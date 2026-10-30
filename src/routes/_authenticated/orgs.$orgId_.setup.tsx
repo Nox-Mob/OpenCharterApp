@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { myOrgsQuery, myPermissionsQuery } from "@/lib/orgs";
+import { myOrgsQuery, myPermissionsQuery, type Org } from "@/lib/orgs";
 import { hasPermission } from "@/lib/policy";
 import { diffByKey, pruneAnswers, validateStep, visibleSteps, type Answers, type FlowContext, type Question } from "@/engines/setup";
 import { attributeInputSchema, STARTER_ATTRIBUTES, type AttributeInput } from "@/engines/attributes";
@@ -38,7 +38,7 @@ function SetupPage() {
   return <Wizard key={org.id} org={org} />;
 }
 
-function Wizard({ org }: { org: (ReturnType<typeof useSuspenseQuery<Awaited<ReturnType<NonNullable<ReturnType<typeof myOrgsQuery>["queryFn"]>>>>>)["data"][number] }) {
+function Wizard({ org }: { org: Org }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const ctx: FlowContext = useMemo(() => ({ orgType: org.type, orgName: org.name }), [org]);
