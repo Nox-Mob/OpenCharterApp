@@ -4,6 +4,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { safeRedirect } from "@/modules/invitations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,8 @@ const creds = z.object({ email: z.string().trim().email(), password: z.string().
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
+  const dest = safeRedirect(redirect);
   const [mode, setMode] = useState<"in" | "up" | "forgot">("in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,12 +49,12 @@ function AuthPage() {
       const parsed = creds.safeParse({ email, password });
       if (!parsed.success) return void toast.error(parsed.error.issues[0]?.message);
       if (mode === "up") {
-        await supabase.auth.signUp({ ...parsed.data, options: { emailRedirectTo: window.location.origin + "/dashboard" } });
+        await supabase.auth.signUp({ ...parsed.data, options: { emailRedirectTo: window.location.origin + dest } });
         setNotice("Check your email to confirm your account, then sign in.");
       } else {
         const { error } = await supabase.auth.signInWithPassword(parsed.data);
         if (error) return void toast.error("Email or password is incorrect.");
-        navigate({ to: "/dashboard" });
+        navigate({ href: dest });
       }
     } finally {
       setBusy(false);
@@ -61,7 +64,7 @@ function AuthPage() {
   async function google() {
     const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth" });
     if (r.error) return void toast.error("Google sign-in failed");
-    if (!r.redirected) navigate({ to: "/dashboard" });
+    if (!r.redirected) navigate({ href: dest });
   }
 
   return (
