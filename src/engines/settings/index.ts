@@ -64,7 +64,8 @@ export function resolveSetting(
   const byOrg = new Map(rows.filter((r) => r.key === key).map((r) => [r.org_id, r]));
   for (const orgId of lineage) {
     const r = byOrg.get(orgId);
-    if (r && r.mode === "locked" && orgId !== self) return { value: r.value, sourceOrgId: orgId, lockedBy: orgId };
+    if (r && r.mode === "locked" && orgId !== self)
+      return { value: r.value, sourceOrgId: orgId, lockedBy: orgId };
   }
   for (let i = lineage.length - 1; i >= 0; i--) {
     const r = byOrg.get(lineage[i]!);

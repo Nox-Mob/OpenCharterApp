@@ -23,7 +23,8 @@ export const TAX_STATUSES = [
 export const membershipFlow: Flow<MembershipPlan> = {
   id: "membership",
   title: "Membership setup",
-  description: "Tell us about your organization, what you track about members, and how joining works.",
+  description:
+    "Tell us about your organization, what you track about members, and how joining works.",
   steps: [
     {
       id: "about",
@@ -31,8 +32,21 @@ export const membershipFlow: Flow<MembershipPlan> = {
       description: "Used on receipts and official records.",
       questions: [
         { id: "legal_name", type: "text", label: "Legal name", required: true },
-        { id: "ein", type: "text", label: "EIN", help: "Format 12-3456789. Leave blank if you don't have one yet.", pattern: /^\d{2}-\d{7}$/, patternMessage: "EIN must look like 12-3456789" },
-        { id: "tax_status", type: "choice", label: "Tax status", required: true, options: TAX_STATUSES },
+        {
+          id: "ein",
+          type: "text",
+          label: "EIN",
+          help: "Format 12-3456789. Leave blank if you don't have one yet.",
+          pattern: /^\d{2}-\d{7}$/,
+          patternMessage: "EIN must look like 12-3456789",
+        },
+        {
+          id: "tax_status",
+          type: "choice",
+          label: "Tax status",
+          required: true,
+          options: TAX_STATUSES,
+        },
       ],
     },
     {
@@ -45,8 +59,20 @@ export const membershipFlow: Flow<MembershipPlan> = {
       id: "joining",
       title: "Joining and renewals",
       questions: [
-        { id: "approval_required", type: "boolean", label: "Must an admin approve new members before they join?" },
-        { id: "grace_days", type: "number", label: "Grace period after a membership expires (days)", required: true, min: 0, max: 365, help: "Members keep their standing during this time." },
+        {
+          id: "approval_required",
+          type: "boolean",
+          label: "Must an admin approve new members before they join?",
+        },
+        {
+          id: "grace_days",
+          type: "number",
+          label: "Grace period after a membership expires (days)",
+          required: true,
+          min: 0,
+          max: 365,
+          help: "Members keep their standing during this time.",
+        },
       ],
     },
     {
@@ -54,8 +80,16 @@ export const membershipFlow: Flow<MembershipPlan> = {
       title: "Rules for your chapters",
       when: (_a, ctx) => isParent(ctx),
       questions: [
-        { id: "lock_joining", type: "boolean", label: "Require every chapter to use these joining and grace rules?" },
-        { id: "chapter_logo_allowed", type: "boolean", label: "May chapters upload their own logo?" },
+        {
+          id: "lock_joining",
+          type: "boolean",
+          label: "Require every chapter to use these joining and grace rules?",
+        },
+        {
+          id: "chapter_logo_allowed",
+          type: "boolean",
+          label: "May chapters upload their own logo?",
+        },
       ],
     },
   ],
@@ -74,13 +108,25 @@ export const membershipFlow: Flow<MembershipPlan> = {
     const lines = [
       `Legal name: ${String(a["legal_name"] ?? "")}${a["ein"] ? ` (EIN ${String(a["ein"])})` : ""}`,
       `Tax status: ${TAX_STATUSES.find((t) => t.value === a["tax_status"])?.label ?? "not set"}`,
-      attrs.length ? `Track ${attrs.length} member field${attrs.length === 1 ? "" : "s"}: ${attrs.map((x) => x.label).join(", ")}` : "No custom member fields yet",
-      a["approval_required"] ? "New members need admin approval" : "New members join without approval",
+      attrs.length
+        ? `Track ${attrs.length} member field${attrs.length === 1 ? "" : "s"}: ${attrs.map((x) => x.label).join(", ")}`
+        : "No custom member fields yet",
+      a["approval_required"]
+        ? "New members need admin approval"
+        : "New members join without approval",
       `Grace period: ${Number(a["grace_days"] ?? 0)} days`,
     ];
     if (isParent(ctx)) {
-      lines.push(a["lock_joining"] ? "Chapters must use these joining rules" : "Chapters may set their own joining rules");
-      lines.push(a["chapter_logo_allowed"] === false ? "Chapters use your logo" : "Chapters may upload their own logo");
+      lines.push(
+        a["lock_joining"]
+          ? "Chapters must use these joining rules"
+          : "Chapters may set their own joining rules",
+      );
+      lines.push(
+        a["chapter_logo_allowed"] === false
+          ? "Chapters use your logo"
+          : "Chapters may upload their own logo",
+      );
     }
     return lines;
   },
@@ -91,11 +137,22 @@ export const membershipFlow: Flow<MembershipPlan> = {
       { key: "membership.grace_days", value: Number(a["grace_days"] ?? 0), mode },
     ];
     if (isParent(ctx)) {
-      settings.push({ key: "branding.chapter_logo_allowed", value: a["chapter_logo_allowed"] !== false, mode: "locked" });
+      settings.push({
+        key: "branding.chapter_logo_allowed",
+        value: a["chapter_logo_allowed"] !== false,
+        mode: "locked",
+      });
     }
     return {
-      tax: { legal_name: String(a["legal_name"] ?? "").trim(), ein: String(a["ein"] ?? "").trim(), tax_status: String(a["tax_status"] ?? "") },
-      attributes: ((a["attributes"] as AttributeInput[] | undefined) ?? []).map((x) => ({ ...x, applies_to: "member" as const })),
+      tax: {
+        legal_name: String(a["legal_name"] ?? "").trim(),
+        ein: String(a["ein"] ?? "").trim(),
+        tax_status: String(a["tax_status"] ?? ""),
+      },
+      attributes: ((a["attributes"] as AttributeInput[] | undefined) ?? []).map((x) => ({
+        ...x,
+        applies_to: "member" as const,
+      })),
       settings,
     };
   },

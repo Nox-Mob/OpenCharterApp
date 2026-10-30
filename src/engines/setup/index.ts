@@ -6,10 +6,33 @@
 export type Answers = Record<string, unknown>;
 
 export type Question =
-  | { id: string; type: "text"; label: string; help?: string; required?: boolean; pattern?: RegExp; patternMessage?: string }
-  | { id: string; type: "number"; label: string; help?: string; required?: boolean; min?: number; max?: number }
+  | {
+      id: string;
+      type: "text";
+      label: string;
+      help?: string;
+      required?: boolean;
+      pattern?: RegExp;
+      patternMessage?: string;
+    }
+  | {
+      id: string;
+      type: "number";
+      label: string;
+      help?: string;
+      required?: boolean;
+      min?: number;
+      max?: number;
+    }
   | { id: string; type: "boolean"; label: string; help?: string }
-  | { id: string; type: "choice"; label: string; help?: string; required?: boolean; options: { value: string; label: string }[] }
+  | {
+      id: string;
+      type: "choice";
+      label: string;
+      help?: string;
+      required?: boolean;
+      options: { value: string; label: string }[];
+    }
   | { id: string; type: "attributes"; label: string; help?: string };
 
 export type FlowContext = { orgType: string; orgName: string };
@@ -36,7 +59,8 @@ export function visibleSteps(flow: Flow<unknown>, a: Answers, ctx: FlowContext):
   return flow.steps.filter((s) => !s.when || s.when(a, ctx));
 }
 
-const isBlank = (v: unknown) => v === undefined || v === null || (typeof v === "string" && v.trim() === "");
+const isBlank = (v: unknown) =>
+  v === undefined || v === null || (typeof v === "string" && v.trim() === "");
 
 export function validateStep(step: Step, a: Answers): Record<string, string> {
   const errors: Record<string, string> = {};
@@ -44,7 +68,8 @@ export function validateStep(step: Step, a: Answers): Record<string, string> {
     const v = a[q.id];
     if (q.type === "text") {
       if (q.required && isBlank(v)) errors[q.id] = `${q.label} is required`;
-      else if (!isBlank(v) && q.pattern && !q.pattern.test(String(v))) errors[q.id] = q.patternMessage ?? "Invalid format";
+      else if (!isBlank(v) && q.pattern && !q.pattern.test(String(v)))
+        errors[q.id] = q.patternMessage ?? "Invalid format";
     } else if (q.type === "number") {
       if (isBlank(v)) {
         if (q.required) errors[q.id] = `${q.label} is required`;
@@ -53,7 +78,8 @@ export function validateStep(step: Step, a: Answers): Record<string, string> {
         errors[q.id] = `Enter a number from ${q.min ?? "-∞"} to ${q.max ?? "∞"}`;
     } else if (q.type === "choice") {
       if (q.required && isBlank(v)) errors[q.id] = `${q.label} is required`;
-      else if (!isBlank(v) && !q.options.some((o) => o.value === v)) errors[q.id] = "Pick one of the options";
+      else if (!isBlank(v) && !q.options.some((o) => o.value === v))
+        errors[q.id] = "Pick one of the options";
     }
   }
   return errors;
@@ -76,7 +102,13 @@ export function diffByKey(
   return planned.map((p) => {
     const e = byKey.get(p.key);
     if (!e) return { key: p.key, label: p.label, change: "add" };
-    const sameOpts = JSON.stringify((p.options ?? []).map((o) => o.value)) === JSON.stringify((e.options ?? []).map((o) => o.value));
-    return { key: p.key, label: p.label, change: e.label === p.label && sameOpts ? "same" : "update" };
+    const sameOpts =
+      JSON.stringify((p.options ?? []).map((o) => o.value)) ===
+      JSON.stringify((e.options ?? []).map((o) => o.value));
+    return {
+      key: p.key,
+      label: p.label,
+      change: e.label === p.label && sameOpts ? "same" : "update",
+    };
   });
 }

@@ -9,7 +9,11 @@ import {
   validateValue,
 } from "./index";
 
-const def = (data_type: Parameters<typeof validateValue>[0]["data_type"], required = false) => ({ data_type, required, label: "Field" });
+const def = (data_type: Parameters<typeof validateValue>[0]["data_type"], required = false) => ({
+  data_type,
+  required,
+  label: "Field",
+});
 const options = [
   { value: "E1", label: "E-1", sort_order: 1, active: true },
   { value: "E2", label: "E-2", sort_order: 2, active: true },
@@ -73,17 +77,39 @@ describe("helpers", () => {
 });
 
 describe("attributeInputSchema", () => {
-  const base = { label: "Rank", key: "rank", data_type: "ordered" as const, required: false, visibility: "members" as const, member_editable: false, show_in_directory: true };
+  const base = {
+    label: "Rank",
+    key: "rank",
+    data_type: "ordered" as const,
+    required: false,
+    visibility: "members" as const,
+    member_editable: false,
+    show_in_directory: true,
+  };
   it("choice-like types need at least two choices", () => {
-    expect(attributeInputSchema.safeParse({ ...base, options: [{ value: "E1", label: "E1" }] }).success).toBe(false);
+    expect(
+      attributeInputSchema.safeParse({ ...base, options: [{ value: "E1", label: "E1" }] }).success,
+    ).toBe(false);
   });
   it("choices must be unique", () => {
-    expect(attributeInputSchema.safeParse({ ...base, options: [{ value: "a", label: "a" }, { value: "a", label: "b" }] }).success).toBe(false);
+    expect(
+      attributeInputSchema.safeParse({
+        ...base,
+        options: [
+          { value: "a", label: "a" },
+          { value: "a", label: "b" },
+        ],
+      }).success,
+    ).toBe(false);
   });
   it("rejects keys the database would reject", () => {
-    expect(attributeInputSchema.safeParse({ ...base, key: "Bad Key", options: [] , data_type: "text" }).success).toBe(false);
+    expect(
+      attributeInputSchema.safeParse({ ...base, key: "Bad Key", options: [], data_type: "text" })
+        .success,
+    ).toBe(false);
   });
   it("every starter attribute is valid", () => {
-    for (const s of STARTER_ATTRIBUTES) expect(attributeInputSchema.safeParse(s).success).toBe(true);
+    for (const s of STARTER_ATTRIBUTES)
+      expect(attributeInputSchema.safeParse(s).success).toBe(true);
   });
 });

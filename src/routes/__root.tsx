@@ -81,7 +81,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "OpenCharterApp" },
-      { name: "description", content: "Open-source membership platform for associations and chapters." },
+      {
+        name: "description",
+        content: "Open-source membership platform for associations and chapters.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

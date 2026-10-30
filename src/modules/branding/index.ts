@@ -18,7 +18,8 @@ export const LOGO_TYPES = ["image/png", "image/jpeg", "image/svg+xml", "image/we
 export const LOGO_MAX_BYTES = 2 * 1024 * 1024;
 
 export function validateLogo(file: { type: string; size: number }): string | null {
-  if (!(LOGO_TYPES as readonly string[]).includes(file.type)) return "Use a PNG, JPG, SVG or WebP image";
+  if (!(LOGO_TYPES as readonly string[]).includes(file.type))
+    return "Use a PNG, JPG, SVG or WebP image";
   if (file.size > LOGO_MAX_BYTES) return "Logo must be 2 MB or smaller";
   return null;
 }
@@ -31,9 +32,14 @@ export async function logoUrl(path: string): Promise<string | null> {
 export async function uploadLogo(orgId: string, file: File): Promise<string> {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
   const path = `${orgId}/logo-${Date.now()}.${ext}`;
-  const { error } = await supabase.storage.from("branding").upload(path, file, { contentType: file.type });
+  const { error } = await supabase.storage
+    .from("branding")
+    .upload(path, file, { contentType: file.type });
   if (error) throw error;
-  const { error: e2 } = await supabase.from("organizations").update({ logo_path: path }).eq("id", orgId);
+  const { error: e2 } = await supabase
+    .from("organizations")
+    .update({ logo_path: path })
+    .eq("id", orgId);
   if (e2) throw e2;
   return path;
 }

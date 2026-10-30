@@ -2,7 +2,10 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { AttributeDef, AttributeOption } from "@/engines/attributes";
 
-export type DefWithOptions = AttributeDef & { applies_to: "member" | "chapter"; options: AttributeOption[] };
+export type DefWithOptions = AttributeDef & {
+  applies_to: "member" | "chapter";
+  options: AttributeOption[];
+};
 
 /** Member attribute definitions that apply to an org: its own plus those inherited from ancestors. */
 export const attributeDefsQuery = (orgId: string, lineage: readonly string[]) =>
@@ -17,7 +20,9 @@ export const attributeDefsQuery = (orgId: string, lineage: readonly string[]) =>
       if (error) throw error;
       return (data ?? []).map((d) => ({
         ...(d as unknown as AttributeDef & { applies_to: "member" | "chapter" }),
-        options: [...((d as { attribute_options: AttributeOption[] }).attribute_options ?? [])].sort((x, y) => x.sort_order - y.sort_order),
+        options: [
+          ...((d as { attribute_options: AttributeOption[] }).attribute_options ?? []),
+        ].sort((x, y) => x.sort_order - y.sort_order),
       }));
     },
   });
@@ -26,7 +31,10 @@ export const memberValuesQuery = (profileId: string) =>
   queryOptions({
     queryKey: ["attribute-values", profileId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("attribute_values").select("definition_id,value").eq("entity_id", profileId);
+      const { data, error } = await supabase
+        .from("attribute_values")
+        .select("definition_id,value")
+        .eq("entity_id", profileId);
       if (error) throw error;
       return Object.fromEntries((data ?? []).map((v) => [v.definition_id, v.value as unknown]));
     },

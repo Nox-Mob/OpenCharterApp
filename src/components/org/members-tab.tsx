@@ -10,8 +10,21 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export function MembersTab({
   org,
@@ -26,29 +39,55 @@ export function MembersTab({
 }) {
   const orgId = org.id;
   const qc = useQueryClient();
-  const me = useQuery({ queryKey: ["me"], queryFn: async () => (await supabase.auth.getUser()).data.user?.id ?? null });
-  const [details, setDetails] = useState<{ id: string; display_name: string; email: string; user_id: string } | null>(null);
+  const me = useQuery({
+    queryKey: ["me"],
+    queryFn: async () => (await supabase.auth.getUser()).data.user?.id ?? null,
+  });
+  const [details, setDetails] = useState<{
+    id: string;
+    display_name: string;
+    email: string;
+    user_id: string;
+  } | null>(null);
   const roles = useQuery({
     queryKey: ["role-assignments", orgId],
     enabled: canAssignAdmin,
     queryFn: async (): Promise<(Assignment & { role_name: string })[]> => {
-      const { data, error } = await supabase.from("role_assignments").select("id,user_id,org_id,roles(key,name)").eq("org_id", orgId);
+      const { data, error } = await supabase
+        .from("role_assignments")
+        .select("id,user_id,org_id,roles(key,name)")
+        .eq("org_id", orgId);
       if (error) throw error;
       return (data ?? []).map((r) => {
         const role = r.roles as { key: string; name: string } | null;
-        return { id: r.id, user_id: r.user_id, org_id: r.org_id, role_key: role?.key ?? "", role_name: role?.name ?? "" };
+        return {
+          id: r.id,
+          user_id: r.user_id,
+          org_id: r.org_id,
+          role_key: role?.key ?? "",
+          role_name: role?.name ?? "",
+        };
       });
     },
   });
   async function assign(userId: string, roleKey: string) {
-    const { error } = await supabase.rpc("assign_role", { _org: orgId, _user: userId, _role_key: roleKey });
+    const { error } = await supabase.rpc("assign_role", {
+      _org: orgId,
+      _user: userId,
+      _role_key: roleKey,
+    });
     if (error) return void toast.error("Couldn't assign that role");
     toast.success("Role assigned");
     qc.invalidateQueries();
   }
   async function unassign(id: string) {
     const { error } = await supabase.rpc("remove_role", { _assignment: id });
-    if (error) return void toast.error(error.message.includes("at least one admin") ? "An organization must keep at least one admin" : "Couldn't remove that role");
+    if (error)
+      return void toast.error(
+        error.message.includes("at least one admin")
+          ? "An organization must keep at least one admin"
+          : "Couldn't remove that role",
+      );
     toast.success("Role removed");
     qc.invalidateQueries();
   }
@@ -109,9 +148,19 @@ export function MembersTab({
         <section className="rounded-md border bg-card p-5">
           <h2 className="text-lg font-semibold">Invite someone</h2>
           <form onSubmit={invite} className="mt-3 flex flex-wrap gap-2">
-            <Input aria-label="Email" type="email" placeholder="name@example.org" value={email} onChange={(e) => setEmail(e.target.value)} className="max-w-xs" required />
+            <Input
+              aria-label="Email"
+              type="email"
+              placeholder="name@example.org"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="max-w-xs"
+              required
+            />
             <Select value={role} onValueChange={(v) => setRole(v as "member" | "org_admin")}>
-              <SelectTrigger className="w-44" aria-label="Role"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-44" aria-label="Role">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="member">Member</SelectItem>
                 {canAssignAdmin && <SelectItem value="org_admin">Organization admin</SelectItem>}
@@ -121,10 +170,22 @@ export function MembersTab({
           </form>
           {link && (
             <div className="mt-4 rounded-md bg-muted p-3 text-sm">
-              <p className="text-muted-foreground">Send this link to the person. It works once, for that email only, and expires in 14 days.</p>
+              <p className="text-muted-foreground">
+                Send this link to the person. It works once, for that email only, and expires in 14
+                days.
+              </p>
               <div className="mt-2 flex gap-2">
                 <Input readOnly value={link} aria-label="Invite link" />
-                <Button type="button" variant="secondary" onClick={() => { navigator.clipboard.writeText(link); toast.success("Copied"); }}>Copy</Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    navigator.clipboard.writeText(link);
+                    toast.success("Copied");
+                  }}
+                >
+                  Copy
+                </Button>
               </div>
             </div>
           )}
@@ -134,7 +195,15 @@ export function MembersTab({
       <section>
         <h2 className="mb-2 text-lg font-semibold">Members</h2>
         <Table>
-          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead>{canAssignAdmin && <TableHead>Roles</TableHead>}<TableHead>Joined</TableHead><TableHead /></TableRow></TableHeader>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              {canAssignAdmin && <TableHead>Roles</TableHead>}
+              <TableHead>Joined</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
           <TableBody>
             {(members.data ?? []).map((m) => (
               <TableRow key={m.id}>
@@ -143,19 +212,35 @@ export function MembersTab({
                 {canAssignAdmin && (
                   <TableCell>
                     <div className="flex flex-wrap items-center gap-1">
-                      {(roles.data ?? []).filter((r) => r.user_id === m.user_id).map((r) => (
-                        <Badge key={r.id} variant="secondary" className="gap-1">
-                          {r.role_name}
-                          {canRemove(r, roles.data ?? [], org.parent_id !== null) && (
-                            <button aria-label={`Remove ${r.role_name} from ${m.email}`} onClick={() => unassign(r.id)}><X className="h-3 w-3" /></button>
-                          )}
-                        </Badge>
-                      ))}
+                      {(roles.data ?? [])
+                        .filter((r) => r.user_id === m.user_id)
+                        .map((r) => (
+                          <Badge key={r.id} variant="secondary" className="gap-1">
+                            {r.role_name}
+                            {canRemove(r, roles.data ?? [], org.parent_id !== null) && (
+                              <button
+                                aria-label={`Remove ${r.role_name} from ${m.email}`}
+                                onClick={() => unassign(r.id)}
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            )}
+                          </Badge>
+                        ))}
                       {availableRoles(m.user_id, orgId, roles.data ?? []).length > 0 && (
                         <Select value="" onValueChange={(k) => assign(m.user_id, k)}>
-                          <SelectTrigger className="h-7 w-28 text-xs" aria-label={`Add role for ${m.email}`}><SelectValue placeholder="Add role" /></SelectTrigger>
+                          <SelectTrigger
+                            className="h-7 w-28 text-xs"
+                            aria-label={`Add role for ${m.email}`}
+                          >
+                            <SelectValue placeholder="Add role" />
+                          </SelectTrigger>
                           <SelectContent>
-                            {availableRoles(m.user_id, orgId, roles.data ?? []).map((r) => <SelectItem key={r.key} value={r.key}>{r.name}</SelectItem>)}
+                            {availableRoles(m.user_id, orgId, roles.data ?? []).map((r) => (
+                              <SelectItem key={r.key} value={r.key}>
+                                {r.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       )}
@@ -164,7 +249,9 @@ export function MembersTab({
                 )}
                 <TableCell>{new Date(m.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
-                  <Button size="sm" variant="ghost" onClick={() => setDetails(m)}>Details</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setDetails(m)}>
+                    Details
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -176,7 +263,14 @@ export function MembersTab({
         <section>
           <h2 className="mb-2 text-lg font-semibold">Invitations</h2>
           <Table>
-            <TableHeader><TableRow><TableHead>Email</TableHead><TableHead>Role</TableHead><TableHead>Status</TableHead><TableHead /></TableRow></TableHeader>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
             <TableBody>
               {invites.data!.map((i) => {
                 const s = inviteStatus(i);
@@ -184,9 +278,20 @@ export function MembersTab({
                   <TableRow key={i.id}>
                     <TableCell>{i.email}</TableCell>
                     <TableCell>{(i.roles as { name: string } | null)?.name}</TableCell>
-                    <TableCell><Badge variant={s === "pending" ? "default" : "secondary"} className="capitalize">{s}</Badge></TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={s === "pending" ? "default" : "secondary"}
+                        className="capitalize"
+                      >
+                        {s}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="text-right">
-                      {s === "pending" && <Button size="sm" variant="ghost" onClick={() => revoke(i.id)}>Revoke</Button>}
+                      {s === "pending" && (
+                        <Button size="sm" variant="ghost" onClick={() => revoke(i.id)}>
+                          Revoke
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 );

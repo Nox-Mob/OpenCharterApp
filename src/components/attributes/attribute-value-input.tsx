@@ -2,7 +2,13 @@ import type { DefWithOptions } from "@/modules/attributes/queries";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function AttributeValueInput({
   def,
@@ -18,21 +24,51 @@ export function AttributeValueInput({
   const active = def.options.filter((o) => o.active);
   switch (def.data_type) {
     case "boolean":
-      return <Switch aria-label={def.label} checked={value === true} disabled={disabled} onCheckedChange={(c) => onChange(c)} />;
+      return (
+        <Switch
+          aria-label={def.label}
+          checked={value === true}
+          disabled={disabled}
+          onCheckedChange={(c) => onChange(c)}
+        />
+      );
     case "number":
       return (
-        <Input aria-label={def.label} type="number" disabled={disabled} value={value === null || value === undefined ? "" : String(value)}
-          onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))} />
+        <Input
+          aria-label={def.label}
+          type="number"
+          disabled={disabled}
+          value={value === null || value === undefined ? "" : String(value)}
+          onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
+        />
       );
     case "date":
-      return <Input aria-label={def.label} type="date" disabled={disabled} value={String(value ?? "")} onChange={(e) => onChange(e.target.value || null)} />;
+      return (
+        <Input
+          aria-label={def.label}
+          type="date"
+          disabled={disabled}
+          value={String(value ?? "")}
+          onChange={(e) => onChange(e.target.value || null)}
+        />
+      );
     case "choice":
     case "ordered":
       return (
-        <Select value={typeof value === "string" ? value : ""} disabled={disabled} onValueChange={(v) => onChange(v)}>
-          <SelectTrigger aria-label={def.label}><SelectValue placeholder="Choose…" /></SelectTrigger>
+        <Select
+          value={typeof value === "string" ? value : ""}
+          disabled={disabled}
+          onValueChange={(v) => onChange(v)}
+        >
+          <SelectTrigger aria-label={def.label}>
+            <SelectValue placeholder="Choose…" />
+          </SelectTrigger>
           <SelectContent>
-            {active.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+            {active.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       );
@@ -59,6 +95,13 @@ export function AttributeValueInput({
       );
     }
     default:
-      return <Input aria-label={def.label} disabled={disabled} value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} />;
+      return (
+        <Input
+          aria-label={def.label}
+          disabled={disabled}
+          value={String(value ?? "")}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      );
   }
 }

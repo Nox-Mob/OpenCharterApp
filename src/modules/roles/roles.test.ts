@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { availableRoles, canRemove, type Assignment } from "./index";
 
-const a = (id: string, user_id: string, role_key: string, org_id = "org"): Assignment => ({ id, user_id, org_id, role_key });
+const a = (id: string, user_id: string, role_key: string, org_id = "org"): Assignment => ({
+  id,
+  user_id,
+  org_id,
+  role_key,
+});
 
 describe("canRemove", () => {
   it("blocks removing the only admin of a top-level org", () => {
@@ -28,7 +33,9 @@ describe("canRemove", () => {
 
 describe("availableRoles", () => {
   it("hides roles the person already holds here", () => {
-    expect(availableRoles("u1", "org", [a("1", "u1", "member")]).map((r) => r.key)).toEqual(["org_admin"]);
+    expect(availableRoles("u1", "org", [a("1", "u1", "member")]).map((r) => r.key)).toEqual([
+      "org_admin",
+    ]);
   });
   it("roles held elsewhere don't hide anything", () => {
     expect(availableRoles("u1", "org", [a("1", "u1", "member", "other")])).toHaveLength(2);

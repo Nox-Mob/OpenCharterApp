@@ -9,7 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function useLineage(org: Org) {
   return useQuery({
@@ -22,13 +28,24 @@ function useLineage(org: Org) {
       if (e1) throw e1;
       if (e2) throw e2;
       const ancestors = [...(anc ?? [])].sort((a, b) => (a.depth ?? 0) - (b.depth ?? 0));
-      const chain = [...ancestors.map((a) => ({ id: a.id, name: a.name, logo_path: a.logo_path })), { id: org.id, name: org.name, logo_path: (org as Org & { logo_path?: string | null }).logo_path ?? null }];
+      const chain = [
+        ...ancestors.map((a) => ({ id: a.id, name: a.name, logo_path: a.logo_path })),
+        {
+          id: org.id,
+          name: org.name,
+          logo_path: (org as Org & { logo_path?: string | null }).logo_path ?? null,
+        },
+      ];
       return { chain, settings: (settings ?? []) as SettingRow[] };
     },
   });
 }
 
-export function SettingsTab({ org }: { org: Org & { timezone?: string; logo_path?: string | null } }) {
+export function SettingsTab({
+  org,
+}: {
+  org: Org & { timezone?: string; logo_path?: string | null };
+}) {
   const qc = useQueryClient();
   const lineage = useLineage(org);
   const refresh = () => qc.invalidateQueries();
@@ -40,7 +57,14 @@ export function SettingsTab({ org }: { org: Org & { timezone?: string; logo_path
   return (
     <div className="grid gap-8 lg:grid-cols-2">
       <GeneralCard org={org} onSaved={refresh} />
-      <LogoCard org={org} chain={chain} allowed={resolveSetting(ids, settings, "branding.chapter_logo_allowed", true).value !== false} onSaved={refresh} />
+      <LogoCard
+        org={org}
+        chain={chain}
+        allowed={
+          resolveSetting(ids, settings, "branding.chapter_logo_allowed", true).value !== false
+        }
+        onSaved={refresh}
+      />
       <TaxCard orgId={org.id} />
       <section className="rounded-md border bg-card p-5">
         <h2 className="text-lg font-semibold">Rules for this organization</h2>
@@ -69,7 +93,10 @@ function GeneralCard({ org, onSaved }: { org: Org & { timezone?: string }; onSav
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (name.trim().length < 2) return void toast.error("Name is too short");
-    const { error } = await supabase.from("organizations").update({ name: name.trim(), timezone: tz }).eq("id", org.id);
+    const { error } = await supabase
+      .from("organizations")
+      .update({ name: name.trim(), timezone: tz })
+      .eq("id", org.id);
     if (error) return void toast.error("Couldn't save");
     toast.success("Saved");
     onSaved();
@@ -77,14 +104,30 @@ function GeneralCard({ org, onSaved }: { org: Org & { timezone?: string }; onSav
   return (
     <form onSubmit={save} className="space-y-4 rounded-md border bg-card p-5">
       <h2 className="text-lg font-semibold">General</h2>
-      <div className="space-y-2"><Label htmlFor="g-name">Name</Label><Input id="g-name" value={name} onChange={(e) => setName(e.target.value)} /></div>
-      <div className="space-y-2"><Label htmlFor="g-tz">Time zone</Label><Input id="g-tz" value={tz} onChange={(e) => setTz(e.target.value)} /></div>
+      <div className="space-y-2">
+        <Label htmlFor="g-name">Name</Label>
+        <Input id="g-name" value={name} onChange={(e) => setName(e.target.value)} />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="g-tz">Time zone</Label>
+        <Input id="g-tz" value={tz} onChange={(e) => setTz(e.target.value)} />
+      </div>
       <Button type="submit">Save</Button>
     </form>
   );
 }
 
-function LogoCard({ org, chain, allowed, onSaved }: { org: Org; chain: { id: string; name: string; logo_path: string | null }[]; allowed: boolean; onSaved: () => void }) {
+function LogoCard({
+  org,
+  chain,
+  allowed,
+  onSaved,
+}: {
+  org: Org;
+  chain: { id: string; name: string; logo_path: string | null }[];
+  allowed: boolean;
+  onSaved: () => void;
+}) {
   const effective = resolveLogo(chain, allowed);
   const [url, setUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -92,7 +135,9 @@ function LogoCard({ org, chain, allowed, onSaved }: { org: Org; chain: { id: str
     let live = true;
     if (effective) logoUrl(effective.path).then((u) => live && setUrl(u));
     else setUrl(null);
-    return () => { live = false; };
+    return () => {
+      live = false;
+    };
   }, [effective?.path]);
   const isChild = chain.length > 1;
 
@@ -102,54 +147,111 @@ function LogoCard({ org, chain, allowed, onSaved }: { org: Org; chain: { id: str
     const err = validateLogo(file);
     if (err) return void toast.error(err);
     setBusy(true);
-    try { await uploadLogo(org.id, file); toast.success("Logo updated"); onSaved(); }
-    catch { toast.error("Upload failed"); }
-    finally { setBusy(false); e.target.value = ""; }
+    try {
+      await uploadLogo(org.id, file);
+      toast.success("Logo updated");
+      onSaved();
+    } catch {
+      toast.error("Upload failed");
+    } finally {
+      setBusy(false);
+      e.target.value = "";
+    }
   }
 
   return (
     <section className="space-y-4 rounded-md border bg-card p-5">
       <h2 className="text-lg font-semibold">Logo</h2>
       <div className="flex h-28 items-center justify-center rounded-md bg-muted">
-        {url ? <img src={url} alt={`${org.name} logo`} className="max-h-24 max-w-full object-contain" /> : <span className="text-sm text-muted-foreground">No logo yet</span>}
+        {url ? (
+          <img src={url} alt={`${org.name} logo`} className="max-h-24 max-w-full object-contain" />
+        ) : (
+          <span className="text-sm text-muted-foreground">No logo yet</span>
+        )}
       </div>
       {effective && effective.orgId !== org.id && (
-        <p className="text-sm text-muted-foreground">Showing the logo from {chain.find((c) => c.id === effective.orgId)?.name}.</p>
+        <p className="text-sm text-muted-foreground">
+          Showing the logo from {chain.find((c) => c.id === effective.orgId)?.name}.
+        </p>
       )}
       {isChild && !allowed ? (
-        <p className="text-sm text-muted-foreground">Your parent organization requires its logo on all chapters.</p>
+        <p className="text-sm text-muted-foreground">
+          Your parent organization requires its logo on all chapters.
+        </p>
       ) : (
         <div className="space-y-2">
           <Label htmlFor="logo">Upload a logo (PNG, JPG, SVG or WebP, up to 2 MB)</Label>
-          <Input id="logo" type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" disabled={busy} onChange={onFile} />
+          <Input
+            id="logo"
+            type="file"
+            accept="image/png,image/jpeg,image/svg+xml,image/webp"
+            disabled={busy}
+            onChange={onFile}
+          />
         </div>
       )}
     </section>
   );
 }
 
-type Tax = { legal_name: string; ein: string; tax_status: string; address_line1: string; address_line2: string; city: string; region: string; postal_code: string; country: string };
-const EMPTY_TAX: Tax = { legal_name: "", ein: "", tax_status: "", address_line1: "", address_line2: "", city: "", region: "", postal_code: "", country: "US" };
+type Tax = {
+  legal_name: string;
+  ein: string;
+  tax_status: string;
+  address_line1: string;
+  address_line2: string;
+  city: string;
+  region: string;
+  postal_code: string;
+  country: string;
+};
+const EMPTY_TAX: Tax = {
+  legal_name: "",
+  ein: "",
+  tax_status: "",
+  address_line1: "",
+  address_line2: "",
+  city: "",
+  region: "",
+  postal_code: "",
+  country: "US",
+};
 const TAX_FIELDS: [keyof Tax, string][] = [
-  ["legal_name", "Legal name"], ["ein", "EIN (12-3456789)"], ["tax_status", "Tax status (e.g. 501(c)(3))"],
-  ["address_line1", "Address"], ["address_line2", "Address line 2"], ["city", "City"], ["region", "State"], ["postal_code", "ZIP"], ["country", "Country"],
+  ["legal_name", "Legal name"],
+  ["ein", "EIN (12-3456789)"],
+  ["tax_status", "Tax status (e.g. 501(c)(3))"],
+  ["address_line1", "Address"],
+  ["address_line2", "Address line 2"],
+  ["city", "City"],
+  ["region", "State"],
+  ["postal_code", "ZIP"],
+  ["country", "Country"],
 ];
 
 function TaxCard({ orgId }: { orgId: string }) {
   const q = useQuery({
     queryKey: ["tax", orgId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("tax_profiles").select("*").eq("org_id", orgId).maybeSingle();
+      const { data, error } = await supabase
+        .from("tax_profiles")
+        .select("*")
+        .eq("org_id", orgId)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
   });
   const [form, setForm] = useState<Tax>(EMPTY_TAX);
-  useEffect(() => { if (q.data) setForm({ ...EMPTY_TAX, ...q.data }); }, [q.data]);
+  useEffect(() => {
+    if (q.data) setForm({ ...EMPTY_TAX, ...q.data });
+  }, [q.data]);
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (form.ein && !/^\d{2}-\d{7}$/.test(form.ein)) return void toast.error("EIN must look like 12-3456789");
-    const { error } = await supabase.from("tax_profiles").upsert({ org_id: orgId, ...form, updated_at: new Date().toISOString() });
+    if (form.ein && !/^\d{2}-\d{7}$/.test(form.ein))
+      return void toast.error("EIN must look like 12-3456789");
+    const { error } = await supabase
+      .from("tax_profiles")
+      .upsert({ org_id: orgId, ...form, updated_at: new Date().toISOString() });
     if (error) return void toast.error("Couldn't save tax profile");
     toast.success("Tax profile saved");
     q.refetch();
@@ -157,12 +259,18 @@ function TaxCard({ orgId }: { orgId: string }) {
   return (
     <form onSubmit={save} className="space-y-3 rounded-md border bg-card p-5">
       <h2 className="text-lg font-semibold">Tax profile</h2>
-      <p className="text-sm text-muted-foreground">Printed on this organization's receipts. Each organization keeps its own.</p>
+      <p className="text-sm text-muted-foreground">
+        Printed on this organization's receipts. Each organization keeps its own.
+      </p>
       <div className="grid gap-3 sm:grid-cols-2">
         {TAX_FIELDS.map(([k, label]) => (
           <div key={k} className="space-y-1">
             <Label htmlFor={`tax-${k}`}>{label}</Label>
-            <Input id={`tax-${k}`} value={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
+            <Input
+              id={`tax-${k}`}
+              value={form[k]}
+              onChange={(e) => setForm({ ...form, [k]: e.target.value })}
+            />
           </div>
         ))}
       </div>
@@ -171,17 +279,35 @@ function TaxCard({ orgId }: { orgId: string }) {
   );
 }
 
-function SettingRowEditor({ orgId, hasChildren, def, own, resolved, nameOf, onSaved }: {
-  orgId: string; hasChildren: boolean; def: (typeof SETTINGS)[number]; own: SettingRow | undefined;
-  resolved: ReturnType<typeof resolveSetting>; nameOf: (id: string | null) => string; onSaved: () => void;
+function SettingRowEditor({
+  orgId,
+  hasChildren,
+  def,
+  own,
+  resolved,
+  nameOf,
+  onSaved,
+}: {
+  orgId: string;
+  hasChildren: boolean;
+  def: (typeof SETTINGS)[number];
+  own: SettingRow | undefined;
+  resolved: ReturnType<typeof resolveSetting>;
+  nameOf: (id: string | null) => string;
+  onSaved: () => void;
 }) {
   const locked = resolved.lockedBy !== null;
   const [value, setValue] = useState<unknown>(own?.value ?? resolved.value);
   const [mode, setMode] = useState<SettingMode>(own?.mode ?? "override");
 
   async function save() {
-    const { error } = await supabase.from("org_settings").upsert({ org_id: orgId, key: def.key, value: value as never, mode });
-    if (error) return void toast.error(error.message.includes("locked") ? "Locked by a parent organization" : "Couldn't save");
+    const { error } = await supabase
+      .from("org_settings")
+      .upsert({ org_id: orgId, key: def.key, value: value as never, mode });
+    if (error)
+      return void toast.error(
+        error.message.includes("locked") ? "Locked by a parent organization" : "Couldn't save",
+      );
     toast.success("Saved");
     onSaved();
   }
@@ -194,11 +320,21 @@ function SettingRowEditor({ orgId, hasChildren, def, own, resolved, nameOf, onSa
           <p className="text-sm text-muted-foreground">{def.description}</p>
         </div>
         {def.kind === "boolean" ? (
-          <Switch aria-label={def.label} checked={value !== false} disabled={locked} onCheckedChange={(c) => setValue(c)} />
+          <Switch
+            aria-label={def.label}
+            checked={value !== false}
+            disabled={locked}
+            onCheckedChange={(c) => setValue(c)}
+          />
         ) : null}
       </div>
       {def.kind === "text" && (
-        <Input aria-label={def.label} value={String(value ?? "")} disabled={locked} onChange={(e) => setValue(e.target.value)} />
+        <Input
+          aria-label={def.label}
+          value={String(value ?? "")}
+          disabled={locked}
+          onChange={(e) => setValue(e.target.value)}
+        />
       )}
       {def.kind === "number" && (
         <Input
@@ -212,20 +348,26 @@ function SettingRowEditor({ orgId, hasChildren, def, own, resolved, nameOf, onSa
         />
       )}
       <p className="text-xs text-muted-foreground">
-        {locked ? `Locked by ${nameOf(resolved.lockedBy)}.` : `Currently from ${resolved.sourceOrgId === orgId ? "this organization" : nameOf(resolved.sourceOrgId)}.`}
+        {locked
+          ? `Locked by ${nameOf(resolved.lockedBy)}.`
+          : `Currently from ${resolved.sourceOrgId === orgId ? "this organization" : nameOf(resolved.sourceOrgId)}.`}
       </p>
       {!locked && (
         <div className="flex items-center gap-2">
           {hasChildren && (
             <Select value={mode} onValueChange={(v) => setMode(v as SettingMode)}>
-              <SelectTrigger className="w-56" aria-label="Chapter rule"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-56" aria-label="Chapter rule">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="override">Chapters may change it</SelectItem>
                 <SelectItem value="locked">Lock for all chapters</SelectItem>
               </SelectContent>
             </Select>
           )}
-          <Button size="sm" variant="secondary" onClick={save}>Save</Button>
+          <Button size="sm" variant="secondary" onClick={save}>
+            Save
+          </Button>
         </div>
       )}
     </div>

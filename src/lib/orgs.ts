@@ -39,9 +39,9 @@ export const myPermissionsQuery = () =>
       return (data ?? []).map((r) => ({
         org_id: r.org_id,
         permissions:
-          (r.roles as { role_permissions: { permission_key: string }[] } | null)?.role_permissions.map(
-            (p) => p.permission_key,
-          ) ?? [],
+          (
+            r.roles as { role_permissions: { permission_key: string }[] } | null
+          )?.role_permissions.map((p) => p.permission_key) ?? [],
       }));
     },
   });

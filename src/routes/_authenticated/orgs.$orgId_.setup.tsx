@@ -4,8 +4,20 @@ import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-quer
 import { toast } from "sonner";
 import { myOrgsQuery, myPermissionsQuery, type Org } from "@/lib/orgs";
 import { hasPermission } from "@/lib/policy";
-import { diffByKey, pruneAnswers, validateStep, visibleSteps, type Answers, type FlowContext, type Question } from "@/engines/setup";
-import { attributeInputSchema, STARTER_ATTRIBUTES, type AttributeInput } from "@/engines/attributes";
+import {
+  diffByKey,
+  pruneAnswers,
+  validateStep,
+  visibleSteps,
+  type Answers,
+  type FlowContext,
+  type Question,
+} from "@/engines/setup";
+import {
+  attributeInputSchema,
+  STARTER_ATTRIBUTES,
+  type AttributeInput,
+} from "@/engines/attributes";
 import { initialAnswers, membershipFlow } from "@/modules/membership/setup-flow";
 import { applyFlow, saveDraft, setupStateQuery } from "@/modules/setup/drafts";
 import { attributeDefsQuery } from "@/modules/attributes/queries";
@@ -18,12 +30,21 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/orgs/$orgId_/setup")({
   head: () => ({ meta: [{ title: "Membership setup — OpenCharterApp" }] }),
   loader: async ({ context }) => {
-    await Promise.all([context.queryClient.ensureQueryData(myOrgsQuery()), context.queryClient.ensureQueryData(myPermissionsQuery())]);
+    await Promise.all([
+      context.queryClient.ensureQueryData(myOrgsQuery()),
+      context.queryClient.ensureQueryData(myPermissionsQuery()),
+    ]);
   },
   component: SetupPage,
 });
@@ -34,7 +55,10 @@ function SetupPage() {
   const { data: grants } = useSuspenseQuery(myPermissionsQuery());
   const org = orgs.find((o) => o.id === orgId);
   if (!org) throw notFound();
-  if (!hasPermission(grants, "setup.run", org)) return <p className="text-muted-foreground">You don't have access to setup for this organization.</p>;
+  if (!hasPermission(grants, "setup.run", org))
+    return (
+      <p className="text-muted-foreground">You don't have access to setup for this organization.</p>
+    );
   return <Wizard key={org.id} org={org} />;
 }
 
@@ -53,7 +77,12 @@ function Wizard({ org }: { org: Org }) {
     () =>
       (defs.data ?? [])
         .filter((d) => d.org_id === org.id && d.applies_to === "member" && d.active)
-        .map((d) => ({ ...d, options: d.options.filter((o) => o.active).map((o) => ({ value: o.value, label: o.label })) })),
+        .map((d) => ({
+          ...d,
+          options: d.options
+            .filter((o) => o.active)
+            .map((o) => ({ value: o.value, label: o.label })),
+        })),
     [defs.data, org.id],
   );
 
@@ -61,7 +90,10 @@ function Wizard({ org }: { org: Org }) {
     if (answers || state.isLoading || defs.isLoading) return;
     const base = initialAnswers(state.data?.answers, ctx);
     // Re-running pre-fills from current configuration (setup-engine.md §4)
-    if (!state.data?.answers?.["attributes"]) base["attributes"] = existingOwn.map(({ id: _id, org_id: _o, sort_order: _s, active: _a, ...rest }) => rest);
+    if (!state.data?.answers?.["attributes"])
+      base["attributes"] = existingOwn.map(
+        ({ id: _id, org_id: _o, sort_order: _s, active: _a, ...rest }) => rest,
+      );
     setAnswers(base);
   }, [answers, state.isLoading, state.data, defs.isLoading, existingOwn, ctx]);
 
@@ -90,7 +122,8 @@ function Wizard({ org }: { org: Org }) {
   async function apply() {
     const final = pruneAnswers(membershipFlow, answers!, ctx);
     for (const s of steps) {
-      if (Object.keys(validateStep(s, final)).length) return void toast.error(`Please finish "${s.title}"`);
+      if (Object.keys(validateStep(s, final)).length)
+        return void toast.error(`Please finish "${s.title}"`);
     }
     setBusy(true);
     try {
@@ -99,7 +132,11 @@ function Wizard({ org }: { org: Org }) {
       await qc.invalidateQueries();
       navigate({ to: "/orgs/$orgId", params: { orgId: org.id } });
     } catch (e) {
-      toast.error(String((e as Error).message).includes("locked") ? "A rule here is locked by your parent organization" : "Setup couldn't be applied. Nothing was changed.");
+      toast.error(
+        String((e as Error).message).includes("locked")
+          ? "A rule here is locked by your parent organization"
+          : "Setup couldn't be applied. Nothing was changed.",
+      );
     } finally {
       setBusy(false);
     }
@@ -108,17 +145,31 @@ function Wizard({ org }: { org: Org }) {
   const plannedAttrs = (answers["attributes"] as AttributeInput[]) ?? [];
   return (
     <div className="mx-auto max-w-2xl">
-      <Link to="/orgs/$orgId" params={{ orgId: org.id }} className="text-sm text-muted-foreground hover:underline">← {org.name}</Link>
+      <Link
+        to="/orgs/$orgId"
+        params={{ orgId: org.id }}
+        className="text-sm text-muted-foreground hover:underline"
+      >
+        ← {org.name}
+      </Link>
       <h1 className="mt-2 text-3xl font-semibold">{membershipFlow.title}</h1>
-      <Progress className="mt-4" value={(Math.min(stepIdx, steps.length) / steps.length) * 100} aria-label="Setup progress" />
-      <p className="mt-2 text-sm text-muted-foreground">{onReview ? "Review" : `Step ${stepIdx + 1} of ${steps.length}`}</p>
+      <Progress
+        className="mt-4"
+        value={(Math.min(stepIdx, steps.length) / steps.length) * 100}
+        aria-label="Setup progress"
+      />
+      <p className="mt-2 text-sm text-muted-foreground">
+        {onReview ? "Review" : `Step ${stepIdx + 1} of ${steps.length}`}
+      </p>
 
       <section className="mt-6 rule-brass bg-card p-6">
         {onReview ? (
           <>
             <h2 className="text-xl font-semibold">Review and apply</h2>
             <ul className="mt-4 list-disc space-y-1 pl-5">
-              {membershipFlow.summarize(answers, ctx).map((l) => <li key={l}>{l}</li>)}
+              {membershipFlow.summarize(answers, ctx).map((l) => (
+                <li key={l}>{l}</li>
+              ))}
             </ul>
             {plannedAttrs.length > 0 && (
               <div className="mt-4">
@@ -126,12 +177,20 @@ function Wizard({ org }: { org: Org }) {
                 <ul className="mt-2 space-y-1 text-sm">
                   {diffByKey(plannedAttrs, existingOwn).map((d) => (
                     <li key={d.key} className="flex items-center gap-2">
-                      <Badge variant={d.change === "same" ? "outline" : "default"}>{d.change === "add" ? "New" : d.change === "update" ? "Changed" : "No change"}</Badge>
+                      <Badge variant={d.change === "same" ? "outline" : "default"}>
+                        {d.change === "add"
+                          ? "New"
+                          : d.change === "update"
+                            ? "Changed"
+                            : "No change"}
+                      </Badge>
                       {d.label}
                     </li>
                   ))}
                 </ul>
-                <p className="mt-2 text-xs text-muted-foreground">Fields you removed here are not deleted. Retire them from the Member fields tab.</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Fields you removed here are not deleted. Retire them from the Member fields tab.
+                </p>
               </div>
             )}
           </>
@@ -141,15 +200,25 @@ function Wizard({ org }: { org: Org }) {
             {step!.description && <p className="mt-1 text-muted-foreground">{step!.description}</p>}
             <div className="mt-6 space-y-5">
               {step!.questions.map((q) => (
-                <QuestionField key={q.id} q={q} value={answers[q.id]} error={errors[q.id]} onChange={(v) => set(q.id, v)} />
+                <QuestionField
+                  key={q.id}
+                  q={q}
+                  value={answers[q.id]}
+                  error={errors[q.id]}
+                  onChange={(v) => set(q.id, v)}
+                />
               ))}
             </div>
           </>
         )}
         <div className="mt-8 flex justify-between">
-          <Button variant="ghost" disabled={stepIdx === 0} onClick={() => setStepIdx(stepIdx - 1)}>Back</Button>
+          <Button variant="ghost" disabled={stepIdx === 0} onClick={() => setStepIdx(stepIdx - 1)}>
+            Back
+          </Button>
           {onReview ? (
-            <Button onClick={apply} disabled={busy}>{busy ? "Applying…" : "Apply setup"}</Button>
+            <Button onClick={apply} disabled={busy}>
+              {busy ? "Applying…" : "Apply setup"}
+            </Button>
           ) : (
             <Button onClick={next}>Save and continue</Button>
           )}
@@ -159,21 +228,56 @@ function Wizard({ org }: { org: Org }) {
   );
 }
 
-function QuestionField({ q, value, error, onChange }: { q: Question; value: unknown; error?: string | undefined; onChange: (v: unknown) => void }) {
+function QuestionField({
+  q,
+  value,
+  error,
+  onChange,
+}: {
+  q: Question;
+  value: unknown;
+  error?: string | undefined;
+  onChange: (v: unknown) => void;
+}) {
   const id = `q-${q.id}`;
   const body = (() => {
     switch (q.type) {
       case "text":
-        return <Input id={id} value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} />;
+        return (
+          <Input id={id} value={String(value ?? "")} onChange={(e) => onChange(e.target.value)} />
+        );
       case "number":
-        return <Input id={id} type="number" className="w-32" value={value === null || value === undefined ? "" : String(value)} onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))} />;
+        return (
+          <Input
+            id={id}
+            type="number"
+            className="w-32"
+            value={value === null || value === undefined ? "" : String(value)}
+            onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
+          />
+        );
       case "boolean":
-        return <Switch id={id} aria-label={q.label} checked={value === true} onCheckedChange={(c) => onChange(c)} />;
+        return (
+          <Switch
+            id={id}
+            aria-label={q.label}
+            checked={value === true}
+            onCheckedChange={(c) => onChange(c)}
+          />
+        );
       case "choice":
         return (
           <Select value={String(value ?? "")} onValueChange={onChange}>
-            <SelectTrigger id={id} aria-label={q.label}><SelectValue placeholder="Choose…" /></SelectTrigger>
-            <SelectContent>{q.options.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+            <SelectTrigger id={id} aria-label={q.label}>
+              <SelectValue placeholder="Choose…" />
+            </SelectTrigger>
+            <SelectContent>
+              {q.options.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         );
       case "attributes":
@@ -190,14 +294,24 @@ function QuestionField({ q, value, error, onChange }: { q: Question; value: unkn
   );
 }
 
-function AttributesQuestion({ value, onChange }: { value: AttributeInput[]; onChange: (v: AttributeInput[]) => void }) {
-  const [editing, setEditing] = useState<{ index: number | null; input: AttributeInput } | null>(null);
+function AttributesQuestion({
+  value,
+  onChange,
+}: {
+  value: AttributeInput[];
+  onChange: (v: AttributeInput[]) => void;
+}) {
+  const [editing, setEditing] = useState<{ index: number | null; input: AttributeInput } | null>(
+    null,
+  );
   const keys = new Set(value.map((v) => v.key));
   function saveEdit() {
     if (!editing) return;
     const parsed = attributeInputSchema.safeParse(editing.input);
-    if (!parsed.success) return void toast.error(parsed.error.issues[0]?.message ?? "Check the field");
-    if (editing.index === null && keys.has(parsed.data.key)) return void toast.error("You already have a field with that name");
+    if (!parsed.success)
+      return void toast.error(parsed.error.issues[0]?.message ?? "Check the field");
+    if (editing.index === null && keys.has(parsed.data.key))
+      return void toast.error("You already have a field with that name");
     const next = [...value];
     if (editing.index === null) next.push(parsed.data);
     else next[editing.index] = parsed.data;
@@ -213,7 +327,13 @@ function AttributesQuestion({ value, onChange }: { value: AttributeInput[]; onCh
             <label key={s.key} className="flex items-center gap-2 text-sm">
               <Checkbox
                 checked={keys.has(s.key)}
-                onCheckedChange={(c) => onChange(c ? [...value, { ...s, options: [...s.options] }] : value.filter((v) => v.key !== s.key))}
+                onCheckedChange={(c) =>
+                  onChange(
+                    c
+                      ? [...value, { ...s, options: [...s.options] }]
+                      : value.filter((v) => v.key !== s.key),
+                  )
+                }
               />
               {s.label}
             </label>
@@ -224,20 +344,50 @@ function AttributesQuestion({ value, onChange }: { value: AttributeInput[]; onCh
         <ul className="divide-y rounded-md border">
           {value.map((a, i) => (
             <li key={a.key} className="flex items-center justify-between px-3 py-2 text-sm">
-              <span>{a.label} <span className="text-muted-foreground">· {a.options.length ? `${a.options.length} choices` : a.data_type}</span></span>
+              <span>
+                {a.label}{" "}
+                <span className="text-muted-foreground">
+                  · {a.options.length ? `${a.options.length} choices` : a.data_type}
+                </span>
+              </span>
               <span className="space-x-1">
-                <Button size="sm" variant="ghost" onClick={() => setEditing({ index: i, input: a })}>Edit</Button>
-                <Button size="sm" variant="ghost" onClick={() => onChange(value.filter((_, j) => j !== i))}>Remove</Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setEditing({ index: i, input: a })}
+                >
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onChange(value.filter((_, j) => j !== i))}
+                >
+                  Remove
+                </Button>
               </span>
             </li>
           ))}
         </ul>
       )}
-      <Button type="button" variant="outline" onClick={() => setEditing({ index: null, input: EMPTY_ATTRIBUTE })}>Create your own field</Button>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setEditing({ index: null, input: EMPTY_ATTRIBUTE })}
+      >
+        Create your own field
+      </Button>
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader><DialogTitle>{editing?.index === null ? "New member field" : "Edit field"}</DialogTitle></DialogHeader>
-          {editing && <AttributeForm value={editing.input} onChange={(input) => setEditing({ ...editing, input })} />}
+          <DialogHeader>
+            <DialogTitle>{editing?.index === null ? "New member field" : "Edit field"}</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <AttributeForm
+              value={editing.input}
+              onChange={(input) => setEditing({ ...editing, input })}
+            />
+          )}
           <Button onClick={saveEdit}>Done</Button>
         </DialogContent>
       </Dialog>

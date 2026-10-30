@@ -36,7 +36,9 @@ export function MemberDetailsDialog({
   async function save() {
     if (!profile) return;
     for (const d of memberDefs) {
-      const err = editable(d) ? validateValue(d, d.options, coerceInput(d.data_type, draft[d.id])) : null;
+      const err = editable(d)
+        ? validateValue(d, d.options, coerceInput(d.data_type, draft[d.id]))
+        : null;
       if (err) return void toast.error(err);
     }
     setBusy(true);
@@ -44,7 +46,11 @@ export function MemberDetailsDialog({
       for (const d of memberDefs.filter(editable)) {
         const next = coerceInput(d.data_type, draft[d.id]);
         if (JSON.stringify(next ?? null) === JSON.stringify(values.data?.[d.id] ?? null)) continue;
-        const { error } = await supabase.rpc("set_attribute_value", { _def: d.id, _entity: profile.id, _value: (next ?? null) as never });
+        const { error } = await supabase.rpc("set_attribute_value", {
+          _def: d.id,
+          _entity: profile.id,
+          _value: (next ?? null) as never,
+        });
         if (error) throw error;
       }
       toast.success("Saved");
@@ -60,18 +66,32 @@ export function MemberDetailsDialog({
   return (
     <Dialog open={!!profile} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>{profile?.display_name || profile?.email}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{profile?.display_name || profile?.email}</DialogTitle>
+        </DialogHeader>
         {memberDefs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">This organization doesn't track any member fields yet.</p>
+          <p className="text-sm text-muted-foreground">
+            This organization doesn't track any member fields yet.
+          </p>
         ) : (
           <div className="space-y-4">
             {memberDefs.map((d) => (
               <div key={d.id} className="space-y-1">
-                <Label>{d.label}{d.required ? " *" : ""}</Label>
-                <AttributeValueInput def={d} value={draft[d.id]} disabled={!editable(d)} onChange={(v) => setDraft({ ...draft, [d.id]: v })} />
+                <Label>
+                  {d.label}
+                  {d.required ? " *" : ""}
+                </Label>
+                <AttributeValueInput
+                  def={d}
+                  value={draft[d.id]}
+                  disabled={!editable(d)}
+                  onChange={(v) => setDraft({ ...draft, [d.id]: v })}
+                />
               </div>
             ))}
-            <Button onClick={save} disabled={busy}>{busy ? "Saving…" : "Save details"}</Button>
+            <Button onClick={save} disabled={busy}>
+              {busy ? "Saving…" : "Save details"}
+            </Button>
           </div>
         )}
       </DialogContent>

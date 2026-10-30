@@ -19,7 +19,9 @@ function Dashboard() {
       <div className="flex items-end justify-between rule-brass pt-6">
         <div>
           <h1 className="text-3xl font-semibold">Your organizations</h1>
-          <p className="mt-1 text-muted-foreground">Every organization you belong to or help run.</p>
+          <p className="mt-1 text-muted-foreground">
+            Every organization you belong to or help run.
+          </p>
         </div>
         <CreateOrgDialog
           trigger={<Button>Create organization</Button>}

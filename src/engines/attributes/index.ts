@@ -5,7 +5,15 @@ import { z } from "zod";
  * validateValue mirrors public.validate_attribute_value so the UI can explain
  * problems before the database rejects them.
  */
-export const ATTRIBUTE_TYPES = ["text", "number", "date", "boolean", "choice", "multi_choice", "ordered"] as const;
+export const ATTRIBUTE_TYPES = [
+  "text",
+  "number",
+  "date",
+  "boolean",
+  "choice",
+  "multi_choice",
+  "ordered",
+] as const;
 export type AttributeType = (typeof ATTRIBUTE_TYPES)[number];
 export const VISIBILITIES = ["admins", "members", "public"] as const;
 export type Visibility = (typeof VISIBILITIES)[number];
@@ -38,9 +46,16 @@ export type AttributeDef = {
   sort_order: number;
   active: boolean;
 };
-export type AttributeOption = { id?: string; value: string; label: string; sort_order: number; active: boolean };
+export type AttributeOption = {
+  id?: string;
+  value: string;
+  label: string;
+  sort_order: number;
+  active: boolean;
+};
 
-export const hasOptions = (t: AttributeType) => t === "choice" || t === "multi_choice" || t === "ordered";
+export const hasOptions = (t: AttributeType) =>
+  t === "choice" || t === "multi_choice" || t === "ordered";
 
 export function toKey(label: string): string {
   const k = label
@@ -56,7 +71,12 @@ export function validateValue(
   options: readonly Pick<AttributeOption, "value" | "active">[],
   value: unknown,
 ): string | null {
-  if (value === null || value === undefined || value === "" || (Array.isArray(value) && value.length === 0)) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === "" ||
+    (Array.isArray(value) && value.length === 0)
+  ) {
     return def.required ? `${def.label} is required` : null;
   }
   const allowed = new Set(options.filter((o) => o.active).map((o) => o.value));
@@ -127,12 +147,59 @@ export type AttributeInput = z.infer<typeof attributeInputSchema>;
 
 const opts = (...v: string[]) => v.map((x) => ({ value: x, label: x }));
 /** Common starters offered in setup (setup-engine.md §6.2). Nothing here is assumed in code. */
-export const STARTER_ATTRIBUTES: readonly (Omit<AttributeInput, "options"> & { options: { value: string; label: string }[] })[] = [
-  { label: "Salutation", key: "salutation", data_type: "choice", required: false, visibility: "members", member_editable: true, show_in_directory: true, options: opts("Mr.", "Ms.", "Mx.", "Dr.") },
-  { label: "Rank", key: "rank", data_type: "ordered", required: false, visibility: "members", member_editable: false, show_in_directory: true, options: opts("E-1", "E-2", "E-3", "E-4", "E-5", "E-6") },
-  { label: "Branch", key: "branch", data_type: "choice", required: false, visibility: "members", member_editable: true, show_in_directory: true, options: opts("Army", "Navy", "Air Force", "Marine Corps", "Coast Guard", "Space Force") },
-  { label: "Join date", key: "join_date", data_type: "date", required: false, visibility: "admins", member_editable: false, show_in_directory: false, options: [] },
-  { label: "Phone", key: "phone", data_type: "text", required: false, visibility: "admins", member_editable: true, show_in_directory: false, options: [] },
+export const STARTER_ATTRIBUTES: readonly (Omit<AttributeInput, "options"> & {
+  options: { value: string; label: string }[];
+})[] = [
+  {
+    label: "Salutation",
+    key: "salutation",
+    data_type: "choice",
+    required: false,
+    visibility: "members",
+    member_editable: true,
+    show_in_directory: true,
+    options: opts("Mr.", "Ms.", "Mx.", "Dr."),
+  },
+  {
+    label: "Rank",
+    key: "rank",
+    data_type: "ordered",
+    required: false,
+    visibility: "members",
+    member_editable: false,
+    show_in_directory: true,
+    options: opts("E-1", "E-2", "E-3", "E-4", "E-5", "E-6"),
+  },
+  {
+    label: "Branch",
+    key: "branch",
+    data_type: "choice",
+    required: false,
+    visibility: "members",
+    member_editable: true,
+    show_in_directory: true,
+    options: opts("Army", "Navy", "Air Force", "Marine Corps", "Coast Guard", "Space Force"),
+  },
+  {
+    label: "Join date",
+    key: "join_date",
+    data_type: "date",
+    required: false,
+    visibility: "admins",
+    member_editable: false,
+    show_in_directory: false,
+    options: [],
+  },
+  {
+    label: "Phone",
+    key: "phone",
+    data_type: "text",
+    required: false,
+    visibility: "admins",
+    member_editable: true,
+    show_in_directory: false,
+    options: [],
+  },
 ];
 
 /** Convert a UI form value into the stored JSON value. */
