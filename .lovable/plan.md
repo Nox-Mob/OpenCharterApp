@@ -1,4 +1,4 @@
-# Plan: Membership Platform — Phase 0 + Phase 1 MVP
+# Plan: OpenCharterApp — Phase 0 + Phase 1 MVP
 
 The design rules from your docs stay the same. The tech changes to fit Lovable: TanStack Start + Lovable Cloud instead of Next.js, self-run Postgres, pg-boss, and Better Auth. Built in sprint-sized steps. Each step ships tests and updates the docs (instructions.md §3).
 
@@ -37,9 +37,11 @@ Exit: a national and a chapter exist, a chapter admin sees only their chapter, a
 - **E-10 Setup engine:** A reusable flow framework (steps, Zod-validated answers, preview, apply as a transaction). The first flow covers members, attributes, tiers, and dues.
 - **E-11 Tiers/terms:** `membership_tiers`, `term_options` (fully org-defined), and `dues_policies` (grace days).
 - **E-12 Payments:**
-  - A gateway interface with a Stripe adapter, using a Stripe Connect account per org so each org collects its own money.
+  - A gateway interface with a Stripe adapter. Each organization brings its own Stripe account, connected during setup ("Connect payments" setup step).
+  - The org's Stripe keys are stored encrypted per org in `gateway_connections`.
+  - Selling memberships stays turned off until that org's connection is verified.
   - `payments`, `payment_line_items`, and `refunds`.
-  - A webhook at `/api/public/stripe` that checks the signature.
+  - A webhook per org at `/api/public/stripe/$orgId` that checks the signature using that org's secret.
 - **E-13 Signup/renewals:**
   - Public join page per org, optional approval step, and renewals.
   - Standing is worked out from paid-through date plus grace.
@@ -63,8 +65,5 @@ A civic, trustworthy look: deep ink-green primary, a warm paper background, seri
   - Token single-use behavior
   - Webhook signature checks
   - Cross-org isolation
-- To enable: Lovable Cloud, email auth, Stripe (via the Lovable Stripe integration, needs your keys later), and the email domain.
-
-## Open items to confirm during build
-- Product name (still TBD).
-- Stripe Connect vs. a single account for the first MVP demo.
+- To enable: Lovable Cloud, email auth, and an email domain. No platform-wide Stripe account is needed; each org enters its own keys in its setup.
+- Save the product name OpenCharterApp and the per-org Stripe rule to project memory, and update README/decisions to match.
