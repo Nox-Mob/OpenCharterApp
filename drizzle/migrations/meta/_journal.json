@@ -15,6 +15,13 @@
       "when": 1793368431974,
       "tag": "0001_invitations_settings_branding",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793368748614,
+      "tag": "0002_fix_audit_trigger_for_keyless_tables",
+      "breakpoints": true
     }
   ]
 }
