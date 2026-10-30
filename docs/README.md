@@ -19,6 +19,7 @@ These documents are the shared reference for the whole build. At any point in de
 | [`data-domains.md`](data-domains.md) | Entity inventory by domain, the input to database design |
 | [`glossary.md`](glossary.md) | Shared vocabulary |
 | [`risks-and-open-questions.md`](risks-and-open-questions.md) | What is still unresolved, and what could hurt us |
+| [`demo-data.md`](demo-data.md) | Temporary demo accounts and organizations, and how to remove them |
 
 ## Vision
 
@@ -63,5 +64,9 @@ Every diagram (Mermaid or image) is followed by a **"Diagram description"** bloc
 - Keep the description factual. Explanatory prose stays in the surrounding text.
 
 ## Current status
+
+Built so far: sign-in, organization hierarchy, roles with downward-only permissions, audit log, invitations, tax profiles, inherited and locked settings, and logos. See `/roadmap.md` for what's left.
+
+### Previous status
 
 Planning complete through v5 of the plan. **Next milestone:** database design, beginning with the "Foundation" and "Membership" domains in `data-domains.md`.

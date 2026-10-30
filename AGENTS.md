@@ -19,3 +19,6 @@ Read `docs/instructions.md` before changing code; planning docs live in `docs/`.
 - Organizations are created only via the `create_organization` RPC — it enforces hierarchy rules and seeds the creator's admin role.
 - Audit events are written only by triggers/definer functions; no client insert/update/delete — keeps the log append-only.
 - Domain code goes in `src/modules/<domain>/`, shared engines in `src/engines/` — enforces module boundaries from architecture.md.
+- Settings are declared in `src/engines/settings` (registry + resolver) and stored in `org_settings`; the DB trigger `enforce_setting_lock` is authoritative for locks — keeps inherit/override/locked consistent everywhere.
+- Invitations are created/accepted only through `create_invitation` / `accept_invitation` RPCs storing token hashes — keeps tokens single-use and email-bound.
+- Logos live in the private `branding` bucket under `<org_id>/` and are shown via signed URLs — workspace blocks public buckets.

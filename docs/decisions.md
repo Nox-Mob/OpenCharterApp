@@ -131,3 +131,7 @@ Status key: **Decided** (final for now), **Default** (working assumption, confir
 | D-104 | Package manager: bun (Lovable toolchain). Supersedes the npm-only rule in instructions.md | Decided |
 | D-105 | Payments: each organization connects its own Stripe account as an org setup step; no platform account | Decided |
 | D-106 | Product name: OpenCharterApp | Decided |
+| D-107 | Invitations store only a SHA-256 hash of the token. Each one is single-use, expires after 14 days, and only works for the invited email. Accepting requires an explicit button press, never a page load | Decided |
+| D-108 | Org settings resolve root → self. An ancestor's `locked` value wins and a database trigger blocks child writes to it. Otherwise the nearest `override` wins, then the registry default | Decided |
+| D-109 | The branding bucket is private (workspace blocks public buckets), so logos load through short-lived signed URLs. Logo fallback runs chapter → national. When national turns off `branding.chapter_logo_allowed`, chapters show the top-most logo | Decided |
+| D-110 | Columns that define hierarchy or identity (`parent_id`, `type`, `slug`, `org_id`, `user_id`) can't be updated from the client. Column-level grants enforce this | Decided |

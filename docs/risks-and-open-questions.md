@@ -74,3 +74,5 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 
 ## Added 2026-10-30
 - **R-20 Self-hosting (principle 6):** building on Lovable Cloud ties auth and jobs to managed services. Mitigation: keep business rules in SQL functions and `src/lib/policy`, so a self-host port replaces only adapters.
+- **R-21 Logo lock enforcement:** today the "chapters may use their own logo" rule only hides the upload control. Resolution respects the lock, so the national logo still shows, but a chapter admin could still store a logo file. Revisit if this matters.
+- **R-22 Demo data:** demo accounts and orgs exist in the live database (docs/demo-data.md). They must be removed before launch.
