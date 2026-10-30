@@ -38,6 +38,29 @@ begin
 end $$;
 grant execute on function tests.eq(anyelement, anyelement, text) to public;
 
--- Fixture: national N with chapters A and B. Users: n (national admin), a (chapter A admin), m (member of A), x (outsider)
-insert into auth.users (id, email) values
-  ('00000000-0000-0000-0000-00000000000n'::text::uuid, 'n@test.org') on conflict do nothing;
+-- Fixture (call inside each test transaction as superuser):
+-- national N with chapters A and B; users n (national admin), a (chapter A admin), m (member of A), x (outsider)
+create function tests.fixture() returns void language plpgsql as $$
+declare _admin uuid; _member uuid;
+begin
+  insert into auth.users (id, email) values
+    ('11111111-0000-4000-8000-000000000001', 'n@test.org'),
+    ('11111111-0000-4000-8000-000000000002', 'a@test.org'),
+    ('11111111-0000-4000-8000-000000000003', 'm@test.org'),
+    ('11111111-0000-4000-8000-000000000004', 'x@test.org');
+  insert into public.organizations (id, type, name, slug) values
+    ('22222222-0000-4000-8000-000000000001', 'national', 'Nat', 'nat');
+  insert into public.organizations (id, parent_id, type, name, slug) values
+    ('22222222-0000-4000-8000-000000000002', '22222222-0000-4000-8000-000000000001', 'chapter', 'A', 'ch-a'),
+    ('22222222-0000-4000-8000-000000000003', '22222222-0000-4000-8000-000000000001', 'chapter', 'B', 'ch-b');
+  insert into public.org_member_profiles (id, org_id, user_id, email) values
+    ('33333333-0000-4000-8000-000000000001', '22222222-0000-4000-8000-000000000001', '11111111-0000-4000-8000-000000000001', 'n@test.org'),
+    ('33333333-0000-4000-8000-000000000002', '22222222-0000-4000-8000-000000000002', '11111111-0000-4000-8000-000000000002', 'a@test.org'),
+    ('33333333-0000-4000-8000-000000000003', '22222222-0000-4000-8000-000000000002', '11111111-0000-4000-8000-000000000003', 'm@test.org');
+  select id into _admin from public.roles where key = 'org_admin' and org_id is null;
+  select id into _member from public.roles where key = 'member' and org_id is null;
+  insert into public.role_assignments (user_id, role_id, org_id) values
+    ('11111111-0000-4000-8000-000000000001', _admin, '22222222-0000-4000-8000-000000000001'),
+    ('11111111-0000-4000-8000-000000000002', _admin, '22222222-0000-4000-8000-000000000002'),
+    ('11111111-0000-4000-8000-000000000003', _member, '22222222-0000-4000-8000-000000000002');
+end $$;
