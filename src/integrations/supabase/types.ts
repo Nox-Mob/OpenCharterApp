@@ -50,6 +50,63 @@ export type Database = {
         }
         Relationships: []
       }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          org_id: string
+          revoked_at: string | null
+          role_id: string
+          token_hash: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          org_id: string
+          revoked_at?: string | null
+          role_id: string
+          token_hash: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          org_id?: string
+          revoked_at?: string | null
+          role_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitations_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_member_profiles: {
         Row: {
           created_at: string
@@ -85,12 +142,45 @@ export type Database = {
           },
         ]
       }
+      org_settings: {
+        Row: {
+          key: string
+          mode: Database["public"]["Enums"]["setting_mode"]
+          org_id: string
+          updated_at: string
+          value: Json | null
+        }
+        Insert: {
+          key: string
+          mode?: Database["public"]["Enums"]["setting_mode"]
+          org_id: string
+          updated_at?: string
+          value?: Json | null
+        }
+        Update: {
+          key?: string
+          mode?: Database["public"]["Enums"]["setting_mode"]
+          org_id?: string
+          updated_at?: string
+          value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           ancestor_ids: string[]
           created_at: string
           created_by: string | null
           id: string
+          logo_path: string | null
           name: string
           parent_id: string | null
           slug: string
@@ -104,6 +194,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          logo_path?: string | null
           name: string
           parent_id?: string | null
           slug: string
@@ -117,6 +208,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          logo_path?: string | null
           name?: string
           parent_id?: string | null
           slug?: string
@@ -251,11 +343,66 @@ export type Database = {
           },
         ]
       }
+      tax_profiles: {
+        Row: {
+          address_line1: string
+          address_line2: string
+          city: string
+          country: string
+          ein: string
+          legal_name: string
+          org_id: string
+          postal_code: string
+          region: string
+          tax_status: string
+          updated_at: string
+        }
+        Insert: {
+          address_line1?: string
+          address_line2?: string
+          city?: string
+          country?: string
+          ein?: string
+          legal_name?: string
+          org_id: string
+          postal_code?: string
+          region?: string
+          tax_status?: string
+          updated_at?: string
+        }
+        Update: {
+          address_line1?: string
+          address_line2?: string
+          city?: string
+          country?: string
+          ein?: string
+          legal_name?: string
+          org_id?: string
+          postal_code?: string
+          region?: string
+          tax_status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_profiles_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: { Args: { _token: string }; Returns: string }
+      create_invitation: {
+        Args: { _email: string; _org: string; _role_key?: string }
+        Returns: string
+      }
       create_organization: {
         Args: {
           _name: string
@@ -265,11 +412,38 @@ export type Database = {
         }
         Returns: string
       }
+      get_invitation: {
+        Args: { _token: string }
+        Returns: {
+          org_name: string
+          usable: boolean
+        }[]
+      }
       has_permission: {
         Args: { _org: string; _perm: string; _user: string }
         Returns: boolean
       }
       is_org_member: { Args: { _org: string; _user: string }; Returns: boolean }
+      lineage_settings: {
+        Args: { _org: string }
+        Returns: {
+          key: string
+          mode: Database["public"]["Enums"]["setting_mode"]
+          org_id: string
+          value: Json
+        }[]
+      }
+      org_lineage: {
+        Args: { _org: string }
+        Returns: {
+          depth: number
+          id: string
+          logo_path: string
+          name: string
+          type: Database["public"]["Enums"]["org_type"]
+        }[]
+      }
+      revoke_invitation: { Args: { _id: string }; Returns: undefined }
       write_audit: {
         Args: {
           _action: string
@@ -284,6 +458,7 @@ export type Database = {
     }
     Enums: {
       org_type: "platform" | "national" | "region" | "chapter" | "standalone"
+      setting_mode: "inherit" | "override" | "locked"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -412,6 +587,7 @@ export const Constants = {
   public: {
     Enums: {
       org_type: ["platform", "national", "region", "chapter", "standalone"],
+      setting_mode: ["inherit", "override", "locked"],
     },
   },
 } as const

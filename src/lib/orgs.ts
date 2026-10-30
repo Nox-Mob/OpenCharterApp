@@ -8,6 +8,8 @@ export type Org = {
   type: "platform" | "national" | "region" | "chapter" | "standalone";
   parent_id: string | null;
   ancestor_ids: string[];
+  timezone: string;
+  logo_path: string | null;
 };
 
 export const myOrgsQuery = () =>
@@ -16,7 +18,7 @@ export const myOrgsQuery = () =>
     queryFn: async (): Promise<Org[]> => {
       const { data, error } = await supabase
         .from("organizations")
-        .select("id,name,slug,type,parent_id,ancestor_ids")
+        .select("id,name,slug,type,parent_id,ancestor_ids,timezone,logo_path")
         .order("name");
       if (error) throw error;
       return data as Org[];
