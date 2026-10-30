@@ -5,6 +5,8 @@ import { hasPermission } from "@/lib/policy";
 import { CreateOrgDialog } from "@/components/create-org-dialog";
 import { MembersTab } from "@/components/org/members-tab";
 import { SettingsTab } from "@/components/org/settings-tab";
+import { AttributesTab } from "@/components/attributes/attributes-tab";
+import { SetupCard } from "@/components/setup/setup-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -55,16 +57,24 @@ function OrgPage() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           {canSeeMembers && <TabsTrigger value="members">Members</TabsTrigger>}
+          <TabsTrigger value="fields">Member fields</TabsTrigger>
           {canManage && <TabsTrigger value="settings">Settings</TabsTrigger>}
           {(org.type === "national" || org.type === "region") && <TabsTrigger value="chapters">Chapters</TabsTrigger>}
           {canAudit && <TabsTrigger value="audit">Audit log</TabsTrigger>}
         </TabsList>
-        <TabsContent value="overview" className="mt-6 text-muted-foreground">
-          Membership setup, tiers and payments arrive in the next milestone.
+        <TabsContent value="overview" className="mt-6">
+          {hasPermission(grants, "setup.run", org) ? (
+            <SetupCard org={org} />
+          ) : (
+            <p className="text-muted-foreground">Welcome to {org.name}.</p>
+          )}
+        </TabsContent>
+        <TabsContent value="fields" className="mt-6">
+          <AttributesTab org={org} canManage={hasPermission(grants, "attributes.manage", org)} />
         </TabsContent>
         {canSeeMembers && (
           <TabsContent value="members" className="mt-6">
-            <MembersTab orgId={org.id} canInvite={canInvite} canAssignAdmin={hasPermission(grants, "roles.manage", org)} />
+            <MembersTab org={org} canInvite={canInvite} canAssignAdmin={hasPermission(grants, "roles.manage", org)} canManageMembers={hasPermission(grants, "members.manage", org)} />
           </TabsContent>
         )}
         {canManage && (

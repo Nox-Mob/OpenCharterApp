@@ -3,20 +3,61 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { inviteSchema, inviteStatus, inviteUrl } from "@/modules/invitations";
+import { availableRoles, canRemove, type Assignment } from "@/modules/roles";
+import type { Org } from "@/lib/orgs";
+import { MemberDetailsDialog } from "./member-details-dialog";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-export function MembersTab({ orgId, canInvite, canAssignAdmin }: { orgId: string; canInvite: boolean; canAssignAdmin: boolean }) {
+export function MembersTab({
+  org,
+  canInvite,
+  canAssignAdmin,
+  canManageMembers,
+}: {
+  org: Org;
+  canInvite: boolean;
+  canAssignAdmin: boolean;
+  canManageMembers: boolean;
+}) {
+  const orgId = org.id;
   const qc = useQueryClient();
+  const me = useQuery({ queryKey: ["me"], queryFn: async () => (await supabase.auth.getUser()).data.user?.id ?? null });
+  const [details, setDetails] = useState<{ id: string; display_name: string; email: string; user_id: string } | null>(null);
+  const roles = useQuery({
+    queryKey: ["role-assignments", orgId],
+    enabled: canAssignAdmin,
+    queryFn: async (): Promise<(Assignment & { role_name: string })[]> => {
+      const { data, error } = await supabase.from("role_assignments").select("id,user_id,org_id,roles(key,name)").eq("org_id", orgId);
+      if (error) throw error;
+      return (data ?? []).map((r) => {
+        const role = r.roles as { key: string; name: string } | null;
+        return { id: r.id, user_id: r.user_id, org_id: r.org_id, role_key: role?.key ?? "", role_name: role?.name ?? "" };
+      });
+    },
+  });
+  async function assign(userId: string, roleKey: string) {
+    const { error } = await supabase.rpc("assign_role", { _org: orgId, _user: userId, _role_key: roleKey });
+    if (error) return void toast.error("Couldn't assign that role");
+    toast.success("Role assigned");
+    qc.invalidateQueries();
+  }
+  async function unassign(id: string) {
+    const { error } = await supabase.rpc("remove_role", { _assignment: id });
+    if (error) return void toast.error(error.message.includes("at least one admin") ? "An organization must keep at least one admin" : "Couldn't remove that role");
+    toast.success("Role removed");
+    qc.invalidateQueries();
+  }
   const members = useQuery({
     queryKey: ["members", orgId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("org_member_profiles")
-        .select("id,display_name,email,created_at")
+        .select("id,user_id,display_name,email,created_at")
         .eq("org_id", orgId)
         .order("created_at");
       if (error) throw error;
@@ -93,13 +134,38 @@ export function MembersTab({ orgId, canInvite, canAssignAdmin }: { orgId: string
       <section>
         <h2 className="mb-2 text-lg font-semibold">Members</h2>
         <Table>
-          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Joined</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead>{canAssignAdmin && <TableHead>Roles</TableHead>}<TableHead>Joined</TableHead><TableHead /></TableRow></TableHeader>
           <TableBody>
             {(members.data ?? []).map((m) => (
               <TableRow key={m.id}>
                 <TableCell>{m.display_name || "—"}</TableCell>
                 <TableCell>{m.email}</TableCell>
+                {canAssignAdmin && (
+                  <TableCell>
+                    <div className="flex flex-wrap items-center gap-1">
+                      {(roles.data ?? []).filter((r) => r.user_id === m.user_id).map((r) => (
+                        <Badge key={r.id} variant="secondary" className="gap-1">
+                          {r.role_name}
+                          {canRemove(r, roles.data ?? [], org.parent_id !== null) && (
+                            <button aria-label={`Remove ${r.role_name} from ${m.email}`} onClick={() => unassign(r.id)}><X className="h-3 w-3" /></button>
+                          )}
+                        </Badge>
+                      ))}
+                      {availableRoles(m.user_id, orgId, roles.data ?? []).length > 0 && (
+                        <Select value="" onValueChange={(k) => assign(m.user_id, k)}>
+                          <SelectTrigger className="h-7 w-28 text-xs" aria-label={`Add role for ${m.email}`}><SelectValue placeholder="Add role" /></SelectTrigger>
+                          <SelectContent>
+                            {availableRoles(m.user_id, orgId, roles.data ?? []).map((r) => <SelectItem key={r.key} value={r.key}>{r.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  </TableCell>
+                )}
                 <TableCell>{new Date(m.created_at).toLocaleDateString()}</TableCell>
+                <TableCell className="text-right">
+                  <Button size="sm" variant="ghost" onClick={() => setDetails(m)}>Details</Button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -129,6 +195,13 @@ export function MembersTab({ orgId, canInvite, canAssignAdmin }: { orgId: string
           </Table>
         </section>
       )}
+      <MemberDetailsDialog
+        org={org}
+        profile={details}
+        canEdit={canManageMembers}
+        isSelf={!!details && details.user_id === me.data}
+        onClose={() => setDetails(null)}
+      />
     </div>
   );
 }
