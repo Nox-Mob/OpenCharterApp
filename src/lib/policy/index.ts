@@ -13,6 +13,7 @@ export const PERMISSIONS = [
   "org.create_child",
   "members.view",
   "members.manage",
+  "members.invite",
   "roles.manage",
   "audit.view",
 ] as const;

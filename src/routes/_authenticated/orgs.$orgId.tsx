@@ -3,6 +3,8 @@ import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { auditQuery, myOrgsQuery, myPermissionsQuery, TYPE_LABEL } from "@/lib/orgs";
 import { hasPermission } from "@/lib/policy";
 import { CreateOrgDialog } from "@/components/create-org-dialog";
+import { MembersTab } from "@/components/org/members-tab";
+import { SettingsTab } from "@/components/org/settings-tab";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,6 +32,9 @@ function OrgPage() {
   const parent = orgs.find((o) => o.id === org.parent_id);
   const canAddChild = (org.type === "national" || org.type === "region") && hasPermission(grants, "org.create_child", org);
   const canAudit = hasPermission(grants, "audit.view", org);
+  const canManage = hasPermission(grants, "org.manage", org);
+  const canInvite = hasPermission(grants, "members.invite", org);
+  const canSeeMembers = hasPermission(grants, "members.view", org);
 
   return (
     <div>
@@ -49,12 +54,24 @@ function OrgPage() {
       <Tabs defaultValue="overview" className="mt-8">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          {canSeeMembers && <TabsTrigger value="members">Members</TabsTrigger>}
+          {canManage && <TabsTrigger value="settings">Settings</TabsTrigger>}
           {(org.type === "national" || org.type === "region") && <TabsTrigger value="chapters">Chapters</TabsTrigger>}
           {canAudit && <TabsTrigger value="audit">Audit log</TabsTrigger>}
         </TabsList>
         <TabsContent value="overview" className="mt-6 text-muted-foreground">
           Membership setup, tiers and payments arrive in the next milestone.
         </TabsContent>
+        {canSeeMembers && (
+          <TabsContent value="members" className="mt-6">
+            <MembersTab orgId={org.id} canInvite={canInvite} canAssignAdmin={hasPermission(grants, "roles.manage", org)} />
+          </TabsContent>
+        )}
+        {canManage && (
+          <TabsContent value="settings" className="mt-6">
+            <SettingsTab key={org.id} org={org} />
+          </TabsContent>
+        )}
         <TabsContent value="chapters" className="mt-6">
           <div className="mb-4 flex justify-end">
             {canAddChild && (

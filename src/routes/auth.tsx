@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -30,6 +30,15 @@ function AuthPage() {
   const navigate = useNavigate();
   const { redirect } = Route.useSearch();
   const dest = safeRedirect(redirect);
+  // After a Google round-trip the page reloads here signed in; continue to the saved destination.
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data.user) return;
+      const saved = safeRedirect(sessionStorage.getItem("postAuthRedirect") ?? undefined, dest);
+      sessionStorage.removeItem("postAuthRedirect");
+      navigate({ href: saved, replace: true });
+    });
+  }, [dest, navigate]);
   const [mode, setMode] = useState<"in" | "up" | "forgot">("in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -62,6 +71,7 @@ function AuthPage() {
   }
 
   async function google() {
+    sessionStorage.setItem("postAuthRedirect", dest);
     const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth" });
     if (r.error) return void toast.error("Google sign-in failed");
     if (!r.redirected) navigate({ href: dest });
