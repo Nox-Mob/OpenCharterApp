@@ -18,13 +18,19 @@ export const Route = createFileRoute("/auth")({
       { title: "Sign in — OpenCharterApp" },
       { name: "description", content: "Sign in to manage your association, chapters and members." },
       { property: "og:title", content: "Sign in — OpenCharterApp" },
-      { property: "og:description", content: "Sign in to manage your association, chapters and members." },
+      {
+        property: "og:description",
+        content: "Sign in to manage your association, chapters and members.",
+      },
     ],
   }),
   component: AuthPage,
 });
 
-const creds = z.object({ email: z.string().trim().email(), password: z.string().min(8, "At least 8 characters") });
+const creds = z.object({
+  email: z.string().trim().email(),
+  password: z.string().min(8, "At least 8 characters"),
+});
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -50,7 +56,9 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "forgot") {
-        await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
+        await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
         // R-15: same message whether or not the account exists
         setNotice("If an account exists for that email, a reset link is on its way.");
         return;
@@ -58,7 +66,10 @@ function AuthPage() {
       const parsed = creds.safeParse({ email, password });
       if (!parsed.success) return void toast.error(parsed.error.issues[0]?.message);
       if (mode === "up") {
-        await supabase.auth.signUp({ ...parsed.data, options: { emailRedirectTo: window.location.origin + dest } });
+        await supabase.auth.signUp({
+          ...parsed.data,
+          options: { emailRedirectTo: window.location.origin + dest },
+        });
         setNotice("Check your email to confirm your account, then sign in.");
       } else {
         const { error } = await supabase.auth.signInWithPassword(parsed.data);
@@ -72,7 +83,9 @@ function AuthPage() {
 
   async function google() {
     sessionStorage.setItem("postAuthRedirect", dest);
-    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth" });
+    const r = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin + "/auth",
+    });
     if (r.error) return void toast.error("Google sign-in failed");
     if (!r.redirected) navigate({ href: dest });
   }
@@ -80,7 +93,9 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rule-brass bg-card p-8 shadow-sm">
-        <Link to="/" className="font-display text-xl font-semibold text-primary">OpenCharter</Link>
+        <Link to="/" className="font-display text-xl font-semibold text-primary">
+          OpenCharter
+        </Link>
         <h1 className="mt-4 text-2xl font-semibold">
           {mode === "in" ? "Sign in" : mode === "up" ? "Create your account" : "Reset password"}
         </h1>
@@ -90,12 +105,24 @@ function AuthPage() {
           <form onSubmit={submit} className="mt-6 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
             {mode !== "forgot" && (
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
               </div>
             )}
             <Button type="submit" className="w-full" disabled={busy}>
@@ -109,11 +136,22 @@ function AuthPage() {
           </form>
         )}
         <div className="mt-6 flex justify-between text-sm">
-          <button className="text-primary hover:underline" onClick={() => { setNotice(null); setMode(mode === "in" ? "up" : "in"); }}>
+          <button
+            className="text-primary hover:underline"
+            onClick={() => {
+              setNotice(null);
+              setMode(mode === "in" ? "up" : "in");
+            }}
+          >
             {mode === "in" ? "Create an account" : "Back to sign in"}
           </button>
           {mode === "in" && (
-            <button className="text-muted-foreground hover:underline" onClick={() => setMode("forgot")}>Forgot password?</button>
+            <button
+              className="text-muted-foreground hover:underline"
+              onClick={() => setMode("forgot")}
+            >
+              Forgot password?
+            </button>
           )}
         </div>
       </div>

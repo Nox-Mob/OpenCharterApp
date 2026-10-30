@@ -12,8 +12,8 @@ export type SettingDef = {
   key: string;
   label: string;
   description: string;
-  kind: "boolean" | "text";
-  default: boolean | string;
+  kind: "boolean" | "text" | "number";
+  default: boolean | string | number;
 };
 
 export const SETTINGS: readonly SettingDef[] = [
@@ -23,6 +23,20 @@ export const SETTINGS: readonly SettingDef[] = [
     description: "When off, chapters show the national logo.",
     kind: "boolean",
     default: true,
+  },
+  {
+    key: "membership.approval_required",
+    label: "New members need admin approval",
+    description: "When on, join requests wait for an admin before the person becomes a member.",
+    kind: "boolean",
+    default: false,
+  },
+  {
+    key: "membership.grace_days",
+    label: "Grace period (days)",
+    description: "How long after expiration a member keeps their standing.",
+    kind: "number",
+    default: 30,
   },
   {
     key: "contact.email",
@@ -50,7 +64,8 @@ export function resolveSetting(
   const byOrg = new Map(rows.filter((r) => r.key === key).map((r) => [r.org_id, r]));
   for (const orgId of lineage) {
     const r = byOrg.get(orgId);
-    if (r && r.mode === "locked" && orgId !== self) return { value: r.value, sourceOrgId: orgId, lockedBy: orgId };
+    if (r && r.mode === "locked" && orgId !== self)
+      return { value: r.value, sourceOrgId: orgId, lockedBy: orgId };
   }
   for (let i = lineage.length - 1; i >= 0; i--) {
     const r = byOrg.get(lineage[i]!);

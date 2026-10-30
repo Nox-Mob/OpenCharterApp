@@ -37,10 +37,11 @@ A commit that does not meet all four is not ready. Reviewers should reject it, a
 ### Before you commit, run
 
 ```bash
-npm run lint
-npm run typecheck
-npm test            # unit and integration
-npm run test:e2e    # when you changed user-facing flows
+bun run lint
+bun run format:check
+bun run typecheck
+bun run test        # unit tests
+bun run test:db     # database rules (needs TEST_DATABASE_URL, see testing.md)
 ```
 
 *(Script names are the standard set established in E-01. If a script is missing, adding it is part of E-01, not a reason to skip the check.)*

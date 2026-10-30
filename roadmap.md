@@ -11,12 +11,17 @@ Full plan: docs/ and .lovable/plan/. Phase IDs map to docs/epic.md.
 - [x] E-04: tax profile per org, org settings (inherit/override/locked, enforced in the database), logo upload with chapter → national fallback
 - [x] E-05: roles, permissions, downward-only has_permission, policy module + tests
 - [x] E-06: append-only audit log via triggers, viewer tab
+- [x] E-05: role assignment screen (add/remove, last-admin protection)
+- [x] E-09: custom member fields (7 types, ordered lists, visibility, self-edit, inherited from parent, retire not delete)
+- [x] E-10: setup engine (steps, conditions, drafts, review with diff, one-transaction apply) + Membership flow v1
+- [x] CI: lint, formatting, types, unit tests, database rule tests, build
 
 ## Open — Phase 0
-- [ ] E-05: role assignment UI, org-defined roles
+- [ ] E-05: org-defined custom roles (platform roles + assignment screen are done)
 
 ## Open — Phase 1
-- [ ] E-09 attributes, E-10 setup engine, E-11 tiers/terms
+- [ ] E-09: chapter attributes UI (database supports them)
+- [ ] E-11 tiers/terms (adds tier questions to the Membership flow)
 - [ ] E-12 per-org Stripe connection as a setup step (each org brings its own Stripe account)
 - [ ] E-13 signup/renewals, E-14 directory/exports, E-15 receipts
 

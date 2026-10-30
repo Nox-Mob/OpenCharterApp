@@ -6,8 +6,20 @@ import { createOrgSchema, slugify, type OrgType } from "@/lib/policy";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function CreateOrgDialog({
   parentId = null,
@@ -29,7 +41,8 @@ export function CreateOrgDialog({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const parsed = createOrgSchema.safeParse({ name, slug: slug || slugify(name), type, parentId });
-    if (!parsed.success) return void toast.error(parsed.error.issues[0]?.message ?? "Invalid input");
+    if (!parsed.success)
+      return void toast.error(parsed.error.issues[0]?.message ?? "Invalid input");
     setBusy(true);
     const { data, error } = await supabase.rpc("create_organization", {
       _name: parsed.data.name,
@@ -38,7 +51,10 @@ export function CreateOrgDialog({
       ...(parsed.data.parentId ? { _parent: parsed.data.parentId } : {}),
     });
     setBusy(false);
-    if (error) return void toast.error(error.message.includes("duplicate") ? "That web address is taken" : error.message);
+    if (error)
+      return void toast.error(
+        error.message.includes("duplicate") ? "That web address is taken" : error.message,
+      );
     toast.success(`${parsed.data.name} created`);
     await qc.invalidateQueries();
     setOpen(false);
@@ -52,7 +68,9 @@ export function CreateOrgDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{parentId ? "Add a chapter or region" : "Create an organization"}</DialogTitle>
+          <DialogTitle>
+            {parentId ? "Add a chapter or region" : "Create an organization"}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">

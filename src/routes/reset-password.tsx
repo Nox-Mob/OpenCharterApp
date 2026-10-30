@@ -12,7 +12,10 @@ export const Route = createFileRoute("/reset-password")({
       { title: "Set a new password — OpenCharterApp" },
       { name: "description", content: "Choose a new password for your OpenCharterApp account." },
       { property: "og:title", content: "Set a new password — OpenCharterApp" },
-      { property: "og:description", content: "Choose a new password for your OpenCharterApp account." },
+      {
+        property: "og:description",
+        content: "Choose a new password for your OpenCharterApp account.",
+      },
     ],
   }),
   component: ResetPassword,
@@ -35,9 +38,16 @@ function ResetPassword() {
         <h1 className="text-2xl font-semibold">Set a new password</h1>
         <div className="space-y-2">
           <Label htmlFor="pw">New password</Label>
-          <Input id="pw" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Input
+            id="pw"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
         </div>
-        <Button type="submit" className="w-full">Save password</Button>
+        <Button type="submit" className="w-full">
+          Save password
+        </Button>
       </form>
     </div>
   );

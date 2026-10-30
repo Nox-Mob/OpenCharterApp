@@ -15,7 +15,9 @@ describe("resolveLogo", () => {
     expect(resolveLogo(chain, false)?.orgId).toBe("national");
   });
   it("falls back to the national logo when the chapter has none", () => {
-    expect(resolveLogo([chain[0]!, { id: "chapter", logo_path: null }], true)?.orgId).toBe("national");
+    expect(resolveLogo([chain[0]!, { id: "chapter", logo_path: null }], true)?.orgId).toBe(
+      "national",
+    );
   });
   it("returns null when nobody has a logo", () => {
     expect(resolveLogo([{ id: "x", logo_path: null }], true)).toBeNull();

@@ -5,10 +5,19 @@ import { hasPermission } from "@/lib/policy";
 import { CreateOrgDialog } from "@/components/create-org-dialog";
 import { MembersTab } from "@/components/org/members-tab";
 import { SettingsTab } from "@/components/org/settings-tab";
+import { AttributesTab } from "@/components/attributes/attributes-tab";
+import { SetupCard } from "@/components/setup/setup-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/orgs/$orgId")({
   head: () => ({ meta: [{ title: "Organization — OpenCharterApp" }] }),
@@ -19,7 +28,9 @@ export const Route = createFileRoute("/_authenticated/orgs/$orgId")({
     ]);
   },
   component: OrgPage,
-  notFoundComponent: () => <p className="text-muted-foreground">Organization not found or not visible to you.</p>,
+  notFoundComponent: () => (
+    <p className="text-muted-foreground">Organization not found or not visible to you.</p>
+  ),
 });
 
 function OrgPage() {
@@ -30,7 +41,9 @@ function OrgPage() {
   if (!org) throw notFound();
   const children = orgs.filter((o) => o.parent_id === org.id);
   const parent = orgs.find((o) => o.id === org.parent_id);
-  const canAddChild = (org.type === "national" || org.type === "region") && hasPermission(grants, "org.create_child", org);
+  const canAddChild =
+    (org.type === "national" || org.type === "region") &&
+    hasPermission(grants, "org.create_child", org);
   const canAudit = hasPermission(grants, "audit.view", org);
   const canManage = hasPermission(grants, "org.manage", org);
   const canInvite = hasPermission(grants, "members.invite", org);
@@ -40,7 +53,11 @@ function OrgPage() {
     <div>
       <div className="rule-brass pt-6">
         {parent && (
-          <Link to="/orgs/$orgId" params={{ orgId: parent.id }} className="text-sm text-muted-foreground hover:underline">
+          <Link
+            to="/orgs/$orgId"
+            params={{ orgId: parent.id }}
+            className="text-sm text-muted-foreground hover:underline"
+          >
             ← {parent.name}
           </Link>
         )}
@@ -55,16 +72,31 @@ function OrgPage() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           {canSeeMembers && <TabsTrigger value="members">Members</TabsTrigger>}
+          <TabsTrigger value="fields">Member fields</TabsTrigger>
           {canManage && <TabsTrigger value="settings">Settings</TabsTrigger>}
-          {(org.type === "national" || org.type === "region") && <TabsTrigger value="chapters">Chapters</TabsTrigger>}
+          {(org.type === "national" || org.type === "region") && (
+            <TabsTrigger value="chapters">Chapters</TabsTrigger>
+          )}
           {canAudit && <TabsTrigger value="audit">Audit log</TabsTrigger>}
         </TabsList>
-        <TabsContent value="overview" className="mt-6 text-muted-foreground">
-          Membership setup, tiers and payments arrive in the next milestone.
+        <TabsContent value="overview" className="mt-6">
+          {hasPermission(grants, "setup.run", org) ? (
+            <SetupCard org={org} />
+          ) : (
+            <p className="text-muted-foreground">Welcome to {org.name}.</p>
+          )}
+        </TabsContent>
+        <TabsContent value="fields" className="mt-6">
+          <AttributesTab org={org} canManage={hasPermission(grants, "attributes.manage", org)} />
         </TabsContent>
         {canSeeMembers && (
           <TabsContent value="members" className="mt-6">
-            <MembersTab orgId={org.id} canInvite={canInvite} canAssignAdmin={hasPermission(grants, "roles.manage", org)} />
+            <MembersTab
+              org={org}
+              canInvite={canInvite}
+              canAssignAdmin={hasPermission(grants, "roles.manage", org)}
+              canManageMembers={hasPermission(grants, "members.manage", org)}
+            />
           </TabsContent>
         )}
         {canManage && (
@@ -84,7 +116,11 @@ function OrgPage() {
             <ul className="divide-y rounded-md border bg-card">
               {children.map((c) => (
                 <li key={c.id}>
-                  <Link to="/orgs/$orgId" params={{ orgId: c.id }} className="flex justify-between px-5 py-3 hover:bg-muted">
+                  <Link
+                    to="/orgs/$orgId"
+                    params={{ orgId: c.id }}
+                    className="flex justify-between px-5 py-3 hover:bg-muted"
+                  >
                     <span>{c.name}</span>
                     <Badge variant="outline">{TYPE_LABEL[c.type]}</Badge>
                   </Link>

@@ -5,7 +5,11 @@ export const inviteSchema = z.object({
   role: z.enum(["member", "org_admin"]),
 });
 
-export type InviteRow = { accepted_at: string | null; revoked_at: string | null; expires_at: string };
+export type InviteRow = {
+  accepted_at: string | null;
+  revoked_at: string | null;
+  expires_at: string;
+};
 export type InviteStatus = "pending" | "accepted" | "revoked" | "expired";
 
 export function inviteStatus(inv: InviteRow, now: Date = new Date()): InviteStatus {
@@ -21,6 +25,7 @@ export function inviteUrl(origin: string, token: string): string {
 
 /** Only allow same-origin relative redirects after sign-in. */
 export function safeRedirect(target: string | undefined, fallback = "/dashboard"): string {
-  if (!target || !target.startsWith("/") || target.startsWith("//") || target.includes("\\")) return fallback;
+  if (!target || !target.startsWith("/") || target.startsWith("//") || target.includes("\\"))
+    return fallback;
   return target;
 }

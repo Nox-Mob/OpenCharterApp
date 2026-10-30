@@ -16,6 +16,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedOrgsOrgIdRouteImport } from './routes/_authenticated/orgs.$orgId'
+import { Route as AuthenticatedOrgsOrgIdSetupRouteImport } from './routes/_authenticated/orgs.$orgId_.setup'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -51,6 +52,12 @@ const AuthenticatedOrgsOrgIdRoute = AuthenticatedOrgsOrgIdRouteImport.update({
   path: '/orgs/$orgId',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOrgsOrgIdSetupRoute =
+  AuthenticatedOrgsOrgIdSetupRouteImport.update({
+    id: '/orgs/$orgId_/setup',
+    path: '/orgs/$orgId/setup',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/invite/$token': typeof InviteTokenRoute
   '/orgs/$orgId': typeof AuthenticatedOrgsOrgIdRoute
+  '/orgs/$orgId/setup': typeof AuthenticatedOrgsOrgIdSetupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -67,6 +75,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/invite/$token': typeof InviteTokenRoute
   '/orgs/$orgId': typeof AuthenticatedOrgsOrgIdRoute
+  '/orgs/$orgId/setup': typeof AuthenticatedOrgsOrgIdSetupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -77,6 +86,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/invite/$token': typeof InviteTokenRoute
   '/_authenticated/orgs/$orgId': typeof AuthenticatedOrgsOrgIdRoute
+  '/_authenticated/orgs/$orgId_/setup': typeof AuthenticatedOrgsOrgIdSetupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -87,6 +97,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/invite/$token'
     | '/orgs/$orgId'
+    | '/orgs/$orgId/setup'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -95,6 +106,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/invite/$token'
     | '/orgs/$orgId'
+    | '/orgs/$orgId/setup'
   id:
     | '__root__'
     | '/'
@@ -104,6 +116,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/invite/$token'
     | '/_authenticated/orgs/$orgId'
+    | '/_authenticated/orgs/$orgId_/setup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -165,17 +178,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrgsOrgIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/orgs/$orgId_/setup': {
+      id: '/_authenticated/orgs/$orgId_/setup'
+      path: '/orgs/$orgId/setup'
+      fullPath: '/orgs/$orgId/setup'
+      preLoaderRoute: typeof AuthenticatedOrgsOrgIdSetupRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedOrgsOrgIdRoute: typeof AuthenticatedOrgsOrgIdRoute
+  AuthenticatedOrgsOrgIdSetupRoute: typeof AuthenticatedOrgsOrgIdSetupRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedOrgsOrgIdRoute: AuthenticatedOrgsOrgIdRoute,
+  AuthenticatedOrgsOrgIdSetupRoute: AuthenticatedOrgsOrgIdSetupRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

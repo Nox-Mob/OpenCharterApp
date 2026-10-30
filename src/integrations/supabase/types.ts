@@ -14,6 +14,155 @@ export type Database = {
   }
   public: {
     Tables: {
+      attribute_definitions: {
+        Row: {
+          active: boolean
+          applies_to: Database["public"]["Enums"]["attribute_subject"]
+          created_at: string
+          data_type: Database["public"]["Enums"]["attribute_type"]
+          help: string
+          id: string
+          key: string
+          label: string
+          member_editable: boolean
+          org_id: string
+          required: boolean
+          show_in_directory: boolean
+          sort_order: number
+          visibility: Database["public"]["Enums"]["attribute_visibility"]
+        }
+        Insert: {
+          active?: boolean
+          applies_to?: Database["public"]["Enums"]["attribute_subject"]
+          created_at?: string
+          data_type: Database["public"]["Enums"]["attribute_type"]
+          help?: string
+          id?: string
+          key: string
+          label: string
+          member_editable?: boolean
+          org_id: string
+          required?: boolean
+          show_in_directory?: boolean
+          sort_order?: number
+          visibility?: Database["public"]["Enums"]["attribute_visibility"]
+        }
+        Update: {
+          active?: boolean
+          applies_to?: Database["public"]["Enums"]["attribute_subject"]
+          created_at?: string
+          data_type?: Database["public"]["Enums"]["attribute_type"]
+          help?: string
+          id?: string
+          key?: string
+          label?: string
+          member_editable?: boolean
+          org_id?: string
+          required?: boolean
+          show_in_directory?: boolean
+          sort_order?: number
+          visibility?: Database["public"]["Enums"]["attribute_visibility"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attribute_definitions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attribute_options: {
+        Row: {
+          active: boolean
+          definition_id: string
+          id: string
+          label: string
+          org_id: string
+          sort_order: number
+          value: string
+        }
+        Insert: {
+          active?: boolean
+          definition_id: string
+          id?: string
+          label: string
+          org_id: string
+          sort_order?: number
+          value: string
+        }
+        Update: {
+          active?: boolean
+          definition_id?: string
+          id?: string
+          label?: string
+          org_id?: string
+          sort_order?: number
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attribute_options_definition_id_fkey"
+            columns: ["definition_id"]
+            isOneToOne: false
+            referencedRelation: "attribute_definitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attribute_options_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attribute_values: {
+        Row: {
+          definition_id: string
+          entity_id: string
+          id: string
+          org_id: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          definition_id: string
+          entity_id: string
+          id?: string
+          org_id: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          definition_id?: string
+          entity_id?: string
+          id?: string
+          org_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attribute_values_definition_id_fkey"
+            columns: ["definition_id"]
+            isOneToOne: false
+            referencedRelation: "attribute_definitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attribute_values_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           action: string
@@ -343,6 +492,44 @@ export type Database = {
           },
         ]
       }
+      setup_states: {
+        Row: {
+          answers: Json
+          applied_at: string | null
+          flow_id: string
+          org_id: string
+          status: Database["public"]["Enums"]["setup_status"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          answers?: Json
+          applied_at?: string | null
+          flow_id: string
+          org_id: string
+          status?: Database["public"]["Enums"]["setup_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          answers?: Json
+          applied_at?: string | null
+          flow_id?: string
+          org_id?: string
+          status?: Database["public"]["Enums"]["setup_status"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "setup_states_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tax_profiles: {
         Row: {
           address_line1: string
@@ -399,6 +586,27 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: string }
+      apply_setup: {
+        Args: { _answers: Json; _flow: string; _org: string; _plan: Json }
+        Returns: undefined
+      }
+      assign_role: {
+        Args: { _org: string; _role_key: string; _user: string }
+        Returns: string
+      }
+      can_read_attribute_value: {
+        Args: {
+          _def: string
+          _entity: string
+          _user: string
+          _value_org: string
+        }
+        Returns: boolean
+      }
+      can_see_org_tree: {
+        Args: { _org: string; _user: string }
+        Returns: boolean
+      }
       create_invitation: {
         Args: { _email: string; _org: string; _role_key?: string }
         Returns: string
@@ -443,7 +651,19 @@ export type Database = {
           type: Database["public"]["Enums"]["org_type"]
         }[]
       }
+      remove_role: { Args: { _assignment: string }; Returns: undefined }
       revoke_invitation: { Args: { _id: string }; Returns: undefined }
+      set_attribute_value: {
+        Args: { _def: string; _entity: string; _value: Json }
+        Returns: undefined
+      }
+      validate_attribute_value: {
+        Args: {
+          _def: Database["public"]["Tables"]["attribute_definitions"]["Row"]
+          _v: Json
+        }
+        Returns: undefined
+      }
       write_audit: {
         Args: {
           _action: string
@@ -457,8 +677,19 @@ export type Database = {
       }
     }
     Enums: {
+      attribute_subject: "member" | "chapter"
+      attribute_type:
+        | "text"
+        | "number"
+        | "date"
+        | "boolean"
+        | "choice"
+        | "multi_choice"
+        | "ordered"
+      attribute_visibility: "admins" | "members" | "public"
       org_type: "platform" | "national" | "region" | "chapter" | "standalone"
       setting_mode: "inherit" | "override" | "locked"
+      setup_status: "in_progress" | "applied" | "needs_review"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -586,8 +817,20 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      attribute_subject: ["member", "chapter"],
+      attribute_type: [
+        "text",
+        "number",
+        "date",
+        "boolean",
+        "choice",
+        "multi_choice",
+        "ordered",
+      ],
+      attribute_visibility: ["admins", "members", "public"],
       org_type: ["platform", "national", "region", "chapter", "standalone"],
       setting_mode: ["inherit", "override", "locked"],
+      setup_status: ["in_progress", "applied", "needs_review"],
     },
   },
 } as const
