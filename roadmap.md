@@ -13,15 +13,17 @@ Full plan: docs/ and .lovable/plan/. Phase IDs map to docs/epic.md.
 - [x] E-06: append-only audit log via triggers, viewer tab
 
 ## Open — Phase 0
-- [ ] E-03: invitation emails (waits on an email domain; for now admins copy the link)
 - [ ] E-05: role assignment UI, org-defined roles
-- [ ] E-07: subdomain / `/o/$slug` tenant resolution, tenant-isolation tests against RLS
-- [ ] E-08: jobs table + scheduled worker, app emails (needs email domain), signed-action tokens
 
 ## Open — Phase 1
 - [ ] E-09 attributes, E-10 setup engine, E-11 tiers/terms
 - [ ] E-12 per-org Stripe connection as a setup step (each org brings its own Stripe account)
 - [ ] E-13 signup/renewals, E-14 directory/exports, E-15 receipts
+
+## Deferred (user decision 2026-10-30: core first, automations later)
+- [ ] E-07: per-org web addresses (subdomain / `/o/$slug`)
+- [ ] E-08: jobs + scheduled worker, automatic emails (incl. invitation emails), signed-action tokens
+- [ ] E-13 automated lapse job and renewal reminders (manual/derived standing for now)
 
 ## Cleanup before launch
 - [ ] Remove the demo data (steps in docs/demo-data.md)

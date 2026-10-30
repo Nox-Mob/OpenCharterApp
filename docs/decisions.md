@@ -135,3 +135,4 @@ Status key: **Decided** (final for now), **Default** (working assumption, confir
 | D-108 | Org settings resolve root → self. An ancestor's `locked` value wins and a database trigger blocks child writes to it. Otherwise the nearest `override` wins, then the registry default | Decided |
 | D-109 | The branding bucket is private (workspace blocks public buckets), so logos load through short-lived signed URLs. Logo fallback runs chapter → national. When national turns off `branding.chapter_logo_allowed`, chapters show the top-most logo | Decided |
 | D-110 | Columns that define hierarchy or identity (`parent_id`, `type`, `slug`, `org_id`, `user_id`) can't be updated from the client. Column-level grants enforce this | Decided |
+| D-111 | E-07 (per-org web addresses) and E-08 (jobs, automatic emails) are deferred until the core membership features are done. Until then, standing is derived on read instead of set by scheduled jobs | Decided |
