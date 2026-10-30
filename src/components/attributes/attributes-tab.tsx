@@ -73,15 +73,13 @@ export async function saveAttribute(
       if (error) throw error;
       prior.delete(o.value);
     } else {
-      const { error } = await supabase
-        .from("attribute_options")
-        .insert({
-          definition_id: defId!,
-          org_id: orgId,
-          value: o.value,
-          label: o.label,
-          sort_order: (i + 1) * 10,
-        });
+      const { error } = await supabase.from("attribute_options").insert({
+        definition_id: defId!,
+        org_id: orgId,
+        value: o.value,
+        label: o.label,
+        sort_order: (i + 1) * 10,
+      });
       if (error) throw error;
     }
   }
