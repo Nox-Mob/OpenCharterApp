@@ -15,9 +15,9 @@ select tests.throws($$delete from public.audit_events$$, 'permission denied');
 -- direct role self-escalation is impossible
 select tests.throws($$insert into public.role_assignments (user_id, role_id, org_id) select auth.uid(), id, '22222222-0000-4000-8000-000000000001' from public.roles limit 1$$, 'permission denied');
 -- a chapter admin cannot create chapters under the national
-select tests.throws($$select public.create_organization('C', 'ch-c', 'chapter', '22222222-0000-4000-8000-000000000001')$$, 'not allowed');
+select tests.throws($$select public.create_organization('Chapter C', 'ch-c', 'chapter', '22222222-0000-4000-8000-000000000001')$$, 'not allowed');
 -- chapters need a parent
-select tests.throws($$select public.create_organization('C', 'ch-c', 'chapter')$$, 'need a parent');
+select tests.throws($$select public.create_organization('Chapter C', 'ch-c', 'chapter')$$, 'need a parent');
 select tests.reset_role();
 
 -- the rename was audited
@@ -26,7 +26,7 @@ select tests.eq((select count(*) from public.audit_events where target_type = 'o
 
 -- national admin may create a chapter; creator becomes a member of it
 select tests.as_user('11111111-0000-4000-8000-000000000001');
-select public.create_organization('C', 'ch-c', 'chapter', '22222222-0000-4000-8000-000000000001');
+select public.create_organization('Chapter C', 'ch-c', 'chapter', '22222222-0000-4000-8000-000000000001');
 select tests.eq((select count(*) from public.organizations where slug = 'ch-c'), 1::bigint, 'chapter created');
 select tests.reset_role();
 
