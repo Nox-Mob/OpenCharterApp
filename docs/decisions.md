@@ -119,3 +119,15 @@ Status key: **Decided** (final for now), **Default** (working assumption, confir
 | D-093 | Regional-level approvals and regional tier features | Deferred |
 | D-094 | Reply-by-email approvals (inbound email parsing) | Deferred |
 | D-095 | Virus scanning for uploaded documents | Deferred |
+
+## Lovable stack adaptation (2026-10-30)
+
+| ID | Decision | Status |
+|---|---|---|
+| D-100 | Framework: TanStack Start (React 19, Vite) on edge workers. **Supersedes D-001** | Decided |
+| D-101 | Database: Postgres with RLS, hosted on Lovable Cloud. Refines D-003 | Decided |
+| D-102 | Auth: Lovable Cloud Auth (email/password + Google). **Supersedes D-005** | Decided |
+| D-103 | Background jobs: Postgres jobs table + scheduled server routes. **Supersedes D-007** | Decided |
+| D-104 | Package manager: bun (Lovable toolchain). Supersedes the npm-only rule in instructions.md | Decided |
+| D-105 | Payments: each organization connects its own Stripe account as an org setup step; no platform account | Decided |
+| D-106 | Product name: OpenCharterApp | Decided |

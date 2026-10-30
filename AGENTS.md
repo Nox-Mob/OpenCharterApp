@@ -8,3 +8,14 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+# OpenCharterApp — agent rules
+
+Read `docs/instructions.md` before changing code; planning docs live in `docs/`. Track work in `roadmap.md`.
+
+- Stack is TanStack Start + Lovable Cloud (see docs/decisions.md D-100..D-104), superseding the Next.js/pg-boss/Better Auth defaults — the Lovable toolchain requires it.
+- Every tenant table has `org_id`, explicit GRANTs and RLS using `public.has_permission` / `public.is_org_member` — RLS is the safety net for tenant isolation.
+- Authorization goes through `src/lib/policy` (UI) and `has_permission` (DB); never ad hoc checks — keeps downward-only inheritance (D-032) in one place.
+- Organizations are created only via the `create_organization` RPC — it enforces hierarchy rules and seeds the creator's admin role.
+- Audit events are written only by triggers/definer functions; no client insert/update/delete — keeps the log append-only.
+- Domain code goes in `src/modules/<domain>/`, shared engines in `src/engines/` — enforces module boundaries from architecture.md.

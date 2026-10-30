@@ -1,6 +1,6 @@
 # Membership Platform — Planning Docs
 
-> Working title: **TBD**. An open-source (AGPL), multi-tenant membership management platform for non-profit associations with national organizations and local chapters. Feature set modeled on Tendenci, plus governance, elections, documents, and awards.
+> Name: **OpenCharterApp**. An open-source (AGPL), multi-tenant membership management platform for non-profit associations with national organizations and local chapters. Feature set modeled on Tendenci, plus governance, elections, documents, and awards.
 
 ## Purpose of these docs
 

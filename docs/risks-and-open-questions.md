@@ -71,3 +71,6 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 2. **Tenant isolation prototype** with RLS and an org-and-descendants policy (resolves Q-F in `data-domains.md`).
 3. **Attribute storage prototype** with filter, sort, export, and rule evaluation on 100k rows (resolves Q-04).
 4. **Wildcard subdomain and on-demand TLS** with Caddy locally (supports E-07 and E-22). Wildcard resolution can be spiked with `*.localhost` first. The TLS part ties to F-11.
+
+## Added 2026-10-30
+- **R-20 Self-hosting (principle 6):** building on Lovable Cloud ties auth and jobs to managed services. Mitigation: keep business rules in SQL functions and `src/lib/policy`, so a self-host port replaces only adapters.
