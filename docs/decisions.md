@@ -136,3 +136,7 @@ Status key: **Decided** (final for now), **Default** (working assumption, confir
 | D-109 | The branding bucket is private (workspace blocks public buckets), so logos load through short-lived signed URLs. Logo fallback runs chapter → national. When national turns off `branding.chapter_logo_allowed`, chapters show the top-most logo | Decided |
 | D-110 | Columns that define hierarchy or identity (`parent_id`, `type`, `slug`, `org_id`, `user_id`) can't be updated from the client. Column-level grants enforce this | Decided |
 | D-111 | E-07 (per-org web addresses) and E-08 (jobs, automatic emails) are deferred until the core membership features are done. Until then, standing is derived on read instead of set by scheduled jobs | Decided |
+| D-112 | Attribute values are written only through `set_attribute_value`, which checks permission, scope and type. Removed choices and fields are retired, never deleted, so stored values keep their meaning | Decided |
+| D-113 | Setup flows are TypeScript definitions (`src/engines/setup` + module flows). They produce a plan that `apply_setup` applies in one transaction. Re-running updates records by key and never duplicates | Decided |
+| D-114 | A top-level organization must keep at least one admin. A chapter may have none, because its parent's admins still manage it | Decided |
+| D-115 | CI runs lint, formatting, type checks, unit tests, database rule tests against a throwaway Postgres with a stub of the managed schemas, and a production build | Decided |
