@@ -129,16 +129,17 @@ function LogoCard({
   onSaved: () => void;
 }) {
   const effective = resolveLogo(chain, allowed);
+  const effectivePath = effective?.path ?? null;
   const [url, setUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     let live = true;
-    if (effective) logoUrl(effective.path).then((u) => live && setUrl(u));
+    if (effectivePath) logoUrl(effectivePath).then((u) => live && setUrl(u));
     else setUrl(null);
     return () => {
       live = false;
     };
-  }, [effective?.path]);
+  }, [effectivePath]);
   const isChild = chain.length > 1;
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
