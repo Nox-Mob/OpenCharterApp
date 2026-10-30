@@ -1,8 +1,10 @@
 -- Minimal stand-in for the Supabase-managed pieces our migrations depend on.
 -- Used only by the CI database rule tests (scripts/db-test.sh), never in production.
-create role anon nologin;
-create role authenticated nologin;
-create role service_role nologin bypassrls;
+do $$ begin
+  if not exists (select 1 from pg_roles where rolname = 'anon') then create role anon nologin; end if;
+  if not exists (select 1 from pg_roles where rolname = 'authenticated') then create role authenticated nologin; end if;
+  if not exists (select 1 from pg_roles where rolname = 'service_role') then create role service_role nologin bypassrls; end if;
+end $$;
 
 create schema if not exists extensions;
 create extension if not exists pgcrypto with schema extensions;
