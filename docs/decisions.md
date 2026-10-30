@@ -1,0 +1,121 @@
+# Decisions Log
+
+Status key: **Decided** (final for now), **Default** (working assumption, confirm when relevant), **Deferred** (intentionally postponed).
+
+## Technology and delivery
+
+| ID | Decision | Status |
+|---|---|---|
+| D-001 | Framework: Next.js (App Router) + TypeScript, as a modular monolith | Decided |
+| D-002 | Package manager: **npm only** (no Bun) | Decided |
+| D-003 | Database: PostgreSQL, with row-level security as a tenant-isolation safety net | Decided |
+| D-004 | ORM: Drizzle or Prisma (pick at schema design) | Default |
+| D-005 | Auth: Better Auth or Auth.js (pick at Phase 0) | Default |
+| D-006 | UI: Tailwind + shadcn/ui. Validation: Zod | Decided |
+| D-007 | Background jobs: pg-boss (Postgres-backed) | Decided |
+| D-008 | Email: Resend or Postmark with React Email templates | Default |
+| D-009 | File storage: S3-compatible (S3, R2, MinIO) | Decided |
+| D-010 | Testing: Vitest (unit/integration) + Playwright (end-to-end) | Decided |
+| D-011 | Deployment neutrality: configuration is environment-driven with no dependency on one vendor's proprietary features, so self-hosted and hosted installs run the same code. A reverse proxy such as Caddy remains the intended approach for wildcard subdomains and automatic SSL | Decided |
+| D-012 | **Docker image, Docker Compose, and reverse-proxy packaging are deferred to the future backlog (F-11).** Packaging is only useful once the app is functional end to end. Early development uses a plain local setup (local Postgres, env vars). F-11 is pulled forward no later than E-22 (custom domains) or E-42 (hosted billing) | Decided |
+| D-013 | **Commit rules:** every commit must have passing tests, tests for any new or changed code, and updated root README and supporting documentation (including diagram descriptions). Enforced by pre-commit hooks and CI where possible. See `instructions.md` | Decided |
+
+## Business model and licensing
+
+| ID | Decision | Status |
+|---|---|---|
+| D-020 | License: **AGPL**. Free to self-host. We sell managed hosting | Decided |
+| D-021 | No dual license or CLA for now | Decided |
+| D-022 | Hosting pricing: base price per org plus a price per sub-chapter. Member-count pricing may apply past a chapter threshold (e.g., chapters > 5, unless members < ~100). Thresholds are configuration, not code | Default |
+| D-023 | Platform meters org count, chapter count, and active members over time | Decided |
+
+## Tenancy and structure
+
+| ID | Decision | Status |
+|---|---|---|
+| D-030 | Hierarchy: Platform → National → (Region, optional) → Chapter. Platform tier is the installer (self-host) or us (hosted) | Decided |
+| D-031 | Every tenant-owned record carries an org ID | Decided |
+| D-032 | Permissions inherit downward only, never upward | Decided |
+| D-033 | Subdomain is the default chapter address (`chapter.national.org`). Custom chapter domains are optional and configured in settings | Decided |
+| D-034 | Data migration from other systems is out of scope. CSV import is for bulk-adding only | Decided |
+| D-035 | **Region tier exists in the database from day one.** Region-specific features come later | Decided |
+| D-036 | **A person is global to the install.** One account (login identity) can hold memberships and roles in many orgs. Signing up with an org when an account already exists with that email **adds the person to that org** rather than creating a second account | Decided |
+| D-037 | **No data crosses orgs.** Profile fields, attributes, settings, and preferences entered for one org are never copied, pre-filled, or offered to another org. Orgs do not see which other orgs a person belongs to. Only the login identity is shared | Decided |
+| D-038 | A person who is an admin or officer in several orgs can **switch between them** (org switcher). Each org context shows only that org's data and permissions | Decided |
+| D-039 | Duplicate accounts from different emails are accepted. No cross-email merging is attempted (admins may merge manually later) | Decided |
+| D-03A | **Branding and logos:** national sets the default logo and brand. A chapter may upload its own logo as an **override**. Resolution falls back chapter → region → national → platform. Receipts, emails, and public pages use the issuing org's resolved branding | Decided |
+
+## Money, receipts, accounting
+
+| ID | Decision | Status |
+|---|---|---|
+| D-040 | Each org (national and each chapter) collects into its **own** Stripe or PayPal account | Decided |
+| D-041 | National may set an **optional** fee/cut on chapter transactions | Decided |
+| D-042 | A member owing national and chapter dues **pays twice**, once to each tax entity. No split checkout | Decided |
+| D-043 | Gateway abstraction with Stripe and PayPal adapters. Generic store and awards reuse the same connectors | Decided |
+| D-044 | Receipts: automatic and manual, customizable templates (inherit from national), immutable once issued, corrections create a new version | Decided |
+| D-045 | Each org has a tax profile (legal name, EIN, status). Mostly 501(c)(19), some 501(c)(3). Specific receipt wording deferred | Decided / Deferred |
+| D-046 | Dues, donation, ticket, and award-purchase items carry a **tax treatment** field | Decided |
+| D-047 | Accounting export: generic transaction CSV only. No tool-specific formats | Decided |
+| D-048 | PayPal national-fee mechanism is decided later. Fallback is invoicing the chapter | Deferred |
+| D-049 | **Two Stripe modes:** (a) *Connect*, national's account is the Connect platform and chapters are connected accounts, enabling automatic application fees. (b) *Direct*, each org uses its own account with no automatic fee, and national's fee is settled by invoice. The mode is per national and sits behind the gateway abstraction | Decided |
+
+## Membership and dues
+
+| ID | Decision | Status |
+|---|---|---|
+| D-050 | Each level (national, chapter) defines its own tiers and pricing | Decided |
+| D-051 | Term lengths are fully org-defined. "1, 3, lifetime" is only an example | Decided |
+| D-052 | Pricing can depend on member attributes (e.g., rank E1–E6 mapped to price bands). Attribute values and mappings are org-defined | Decided |
+| D-053 | Prepaid and postpaid dues both supported, per tier or per org | Decided |
+| D-054 | Postpaid enforcement (grace days, when standing changes) is set by admins at each level | Decided |
+| D-055 | National controls whether chapters may charge separate dues (none / optional with range / required) and can provide locked or suggested tier structures | Decided |
+| D-056 | Good standing is derived from membership state. Officers must be in good standing | Decided |
+
+## Custom attributes and setup
+
+| ID | Decision | Status |
+|---|---|---|
+| D-060 | Organizations define **custom member attributes** (rank, salutation, anything else). Attributes drive pricing, eligibility, and approvals | Decided |
+| D-061 | Chapters have attributes too (e.g., charter date), **defined by national**, during setup (preferred) or after | Decided |
+| D-062 | A **setup engine** asks guided questions per module and produces configuration (see `setup-engine.md`) | Decided |
+| D-063 | Setup is re-runnable and editable after initial setup | Default |
+| D-064 | Rules (pricing reductions, eligibility, approver rules) are declarative and built through a UI, not custom code | Default |
+| D-065 | **Attribute values are stored as JSONB**, validated against attribute definitions (Zod), with indexes for filtered and sorted attributes | Decided |
+
+## Governance, elections, documents
+
+| ID | Decision | Status |
+|---|---|---|
+| D-070 | National defines board role templates, required seats, seat counts, term length, and linked permissions | Decided |
+| D-071 | Chapters may use custom titles. Underlying role and permissions are unchanged | Decided |
+| D-072 | Board seats link to permission sets. Appointment grants access, ending the term revokes it | Decided |
+| D-073 | Board reports: national defines types and schedules, chapters submit, national reviews. Overdue reports are chased automatically | Decided |
+| D-074 | Elections: admin-visible votes acceptable. Ranked choice is a chapter-level option | Decided |
+| D-075 | Document repository per org with versioning, national-defined categories, required types, visibility levels, and change alerts to national | Decided |
+
+## Awards
+
+| ID | Decision | Status |
+|---|---|---|
+| D-080 | Each award has its own criteria, submission form, approval policy, and purchase options | Decided |
+| D-081 | Approval policy is an ordered chain by tier. Approvers may be defined by role, by member rank, or both. Regional level can be added later | Decided |
+| D-082 | Routing checks the nominee's chapter, whether the seat can approve, and whether the approver is eligible. The president can confirm an approver's rank, which sets a **"rank verified" flag** for national | Decided |
+| D-083 | If no one can or does approve, **national can approve** (e.g., at a board meeting), including batch approval with a meeting date | Decided |
+| D-084 | Approval is given via **signed one-click email link** (optionally with a comment) or in-portal. Reply-by-email is not built | Decided |
+| D-085 | Approval **outcomes and appeals** (decline, appeal, final) are configured by the org level that defined the award | Decided |
+| D-086 | **Payer is configurable**: per award and/or as a form question. Options include submitter, chapter, recipient, or any payer via link. A chapter may be allowed to override the default payer | Decided |
+| D-087 | Awards support multiple purchase options and add-ons (e.g., express fee), purchased after approval | Decided |
+| D-088 | National manages award shipment for now. Vendor and inventory tracking is scoped for later | Decided |
+| D-089 | Awards may belong to a family/series with optional prerequisites (e.g., Bronze → Silver → Gold) | Default |
+
+## Future (scoped, not built)
+
+| ID | Decision | Status |
+|---|---|---|
+| D-090 | Generic store (merchandise, add-ons) using the same cart and gateway connectors | Deferred |
+| D-091 | Vendor and inventory tracking for physical items | Deferred |
+| D-092 | Delegate-based national elections | Deferred |
+| D-093 | Regional-level approvals and regional tier features | Deferred |
+| D-094 | Reply-by-email approvals (inbound email parsing) | Deferred |
+| D-095 | Virus scanning for uploaded documents | Deferred |
