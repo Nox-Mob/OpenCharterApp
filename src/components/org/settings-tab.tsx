@@ -200,6 +200,17 @@ function SettingRowEditor({ orgId, hasChildren, def, own, resolved, nameOf, onSa
       {def.kind === "text" && (
         <Input aria-label={def.label} value={String(value ?? "")} disabled={locked} onChange={(e) => setValue(e.target.value)} />
       )}
+      {def.kind === "number" && (
+        <Input
+          aria-label={def.label}
+          type="number"
+          min={0}
+          className="w-32"
+          value={value === null || value === undefined ? "" : String(value)}
+          disabled={locked}
+          onChange={(e) => setValue(e.target.value === "" ? null : Number(e.target.value))}
+        />
+      )}
       <p className="text-xs text-muted-foreground">
         {locked ? `Locked by ${nameOf(resolved.lockedBy)}.` : `Currently from ${resolved.sourceOrgId === orgId ? "this organization" : nameOf(resolved.sourceOrgId)}.`}
       </p>

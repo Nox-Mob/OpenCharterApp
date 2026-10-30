@@ -12,8 +12,8 @@ export type SettingDef = {
   key: string;
   label: string;
   description: string;
-  kind: "boolean" | "text";
-  default: boolean | string;
+  kind: "boolean" | "text" | "number";
+  default: boolean | string | number;
 };
 
 export const SETTINGS: readonly SettingDef[] = [
@@ -23,6 +23,20 @@ export const SETTINGS: readonly SettingDef[] = [
     description: "When off, chapters show the national logo.",
     kind: "boolean",
     default: true,
+  },
+  {
+    key: "membership.approval_required",
+    label: "New members need admin approval",
+    description: "When on, join requests wait for an admin before the person becomes a member.",
+    kind: "boolean",
+    default: false,
+  },
+  {
+    key: "membership.grace_days",
+    label: "Grace period (days)",
+    description: "How long after expiration a member keeps their standing.",
+    kind: "number",
+    default: 30,
   },
   {
     key: "contact.email",
