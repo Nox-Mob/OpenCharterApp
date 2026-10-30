@@ -23,9 +23,9 @@ function ResetPassword() {
   const [password, setPassword] = useState("");
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < 8) return toast.error("At least 8 characters");
+    if (password.length < 8) return void toast.error("At least 8 characters");
     const { error } = await supabase.auth.updateUser({ password });
-    if (error) return toast.error("This reset link is invalid or has expired.");
+    if (error) return void toast.error("This reset link is invalid or has expired.");
     toast.success("Password updated");
     navigate({ to: "/dashboard" });
   }

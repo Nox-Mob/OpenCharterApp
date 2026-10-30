@@ -29,7 +29,7 @@ export function CreateOrgDialog({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const parsed = createOrgSchema.safeParse({ name, slug: slug || slugify(name), type, parentId });
-    if (!parsed.success) return toast.error(parsed.error.issues[0]?.message ?? "Invalid input");
+    if (!parsed.success) return void toast.error(parsed.error.issues[0]?.message ?? "Invalid input");
     setBusy(true);
     const { data, error } = await supabase.rpc("create_organization", {
       _name: parsed.data.name,
@@ -38,7 +38,7 @@ export function CreateOrgDialog({
       ...(parsed.data.parentId ? { _parent: parsed.data.parentId } : {}),
     });
     setBusy(false);
-    if (error) return toast.error(error.message.includes("duplicate") ? "That web address is taken" : error.message);
+    if (error) return void toast.error(error.message.includes("duplicate") ? "That web address is taken" : error.message);
     toast.success(`${parsed.data.name} created`);
     await qc.invalidateQueries();
     setOpen(false);
