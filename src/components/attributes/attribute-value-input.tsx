@@ -8,7 +8,7 @@ export function AttributeValueInput({
   def,
   value,
   onChange,
-  disabled,
+  disabled = false,
 }: {
   def: DefWithOptions;
   value: unknown;

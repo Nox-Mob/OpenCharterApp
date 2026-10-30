@@ -159,7 +159,7 @@ function Wizard({ org }: { org: Org }) {
   );
 }
 
-function QuestionField({ q, value, error, onChange }: { q: Question; value: unknown; error?: string; onChange: (v: unknown) => void }) {
+function QuestionField({ q, value, error, onChange }: { q: Question; value: unknown; error?: string | undefined; onChange: (v: unknown) => void }) {
   const id = `q-${q.id}`;
   const body = (() => {
     switch (q.type) {
