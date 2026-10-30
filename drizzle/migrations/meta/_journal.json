@@ -22,6 +22,13 @@
       "when": 1793368748614,
       "tag": "0002_fix_audit_trigger_for_keyless_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793369736099,
+      "tag": "0003_roles_attributes_setup_engine",
+      "breakpoints": true
     }
   ]
 }
