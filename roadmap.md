@@ -13,6 +13,7 @@ Full plan: docs/ and .lovable/plan/. Phase IDs map to docs/epic.md.
 - [x] E-06: append-only audit log via triggers, viewer tab
 - [x] E-05: role assignment screen (add/remove, last-admin protection)
 - [x] E-09: custom member fields (7 types, ordered lists, visibility, self-edit, inherited from parent, retire not delete)
+- [x] E-09: field editor dialog scrolls with long choice lists (header and Save stay visible, new choices get focus)
 - [x] E-10: setup engine (steps, conditions, drafts, review with diff, one-transaction apply) + Membership flow v1
 - [x] CI: lint, formatting, types, unit tests, database rule tests, build
 

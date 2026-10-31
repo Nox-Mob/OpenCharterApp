@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { ArrowDown, ArrowUp, X } from "lucide-react";
 import {
   ATTRIBUTE_TYPES,
@@ -45,6 +46,15 @@ export function AttributeForm({
   locked?: boolean;
 }) {
   const set = (patch: Partial<AttributeInput>) => onChange({ ...value, ...patch });
+  // After "Add choice", focus the new row and scroll it into view so long lists stay usable.
+  const lastChoice = useRef<HTMLInputElement>(null);
+  const focusNewChoice = useRef(false);
+  useEffect(() => {
+    if (!focusNewChoice.current) return;
+    focusNewChoice.current = false;
+    lastChoice.current?.focus();
+    lastChoice.current?.scrollIntoView?.({ block: "nearest" });
+  }, [value.options.length]);
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -90,6 +100,7 @@ export function AttributeForm({
             {value.options.map((o, i) => (
               <li key={i} className="flex items-center gap-2">
                 <Input
+                  ref={i === value.options.length - 1 ? lastChoice : undefined}
                   aria-label={`Choice ${i + 1}`}
                   value={o.label}
                   onChange={(e) => {
@@ -135,7 +146,10 @@ export function AttributeForm({
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => set({ options: [...value.options, { value: "", label: "" }] })}
+            onClick={() => {
+              focusNewChoice.current = true;
+              set({ options: [...value.options, { value: "", label: "" }] });
+            }}
           >
             Add choice
           </Button>

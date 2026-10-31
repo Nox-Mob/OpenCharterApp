@@ -11,10 +11,10 @@ import {
   type AttributeInput,
 } from "@/engines/attributes";
 import { attributeDefsQuery, type DefWithOptions } from "@/modules/attributes/queries";
-import { AttributeForm, EMPTY_ATTRIBUTE } from "./attribute-form";
+import { EMPTY_ATTRIBUTE } from "./attribute-form";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AttributeFieldDialog } from "./attribute-field-dialog";
 import {
   Table,
   TableBody,
@@ -218,25 +218,17 @@ export function AttributesTab({ org, canManage }: { org: Org; canManage: boolean
         </Table>
       )}
 
-      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {editing?.def ? `Edit ${editing.def.label}` : "Add a member field"}
-            </DialogTitle>
-          </DialogHeader>
-          {editing && (
-            <AttributeForm
-              value={editing.input}
-              locked={!!editing.def}
-              onChange={(input) => setEditing({ ...editing, input })}
-            />
-          )}
-          <Button onClick={save} disabled={busy}>
-            {busy ? "Saving…" : "Save field"}
-          </Button>
-        </DialogContent>
-      </Dialog>
+      <AttributeFieldDialog
+        open={!!editing}
+        title={editing?.def ? `Edit ${editing.def.label}` : "Add a member field"}
+        value={editing?.input ?? null}
+        locked={!!editing?.def}
+        onChange={(input) => editing && setEditing({ ...editing, input })}
+        onClose={() => setEditing(null)}
+        primaryLabel={busy ? "Saving…" : "Save field"}
+        onPrimary={save}
+        busy={busy}
+      />
     </div>
   );
 }

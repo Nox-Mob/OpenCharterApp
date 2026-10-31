@@ -21,7 +21,7 @@ import {
 import { initialAnswers, membershipFlow } from "@/modules/membership/setup-flow";
 import { applyFlow, saveDraft, setupStateQuery } from "@/modules/setup/drafts";
 import { attributeDefsQuery } from "@/modules/attributes/queries";
-import { AttributeForm, EMPTY_ATTRIBUTE } from "@/components/attributes/attribute-form";
+import { EMPTY_ATTRIBUTE } from "@/components/attributes/attribute-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +29,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AttributeFieldDialog } from "@/components/attributes/attribute-field-dialog";
 import {
   Select,
   SelectContent,
@@ -377,20 +377,15 @@ function AttributesQuestion({
       >
         Create your own field
       </Button>
-      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{editing?.index === null ? "New member field" : "Edit field"}</DialogTitle>
-          </DialogHeader>
-          {editing && (
-            <AttributeForm
-              value={editing.input}
-              onChange={(input) => setEditing({ ...editing, input })}
-            />
-          )}
-          <Button onClick={saveEdit}>Done</Button>
-        </DialogContent>
-      </Dialog>
+      <AttributeFieldDialog
+        open={!!editing}
+        title={editing?.index === null ? "New member field" : "Edit field"}
+        value={editing?.input ?? null}
+        onChange={(input) => editing && setEditing({ ...editing, input })}
+        onClose={() => setEditing(null)}
+        primaryLabel="Done"
+        onPrimary={saveEdit}
+      />
     </div>
   );
 }
