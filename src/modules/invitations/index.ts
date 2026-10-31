@@ -2,7 +2,8 @@ import { z } from "zod";
 
 export const inviteSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
-  role: z.enum(["member", "org_admin"]),
+  // Any role key: built-in or org-defined (E-05). The database resolves and checks it.
+  role: z.string().regex(/^[a-z][a-z0-9_]{0,39}$/, "Pick a role"),
 });
 
 export type InviteRow = {

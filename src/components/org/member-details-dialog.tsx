@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import type { Org } from "@/lib/orgs";
-import { coerceInput, validateValue } from "@/engines/attributes";
 import { attributeDefsQuery, memberValuesQuery } from "@/modules/attributes/queries";
+import { firstValueError, saveAttributeValues } from "@/modules/attributes/values";
 import { AttributeValueInput } from "@/components/attributes/attribute-value-input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -35,24 +34,11 @@ export function MemberDetailsDialog({
 
   async function save() {
     if (!profile) return;
-    for (const d of memberDefs) {
-      const err = editable(d)
-        ? validateValue(d, d.options, coerceInput(d.data_type, draft[d.id]))
-        : null;
-      if (err) return void toast.error(err);
-    }
+    const err = firstValueError(memberDefs.filter(editable), draft);
+    if (err) return void toast.error(err);
     setBusy(true);
     try {
-      for (const d of memberDefs.filter(editable)) {
-        const next = coerceInput(d.data_type, draft[d.id]);
-        if (JSON.stringify(next ?? null) === JSON.stringify(values.data?.[d.id] ?? null)) continue;
-        const { error } = await supabase.rpc("set_attribute_value", {
-          _def: d.id,
-          _entity: profile.id,
-          _value: (next ?? null) as never,
-        });
-        if (error) throw error;
-      }
+      await saveAttributeValues(memberDefs.filter(editable), profile.id, draft, values.data);
       toast.success("Saved");
       qc.invalidateQueries({ queryKey: ["attribute-values", profile.id] });
       onClose();

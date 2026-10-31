@@ -53,3 +53,42 @@ select tests.eq((select count(*) from public.attribute_definitions), 0::bigint, 
 select tests.eq((select count(*) from public.attribute_values), 0::bigint, 'outsider sees no values');
 select tests.reset_role();
 rollback;
+
+-- Chapter fields (E-09): defined by national, values set per chapter
+begin;
+select tests.fixture();
+select tests.as_user('11111111-0000-4000-8000-000000000001');
+insert into public.attribute_definitions (id, org_id, applies_to, key, label, data_type, visibility, member_editable) values
+  ('44444444-0000-4000-8000-000000000011', '22222222-0000-4000-8000-000000000001', 'chapter', 'charter_date', 'Charter date', 'date', 'admins', true),
+  ('44444444-0000-4000-8000-000000000012', '22222222-0000-4000-8000-000000000001', 'chapter', 'meets_at', 'Meeting place', 'text', 'members', false);
+-- member-only switches don't apply to chapter fields
+select tests.eq((select member_editable from public.attribute_definitions where key = 'charter_date'), false, 'member_editable off for chapter fields');
+-- national's chapter fields describe chapters, not the national itself
+select tests.throws($$select public.set_attribute_value('44444444-0000-4000-8000-000000000011', '22222222-0000-4000-8000-000000000001', '"2020-01-01"')$$, 'does not apply');
+-- national admin may set a chapter's value (downward)
+select public.set_attribute_value('44444444-0000-4000-8000-000000000011', '22222222-0000-4000-8000-000000000003', '"2019-03-04"');
+select tests.reset_role();
+
+-- chapters can't define chapter fields
+select tests.as_user('11111111-0000-4000-8000-000000000002');
+select tests.throws($$insert into public.attribute_definitions (org_id, applies_to, key, label, data_type) values ('22222222-0000-4000-8000-000000000002', 'chapter', 'x', 'X', 'text')$$, 'only national or regional');
+-- chapter admin sets its own chapter's values, with type validation
+select public.set_attribute_value('44444444-0000-4000-8000-000000000011', '22222222-0000-4000-8000-000000000002', '"2001-02-03"');
+select public.set_attribute_value('44444444-0000-4000-8000-000000000012', '22222222-0000-4000-8000-000000000002', '"Town hall"');
+select tests.throws($$select public.set_attribute_value('44444444-0000-4000-8000-000000000011', '22222222-0000-4000-8000-000000000002', '"soon"')$$, 'invalid value');
+-- but not a sibling chapter's, and it can't read the sibling's values
+select tests.throws($$select public.set_attribute_value('44444444-0000-4000-8000-000000000011', '22222222-0000-4000-8000-000000000003', '"2001-02-03"')$$, 'not allowed');
+select tests.eq((select count(*) from public.attribute_values where entity_id = '22222222-0000-4000-8000-000000000003'), 0::bigint, 'sibling values hidden');
+select tests.reset_role();
+
+-- a chapter member sees member-visible chapter fields only, and can't edit
+select tests.as_user('11111111-0000-4000-8000-000000000003');
+select tests.eq((select count(*) from public.attribute_values where entity_id = '22222222-0000-4000-8000-000000000002'), 1::bigint, 'member sees member-visible chapter value');
+select tests.throws($$select public.set_attribute_value('44444444-0000-4000-8000-000000000012', '22222222-0000-4000-8000-000000000002', '"Library"')$$, 'not allowed');
+select tests.reset_role();
+
+-- national admin reads every chapter's values
+select tests.as_user('11111111-0000-4000-8000-000000000001');
+select tests.eq((select count(*) from public.attribute_values), 3::bigint, 'national reads chapter values');
+select tests.reset_role();
+rollback;

@@ -1,4 +1,4 @@
-import type { AttributeInput } from "@/engines/attributes";
+import type { AttributeInput, AttributeSubject } from "@/engines/attributes";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +24,7 @@ export function AttributeFieldDialog({
   primaryLabel,
   onPrimary,
   busy = false,
+  subject = "member",
 }: {
   open: boolean;
   title: string;
@@ -34,6 +35,7 @@ export function AttributeFieldDialog({
   primaryLabel: string;
   onPrimary: () => void;
   busy?: boolean;
+  subject?: AttributeSubject;
 }) {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -45,7 +47,9 @@ export function AttributeFieldDialog({
           data-testid="attribute-field-scroll"
           className="min-h-0 flex-1 overflow-y-auto px-6 py-4"
         >
-          {value && <AttributeForm value={value} locked={locked} onChange={onChange} />}
+          {value && (
+            <AttributeForm value={value} locked={locked} onChange={onChange} subject={subject} />
+          )}
         </div>
         <DialogFooter className="border-t px-6 py-4">
           <Button onClick={onPrimary} disabled={busy}>

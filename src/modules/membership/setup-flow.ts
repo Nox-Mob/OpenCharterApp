@@ -1,13 +1,13 @@
-import type { AttributeInput } from "@/engines/attributes";
+import { forSubject, type AttributeInput, type AttributeSubject } from "@/engines/attributes";
 import type { Answers, Flow, FlowContext } from "@/engines/setup";
 
 /**
- * Membership setup flow v1 (setup-engine.md §6.1 basics, §6.2, §6.3 joining/grace).
- * Tier and price questions are added with E-11.
+ * Membership setup flow v1 (setup-engine.md §6.1 basics, §6.2 incl. chapter fields,
+ * §6.3 joining/grace). Tier and price questions are added with E-11.
  */
 export type MembershipPlan = {
   tax: { legal_name: string; ein: string; tax_status: string };
-  attributes: (AttributeInput & { applies_to: "member" })[];
+  attributes: (AttributeInput & { applies_to: AttributeSubject })[];
   settings: { key: string; value: unknown; mode: "override" | "locked" }[];
 };
 
@@ -56,6 +56,21 @@ export const membershipFlow: Flow<MembershipPlan> = {
       questions: [{ id: "attributes", type: "attributes", label: "Member fields" }],
     },
     {
+      id: "chapter_fields",
+      title: "What do you want to track about each chapter?",
+      description:
+        "For example its charter date. Chapter admins fill these in, and required ones are asked for when a chapter is created.",
+      when: (_a, ctx) => isParent(ctx),
+      questions: [
+        {
+          id: "chapter_attributes",
+          type: "attributes",
+          label: "Chapter fields",
+          subject: "chapter",
+        },
+      ],
+    },
+    {
       id: "joining",
       title: "Joining and renewals",
       questions: [
@@ -98,6 +113,7 @@ export const membershipFlow: Flow<MembershipPlan> = {
     ein: "",
     tax_status: "",
     attributes: [],
+    chapter_attributes: [],
     approval_required: false,
     grace_days: 30,
     lock_joining: false,
@@ -117,6 +133,12 @@ export const membershipFlow: Flow<MembershipPlan> = {
       `Grace period: ${Number(a["grace_days"] ?? 0)} days`,
     ];
     if (isParent(ctx)) {
+      const chapterAttrs = (a["chapter_attributes"] as AttributeInput[] | undefined) ?? [];
+      lines.push(
+        chapterAttrs.length
+          ? `Track ${chapterAttrs.length} chapter field${chapterAttrs.length === 1 ? "" : "s"}: ${chapterAttrs.map((x) => x.label).join(", ")}`
+          : "No chapter fields yet",
+      );
       lines.push(
         a["lock_joining"]
           ? "Chapters must use these joining rules"
@@ -149,10 +171,16 @@ export const membershipFlow: Flow<MembershipPlan> = {
         ein: String(a["ein"] ?? "").trim(),
         tax_status: String(a["tax_status"] ?? ""),
       },
-      attributes: ((a["attributes"] as AttributeInput[] | undefined) ?? []).map((x) => ({
-        ...x,
-        applies_to: "member" as const,
-      })),
+      attributes: [
+        ...((a["attributes"] as AttributeInput[] | undefined) ?? []).map((x) => ({
+          ...x,
+          applies_to: "member" as const,
+        })),
+        ...(isParent(ctx)
+          ? ((a["chapter_attributes"] as AttributeInput[] | undefined) ?? [])
+          : []
+        ).map((x) => ({ ...forSubject(x, "chapter"), applies_to: "chapter" as const })),
+      ],
       settings,
     };
   },

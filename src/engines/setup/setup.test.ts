@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { diffByKey, pruneAnswers, validateStep, visibleSteps, type Step } from "./index";
 import { initialAnswers, membershipFlow } from "@/modules/membership/setup-flow";
-import { STARTER_ATTRIBUTES } from "@/engines/attributes";
+import { STARTER_ATTRIBUTES, STARTER_CHAPTER_ATTRIBUTES } from "@/engines/attributes";
 
 const national = { orgType: "national", orgName: "Nat" };
 const chapter = { orgType: "chapter", orgName: "Austin" };
@@ -84,6 +84,34 @@ describe("membership plan", () => {
       applies_to: "member",
       data_type: "ordered",
     });
+  });
+  it("chapter fields are planned as chapter attributes for nationals only", () => {
+    const answers = {
+      ...initialAnswers(null, national),
+      attributes: [STARTER_ATTRIBUTES[1]],
+      chapter_attributes: [{ ...STARTER_CHAPTER_ATTRIBUTES[0]!, member_editable: true }],
+    };
+    const plan = membershipFlow.plan(answers, national);
+    expect(plan.attributes.map((x) => [x.key, x.applies_to])).toEqual([
+      ["rank", "member"],
+      ["charter_date", "chapter"],
+    ]);
+    expect(plan.attributes[1]).toMatchObject({ member_editable: false, show_in_directory: false });
+    expect(membershipFlow.plan(answers, standalone).attributes.map((x) => x.key)).toEqual(["rank"]);
+  });
+  it("the chapter fields step is shown to nationals and regions only", () => {
+    const ids = (ctx: typeof national) => visibleSteps(membershipFlow, {}, ctx).map((s) => s.id);
+    expect(ids(national)).toContain("chapter_fields");
+    expect(ids({ orgType: "region", orgName: "R" })).toContain("chapter_fields");
+    expect(ids(standalone)).not.toContain("chapter_fields");
+    expect(ids(chapter)).not.toContain("chapter_fields");
+  });
+  it("summary lists chapter fields for nationals", () => {
+    const lines = membershipFlow.summarize(
+      { ...initialAnswers(null, national), chapter_attributes: [STARTER_CHAPTER_ATTRIBUTES[0]] },
+      national,
+    );
+    expect(lines).toContain("Track 1 chapter field: Charter date");
   });
   it("summary describes grace days and chapter rules in plain language", () => {
     const lines = membershipFlow.summarize(

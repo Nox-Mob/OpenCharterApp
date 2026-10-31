@@ -465,18 +465,27 @@ export type Database = {
       }
       roles: {
         Row: {
+          active: boolean
+          created_at: string
+          description: string
           id: string
           key: string
           name: string
           org_id: string | null
         }
         Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string
           id?: string
           key: string
           name: string
           org_id?: string | null
         }
         Update: {
+          active?: boolean
+          created_at?: string
+          description?: string
           id?: string
           key?: string
           name?: string
@@ -611,6 +620,16 @@ export type Database = {
         Args: { _email: string; _org: string; _role_key?: string }
         Returns: string
       }
+      create_role: {
+        Args: {
+          _description: string
+          _key: string
+          _name: string
+          _org: string
+          _perms: string[]
+        }
+        Returns: string
+      }
       create_organization: {
         Args: {
           _name: string
@@ -657,6 +676,10 @@ export type Database = {
         Args: { _def: string; _entity: string; _value: Json }
         Returns: undefined
       }
+      set_role_active: {
+        Args: { _active: boolean; _role: string }
+        Returns: undefined
+      }
       validate_attribute_value: {
         Args: {
           _def: Database["public"]["Tables"]["attribute_definitions"]["Row"]
@@ -672,6 +695,15 @@ export type Database = {
           _org: string
           _target_id: string
           _target_type: string
+        }
+        Returns: undefined
+      }
+      update_role: {
+        Args: {
+          _description: string
+          _name: string
+          _perms: string[]
+          _role: string
         }
         Returns: undefined
       }

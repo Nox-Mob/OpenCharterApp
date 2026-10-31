@@ -15,9 +15,13 @@ import {
 } from "@/engines/setup";
 import {
   attributeInputSchema,
+  forSubject,
   STARTER_ATTRIBUTES,
+  STARTER_CHAPTER_ATTRIBUTES,
   type AttributeInput,
+  type AttributeSubject,
 } from "@/engines/attributes";
+import type { DefWithOptions } from "@/modules/attributes/queries";
 import { initialAnswers, membershipFlow } from "@/modules/membership/setup-flow";
 import { applyFlow, saveDraft, setupStateQuery } from "@/modules/setup/drafts";
 import { attributeDefsQuery } from "@/modules/attributes/queries";
@@ -73,16 +77,9 @@ function Wizard({ org }: { org: Org }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
 
-  const existingOwn = useMemo(
-    () =>
-      (defs.data ?? [])
-        .filter((d) => d.org_id === org.id && d.applies_to === "member" && d.active)
-        .map((d) => ({
-          ...d,
-          options: d.options
-            .filter((o) => o.active)
-            .map((o) => ({ value: o.value, label: o.label })),
-        })),
+  const existingOwn = useMemo(() => ownFields(defs.data, org.id, "member"), [defs.data, org.id]);
+  const existingChapter = useMemo(
+    () => ownFields(defs.data, org.id, "chapter"),
     [defs.data, org.id],
   );
 
@@ -90,12 +87,11 @@ function Wizard({ org }: { org: Org }) {
     if (answers || state.isLoading || defs.isLoading) return;
     const base = initialAnswers(state.data?.answers, ctx);
     // Re-running pre-fills from current configuration (setup-engine.md §4)
-    if (!state.data?.answers?.["attributes"])
-      base["attributes"] = existingOwn.map(
-        ({ id: _id, org_id: _o, sort_order: _s, active: _a, ...rest }) => rest,
-      );
+    if (!state.data?.answers?.["attributes"]) base["attributes"] = existingOwn.map(toInput);
+    if (!state.data?.answers?.["chapter_attributes"])
+      base["chapter_attributes"] = existingChapter.map(toInput);
     setAnswers(base);
-  }, [answers, state.isLoading, state.data, defs.isLoading, existingOwn, ctx]);
+  }, [answers, state.isLoading, state.data, defs.isLoading, existingOwn, existingChapter, ctx]);
 
   if (!answers) return <p className="text-muted-foreground">Loading…</p>;
   const steps = visibleSteps(membershipFlow, answers, ctx);
@@ -143,6 +139,9 @@ function Wizard({ org }: { org: Org }) {
   }
 
   const plannedAttrs = (answers["attributes"] as AttributeInput[]) ?? [];
+  const plannedChapter = steps.some((s) => s.id === "chapter_fields")
+    ? ((answers["chapter_attributes"] as AttributeInput[]) ?? [])
+    : [];
   return (
     <div className="mx-auto max-w-2xl">
       <Link
@@ -171,28 +170,13 @@ function Wizard({ org }: { org: Org }) {
                 <li key={l}>{l}</li>
               ))}
             </ul>
-            {plannedAttrs.length > 0 && (
-              <div className="mt-4">
-                <p className="font-medium">Member fields</p>
-                <ul className="mt-2 space-y-1 text-sm">
-                  {diffByKey(plannedAttrs, existingOwn).map((d) => (
-                    <li key={d.key} className="flex items-center gap-2">
-                      <Badge variant={d.change === "same" ? "outline" : "default"}>
-                        {d.change === "add"
-                          ? "New"
-                          : d.change === "update"
-                            ? "Changed"
-                            : "No change"}
-                      </Badge>
-                      {d.label}
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Fields you removed here are not deleted. Retire them from the Member fields tab.
-                </p>
-              </div>
-            )}
+            <FieldDiff title="Member fields" planned={plannedAttrs} existing={existingOwn} />
+            <FieldDiff
+              title="Chapter fields"
+              planned={plannedChapter}
+              existing={existingChapter}
+              tab="Chapter fields"
+            />
           </>
         ) : (
           <>
@@ -281,7 +265,13 @@ function QuestionField({
           </Select>
         );
       case "attributes":
-        return <AttributesQuestion value={(value as AttributeInput[]) ?? []} onChange={onChange} />;
+        return (
+          <AttributesQuestion
+            value={(value as AttributeInput[]) ?? []}
+            onChange={onChange}
+            subject={q.subject ?? "member"}
+          />
+        );
     }
   })();
   return (
@@ -294,20 +284,82 @@ function QuestionField({
   );
 }
 
+type OwnField = Omit<DefWithOptions, "options"> & { options: { value: string; label: string }[] };
+
+/** This org's active fields of one subject, shaped like setup answers. */
+function ownFields(
+  defs: DefWithOptions[] | undefined,
+  orgId: string,
+  subject: AttributeSubject,
+): OwnField[] {
+  return (defs ?? [])
+    .filter((d) => d.org_id === orgId && d.applies_to === subject && d.active)
+    .map((d) => ({
+      ...d,
+      options: d.options.filter((o) => o.active).map((o) => ({ value: o.value, label: o.label })),
+    }));
+}
+
+function toInput({
+  id: _id,
+  org_id: _o,
+  sort_order: _s,
+  active: _a,
+  applies_to: _t,
+  ...rest
+}: OwnField): AttributeInput {
+  return rest;
+}
+
+function FieldDiff({
+  title,
+  planned,
+  existing,
+  tab = "Member fields",
+}: {
+  title: string;
+  planned: AttributeInput[];
+  existing: OwnField[];
+  tab?: string;
+}) {
+  if (planned.length === 0) return null;
+  return (
+    <div className="mt-4">
+      <p className="font-medium">{title}</p>
+      <ul className="mt-2 space-y-1 text-sm">
+        {diffByKey(planned, existing).map((d) => (
+          <li key={d.key} className="flex items-center gap-2">
+            <Badge variant={d.change === "same" ? "outline" : "default"}>
+              {d.change === "add" ? "New" : d.change === "update" ? "Changed" : "No change"}
+            </Badge>
+            {d.label}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Fields you removed here are not deleted. Retire them from the {tab} tab.
+      </p>
+    </div>
+  );
+}
+
 function AttributesQuestion({
   value,
   onChange,
+  subject,
 }: {
   value: AttributeInput[];
   onChange: (v: AttributeInput[]) => void;
+  subject: AttributeSubject;
 }) {
+  const starters = subject === "chapter" ? STARTER_CHAPTER_ATTRIBUTES : STARTER_ATTRIBUTES;
   const [editing, setEditing] = useState<{ index: number | null; input: AttributeInput } | null>(
     null,
   );
   const keys = new Set(value.map((v) => v.key));
   function saveEdit() {
     if (!editing) return;
-    const parsed = attributeInputSchema.safeParse(editing.input);
+    const parsed = attributeInputSchema.safeParse(forSubject(editing.input, subject));
     if (!parsed.success)
       return void toast.error(parsed.error.issues[0]?.message ?? "Check the field");
     if (editing.index === null && keys.has(parsed.data.key))
@@ -323,7 +375,7 @@ function AttributesQuestion({
       <div>
         <p className="font-medium">Common fields</p>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          {STARTER_ATTRIBUTES.map((s) => (
+          {starters.map((s) => (
             <label key={s.key} className="flex items-center gap-2 text-sm">
               <Checkbox
                 checked={keys.has(s.key)}
@@ -379,12 +431,19 @@ function AttributesQuestion({
       </Button>
       <AttributeFieldDialog
         open={!!editing}
-        title={editing?.index === null ? "New member field" : "Edit field"}
+        title={
+          editing?.index === null
+            ? subject === "chapter"
+              ? "New chapter field"
+              : "New member field"
+            : "Edit field"
+        }
         value={editing?.input ?? null}
         onChange={(input) => editing && setEditing({ ...editing, input })}
         onClose={() => setEditing(null)}
         primaryLabel="Done"
         onPrimary={saveEdit}
+        subject={subject}
       />
     </div>
   );

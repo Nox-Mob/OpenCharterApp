@@ -38,8 +38,9 @@ describe("inviteSchema", () => {
       "pat@example.org",
     );
   });
-  it("rejects unknown roles", () => {
-    expect(inviteSchema.safeParse({ email: "a@b.co", role: "owner" }).success).toBe(false);
+  it("rejects malformed role keys (custom role keys are checked by the database)", () => {
+    expect(inviteSchema.safeParse({ email: "a@b.co", role: "Owner!" }).success).toBe(false);
+    expect(inviteSchema.safeParse({ email: "a@b.co", role: "treasurer" }).success).toBe(true);
   });
 });
 

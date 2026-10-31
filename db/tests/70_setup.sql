@@ -47,3 +47,26 @@ insert into public.setup_states (org_id, flow_id, answers) values ('22222222-000
 select tests.throws($$update public.setup_states set status = 'applied' where org_id = '22222222-0000-4000-8000-000000000002'$$, 'permission denied');
 select tests.reset_role();
 rollback;
+
+-- Chapter fields through setup (E-09): nationals may plan them, chapters may not
+begin;
+select tests.fixture();
+select tests.as_user('11111111-0000-4000-8000-000000000001');
+select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+  "attributes": [
+    {"key": "charter_date", "label": "Charter date", "data_type": "date", "applies_to": "chapter", "member_editable": true},
+    {"key": "charter_date", "label": "Charter date", "data_type": "date", "applies_to": "member"}
+  ]}$$);
+select tests.eq((select count(*) from public.attribute_definitions where applies_to = 'chapter'), 1::bigint, 'chapter field applied');
+select tests.eq((select member_editable from public.attribute_definitions where applies_to = 'chapter'), false, 'member switch cleared');
+-- re-running keeps one chapter field (updates by key)
+select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+  "attributes": [{"key": "charter_date", "label": "Chartered on", "data_type": "date", "applies_to": "chapter"}]}$$);
+select tests.eq((select label from public.attribute_definitions where applies_to = 'chapter'), 'Chartered on', 'chapter field relabelled');
+select tests.eq((select count(*) from public.attribute_definitions where applies_to = 'chapter'), 1::bigint, 'no duplicate chapter field');
+select tests.reset_role();
+select tests.as_user('11111111-0000-4000-8000-000000000002');
+select tests.throws($$select public.apply_setup('22222222-0000-4000-8000-000000000002', 'membership', '{}',
+  '{"attributes": [{"key": "x", "label": "X", "data_type": "text", "applies_to": "chapter"}]}')$$, 'only national or regional');
+select tests.reset_role();
+rollback;

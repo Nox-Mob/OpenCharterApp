@@ -33,7 +33,14 @@ export type Question =
       required?: boolean;
       options: { value: string; label: string }[];
     }
-  | { id: string; type: "attributes"; label: string; help?: string };
+  | {
+      id: string;
+      type: "attributes";
+      label: string;
+      help?: string;
+      /** What the fields describe; defaults to members. */
+      subject?: "member" | "chapter";
+    };
 
 export type FlowContext = { orgType: string; orgName: string };
 
