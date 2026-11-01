@@ -8,6 +8,7 @@ import { db } from "./pending-schema";
  */
 export const FEATURES = {
   memberships: { migration: "0008_memberships", label: "Memberships", table: "memberships" },
+  payments: { migration: "0009_payments_gateway", label: "Payments", table: "gateway_connections" },
 } as const satisfies Record<
   string,
   { migration: string; label: string; table?: string; rpc?: string }

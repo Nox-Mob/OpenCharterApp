@@ -7,7 +7,7 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When Lovable applies a migration, delete its section here (the generated types take over).
- * Pending: 0008_memberships.
+ * Pending: 0008_memberships, 0009_payments_gateway.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,7 @@ import type { Database } from "@/integrations/supabase/types";
 type Generated = Database["public"];
 
 export type PendingEnums = {
+  gateway_status: "verified" | "disabled";
   membership_event_kind: "joined" | "renewed" | "approved" | "declined" | "cancelled";
   membership_status: "pending" | "active" | "cancelled" | "declined";
   payment_gateway: "manual" | "stripe" | "test";
@@ -26,6 +27,54 @@ export type PendingEnums = {
 
 /** Tables added or changed by pending migrations (a changed table replaces the generated one). */
 export type PendingTables = {
+  gateway_connections: {
+    Row: {
+      account_label: string;
+      connected_at: string;
+      connected_by: string | null;
+      gateway: PendingEnums["payment_gateway"];
+      id: string;
+      livemode: boolean;
+      org_id: string;
+      status: PendingEnums["gateway_status"];
+      updated_at: string;
+    };
+    Insert: {
+      account_label?: string;
+      connected_at?: string;
+      connected_by?: string | null;
+      gateway: PendingEnums["payment_gateway"];
+      id?: string;
+      livemode?: boolean;
+      org_id: string;
+      status?: PendingEnums["gateway_status"];
+      updated_at?: string;
+    };
+    Update: Partial<PendingTables["gateway_connections"]["Insert"]>;
+    Relationships: [];
+  };
+  webhook_events: {
+    Row: {
+      event_id: string;
+      gateway: PendingEnums["payment_gateway"];
+      id: number;
+      org_id: string;
+      payment_id: string | null;
+      received_at: string;
+      type: string;
+    };
+    Insert: {
+      event_id: string;
+      gateway: PendingEnums["payment_gateway"];
+      id?: number;
+      org_id: string;
+      payment_id?: string | null;
+      received_at?: string;
+      type: string;
+    };
+    Update: Partial<PendingTables["webhook_events"]["Insert"]>;
+    Relationships: [];
+  };
   membership_events: {
     Row: {
       actor_id: string | null;
@@ -181,6 +230,9 @@ export type PendingTables = {
   payments: {
     Row: {
       amount_minor: number;
+      checkout_ref: string | null;
+      failure_reason: string | null;
+      refunded_amount_minor: number;
       created_at: string;
       created_by: string | null;
       currency: string;
@@ -200,6 +252,9 @@ export type PendingTables = {
     };
     Insert: {
       amount_minor: number;
+      checkout_ref?: string | null;
+      failure_reason?: string | null;
+      refunded_amount_minor?: number;
       created_at?: string;
       created_by?: string | null;
       currency?: string;
@@ -219,6 +274,9 @@ export type PendingTables = {
     };
     Update: {
       amount_minor?: number;
+      checkout_ref?: string | null;
+      failure_reason?: string | null;
+      refunded_amount_minor?: number;
       created_at?: string;
       created_by?: string | null;
       currency?: string;
@@ -304,6 +362,24 @@ export type PendingTables = {
 };
 
 export type PendingFunctions = {
+  claim_webhook_event: {
+    Args: {
+      _event_id: string;
+      _gateway: PendingEnums["payment_gateway"];
+      _org: string;
+      _payment?: string;
+      _type: string;
+    };
+    Returns: boolean;
+  };
+  connect_test_gateway: { Args: { _org: string }; Returns: undefined };
+  disconnect_gateway: { Args: { _org: string }; Returns: undefined };
+  gateway_sealed_credentials: { Args: { _org: string }; Returns: string | null };
+  save_stripe_connection: {
+    Args: { _account_label: string; _livemode: boolean; _org: string; _sealed: string };
+    Returns: undefined;
+  };
+  test_gateway_allowed: { Args: { _org: string }; Returns: boolean };
   admin_create_member: {
     Args: { _display_name: string; _email?: string; _org: string };
     Returns: string;

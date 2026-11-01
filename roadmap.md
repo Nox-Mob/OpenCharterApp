@@ -8,6 +8,7 @@ Apply these in order (Lovable → apply pending migrations). Until a migration i
 | Migration | Enables | Status |
 |---|---|---|
 | `0008_memberships` | E-13a memberships, standing, recorded payments, member records without a login | Waiting (Lovable credit cap) |
+| `0009_payments_gateway` | E-12 per-org Stripe / test gateway connections, encrypted credentials, webhook event log. Also needs the Lovable Cloud secret `GATEWAY_ENCRYPTION_KEY` (`openssl rand -base64 32`) | Waiting |
 
 ## Done
 - [x] Step 0: planning docs in /docs, decisions for the Lovable stack recorded (D-100+)
@@ -36,7 +37,7 @@ Apply these in order (Lovable → apply pending migrations). Until a migration i
 
 ## Open — Phase 1
 Plan for E-12 / E-13: docs/plans/e12-e13-payments-and-joining.md
-- [ ] E-12: per-org Stripe connection as a setup step (keys encrypted, webhooks per org) + a test gateway for demo orgs with accepted / declined card outcomes
+- [ ] E-12 (built, waiting for 0009): Payments tab to connect Stripe (key checked, sealed, stored privately) or the demo test gateway, payments list. Remaining: the webhook route and checkout come with E-13b; a "Connect payments" step in guided setup needs the setup page to run more than one flow
 - [ ] E-13b: public join page, online renewal (pay per term, stacked renewals), pay-first approvals with refund on decline, parent-set auto-acceptance for chapters
 - [ ] E-14 directory/exports, E-15 receipts
 

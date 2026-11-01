@@ -1,6 +1,6 @@
 -- Test helpers. Loaded first, as superuser.
 create schema tests;
-grant usage on schema tests to authenticated, anon;
+grant usage on schema tests to authenticated, anon, service_role;
 
 -- Act as a signed-in user for the rest of the transaction.
 create function tests.as_user(_id uuid) returns void language plpgsql as $$

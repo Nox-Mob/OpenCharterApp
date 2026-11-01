@@ -42,6 +42,7 @@ Current coverage:
 | `70_setup` | Permission checks, transactional apply, re-run, locks, chapter fields, membership levels |
 | `80_custom_roles` | Custom roles: inheritance, no permission escalation, retire not delete |
 | `95_memberships` | Term-end and standing rules (same cases as the TypeScript), member records without a login, recording joins and stacked renewals, payment permission, read isolation, no client writes, append-only history, approve / decline / cancel, grace from settings, claiming a record by invitation |
+| `96_payments_gateway` | Test gateway limited to demo orgs (or the platform flag), Stripe credentials only sealed and only by payment managers, secrets and server-only functions unreachable by clients, connection visibility, webhook events claimed once, disconnect removes credentials |
 | `90_tiers` | Membership levels and terms: isolation, term rules, parent control, retire not delete (deletes remove nothing), identity columns can't change |
 
 ## Migrations Lovable hasn't applied yet
@@ -56,3 +57,4 @@ Migrations are tested here before Lovable applies them to the live database. Unt
 
 - Put a new business rule as a pure function under `src/engines` or `src/modules`, with a `*.test.ts` next to it.
 - Add a database test whenever a policy, grant, trigger or RPC changes.
+- Tests that need WebCrypto (signatures, encryption) start with `// @vitest-environment node`.

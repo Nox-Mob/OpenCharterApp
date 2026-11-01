@@ -9,6 +9,7 @@ import { AttributesTab } from "@/components/attributes/attributes-tab";
 import { ChapterFieldsCard } from "@/components/attributes/chapter-fields-card";
 import { RolesTab } from "@/components/org/roles-tab";
 import { LevelsTab } from "@/components/membership/levels-tab";
+import { PaymentsTab } from "@/components/payments/payments-tab";
 import { MyMembershipCard } from "@/components/membership/my-membership-card";
 import { RequiresDatabase } from "@/components/db/requires-database";
 import { SetupCard } from "@/components/setup/setup-card";
@@ -56,6 +57,8 @@ function OrgPage() {
   const canManageRoles = hasPermission(grants, "roles.manage", org);
   const canManageFields = hasPermission(grants, "attributes.manage", org);
   const hasChapters = org.type === "national" || org.type === "region";
+  const canSeePayments =
+    hasPermission(grants, "payments.view", org) || hasPermission(grants, "payments.manage", org);
 
   return (
     <div>
@@ -84,6 +87,7 @@ function OrgPage() {
           <TabsTrigger value="fields">Member fields</TabsTrigger>
           {hasChapters && <TabsTrigger value="chapter-fields">Chapter fields</TabsTrigger>}
           {canManageRoles && <TabsTrigger value="roles">Roles</TabsTrigger>}
+          {canSeePayments && <TabsTrigger value="payments">Payments</TabsTrigger>}
           {canManage && <TabsTrigger value="settings">Settings</TabsTrigger>}
           {hasChapters && <TabsTrigger value="chapters">Chapters</TabsTrigger>}
           {canAudit && <TabsTrigger value="audit">Audit log</TabsTrigger>}
@@ -108,6 +112,13 @@ function OrgPage() {
         {hasChapters && (
           <TabsContent value="chapter-fields" className="mt-6">
             <AttributesTab org={org} canManage={canManageFields} subject="chapter" />
+          </TabsContent>
+        )}
+        {canSeePayments && (
+          <TabsContent value="payments" className="mt-6">
+            <RequiresDatabase feature="payments">
+              <PaymentsTab org={org} canManage={hasPermission(grants, "payments.manage", org)} />
+            </RequiresDatabase>
           </TabsContent>
         )}
         {canManageRoles && (
