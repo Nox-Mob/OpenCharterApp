@@ -27,6 +27,7 @@ Apply these in order (Lovable → apply pending migrations). Until a migration i
 - [x] CI runs on every branch and on pull requests
 - [x] Migrations 0004–0006 follow Lovable's import rules (full grants + RLS, no drops), checked in CI by `bun run check:migrations`
 - [x] E-10: setup card scrolls with long steps (title and Back / Save and continue stay visible)
+- [x] E-13b (part): a parent decides how its chapters' new members are accepted (automatically / always reviewed / each chapter decides), Membership setup v3 (D-130)
 - [x] E-13a: memberships and standing (good / grace / lapsed, derived on read), admin-recorded joins, renewals and cash/check payments with stacked renewals, applications approve/decline, cancel and rejoin, members without a login that an invitation claims, "Your membership" card (D-131..D-134)
 - [x] E-11: an org's only level doesn't need a name; it's shown as "Membership" (D-126)
 - [x] E-11: membership levels and terms (Days / Months / Years or Lifetime, prices in cents, tax treatment), Membership levels tab, levels step in Membership setup (v2), parent decides whether chapters create their own levels

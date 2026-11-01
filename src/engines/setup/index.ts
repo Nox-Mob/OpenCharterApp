@@ -5,7 +5,7 @@
  */
 export type Answers = Record<string, unknown>;
 
-export type Question =
+type QuestionBody =
   | {
       id: string;
       type: "text";
@@ -43,11 +43,16 @@ export type Question =
     }
   | { id: string; type: "tiers"; label: string; help?: string };
 
+/** A question; `when` hides it (and drops its answer) based on earlier answers or the org. */
+export type Question = QuestionBody & { when?: (a: Answers, ctx: FlowContext) => boolean };
+
 export type FlowContext = {
   orgType: string;
   orgName: string;
   /** False when a parent org manages membership levels for this org (D-123). */
   childLevelsAllowed?: boolean;
+  /** Set when a parent org decides how this org's new members are accepted (D-130). */
+  parentApproval?: "auto" | "review";
 };
 
 export type Step = {
@@ -77,9 +82,13 @@ export function visibleSteps(flow: Flow<unknown>, a: Answers, ctx: FlowContext):
 const isBlank = (v: unknown) =>
   v === undefined || v === null || (typeof v === "string" && v.trim() === "");
 
-export function validateStep(step: Step, a: Answers): Record<string, string> {
+export function visibleQuestions(step: Step, a: Answers, ctx?: FlowContext): Question[] {
+  return step.questions.filter((q) => !q.when || !ctx || q.when(a, ctx));
+}
+
+export function validateStep(step: Step, a: Answers, ctx?: FlowContext): Record<string, string> {
   const errors: Record<string, string> = {};
-  for (const q of step.questions) {
+  for (const q of visibleQuestions(step, a, ctx)) {
     const v = a[q.id];
     if (q.type === "text") {
       if (q.required && isBlank(v)) errors[q.id] = `${q.label} is required`;
@@ -102,7 +111,9 @@ export function validateStep(step: Step, a: Answers): Record<string, string> {
 
 /** Drop answers to steps that are no longer visible so stale answers never reach the plan. */
 export function pruneAnswers(flow: Flow<unknown>, a: Answers, ctx: FlowContext): Answers {
-  const keep = new Set(visibleSteps(flow, a, ctx).flatMap((s) => s.questions.map((q) => q.id)));
+  const keep = new Set(
+    visibleSteps(flow, a, ctx).flatMap((s) => visibleQuestions(s, a, ctx).map((q) => q.id)),
+  );
   return Object.fromEntries(Object.entries(a).filter(([k]) => keep.has(k)));
 }
 

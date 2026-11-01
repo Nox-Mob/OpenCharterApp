@@ -12,10 +12,17 @@ export type SettingDef = {
   key: string;
   label: string;
   description: string;
-  kind: "boolean" | "text" | "number";
+  kind: "boolean" | "text" | "number" | "choice";
   default: boolean | string | number;
+  /** For kind "choice". */
+  options?: readonly { value: string; label: string }[];
   /** "parents": a rule a national or region sets for the orgs below it. */
   appliesTo?: "all" | "parents";
+  /**
+   * An ancestor's "parents" rule that can decide this setting instead (e.g. chapter
+   * auto-acceptance decides approval_required). Rule values not listed leave it to the org.
+   */
+  decidedBy?: { key: string; values: Record<string, boolean | string | number> };
 };
 
 export const SETTINGS: readonly SettingDef[] = [
@@ -36,11 +43,26 @@ export const SETTINGS: readonly SettingDef[] = [
     appliesTo: "parents",
   },
   {
+    key: "membership.child_approval",
+    label: "How new members of your chapters are accepted",
+    description:
+      "Accepted automatically or always reviewed applies to every chapter. Otherwise each chapter decides.",
+    kind: "choice",
+    default: "chapter",
+    options: [
+      { value: "auto", label: "Accepted automatically" },
+      { value: "review", label: "Always reviewed by an admin" },
+      { value: "chapter", label: "Each chapter decides" },
+    ],
+    appliesTo: "parents",
+  },
+  {
     key: "membership.approval_required",
     label: "New members need admin approval",
     description: "When on, join requests wait for an admin before the person becomes a member.",
     kind: "boolean",
     default: false,
+    decidedBy: { key: "membership.child_approval", values: { auto: false, review: true } },
   },
   {
     key: "membership.grace_days",
@@ -75,17 +97,57 @@ export function resolveFromAncestors(
   key: string,
   fallback: unknown,
 ): unknown {
+  return ancestorValue(lineage, rows, key, fallback).value;
+}
+
+/** resolveFromAncestors, also naming the ancestor the value came from (null = fallback). */
+export function ancestorValue(
+  lineage: readonly string[],
+  rows: readonly SettingRow[],
+  key: string,
+  fallback: unknown,
+): { value: unknown; sourceOrgId: string | null } {
   const ancestors = lineage.slice(0, -1);
   const byOrg = new Map(rows.filter((r) => r.key === key).map((r) => [r.org_id, r]));
   for (const id of ancestors) {
     const r = byOrg.get(id);
-    if (r?.mode === "locked") return r.value;
+    if (r?.mode === "locked") return { value: r.value, sourceOrgId: id };
   }
   for (let i = ancestors.length - 1; i >= 0; i--) {
     const r = byOrg.get(ancestors[i]!);
-    if (r && r.mode !== "inherit") return r.value;
+    if (r && r.mode !== "inherit") return { value: r.value, sourceOrgId: r.org_id };
   }
-  return fallback;
+  return { value: fallback, sourceOrgId: null };
+}
+
+/**
+ * Resolve a setting, letting an ancestor's rule decide it when the definition says so
+ * (`decidedBy`). A decided value reads as locked by that ancestor.
+ */
+export function resolveDef(
+  lineage: readonly string[],
+  rows: readonly SettingRow[],
+  def: SettingDef,
+): Resolved {
+  if (def.decidedBy) {
+    const rule = ancestorValue(lineage, rows, def.decidedBy.key, null);
+    const decided = typeof rule.value === "string" ? def.decidedBy.values[rule.value] : undefined;
+    if (decided !== undefined && rule.sourceOrgId)
+      return { value: decided, sourceOrgId: rule.sourceOrgId, lockedBy: rule.sourceOrgId };
+  }
+  return resolveSetting(lineage, rows, def.key, def.default);
+}
+
+/** Whether an org must approve new members (E-13b): a parent's acceptance rule wins (D-130). */
+export function effectiveApprovalRequired(
+  lineage: readonly string[],
+  rows: readonly SettingRow[],
+): { required: boolean; decidedBy: string | null } {
+  const def = SETTINGS.find((s) => s.key === "membership.approval_required")!;
+  const rule = ancestorValue(lineage, rows, "membership.child_approval", "chapter");
+  const r = resolveDef(lineage, rows, def);
+  const byRule = rule.value === "auto" || rule.value === "review";
+  return { required: r.value === true, decidedBy: byRule ? rule.sourceOrgId : null };
 }
 
 export type Resolved = {

@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { resolveFromAncestors, type SettingRow } from "@/engines/settings";
+import { ancestorValue, resolveFromAncestors, type SettingRow } from "@/engines/settings";
 import { tierInputSchema, type Term, type Tier, type TierInput } from "./tiers";
 
 /** Levels of an org and its ancestors (ancestors' levels are shown read-only). */
@@ -41,6 +41,24 @@ export const childLevelsAllowedQuery = (orgId: string, lineage: readonly string[
           true,
         ) !== false
       );
+    },
+  });
+
+/** How a parent org has decided this org's new members are accepted, if it has (D-130). */
+export const parentApprovalQuery = (orgId: string, lineage: readonly string[]) =>
+  queryOptions({
+    queryKey: ["parent-approval", orgId],
+    queryFn: async (): Promise<"auto" | "review" | null> => {
+      if (lineage.length === 0) return null;
+      const { data, error } = await supabase.rpc("lineage_settings", { _org: orgId });
+      if (error) throw error;
+      const v = ancestorValue(
+        [...lineage, orgId],
+        (data ?? []) as SettingRow[],
+        "membership.child_approval",
+        "chapter",
+      ).value;
+      return v === "auto" || v === "review" ? v : null;
     },
   });
 

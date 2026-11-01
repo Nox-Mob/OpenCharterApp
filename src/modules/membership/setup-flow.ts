@@ -6,6 +6,8 @@ import type { Answers, Flow, FlowContext } from "@/engines/setup";
  * Membership setup flow (setup-engine.md §6.1 basics, §6.2 incl. chapter fields,
  * §6.3 levels, terms and prices, joining/grace).
  * v2 (E-11) added membership levels and the "may chapters create their own levels" rule.
+ * v3 (E-13b) splits joining rules: chapter acceptance is its own 3-way rule (D-130) and
+ * "lock" now covers only the grace period.
  */
 export type TierPlan = {
   key: string;
@@ -28,6 +30,18 @@ export type MembershipPlan = {
   tiers?: TierPlan[];
 };
 
+export type ChapterAcceptance = "auto" | "review" | "chapter";
+export const CHAPTER_ACCEPTANCE: { value: ChapterAcceptance; label: string }[] = [
+  { value: "auto", label: "Accepted automatically" },
+  { value: "review", label: "Always reviewed by an admin" },
+  { value: "chapter", label: "Each chapter decides" },
+];
+const CHAPTER_ACCEPTANCE_SUMMARY: Record<ChapterAcceptance, string> = {
+  auto: "New chapter members are accepted automatically",
+  review: "New chapter members are always reviewed by an admin",
+  chapter: "Each chapter decides whether new members need approval",
+};
+
 const isParent = (ctx: FlowContext) => ctx.orgType === "national" || ctx.orgType === "region";
 const ownsLevels = (ctx: FlowContext) => ctx.childLevelsAllowed !== false;
 
@@ -40,7 +54,7 @@ export const TAX_STATUSES = [
 
 export const membershipFlow: Flow<MembershipPlan> = {
   id: "membership",
-  version: 2,
+  version: 3,
   title: "Membership setup",
   description:
     "Tell us about your organization, what you track about members, and how joining works.",
@@ -105,6 +119,8 @@ export const membershipFlow: Flow<MembershipPlan> = {
           id: "approval_required",
           type: "boolean",
           label: "Must an admin approve new members before they join?",
+          // Hidden when a parent organization already decides it for this org (D-130).
+          when: (_a, ctx) => !ctx.parentApproval,
         },
         {
           id: "grace_days",
@@ -123,9 +139,16 @@ export const membershipFlow: Flow<MembershipPlan> = {
       when: (_a, ctx) => isParent(ctx),
       questions: [
         {
+          id: "chapter_acceptance",
+          type: "choice",
+          label: "How are new members of your chapters accepted?",
+          required: true,
+          options: CHAPTER_ACCEPTANCE,
+        },
+        {
           id: "lock_joining",
           type: "boolean",
-          label: "Require every chapter to use these joining and grace rules?",
+          label: "Require every chapter to use this grace period?",
         },
         {
           id: "chapter_logo_allowed",
@@ -152,6 +175,7 @@ export const membershipFlow: Flow<MembershipPlan> = {
     approval_required: false,
     grace_days: 30,
     lock_joining: false,
+    chapter_acceptance: "chapter",
     chapter_logo_allowed: true,
   }),
   summarize: (a, ctx) => {
@@ -162,9 +186,13 @@ export const membershipFlow: Flow<MembershipPlan> = {
       attrs.length
         ? `Track ${attrs.length} member field${attrs.length === 1 ? "" : "s"}: ${attrs.map((x) => x.label).join(", ")}`
         : "No custom member fields yet",
-      a["approval_required"]
-        ? "New members need admin approval"
-        : "New members join without approval",
+      ctx.parentApproval
+        ? ctx.parentApproval === "auto"
+          ? "New members are accepted automatically (set by your parent organization)"
+          : "New members are reviewed by an admin (set by your parent organization)"
+        : a["approval_required"]
+          ? "New members need admin approval"
+          : "New members join without approval",
       `Grace period: ${Number(a["grace_days"] ?? 0)} days`,
     ];
     if (ownsLevels(ctx)) {
@@ -181,9 +209,12 @@ export const membershipFlow: Flow<MembershipPlan> = {
           : "No chapter fields yet",
       );
       lines.push(
+        CHAPTER_ACCEPTANCE_SUMMARY[(a["chapter_acceptance"] as ChapterAcceptance) ?? "chapter"],
+      );
+      lines.push(
         a["lock_joining"]
-          ? "Chapters must use these joining rules"
-          : "Chapters may set their own joining rules",
+          ? "Chapters must use your grace period"
+          : "Chapters may set their own grace period",
       );
       lines.push(
         a["chapter_logo_allowed"] === false
@@ -199,12 +230,23 @@ export const membershipFlow: Flow<MembershipPlan> = {
     return lines;
   },
   plan: (a, ctx) => {
-    const mode = isParent(ctx) && a["lock_joining"] ? "locked" : "override";
+    const graceMode = isParent(ctx) && a["lock_joining"] ? "locked" : "override";
     const settings: MembershipPlan["settings"] = [
-      { key: "membership.approval_required", value: Boolean(a["approval_required"]), mode },
-      { key: "membership.grace_days", value: Number(a["grace_days"] ?? 0), mode },
+      { key: "membership.grace_days", value: Number(a["grace_days"] ?? 0), mode: graceMode },
     ];
+    // The org's own approval choice; a parent's acceptance rule overrides it when set (D-130).
+    if (!ctx.parentApproval)
+      settings.unshift({
+        key: "membership.approval_required",
+        value: Boolean(a["approval_required"]),
+        mode: "override",
+      });
     if (isParent(ctx)) {
+      settings.push({
+        key: "membership.child_approval",
+        value: ((a["chapter_acceptance"] as ChapterAcceptance) ?? "chapter") as string,
+        mode: "locked",
+      });
       settings.push({
         key: "branding.chapter_logo_allowed",
         value: a["chapter_logo_allowed"] !== false,
@@ -261,5 +303,9 @@ function toTierPlan(t: Tier): TierPlan {
 }
 
 export function initialAnswers(saved: Answers | null | undefined, ctx: FlowContext): Answers {
-  return { ...membershipFlow.defaults(ctx), ...(saved ?? {}) };
+  const answers = { ...membershipFlow.defaults(ctx), ...(saved ?? {}) };
+  // Before v3, "lock joining rules" also locked approval for chapters. Keep that meaning.
+  if (saved && !("chapter_acceptance" in saved) && saved["lock_joining"] === true)
+    answers["chapter_acceptance"] = saved["approval_required"] ? "review" : "auto";
+  return answers;
 }

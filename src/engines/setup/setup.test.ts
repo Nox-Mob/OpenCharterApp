@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { diffByKey, pruneAnswers, validateStep, visibleSteps, type Step } from "./index";
+import {
+  diffByKey,
+  pruneAnswers,
+  validateStep,
+  visibleQuestions,
+  visibleSteps,
+  type Step,
+} from "./index";
 import { initialAnswers, membershipFlow } from "@/modules/membership/setup-flow";
 import { STARTER_ATTRIBUTES, STARTER_CHAPTER_ATTRIBUTES } from "@/engines/attributes";
 import { newTerm, withLength, type Tier } from "@/modules/membership/tiers";
@@ -56,17 +63,41 @@ describe("membership plan", () => {
   it("saved draft answers win over defaults", () => {
     expect(initialAnswers({ grace_days: 10 }, standalone)["grace_days"]).toBe(10);
   });
-  it("a national that locks joining rules locks both settings and the logo rule", () => {
+  // v3 (D-130): the lock covers only the grace period; chapter acceptance is its own rule,
+  // so a national's own approval choice is never forced onto its chapters.
+  it("a national that locks the grace period sets its rules for chapters separately", () => {
     const plan = membershipFlow.plan(
-      { ...initialAnswers(null, national), lock_joining: true, chapter_logo_allowed: false },
+      {
+        ...initialAnswers(null, national),
+        lock_joining: true,
+        chapter_logo_allowed: false,
+        chapter_acceptance: "auto",
+      },
       national,
     );
     expect(plan.settings).toEqual([
-      { key: "membership.approval_required", value: false, mode: "locked" },
+      { key: "membership.approval_required", value: false, mode: "override" },
       { key: "membership.grace_days", value: 30, mode: "locked" },
+      { key: "membership.child_approval", value: "auto", mode: "locked" },
       { key: "branding.chapter_logo_allowed", value: false, mode: "locked" },
       { key: "membership.child_levels_allowed", value: true, mode: "locked" },
     ]);
+  });
+  it("a national can require approval itself while auto-accepting for chapters", () => {
+    const plan = membershipFlow.plan(
+      { ...initialAnswers(null, national), approval_required: true, chapter_acceptance: "auto" },
+      national,
+    );
+    expect(plan.settings).toContainEqual({
+      key: "membership.approval_required",
+      value: true,
+      mode: "override",
+    });
+    expect(plan.settings).toContainEqual({
+      key: "membership.child_approval",
+      value: "auto",
+      mode: "locked",
+    });
   });
   it("a standalone org never locks and has no chapter settings", () => {
     const plan = membershipFlow.plan(
@@ -122,7 +153,8 @@ describe("membership plan", () => {
       national,
     );
     expect(lines).toContain("Grace period: 15 days");
-    expect(lines).toContain("Chapters must use these joining rules");
+    expect(lines).toContain("Chapters must use your grace period");
+    expect(lines).toContain("Each chapter decides whether new members need approval");
   });
   it("pruneAnswers drops answers for hidden steps", () => {
     const a = pruneAnswers(
@@ -235,7 +267,57 @@ describe("membership levels (E-11)", () => {
       membershipFlow.summarize(initialAnswers(null, managedChapter), managedChapter),
     ).toContain("Membership levels come from your parent organization");
   });
-  it("is version 2", () => {
-    expect(membershipFlow.version).toBe(2);
+  it("is version 3", () => {
+    expect(membershipFlow.version).toBe(3);
+  });
+});
+
+describe("chapter acceptance (D-130)", () => {
+  const managed = (parentApproval: "auto" | "review") => ({ ...chapter, parentApproval });
+  it("hides the chapter's own approval question when the parent decides", () => {
+    const joining = membershipFlow.steps.find((s) => s.id === "joining")!;
+    const ids = (ctx: typeof chapter) =>
+      visibleQuestions(joining, initialAnswers(null, ctx), ctx).map((q) => q.id);
+    expect(ids(chapter)).toContain("approval_required");
+    expect(ids(managed("auto"))).not.toContain("approval_required");
+  });
+  it("never writes approval_required when the parent decides, and says who decided", () => {
+    const ctx = managed("review");
+    const a = pruneAnswers(
+      membershipFlow,
+      { ...initialAnswers(null, ctx), approval_required: false },
+      ctx,
+    );
+    expect(a).not.toHaveProperty("approval_required");
+    const plan = membershipFlow.plan(a, ctx);
+    expect(plan.settings.map((s) => s.key)).not.toContain("membership.approval_required");
+    expect(membershipFlow.summarize(a, ctx)).toContain(
+      "New members are reviewed by an admin (set by your parent organization)",
+    );
+  });
+  it("keeps the meaning of answers saved before v3", () => {
+    expect(
+      initialAnswers({ lock_joining: true, approval_required: true }, national)[
+        "chapter_acceptance"
+      ],
+    ).toBe("review");
+    expect(
+      initialAnswers({ lock_joining: true, approval_required: false }, national)[
+        "chapter_acceptance"
+      ],
+    ).toBe("auto");
+    expect(initialAnswers({ lock_joining: false }, national)["chapter_acceptance"]).toBe("chapter");
+    expect(
+      initialAnswers({ lock_joining: true, chapter_acceptance: "chapter" }, national)[
+        "chapter_acceptance"
+      ],
+    ).toBe("chapter");
+  });
+  it("validates the 3-way choice", () => {
+    const step = membershipFlow.steps.find((s) => s.id === "chapters")!;
+    expect(validateStep(step, { chapter_acceptance: "sometimes" }, national)).toHaveProperty(
+      "chapter_acceptance",
+    );
+    expect(validateStep(step, { chapter_acceptance: "auto" }, national)).toEqual({});
   });
 });

@@ -8,6 +8,7 @@ import {
   diffByKey,
   pruneAnswers,
   validateStep,
+  visibleQuestions,
   visibleSteps,
   type Answers,
   type FlowContext,
@@ -25,7 +26,11 @@ import type { DefWithOptions } from "@/modules/attributes/queries";
 import { initialAnswers, membershipFlow } from "@/modules/membership/setup-flow";
 import { applyFlow, saveDraft, setupStateQuery } from "@/modules/setup/drafts";
 import { attributeDefsQuery } from "@/modules/attributes/queries";
-import { childLevelsAllowedQuery, tiersQuery } from "@/modules/membership/queries";
+import {
+  childLevelsAllowedQuery,
+  parentApprovalQuery,
+  tiersQuery,
+} from "@/modules/membership/queries";
 import {
   DEFAULT_LEVEL_NAME,
   describeTier,
@@ -84,13 +89,15 @@ function Wizard({ org }: { org: Org }) {
   const defs = useQuery(attributeDefsQuery(org.id, org.ancestor_ids));
   const tiers = useQuery(tiersQuery(org.id, org.ancestor_ids));
   const levelsAllowed = useQuery(childLevelsAllowedQuery(org.id, org.ancestor_ids));
+  const parentApproval = useQuery(parentApprovalQuery(org.id, org.ancestor_ids));
   const ctx: FlowContext = useMemo(
     () => ({
       orgType: org.type,
       orgName: org.name,
       childLevelsAllowed: levelsAllowed.data !== false,
+      ...(parentApproval.data ? { parentApproval: parentApproval.data } : {}),
     }),
-    [org, levelsAllowed.data],
+    [org, levelsAllowed.data, parentApproval.data],
   );
   const [answers, setAnswers] = useState<Answers | null>(null);
   const [stepIdx, setStepIdx] = useState(0);
@@ -111,7 +118,14 @@ function Wizard({ org }: { org: Org }) {
   );
 
   useEffect(() => {
-    if (answers || state.isLoading || defs.isLoading || tiers.isLoading || levelsAllowed.isLoading)
+    if (
+      answers ||
+      state.isLoading ||
+      defs.isLoading ||
+      tiers.isLoading ||
+      levelsAllowed.isLoading ||
+      parentApproval.isLoading
+    )
       return;
     const base = initialAnswers(state.data?.answers, ctx);
     // Re-running pre-fills from current configuration (setup-engine.md §4)
@@ -127,6 +141,7 @@ function Wizard({ org }: { org: Org }) {
     defs.isLoading,
     tiers.isLoading,
     levelsAllowed.isLoading,
+    parentApproval.isLoading,
     existingOwn,
     existingChapter,
     existingTiers,
@@ -141,7 +156,7 @@ function Wizard({ org }: { org: Org }) {
 
   async function next() {
     if (step) {
-      const errs = validateStep(step, answers!);
+      const errs = validateStep(step, answers!, ctx);
       setErrors(errs);
       if (Object.keys(errs).length) return;
     }
@@ -158,7 +173,7 @@ function Wizard({ org }: { org: Org }) {
   async function apply() {
     const final = pruneAnswers(membershipFlow, answers!, ctx);
     for (const s of steps) {
-      if (Object.keys(validateStep(s, final)).length)
+      if (Object.keys(validateStep(s, final, ctx)).length)
         return void toast.error(`Please finish "${s.title}"`);
     }
     setBusy(true);
@@ -261,7 +276,7 @@ function Wizard({ org }: { org: Org }) {
           </>
         ) : (
           <div className="space-y-5">
-            {step!.questions.map((q) => (
+            {visibleQuestions(step!, answers, ctx).map((q) => (
               <QuestionField
                 key={q.id}
                 q={q}
