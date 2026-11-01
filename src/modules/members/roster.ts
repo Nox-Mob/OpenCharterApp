@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { db } from "@/lib/db/pending-schema";
 import type { AttributeOption, AttributeType, Visibility } from "@/engines/attributes";
 import type { MemberRow } from "@/modules/membership/memberships";
-import { standing, type Standing } from "@/modules/membership/standing";
+import { daysToExpiration, standing, type Standing } from "@/modules/membership/standing";
 
 /**
  * Member list tools (E-14): search, filters, sorting and CSV export, all on data the viewer
@@ -17,7 +17,12 @@ export type RosterField = {
   options: Pick<AttributeOption, "value" | "label" | "sort_order" | "active">[];
 };
 
-export type RosterRow = MemberRow & { values: Record<string, unknown>; standing: Standing };
+export type RosterRow = MemberRow & {
+  values: Record<string, unknown>;
+  standing: Standing;
+  /** Days until paid-through (negative once past); null for lifetime or no membership. */
+  days_left: number | null;
+};
 
 export type FieldFilter =
   | { fieldId: string; op: "is"; value: string }
@@ -29,8 +34,18 @@ export type RosterFilter = {
   standings: Standing[];
   tierIds: string[];
   field: FieldFilter | null;
+  /** Only members whose membership ends within this many days (and hasn't ended yet). */
+  expiringWithinDays: number | null;
 };
-export const EMPTY_FILTER: RosterFilter = { q: "", standings: [], tierIds: [], field: null };
+export const EMPTY_FILTER: RosterFilter = {
+  q: "",
+  standings: [],
+  tierIds: [],
+  field: null,
+  expiringWithinDays: null,
+};
+/** Choices for the "expiring within" filter (the time-to-expiration report). */
+export const EXPIRING_WINDOWS = [30, 60, 90] as const;
 
 export type RosterSort = "name" | "paid_through" | "standing";
 
@@ -44,6 +59,7 @@ export function toRosterRows(
     ...m,
     values: values[m.id] ?? {},
     standing: standing(m.membership, graceDays, on),
+    days_left: daysToExpiration(m.membership, on),
   }));
 }
 
@@ -89,7 +105,9 @@ export function filterRoster(
       (filter.standings.length === 0 || filter.standings.includes(r.standing)) &&
       (filter.tierIds.length === 0 ||
         (r.membership && filter.tierIds.includes(r.membership.tier_id))) &&
-      (!filter.field || matchesField(r, filter.field, fields)),
+      (!filter.field || matchesField(r, filter.field, fields)) &&
+      (filter.expiringWithinDays === null ||
+        (r.days_left !== null && r.days_left >= 0 && r.days_left <= filter.expiringWithinDays)),
   );
 }
 
@@ -119,6 +137,25 @@ export function sortRoster(rows: readonly RosterRow[], by: RosterSort): RosterRo
     }
     return name(a).localeCompare(name(b));
   });
+}
+
+// ----- privacy (D-139, Q-11) -----
+
+/** Whether a member is listed in the directory: their own choice, else the org's default. */
+export function isListed(row: Pick<MemberRow, "directory_listed">, orgDefault: boolean): boolean {
+  return row.directory_listed ?? orgDefault;
+}
+
+/**
+ * Rows an export may contain. Members who opted out are left out unless the exporter chose to
+ * include them and the parent organization allows that (privacy.admin_override_allowed).
+ */
+export function exportableRows<T extends Pick<MemberRow, "directory_listed">>(
+  rows: readonly T[],
+  opts: { orgDefault: boolean; includeOptedOut: boolean; overrideAllowed: boolean },
+): T[] {
+  if (opts.includeOptedOut && opts.overrideAllowed) return [...rows];
+  return rows.filter((r) => isListed(r, opts.orgDefault));
 }
 
 // ----- CSV export -----
@@ -224,7 +261,7 @@ export async function logExport(
   orgId: string,
   rowCount: number,
   columns: string[],
-  filter: RosterFilter,
+  filter: RosterFilter & { include_opted_out?: boolean },
 ) {
   const { error } = await db.rpc("log_member_export", {
     _org: orgId,

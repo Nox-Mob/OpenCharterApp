@@ -27,8 +27,11 @@ import { declineApplication } from "@/modules/payments/payments.functions";
 import { MemberDetailsDialog } from "./member-details-dialog";
 import { RosterToolbar } from "@/components/members/roster-toolbar";
 import { attributeDefsQuery, orgMemberValuesQuery } from "@/modules/attributes/queries";
+import { privacyRulesQuery } from "@/modules/members/privacy";
 import {
   EMPTY_FILTER,
+  exportableRows,
+  isListed,
   exportColumns,
   filterRoster,
   logExport,
@@ -135,7 +138,13 @@ export function MembersTab({
   }
   // Membership features wait for migration 0008 (readiness guard, D-135).
   const ready = useFeatureReady("memberships") === true;
-  const members = useQuery(membersQuery(orgId, ready));
+  const directoryReady = useFeatureReady("directory") === true;
+  const members = useQuery(membersQuery(orgId, ready, directoryReady));
+  const privacy = useQuery({
+    ...privacyRulesQuery(orgId, org.ancestor_ids),
+    enabled: directoryReady,
+  });
+  const [includeOptedOut, setIncludeOptedOut] = useState(false);
   const grace = useQuery({ ...graceDaysQuery(orgId), enabled: ready });
   const graceDays = grace.data ?? 30;
   const on = today();
@@ -168,6 +177,13 @@ export function MembersTab({
     ).values(),
   ];
   const canExport = exportsReady && hasPermission(grants, "members.export", org);
+  // Members who opted out of the directory stay out of exports unless included (D-139).
+  const listedByDefault = privacy.data?.listedByDefault ?? true;
+  const overrideAllowed = privacy.data?.adminOverrideAllowed ?? true;
+  const optedOut = directoryReady ? visible.filter((r) => !isListed(r, listedByDefault)).length : 0;
+  const toExport = directoryReady
+    ? exportableRows(visible, { orgDefault: listedByDefault, includeOptedOut, overrideAllowed })
+    : visible;
 
   async function exportCsv() {
     const columns = exportColumns(
@@ -182,20 +198,22 @@ export function MembersTab({
       // Audited first (D-138); no log, no file.
       await logExport(
         orgId,
-        visible.length,
+        toExport.length,
         columns.map((c) => c.label),
-        filter,
+        { ...filter, include_opted_out: includeOptedOut && overrideAllowed },
       );
     } catch {
       return void toast.error("Couldn't export: you may not have permission to export members");
     }
-    const blob = new Blob(["\uFEFF" + toCsv(visible, columns)], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob(["\uFEFF" + toCsv(toExport, columns)], {
+      type: "text/csv;charset=utf-8",
+    });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `${org.slug}-members-${on}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
-    toast.success(`Exported ${visible.length} member${visible.length === 1 ? "" : "s"}`);
+    toast.success(`Exported ${toExport.length} member${toExport.length === 1 ? "" : "s"}`);
   }
   const applications = (members.data ?? []).filter((m) => m.membership?.status === "pending");
   const joiningReady = useFeatureReady("joining") === true;
@@ -354,6 +372,10 @@ export function MembersTab({
             canUseViews={exportsReady}
             canExport={canExport}
             onExport={exportCsv}
+            optedOut={canExport ? optedOut : 0}
+            includeOptedOut={includeOptedOut}
+            onIncludeOptedOut={setIncludeOptedOut}
+            overrideAllowed={overrideAllowed}
             shown={visible.length}
             total={rows.length}
           />
@@ -383,6 +405,11 @@ export function MembersTab({
                   {!m.user_id && (
                     <Badge variant="outline" className="ml-2">
                       No login
+                    </Badge>
+                  )}
+                  {directoryReady && !isListed(m, listedByDefault) && (
+                    <Badge variant="outline" className="ml-2">
+                      Not in directory
                     </Badge>
                   )}
                 </TableCell>

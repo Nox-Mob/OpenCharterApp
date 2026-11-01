@@ -45,6 +45,7 @@ Current coverage:
 | `96_payments_gateway` | Test gateway limited to demo orgs (or the platform flag), Stripe credentials only sealed and only by payment managers, secrets and server-only functions unreachable by clients, connection visibility, webhook events claimed once, disconnect removes credentials |
 | `97_joining` | Join info without signing in, starting a join (validation, nothing written but a pending payment), only the server role completes payments, duplicate and mismatched events, renewal stacking, failures, partial and full refunds, approval rules from the parent (D-130), claiming a record by paying, test checkout outcomes, decline with refund |
 | `98_exports` | Exports audited with the exporter, row count and columns, permission and sibling checks, saved views (managers save, viewers read, isolation) |
+| `99_privacy` | Directory shows only current, listed members with directory fields members may see; opting out / in / back to default; org default; outsiders and siblings refused; including opted-out members in exports needs the parent's permission |
 | `90_tiers` | Membership levels and terms: isolation, term rules, parent control, retire not delete (deletes remove nothing), identity columns can't change |
 
 ## Migrations Lovable hasn't applied yet

@@ -7,7 +7,7 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When Lovable applies a migration, delete its section here (the generated types take over).
- * Pending: 0008_memberships, 0009_payments_gateway, 0010_joining, 0011_member_exports.
+ * Pending: 0008_memberships … 0012_member_privacy (see roadmap.md).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -348,6 +348,7 @@ export type PendingTables = {
     Row: {
       claimed_at: string | null;
       created_at: string;
+      directory_listed: boolean | null;
       display_name: string;
       email: string;
       id: string;
@@ -358,6 +359,7 @@ export type PendingTables = {
     Insert: {
       claimed_at?: string | null;
       created_at?: string;
+      directory_listed?: boolean | null;
       display_name?: string;
       email?: string;
       id?: string;
@@ -368,6 +370,7 @@ export type PendingTables = {
     Update: {
       claimed_at?: string | null;
       created_at?: string;
+      directory_listed?: boolean | null;
       display_name?: string;
       email?: string;
       id?: string;
@@ -388,6 +391,12 @@ export type PendingTables = {
 };
 
 export type PendingFunctions = {
+  member_directory: {
+    Args: { _org: string };
+    Returns: { display_name: string; fields: Json; profile_id: string }[];
+  };
+  privacy_admin_override_allowed: { Args: { _org: string }; Returns: boolean };
+  set_my_directory_listing: { Args: { _listed: boolean | null; _org: string }; Returns: undefined };
   log_member_export: {
     Args: { _columns: string[]; _filter?: Json; _org: string; _row_count: number };
     Returns: undefined;

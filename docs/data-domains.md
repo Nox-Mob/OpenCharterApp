@@ -51,6 +51,7 @@ Conventions to assume at schema time: every tenant-owned table carries `org_id`;
 | Membership | (person, org, tier, term, status, start, paid-through, source). *Built (E-13a):* `memberships`, one current row per member profile and org: tier, term, status (pending / active / cancelled / declined), joined_on, paid_through, lifetime (D-131) |
 | Membership event history | Joined, renewed, lapsed, upgraded, cancelled. *Built:* append-only `membership_events` (joined / renewed / approved / declined / cancelled) with the period covered and the payment |
 | Standing | Derived state (good standing, grace, lapsed, delinquent). Possibly materialized for query speed. *Built:* derived on read from paid_through and the grace period (`membership_standing`, `src/modules/membership/standing.ts`), not stored (D-111) |
+| Directory listing | *Built (E-14):* `org_member_profiles.directory_listed` (null = the org default), read through `member_directory` (D-139) |
 | Member record | *Built (E-13a):* `org_member_profiles` may have no login (`user_id` null, source admin / import) for historical members; an invitation claims it (D-116, D-134) |
 | Invoice / balance (postpaid) | Amount, due date, status, line items |
 | Dues policy | Per org: grace days, delinquency rules, national control mode for chapter dues (none / optional range / required) |

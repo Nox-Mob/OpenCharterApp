@@ -4,6 +4,7 @@ import { STANDING_LABELS, type Standing } from "@/modules/membership/standing";
 import {
   deleteSegment,
   EMPTY_FILTER,
+  EXPIRING_WINDOWS,
   saveSegment,
   segmentsQuery,
   type FieldFilter,
@@ -48,6 +49,10 @@ export function RosterToolbar({
   onExport,
   shown,
   total,
+  optedOut = 0,
+  includeOptedOut = false,
+  onIncludeOptedOut,
+  overrideAllowed = true,
 }: {
   orgId: string;
   filter: RosterFilter;
@@ -64,13 +69,22 @@ export function RosterToolbar({
   onExport: () => void;
   shown: number;
   total: number;
+  /** Members in the current list who opted out of the directory (D-139). */
+  optedOut?: number;
+  includeOptedOut?: boolean;
+  onIncludeOptedOut?: (v: boolean) => void;
+  overrideAllowed?: boolean;
 }) {
   const qc = useQueryClient();
   const segments = useQuery({ ...segmentsQuery(orgId), enabled: canUseViews });
   const field = fields.find((f) => f.id === filter.field?.fieldId);
   const set = (patch: Partial<RosterFilter>) => onFilter({ ...filter, ...patch });
   const active =
-    filter.q !== "" || filter.standings.length > 0 || filter.tierIds.length > 0 || !!filter.field;
+    filter.q !== "" ||
+    filter.standings.length > 0 ||
+    filter.tierIds.length > 0 ||
+    !!filter.field ||
+    filter.expiringWithinDays !== null;
 
   function pickField(id: string) {
     const f = fields.find((x) => x.id === id);
@@ -217,6 +231,24 @@ export function RosterToolbar({
             }
           />
         )}
+        {showMembership && (
+          <Select
+            value={filter.expiringWithinDays === null ? ANY : String(filter.expiringWithinDays)}
+            onValueChange={(v) => set({ expiringWithinDays: v === ANY ? null : Number(v) })}
+          >
+            <SelectTrigger className="w-48" aria-label="Expiring">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ANY}>Any expiry</SelectItem>
+              {EXPIRING_WINDOWS.map((d) => (
+                <SelectItem key={d} value={String(d)}>
+                  Expiring within {d} days
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <Select value={sort} onValueChange={(v) => onSort(v as RosterSort)}>
           <SelectTrigger className="w-44" aria-label="Sort by">
             <SelectValue />
@@ -256,6 +288,22 @@ export function RosterToolbar({
             Save this view
           </Button>
         )}
+        {canExport &&
+          optedOut > 0 &&
+          (overrideAllowed ? (
+            <label className="flex items-center gap-1 text-xs">
+              <input
+                type="checkbox"
+                checked={includeOptedOut}
+                onChange={(e) => onIncludeOptedOut?.(e.target.checked)}
+              />
+              Include {optedOut} member{optedOut === 1 ? "" : "s"} who opted out of the directory
+            </label>
+          ) : (
+            <span className="text-xs text-muted-foreground">
+              {optedOut} member{optedOut === 1 ? "" : "s"} who opted out won't be exported
+            </span>
+          ))}
         {canExport && (
           <Button size="sm" variant="outline" onClick={onExport} disabled={shown === 0}>
             Export CSV

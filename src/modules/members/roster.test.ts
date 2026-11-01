@@ -3,6 +3,8 @@ import type { MemberRow } from "@/modules/membership/memberships";
 import { STANDING_LABELS } from "@/modules/membership/standing";
 import {
   csvCell,
+  exportableRows,
+  isListed,
   EMPTY_FILTER,
   exportColumns,
   fieldText,
@@ -171,5 +173,43 @@ describe("CSV export", () => {
       "Ana Álvarez,a@x.org,Good standing,Regular,1 year,2025-01-01,2026-12-31,E-3",
     );
     expect(lines).toHaveLength(4);
+  });
+});
+
+describe("expiring within (time-to-expiration report)", () => {
+  it("keeps members whose term ends within the window and hasn't ended", () => {
+    const ids = filterRoster(rows, { ...EMPTY_FILTER, expiringWithinDays: 30 }, fields).map(
+      (r) => r.id,
+    );
+    // on 2026-06-01: b ended 2026-05-20 (in grace), a ends 2026-12-31, c long gone
+    expect(ids).toEqual([]);
+    expect(
+      filterRoster(rows, { ...EMPTY_FILTER, expiringWithinDays: 300 }, fields).map((r) => r.id),
+    ).toEqual(["a"]);
+  });
+  it("counts days left", () => {
+    expect(rows.find((r) => r.id === "a")?.days_left).toBe(213);
+    expect(rows.find((r) => r.id === "d")?.days_left).toBeNull();
+  });
+});
+
+describe("privacy in exports (D-139)", () => {
+  const people = [
+    { id: "1", directory_listed: null },
+    { id: "2", directory_listed: false },
+    { id: "3", directory_listed: true },
+  ];
+  it("follows each member's choice, else the org default", () => {
+    expect(isListed(people[0]!, true)).toBe(true);
+    expect(isListed(people[0]!, false)).toBe(false);
+    expect(isListed(people[1]!, true)).toBe(false);
+    expect(isListed(people[2]!, false)).toBe(true);
+  });
+  it("leaves opted-out members out unless included and allowed", () => {
+    const ids = (o: { includeOptedOut: boolean; overrideAllowed: boolean }) =>
+      exportableRows(people, { orgDefault: true, ...o }).map((r) => r.id);
+    expect(ids({ includeOptedOut: false, overrideAllowed: true })).toEqual(["1", "3"]);
+    expect(ids({ includeOptedOut: true, overrideAllowed: true })).toEqual(["1", "2", "3"]);
+    expect(ids({ includeOptedOut: true, overrideAllowed: false })).toEqual(["1", "3"]);
   });
 });

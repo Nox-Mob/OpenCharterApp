@@ -10,6 +10,8 @@ import { ChapterFieldsCard } from "@/components/attributes/chapter-fields-card";
 import { RolesTab } from "@/components/org/roles-tab";
 import { LevelsTab } from "@/components/membership/levels-tab";
 import { PaymentsTab } from "@/components/payments/payments-tab";
+import { MembersDirectory } from "@/components/members/members-directory";
+import { DirectoryPreference } from "@/components/members/directory-preference";
 import { MyMembershipCard } from "@/components/membership/my-membership-card";
 import { RequiresDatabase } from "@/components/db/requires-database";
 import { SetupCard } from "@/components/setup/setup-card";
@@ -83,6 +85,7 @@ function OrgPage() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           {canSeeMembers && <TabsTrigger value="members">Members</TabsTrigger>}
+          <TabsTrigger value="directory">Directory</TabsTrigger>
           <TabsTrigger value="levels">Membership levels</TabsTrigger>
           <TabsTrigger value="fields">Member fields</TabsTrigger>
           {hasChapters && <TabsTrigger value="chapter-fields">Chapter fields</TabsTrigger>}
@@ -96,12 +99,20 @@ function OrgPage() {
           <RequiresDatabase feature="memberships" fallback={null}>
             <MyMembershipCard org={org} />
           </RequiresDatabase>
+          <RequiresDatabase feature="directory" fallback={null}>
+            <DirectoryPreference org={org} />
+          </RequiresDatabase>
           {hasPermission(grants, "setup.run", org) ? (
             <SetupCard org={org} />
           ) : (
             <p className="text-muted-foreground">Welcome to {org.name}.</p>
           )}
           {org.type === "chapter" && <ChapterFieldsCard org={org} orgs={orgs} grants={grants} />}
+        </TabsContent>
+        <TabsContent value="directory" className="mt-6">
+          <RequiresDatabase feature="directory">
+            <MembersDirectory orgId={org.id} />
+          </RequiresDatabase>
         </TabsContent>
         <TabsContent value="levels" className="mt-6">
           <LevelsTab org={org} orgs={orgs} canManage={hasPermission(grants, "tiers.manage", org)} />

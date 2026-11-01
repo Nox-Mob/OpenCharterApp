@@ -72,6 +72,22 @@ export const SETTINGS: readonly SettingDef[] = [
     default: 30,
   },
   {
+    key: "directory.listed_by_default",
+    label: "Members are listed in the member directory",
+    description: "The default for members who haven't chosen. Each member can opt in or out.",
+    kind: "boolean",
+    default: true,
+  },
+  {
+    key: "privacy.admin_override_allowed",
+    label: "Chapter admins may export members who opted out",
+    description:
+      "When off, members who chose not to be listed are always left out of chapter exports.",
+    kind: "boolean",
+    default: true,
+    appliesTo: "parents",
+  },
+  {
     key: "contact.email",
     label: "Public contact email",
     description: "Shown on public pages and receipts.",

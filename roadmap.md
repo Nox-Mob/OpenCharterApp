@@ -11,6 +11,7 @@ Apply these in order (Lovable → apply pending migrations). Until a migration i
 | `0009_payments_gateway` | E-12 per-org Stripe / test gateway connections, encrypted credentials, webhook event log. Also needs the Lovable Cloud secret `GATEWAY_ENCRYPTION_KEY` (`openssl rand -base64 32`) | Waiting |
 | `0010_joining` | E-13b public join page, checkout, payment completion and refunds, online renewal, decline with refund | Waiting |
 | `0011_member_exports` | E-14 audited CSV export (`members.export` permission) and saved views of the member list | Waiting |
+| `0012_member_privacy` | E-14 member directory, each member's directory choice, export privacy rule from the parent | Waiting |
 
 ## Done
 - [x] Step 0: planning docs in /docs, decisions for the Lovable stack recorded (D-100+)
@@ -41,7 +42,7 @@ Apply these in order (Lovable → apply pending migrations). Until a migration i
 Plan for E-12 / E-13: docs/plans/e12-e13-payments-and-joining.md
 - [ ] E-12 (built, waiting for 0009): Payments tab to connect Stripe (key checked, sealed, stored privately) or the demo test gateway, payments list. Remaining: the webhook route and checkout come with E-13b; a "Connect payments" step in guided setup needs the setup page to run more than one flow
 - [ ] E-13b (built, waiting for 0008–0010): public join page `/join/<slug>`, Stripe / test checkout, webhook endpoint per org, return page that waits for confirmation, test checkout with accepted / declined / insufficient funds / slow / cancel, online renewal, decline with refund, join link on the Payments tab. Remaining: a Playwright end-to-end test once the database has the migrations
-- [ ] E-14 (search and filters work now; export and saved views wait for 0011): search, filters by standing / level / member field ("at least" for ranks), sorting, audited privacy-aware CSV export, saved views. Remaining: member privacy preferences (Q-11), time-to-expiration report
+- [ ] E-14 (built; search, filters and the expiring report work now, the rest waits for 0011–0012): search, filters by standing / level / member field ("at least" for ranks), "expiring within 30 / 60 / 90 days", sorting, audited privacy-aware CSV export, saved views, member directory with each member's own listing choice (D-138, D-139)
 - [ ] E-15 receipts
 
 ## Deferred (user decision 2026-10-30: core first, automations later)

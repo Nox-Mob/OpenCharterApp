@@ -25,6 +25,8 @@ export type MemberRow = {
   email: string;
   source: string;
   created_at: string;
+  /** The member's own directory choice; null = the org default; undefined = not loaded (0012). */
+  directory_listed?: boolean | null;
   membership: {
     id: string;
     status: MembershipStatus;
@@ -54,9 +56,9 @@ type MembershipEmbed = {
  * The member list. Without migration 0008 (see src/lib/db/readiness.ts) it reads only the
  * columns that exist today, and every member shows as having no membership.
  */
-export const membersQuery = (orgId: string, withMemberships = true) =>
+export const membersQuery = (orgId: string, withMemberships = true, withPrivacy = false) =>
   queryOptions({
-    queryKey: ["members", orgId, withMemberships],
+    queryKey: ["members", orgId, withMemberships, withPrivacy],
     queryFn: async (): Promise<MemberRow[]> => {
       if (!withMemberships) {
         const { data, error } = await supabase
@@ -67,15 +69,18 @@ export const membersQuery = (orgId: string, withMemberships = true) =>
         if (error) throw error;
         return (data ?? []).map((p) => ({ ...p, source: "signup", membership: null }));
       }
+      // directory_listed only exists once migration 0012 is applied (readiness guard).
+      const base = "id,user_id,display_name,email,source,created_at";
+      const embed =
+        "memberships(id,status,paid_through,lifetime,joined_on,tier_id,term_id,membership_tiers(name),tier_terms(label))";
       const { data, error } = await supabase
         .from("org_member_profiles")
-        .select(
-          "id,user_id,display_name,email,source,created_at,memberships(id,status,paid_through,lifetime,joined_on,tier_id,term_id,membership_tiers(name),tier_terms(label))",
-        )
+        .select(withPrivacy ? `${base},directory_listed,${embed}` : `${base},${embed}`)
         .eq("org_id", orgId)
         .order("created_at");
       if (error) throw error;
-      return (data ?? []).map(({ memberships, ...p }) => {
+      type Row = Omit<MemberRow, "membership"> & { memberships: unknown };
+      return ((data ?? []) as unknown as Row[]).map(({ memberships, ...p }) => {
         const m = ((memberships ?? []) as unknown as MembershipEmbed[])[0];
         return {
           ...p,

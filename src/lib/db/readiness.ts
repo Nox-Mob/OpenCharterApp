@@ -9,6 +9,12 @@ import { db } from "./pending-schema";
 export const FEATURES = {
   memberships: { migration: "0008_memberships", label: "Memberships", table: "memberships" },
   payments: { migration: "0009_payments_gateway", label: "Payments", table: "gateway_connections" },
+  directory: {
+    migration: "0012_member_privacy",
+    label: "The member directory and privacy choices",
+    rpc: "member_directory",
+    args: { _org: "00000000-0000-0000-0000-000000000000" },
+  },
   exports: {
     migration: "0011_member_exports",
     label: "Member exports and saved views",
