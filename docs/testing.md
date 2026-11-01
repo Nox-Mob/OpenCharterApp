@@ -12,6 +12,12 @@ Every change must keep all of these green (instructions.md §3). CI runs them on
 | Migration conventions | `bun run check:migrations` | Lovable's import rules for migrations from 0004 on: `org_id`, full grants to `authenticated`, RLS with `has_permission` / `is_org_member` policies, no `DROP TABLE` / `DROP COLUMN` (`scripts/migration-rules.ts`) |
 | Build | `bun run build` | Production build |
 
+## Live smoke test
+
+`bun run test:smoke` signs in as the demo accounts (docs/demo-data.md) and runs the hand-off smoke test (docs/lovable-handoff.md §5) against the real backend, with no clicking: 69 checks covering the applied migrations, levels and parent control, check payments and standing, receipts and voiding, the test gateway, joining (declined, accepted, idempotent, approval, renewal, decline with refund), audited exports, saved views, the directory opt-out, and board seats, terms and appointments. Each run creates uniquely named records in the demo orgs only and retires what it can, so it can run repeatedly. It is not part of `bun run test` or CI because it needs network access and changes demo data. Set `SMOKE_DEMO_PASSWORD` if the demo password changes.
+
+Because the demo national manages membership levels, the money flows run at Demo National; Austin is used for the parent-control, sibling-isolation and chapter-seat checks.
+
 ## Database rule tests
 
 `scripts/db-test.sh` creates a fresh database named `oc_rules_test`, then:

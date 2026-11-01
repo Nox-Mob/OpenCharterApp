@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit",
     "test:db": "bash scripts/db-test.sh",
     "check:migrations": "bun scripts/check-migrations.ts",
-    "ci": "bun run lint && bun run format:check && bun run typecheck && bun run test && bun run check:migrations"
+    "ci": "bun run lint && bun run format:check && bun run typecheck && bun run test && bun run check:migrations",
+    "test:smoke": "vitest run --config vitest.smoke.config.ts"
   },
   "overrides": {
     "rolldown": "1.2.1"
