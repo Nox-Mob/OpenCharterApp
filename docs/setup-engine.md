@@ -130,7 +130,7 @@ Several questions need a rule rather than a single value. The setup engine embed
 - **No hidden state.** Everything setup does is visible in the normal admin screens afterward.
 - **Permissions apply.** A chapter admin only sees flows and options national has allowed. Locked settings display as read-only with an explanation.
 - **Auditable.** Applying a flow is a single audit event with a before/after diff.
-- **Accessible and mobile-friendly**, since many officers will do setup from a phone.
+- **Accessible and mobile-friendly**, since many officers will do setup from a phone. Each step card keeps its title and navigation buttons in view and scrolls its content, so long lists of fields or levels stay usable on small screens.
 - **Versioned flows.** When the product adds new questions in an update, existing orgs see a "new setup options available" prompt rather than a forced change.
 
 ## 9. Open design questions

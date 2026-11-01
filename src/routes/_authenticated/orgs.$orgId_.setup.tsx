@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { AttributeFieldDialog } from "@/components/attributes/attribute-field-dialog";
+import { SetupStepFrame } from "@/components/setup/step-frame";
 import {
   Select,
   SelectContent,
@@ -161,11 +162,42 @@ function Wizard({ org }: { org: Org }) {
         {onReview ? "Review" : `Step ${stepIdx + 1} of ${steps.length}`}
       </p>
 
-      <section className="mt-6 rule-brass bg-card p-6">
+      <SetupStepFrame
+        scrollKey={stepIdx}
+        header={
+          onReview ? (
+            <h2 className="text-xl font-semibold">Review and apply</h2>
+          ) : (
+            <>
+              <h2 className="text-xl font-semibold">{step!.title}</h2>
+              {step!.description && (
+                <p className="mt-1 text-muted-foreground">{step!.description}</p>
+              )}
+            </>
+          )
+        }
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              disabled={stepIdx === 0}
+              onClick={() => setStepIdx(stepIdx - 1)}
+            >
+              Back
+            </Button>
+            {onReview ? (
+              <Button onClick={apply} disabled={busy}>
+                {busy ? "Applying…" : "Apply setup"}
+              </Button>
+            ) : (
+              <Button onClick={next}>Save and continue</Button>
+            )}
+          </>
+        }
+      >
         {onReview ? (
           <>
-            <h2 className="text-xl font-semibold">Review and apply</h2>
-            <ul className="mt-4 list-disc space-y-1 pl-5">
+            <ul className="list-disc space-y-1 pl-5">
               {membershipFlow.summarize(answers, ctx).map((l) => (
                 <li key={l}>{l}</li>
               ))}
@@ -179,35 +211,19 @@ function Wizard({ org }: { org: Org }) {
             />
           </>
         ) : (
-          <>
-            <h2 className="text-xl font-semibold">{step!.title}</h2>
-            {step!.description && <p className="mt-1 text-muted-foreground">{step!.description}</p>}
-            <div className="mt-6 space-y-5">
-              {step!.questions.map((q) => (
-                <QuestionField
-                  key={q.id}
-                  q={q}
-                  value={answers[q.id]}
-                  error={errors[q.id]}
-                  onChange={(v) => set(q.id, v)}
-                />
-              ))}
-            </div>
-          </>
+          <div className="space-y-5">
+            {step!.questions.map((q) => (
+              <QuestionField
+                key={q.id}
+                q={q}
+                value={answers[q.id]}
+                error={errors[q.id]}
+                onChange={(v) => set(q.id, v)}
+              />
+            ))}
+          </div>
         )}
-        <div className="mt-8 flex justify-between">
-          <Button variant="ghost" disabled={stepIdx === 0} onClick={() => setStepIdx(stepIdx - 1)}>
-            Back
-          </Button>
-          {onReview ? (
-            <Button onClick={apply} disabled={busy}>
-              {busy ? "Applying…" : "Apply setup"}
-            </Button>
-          ) : (
-            <Button onClick={next}>Save and continue</Button>
-          )}
-        </div>
-      </section>
+      </SetupStepFrame>
     </div>
   );
 }
