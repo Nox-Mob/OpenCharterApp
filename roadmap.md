@@ -3,7 +3,7 @@
 Full plan: docs/ and .lovable/plan/. Phase IDs map to docs/epic.md.
 
 ## Pending migrations for Lovable
-Apply these in order (Lovable → apply pending migrations). Until a migration is applied, the screens that need it show "needs a database update" instead of failing (D-135).
+Apply these in order (Lovable → apply pending migrations). Step-by-step instructions, checks and the smoke test: docs/lovable-handoff.md. Until a migration is applied, the screens that need it show "needs a database update" instead of failing (D-135).
 
 | Migration | Enables | Status |
 |---|---|---|
