@@ -30,6 +30,7 @@ The full vision, scope and feature map are in [`docs/README.md`](docs/README.md)
 ### Where it stands
 
 Working today:
+
 - sign-in and invitations
 - national / chapter hierarchy
 - roles, including custom roles with downward-only permissions
@@ -41,9 +42,11 @@ Working today:
 - membership levels and terms
 
 Built and waiting for a database update:
+
 - memberships with standing and recorded payments
 
 Next:
+
 - Stripe payments per organization
 - online joining and renewal
 - member lists and exports
@@ -54,11 +57,13 @@ Progress lives in [`roadmap.md`](roadmap.md).
 ## Install and run
 
 ### Prerequisites
+
 - [Bun](https://bun.sh) 1.x. The project uses Bun as its package manager (decision D-104), so don't use npm, Yarn or pnpm.
 - Git.
 - PostgreSQL 16 or newer, only for running the database rule tests locally.
 
 ### Set up
+
 ```sh
 git clone https://github.com/Nox-Mob/OpenCharterApp.git
 cd OpenCharterApp
@@ -68,12 +73,15 @@ bun install
 The committed `.env` holds the Lovable Cloud project's **publishable** settings, which are safe to share. Server-only secrets are never committed. [`.env.example`](.env.example) lists every variable and what it's for.
 
 ### Run the app
+
 ```sh
 bun run dev
 ```
+
 Then open the URL Vite prints. To sign in with test accounts, use the demo users in [`docs/demo-data.md`](docs/demo-data.md). They're temporary and are removed before launch.
 
 ### Checks (run before every commit, CI runs the same)
+
 ```sh
 bun run lint
 bun run format:check
@@ -83,14 +91,17 @@ bun run check:migrations     # Lovable's migration rules
 TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres bun run test:db
 bun run build
 ```
+
 `test:db` creates and drops its own throwaway database (`oc_rules_test`), applies every migration and runs `db/tests/*.sql`. **Never point it at the real project database.** Details are in [`docs/testing.md`](docs/testing.md).
 
 ### Database changes
+
 - Schema changes are SQL migrations in [`drizzle/migrations`](drizzle/migrations). They follow Lovable's import rules: full grants with row-level security and no dropping tables or columns.
 - Lovable applies them to the live database in order. Until it does, screens that need a new migration show "needs a database update" instead of failing.
 - The list of migrations waiting to be applied is at the top of [`roadmap.md`](roadmap.md).
 
 ### Working with Lovable
+
 - Changes made in Lovable are committed to this repository, and changes merged into `main` sync back to Lovable.
 - **Don't rewrite published history**: no force pushes and no rebasing or amending pushed commits. Rewriting history breaks Lovable's project history.
 - Keep `main` in a working state, because Lovable builds from it.
@@ -98,6 +109,7 @@ bun run build
 ## Contributing
 
 Start with [`docs/instructions.md`](docs/instructions.md). It holds the working rules, and [`AGENTS.md`](AGENTS.md) summarizes them for AI assistants. In short:
+
 - every change ships with tests and updated docs
 - tenant data is isolated by row-level security
 - authorization goes through the policy layer
