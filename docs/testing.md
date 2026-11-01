@@ -44,6 +44,14 @@ Current coverage:
 | `95_memberships` | Term-end and standing rules (same cases as the TypeScript), member records without a login, recording joins and stacked renewals, payment permission, read isolation, no client writes, append-only history, approve / decline / cancel, grace from settings, claiming a record by invitation |
 | `90_tiers` | Membership levels and terms: isolation, term rules, parent control, retire not delete (deletes remove nothing), identity columns can't change |
 
+## Migrations Lovable hasn't applied yet
+
+Migrations are tested here before Lovable applies them to the live database. Until then:
+
+- Types for them go in `src/lib/db/pending-schema.ts`, not the generated `types.ts`. Use the `db` client from there.
+- Screens that need them sit behind the readiness guard (`src/lib/db/readiness.ts`, `<RequiresDatabase>`). Add a feature entry with the migration name and a probe table or function.
+- Add the migration to "Pending migrations for Lovable" in `/roadmap.md`. Once applied, remove its section from `pending-schema.ts` and mark it applied.
+
 ## Adding a test
 
 - Put a new business rule as a pure function under `src/engines` or `src/modules`, with a `*.test.ts` next to it.

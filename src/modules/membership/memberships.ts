@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
+import { db as supabase } from "@/lib/db/pending-schema";
 import type { MembershipStatus } from "./standing";
 
 /**
@@ -50,10 +50,23 @@ type MembershipEmbed = {
   tier_terms: { label: string } | null;
 };
 
-export const membersQuery = (orgId: string) =>
+/**
+ * The member list. Without migration 0008 (see src/lib/db/readiness.ts) it reads only the
+ * columns that exist today, and every member shows as having no membership.
+ */
+export const membersQuery = (orgId: string, withMemberships = true) =>
   queryOptions({
-    queryKey: ["members", orgId],
+    queryKey: ["members", orgId, withMemberships],
     queryFn: async (): Promise<MemberRow[]> => {
+      if (!withMemberships) {
+        const { data, error } = await supabase
+          .from("org_member_profiles")
+          .select("id,user_id,display_name,email,created_at")
+          .eq("org_id", orgId)
+          .order("created_at");
+        if (error) throw error;
+        return (data ?? []).map((p) => ({ ...p, source: "signup", membership: null }));
+      }
       const { data, error } = await supabase
         .from("org_member_profiles")
         .select(

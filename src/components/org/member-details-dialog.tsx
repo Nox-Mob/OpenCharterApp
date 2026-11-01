@@ -14,6 +14,7 @@ import {
 } from "@/modules/membership/memberships";
 import { AttributeValueInput } from "@/components/attributes/attribute-value-input";
 import { MembershipPanel } from "@/components/membership/membership-panel";
+import { RequiresDatabase } from "@/components/db/requires-database";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,13 +73,15 @@ export function MemberDetailsDialog({
         </DialogHeader>
         {member && (
           <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-4">
-            <MembershipPanel
-              org={org}
-              member={member}
-              graceDays={graceDays}
-              canManage={canEdit}
-              canRecordPayments={canRecordPayments}
-            />
+            <RequiresDatabase feature="memberships">
+              <MembershipPanel
+                org={org}
+                member={member}
+                graceDays={graceDays}
+                canManage={canEdit}
+                canRecordPayments={canRecordPayments}
+              />
+            </RequiresDatabase>
             {member.user_id === null && (
               <RecordContact member={member} canEdit={canEdit} canInvite={canInvite} org={org} />
             )}

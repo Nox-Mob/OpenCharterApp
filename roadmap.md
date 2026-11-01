@@ -2,6 +2,13 @@
 
 Full plan: docs/ and .lovable/plan/. Phase IDs map to docs/epic.md.
 
+## Pending migrations for Lovable
+Apply these in order (Lovable → apply pending migrations). Until a migration is applied, the screens that need it show "needs a database update" instead of failing (D-135).
+
+| Migration | Enables | Status |
+|---|---|---|
+| `0008_memberships` | E-13a memberships, standing, recorded payments, member records without a login | Waiting (Lovable credit cap) |
+
 ## Done
 - [x] Step 0: planning docs in /docs, decisions for the Lovable stack recorded (D-100+)
 - [x] Demo organization and accounts for testing (docs/demo-data.md). Delete before launch

@@ -22,6 +22,7 @@ import {
 import { expirationLabel, standing, today } from "@/modules/membership/standing";
 import { StandingBadge } from "@/components/membership/standing-badge";
 import { AddMemberDialog } from "@/components/membership/add-member-dialog";
+import { useFeatureReady } from "@/lib/db/readiness";
 import { MemberDetailsDialog } from "./member-details-dialog";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -117,8 +118,10 @@ export function MembersTab({
     toast.success("Role removed");
     qc.invalidateQueries();
   }
-  const members = useQuery(membersQuery(orgId));
-  const grace = useQuery(graceDaysQuery(orgId));
+  // Membership features wait for migration 0008 (readiness guard, D-135).
+  const ready = useFeatureReady("memberships") === true;
+  const members = useQuery(membersQuery(orgId, ready));
+  const grace = useQuery({ ...graceDaysQuery(orgId), enabled: ready });
   const graceDays = grace.data ?? 30;
   const on = today();
   const details = (members.data ?? []).find((m) => m.id === detailsId) ?? null;
@@ -224,7 +227,7 @@ export function MembersTab({
         </section>
       )}
 
-      {canManageMembers && applications.length > 0 && (
+      {ready && canManageMembers && applications.length > 0 && (
         <section className="rounded-md border bg-card p-5">
           <h2 className="text-lg font-semibold">Applications ({applications.length})</h2>
           <ul className="mt-3 divide-y">
@@ -257,16 +260,20 @@ export function MembersTab({
       <section>
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Members</h2>
-          {canManageMembers && <Button onClick={() => setAdding(true)}>Add member</Button>}
+          {ready && canManageMembers && <Button onClick={() => setAdding(true)}>Add member</Button>}
         </div>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Standing</TableHead>
-              <TableHead>Level</TableHead>
-              <TableHead>Expires</TableHead>
+              {ready && (
+                <>
+                  <TableHead>Standing</TableHead>
+                  <TableHead>Level</TableHead>
+                  <TableHead>Expires</TableHead>
+                </>
+              )}
               {canAssignAdmin && <TableHead>Roles</TableHead>}
               <TableHead />
             </TableRow>
@@ -283,18 +290,26 @@ export function MembersTab({
                     </Badge>
                   )}
                 </TableCell>
-                <TableCell>
-                  <StandingBadge standing={standing(m.membership, graceDays, on)} />
-                </TableCell>
-                <TableCell className="text-sm">
-                  {m.membership ? `${m.membership.tier_name} · ${m.membership.term_label}` : "—"}
-                </TableCell>
-                <TableCell className="text-sm">
-                  {m.membership?.status === "active" && m.membership.paid_through && (
-                    <span className="block">{m.membership.paid_through}</span>
-                  )}
-                  <span className="text-muted-foreground">{expirationLabel(m.membership, on)}</span>
-                </TableCell>
+                {ready && (
+                  <>
+                    <TableCell>
+                      <StandingBadge standing={standing(m.membership, graceDays, on)} />
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {m.membership
+                        ? `${m.membership.tier_name} · ${m.membership.term_label}`
+                        : "—"}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {m.membership?.status === "active" && m.membership.paid_through && (
+                        <span className="block">{m.membership.paid_through}</span>
+                      )}
+                      <span className="text-muted-foreground">
+                        {expirationLabel(m.membership, on)}
+                      </span>
+                    </TableCell>
+                  </>
+                )}
                 {canAssignAdmin && (
                   <TableCell>
                     {m.user_id === null ? (

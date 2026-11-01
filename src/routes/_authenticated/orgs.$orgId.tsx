@@ -10,6 +10,7 @@ import { ChapterFieldsCard } from "@/components/attributes/chapter-fields-card";
 import { RolesTab } from "@/components/org/roles-tab";
 import { LevelsTab } from "@/components/membership/levels-tab";
 import { MyMembershipCard } from "@/components/membership/my-membership-card";
+import { RequiresDatabase } from "@/components/db/requires-database";
 import { SetupCard } from "@/components/setup/setup-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -88,7 +89,9 @@ function OrgPage() {
           {canAudit && <TabsTrigger value="audit">Audit log</TabsTrigger>}
         </TabsList>
         <TabsContent value="overview" className="mt-6 space-y-6">
-          <MyMembershipCard org={org} />
+          <RequiresDatabase feature="memberships" fallback={null}>
+            <MyMembershipCard org={org} />
+          </RequiresDatabase>
           {hasPermission(grants, "setup.run", org) ? (
             <SetupCard org={org} />
           ) : (
