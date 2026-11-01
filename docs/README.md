@@ -21,6 +21,7 @@ These documents are the shared reference for the whole build. At any point in de
 | [`risks-and-open-questions.md`](risks-and-open-questions.md) | What is still unresolved, and what could hurt us |
 | [`testing.md`](testing.md) | How to run checks locally, how CI works, and how database rule tests are built |
 | [`demo-data.md`](demo-data.md) | Temporary demo accounts and organizations, and how to remove them |
+| [`plans/`](plans/) | Agreed plans for upcoming epics, e.g. [`e12-e13-payments-and-joining.md`](plans/e12-e13-payments-and-joining.md) |
 
 ## Vision
 
