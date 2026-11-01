@@ -22,6 +22,8 @@ flowchart LR
 
 Phases 4 and 5 can swap or run in parallel if two streams are available. Hosted-service billing (E-42) can be pulled earlier if we want to start selling hosting sooner.
 
+Detailed plans for epics being worked on live in [`plans/`](plans/), e.g. [E-12 / E-13](plans/e12-e13-payments-and-joining.md).
+
 ## 2. Epics by phase
 
 ### Phase 0: Foundation
@@ -34,8 +36,8 @@ Phases 4 and 5 can swap or run in parallel if two streams are available. Hosted-
 | E-04 | Organization hierarchy and platform tier | Org tree (platform, national, region, chapter, standalone), org settings, tax profile, **branding with logo upload and chapter override** |
 | E-05 | RBAC and permissions | Roles, permissions, scoped assignments with downward inheritance, policy layer |
 | E-06 | Audit log | Append-only log and viewer, hooks for all modules |
-| E-07 | Host-based tenant resolution | Wildcard subdomain mapping (tested locally with `*.localhost`), org context per request, RLS wiring, tenant-isolation tests |
-| E-08 | Jobs, email, and notifications infrastructure | pg-boss, email provider integration, template system, signed-action link service |
+| E-07 | Host-based tenant resolution | Wildcard subdomain mapping (tested locally with `*.localhost`), org context per request, RLS wiring, tenant-isolation tests. **Deferred** (D-111): RLS and tenant-isolation tests are done; per-org web addresses wait |
+| E-08 | Jobs, email, and notifications infrastructure | Postgres jobs table and scheduled server routes (D-103, replacing pg-boss), email provider integration, template system, signed-action link service. **Deferred** (D-111); its email follow-up list is in `roadmap.md` |
 
 **Exit:** a national and a chapter can exist, users can sign in on the right subdomain, a chapter admin sees only their chapter, and every action is audited.
 

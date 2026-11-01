@@ -76,3 +76,7 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 - **R-20 Self-hosting (principle 6):** building on Lovable Cloud ties auth and jobs to managed services. Mitigation: keep business rules in SQL functions and `src/lib/policy`, so a self-host port replaces only adapters.
 - **R-21 Logo lock enforcement:** today the "chapters may use their own logo" rule only hides the upload control. Resolution respects the lock, so the national logo still shows, but a chapter admin could still store a logo file. Revisit if this matters.
 - **R-22 Demo data:** demo accounts and orgs exist in the live database (docs/demo-data.md). They must be removed before launch.
+
+## Added 2026-11-01
+- **R-23 Migrations blocked by hosting limits:** Lovable applies migrations to the live database and can be unavailable (for example a credit cap), while merged code already expects the new schema. Mitigation (D-135): migrations are prepared and tested locally, types for them live outside the generated file, and a readiness guard shows "needs a database update" instead of failing. The pending list in `roadmap.md` says what to apply, in order.
+- **R-24 License file:** AGPL-3.0 is decided (D-020), but the repository has no `LICENSE` file yet. Add the official AGPL-3.0 text before the first public release.
