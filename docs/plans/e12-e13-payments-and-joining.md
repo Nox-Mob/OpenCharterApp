@@ -46,7 +46,7 @@ Migration `0008_memberships.sql`, following D-125 (full grants, RLS through `has
   - `db/tests/95_memberships.sql`: records without login only via admin; claim on invite; stacking renewal; cross-org denied; a member reads only their own; events and payments not writable by clients; deletes remove nothing.
   - `standing.test.ts`.
 
-## E-12: Per-org Stripe connection (D-105, Direct mode only)
+## E-12: Per-org Stripe connection (D-105, Direct mode only) — built, waiting for migration 0009 (D-127, D-129)
 **Spike first** (≤1 day), and record the result as D-127:
 - (a) **Secret storage.** Each org's restricted API key and webhook signing secret are encrypted with AES-GCM using the server secret `GATEWAY_ENCRYPTION_KEY` (a Lovable Cloud secret). They are kept in a **non-public schema**, `private.gateway_secrets`, which isn't exposed through the API. Only definer functions and the server-side client read them, so they're never visible to the browser. The spike also checks whether Supabase Vault is available on Lovable Cloud as the alternative.
 - (b) **Stripe over plain `fetch`** from the edge worker, with no new dependency. A small client covers Checkout Sessions, Refunds and a verify call. Webhook signatures are checked with WebCrypto HMAC-SHA256, including the timestamp tolerance.
@@ -89,7 +89,7 @@ A second adapter behind the same gateway interface, `src/modules/payments/test-g
 - Tests: unit tests for the adapter's outcomes; a DB check that the test gateway is rejected for non-demo orgs without the flag; a Playwright e2e covering both "accepted" and "declined".
 - **Real Stripe test mode is still supported:** an org can paste Stripe *test* keys (`sk_test_…`), use Stripe's own test cards, and see results via real webhooks. That's the final check before going live.
 
-## E-13b: Public join and online renewal
+## E-13b: Public join and online renewal — built, waiting for migrations 0008–0010 (D-136, D-137)
 - **Public join page** `/join/$orgSlug`. This is a plain path, since per-org web addresses (E-07) are deferred.
   - `public_join_info(slug)` (definer, callable by `anon`) returns the org name and logo, its active levels and terms, its required member fields, and whether payments are on. If not, the page says "Online joining isn't open yet".
   - Flow: pick a level and term → sign up or sign in (D-116; the response stays neutral per R-15) → fill required member fields → Stripe Checkout.

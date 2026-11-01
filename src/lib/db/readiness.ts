@@ -9,9 +9,15 @@ import { db } from "./pending-schema";
 export const FEATURES = {
   memberships: { migration: "0008_memberships", label: "Memberships", table: "memberships" },
   payments: { migration: "0009_payments_gateway", label: "Payments", table: "gateway_connections" },
+  joining: {
+    migration: "0010_joining",
+    label: "Online joining and renewal",
+    rpc: "public_join_info",
+    args: { _slug: "" },
+  },
 } as const satisfies Record<
   string,
-  { migration: string; label: string; table?: string; rpc?: string }
+  { migration: string; label: string; table?: string; rpc?: string; args?: object }
 >;
 export type Feature = keyof typeof FEATURES;
 
@@ -38,7 +44,7 @@ export const featureReadyQuery = (feature: Feature) =>
     gcTime: Infinity,
     retry: false,
     queryFn: async (): Promise<boolean> => {
-      const f: { table?: string; rpc?: string } = FEATURES[feature];
+      const f: { table?: string; rpc?: string; args?: object } = FEATURES[feature];
       // Untyped on purpose: the probe must work whether or not the generated types know the table.
       const client = db as unknown as {
         from: (t: string) => {
@@ -51,7 +57,7 @@ export const featureReadyQuery = (feature: Feature) =>
       };
       const { error } = f.table
         ? await client.from(f.table).select("id", { head: true }).limit(1)
-        : await client.rpc(f.rpc!, {});
+        : await client.rpc(f.rpc!, f.args ?? {});
       return !isMissingSchemaError(error);
     },
   });

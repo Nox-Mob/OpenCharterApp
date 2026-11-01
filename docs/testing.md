@@ -43,6 +43,7 @@ Current coverage:
 | `80_custom_roles` | Custom roles: inheritance, no permission escalation, retire not delete |
 | `95_memberships` | Term-end and standing rules (same cases as the TypeScript), member records without a login, recording joins and stacked renewals, payment permission, read isolation, no client writes, append-only history, approve / decline / cancel, grace from settings, claiming a record by invitation |
 | `96_payments_gateway` | Test gateway limited to demo orgs (or the platform flag), Stripe credentials only sealed and only by payment managers, secrets and server-only functions unreachable by clients, connection visibility, webhook events claimed once, disconnect removes credentials |
+| `97_joining` | Join info without signing in, starting a join (validation, nothing written but a pending payment), only the server role completes payments, duplicate and mismatched events, renewal stacking, failures, partial and full refunds, approval rules from the parent (D-130), claiming a record by paying, test checkout outcomes, decline with refund |
 | `90_tiers` | Membership levels and terms: isolation, term rules, parent control, retire not delete (deletes remove nothing), identity columns can't change |
 
 ## Migrations Lovable hasn't applied yet

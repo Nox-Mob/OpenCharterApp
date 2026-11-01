@@ -7,11 +7,11 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When Lovable applies a migration, delete its section here (the generated types take over).
- * Pending: 0008_memberships, 0009_payments_gateway.
+ * Pending: 0008_memberships, 0009_payments_gateway, 0010_joining.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 type Generated = Database["public"];
 
@@ -239,6 +239,7 @@ export type PendingTables = {
       gateway: PendingEnums["payment_gateway"];
       gateway_ref: string | null;
       id: string;
+      join_answers: Json;
       livemode: boolean;
       membership_id: string | null;
       method: PendingEnums["payment_method"] | null;
@@ -249,6 +250,7 @@ export type PendingTables = {
       purpose: PendingEnums["payment_purpose"];
       received_on: string | null;
       status: PendingEnums["payment_status"];
+      term_id: string | null;
     };
     Insert: {
       amount_minor: number;
@@ -261,6 +263,7 @@ export type PendingTables = {
       gateway?: PendingEnums["payment_gateway"];
       gateway_ref?: string | null;
       id?: string;
+      join_answers?: Json;
       livemode?: boolean;
       membership_id?: string | null;
       method?: PendingEnums["payment_method"] | null;
@@ -271,6 +274,7 @@ export type PendingTables = {
       purpose: PendingEnums["payment_purpose"];
       received_on?: string | null;
       status: PendingEnums["payment_status"];
+      term_id?: string | null;
     };
     Update: {
       amount_minor?: number;
@@ -283,6 +287,7 @@ export type PendingTables = {
       gateway?: PendingEnums["payment_gateway"];
       gateway_ref?: string | null;
       id?: string;
+      join_answers?: Json;
       livemode?: boolean;
       membership_id?: string | null;
       method?: PendingEnums["payment_method"] | null;
@@ -293,6 +298,7 @@ export type PendingTables = {
       purpose?: PendingEnums["payment_purpose"];
       received_on?: string | null;
       status?: PendingEnums["payment_status"];
+      term_id?: string | null;
     };
     Relationships: [
       {
@@ -362,6 +368,37 @@ export type PendingTables = {
 };
 
 export type PendingFunctions = {
+  begin_join: { Args: { _answers?: Json; _org: string; _term: string }; Returns: string };
+  begin_renewal: { Args: { _membership: string; _term: string }; Returns: string };
+  complete_gateway_payment: {
+    Args: {
+      _amount_minor: number;
+      _currency: string;
+      _event_id: string;
+      _gateway_ref: string;
+      _livemode: boolean;
+      _payment: string;
+    };
+    Returns: string;
+  };
+  complete_test_payment: { Args: { _outcome: string; _payment: string }; Returns: string };
+  decline_application: { Args: { _membership: string; _note?: string }; Returns: Json };
+  effective_approval_required: { Args: { _org: string }; Returns: boolean };
+  fail_gateway_payment: {
+    Args: { _event_id: string; _payment: string; _reason: string };
+    Returns: string;
+  };
+  mark_payment_refunded: {
+    Args: {
+      _amount_minor: number;
+      _event_id: string;
+      _gateway: PendingEnums["payment_gateway"];
+      _gateway_ref: string;
+    };
+    Returns: string;
+  };
+  public_join_info: { Args: { _slug: string }; Returns: Json };
+  set_checkout_ref: { Args: { _payment: string; _ref: string }; Returns: undefined };
   claim_webhook_event: {
     Args: {
       _event_id: string;

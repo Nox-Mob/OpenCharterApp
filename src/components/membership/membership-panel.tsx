@@ -13,6 +13,8 @@ import {
 } from "@/modules/membership/memberships";
 import { expirationLabel, standing, today } from "@/modules/membership/standing";
 import { StandingBadge } from "./standing-badge";
+import { useFeatureReady } from "@/lib/db/readiness";
+import { declineApplication } from "@/modules/payments/payments.functions";
 import { RecordMembershipDialog } from "./record-membership-dialog";
 import { Button } from "@/components/ui/button";
 
@@ -42,6 +44,7 @@ export function MembershipPanel({
   const m = member.membership;
   const history = useQuery({ ...membershipHistoryQuery(m?.id ?? ""), enabled: !!m });
   const [recording, setRecording] = useState(false);
+  const joiningReady = useFeatureReady("joining") === true;
   const on = today();
   const s = standing(m, graceDays, on);
 
@@ -49,7 +52,12 @@ export function MembershipPanel({
     if (!m) return;
     if (action === "cancel" && !window.confirm("Cancel this membership now?")) return;
     try {
-      await decideMembership(m.id, action);
+      if (action === "decline" && joiningReady) {
+        // Online applicants paid first: declining refunds them (E-13b).
+        const r = await declineApplication({ data: { membershipId: m.id, note: "" } });
+        if (r.refund === "failed")
+          toast.warning("Declined, but the refund didn't go through. Refund it in Stripe.");
+      } else await decideMembership(m.id, action);
       toast.success(
         action === "approve" ? "Approved" : action === "decline" ? "Declined" : "Cancelled",
       );

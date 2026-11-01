@@ -40,6 +40,7 @@ export function PaymentsTab({ org, canManage }: { org: Org; canManage: boolean }
   const c = connection.data;
   const connected = c?.status === "verified";
   const hook = typeof window === "undefined" ? "" : webhookUrl(window.location.origin, org.id);
+  const joinUrl = typeof window === "undefined" ? "" : `${window.location.origin}/join/${org.slug}`;
   const refresh = () => qc.invalidateQueries({ queryKey: ["gateway-connection", org.id] });
 
   async function saveStripe() {
@@ -165,6 +166,28 @@ export function PaymentsTab({ org, canManage }: { org: Org; canManage: boolean }
             <p className="text-xs text-muted-foreground">
               Stripe test keys (sk_test_…) work too, with Stripe's test cards. Keys are checked with
               Stripe, then stored encrypted.
+            </p>
+          </div>
+        )}
+
+        {connected && (
+          <div className="space-y-1">
+            <Label htmlFor="join-url">Your join page</Label>
+            <div className="flex gap-2">
+              <Input id="join-url" readOnly value={joinUrl} />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  navigator.clipboard.writeText(joinUrl);
+                  toast.success("Copied");
+                }}
+              >
+                Copy
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Share this link: people pick a membership, sign in and pay {org.name} directly.
             </p>
           </div>
         )}

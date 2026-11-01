@@ -23,6 +23,7 @@ import { expirationLabel, standing, today } from "@/modules/membership/standing"
 import { StandingBadge } from "@/components/membership/standing-badge";
 import { AddMemberDialog } from "@/components/membership/add-member-dialog";
 import { useFeatureReady } from "@/lib/db/readiness";
+import { declineApplication } from "@/modules/payments/payments.functions";
 import { MemberDetailsDialog } from "./member-details-dialog";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -126,9 +127,15 @@ export function MembersTab({
   const on = today();
   const details = (members.data ?? []).find((m) => m.id === detailsId) ?? null;
   const applications = (members.data ?? []).filter((m) => m.membership?.status === "pending");
+  const joiningReady = useFeatureReady("joining") === true;
   async function decide(membershipId: string, action: "approve" | "decline") {
     try {
-      await decideMembership(membershipId, action);
+      if (action === "decline" && joiningReady) {
+        // Online applicants paid first: declining refunds them (E-13b).
+        const r = await declineApplication({ data: { membershipId, note: "" } });
+        if (r.refund === "failed")
+          toast.warning("Declined, but the refund didn't go through. Refund it in Stripe.");
+      } else await decideMembership(membershipId, action);
       toast.success(action === "approve" ? "Application approved" : "Application declined");
       qc.invalidateQueries({ queryKey: ["members", orgId] });
     } catch (e) {
