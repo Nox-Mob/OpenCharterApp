@@ -113,6 +113,13 @@
       "when": 1793575399126,
       "tag": "0015_confirm_0008_0014_applied",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1793576311604,
+      "tag": "0016_purge_smoke_data",
+      "breakpoints": true
     }
   ]
 }
