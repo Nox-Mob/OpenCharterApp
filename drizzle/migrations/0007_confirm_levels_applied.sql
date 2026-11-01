@@ -1,0 +1,1 @@
+COMMENT ON TABLE public.membership_tiers IS 'Membership levels (tiers) defined per organization; retired via active=false, never deleted.';
