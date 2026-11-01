@@ -19,6 +19,8 @@ export const PERMISSIONS = [
   "attributes.manage",
   "setup.run",
   "tiers.manage",
+  "payments.view",
+  "payments.manage",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -35,6 +37,8 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   "attributes.manage": "Define member and chapter fields",
   "setup.run": "Run guided setup",
   "tiers.manage": "Define membership levels and prices",
+  "payments.view": "See payments",
+  "payments.manage": "Record and refund payments",
 };
 
 export type OrgNode = { id: string; ancestor_ids: string[] };

@@ -12,7 +12,16 @@ import {
 } from "@/modules/roles";
 import { rolesQuery } from "@/modules/roles/queries";
 import type { Org } from "@/lib/orgs";
-import type { Grant } from "@/lib/policy";
+import { hasPermission, type Grant } from "@/lib/policy";
+import {
+  decideMembership,
+  graceDaysQuery,
+  membersQuery,
+  membershipErrorMessage,
+} from "@/modules/membership/memberships";
+import { expirationLabel, standing, today } from "@/modules/membership/standing";
+import { StandingBadge } from "@/components/membership/standing-badge";
+import { AddMemberDialog } from "@/components/membership/add-member-dialog";
 import { MemberDetailsDialog } from "./member-details-dialog";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -53,12 +62,9 @@ export function MembersTab({
     queryKey: ["me"],
     queryFn: async () => (await supabase.auth.getUser()).data.user?.id ?? null,
   });
-  const [details, setDetails] = useState<{
-    id: string;
-    display_name: string;
-    email: string;
-    user_id: string;
-  } | null>(null);
+  const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const canRecordPayments = hasPermission(grants, "payments.manage", org);
   const allRoles = useQuery(rolesQuery());
   const usable = rolesForOrg(allRoles.data ?? [], org);
   const invitable = usable.filter(
@@ -111,18 +117,21 @@ export function MembersTab({
     toast.success("Role removed");
     qc.invalidateQueries();
   }
-  const members = useQuery({
-    queryKey: ["members", orgId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("org_member_profiles")
-        .select("id,user_id,display_name,email,created_at")
-        .eq("org_id", orgId)
-        .order("created_at");
-      if (error) throw error;
-      return data;
-    },
-  });
+  const members = useQuery(membersQuery(orgId));
+  const grace = useQuery(graceDaysQuery(orgId));
+  const graceDays = grace.data ?? 30;
+  const on = today();
+  const details = (members.data ?? []).find((m) => m.id === detailsId) ?? null;
+  const applications = (members.data ?? []).filter((m) => m.membership?.status === "pending");
+  async function decide(membershipId: string, action: "approve" | "decline") {
+    try {
+      await decideMembership(membershipId, action);
+      toast.success(action === "approve" ? "Application approved" : "Application declined");
+      qc.invalidateQueries({ queryKey: ["members", orgId] });
+    } catch (e) {
+      toast.error(membershipErrorMessage(String((e as Error).message)));
+    }
+  }
   const invites = useQuery({
     queryKey: ["invites", orgId],
     enabled: canInvite,
@@ -215,15 +224,50 @@ export function MembersTab({
         </section>
       )}
 
+      {canManageMembers && applications.length > 0 && (
+        <section className="rounded-md border bg-card p-5">
+          <h2 className="text-lg font-semibold">Applications ({applications.length})</h2>
+          <ul className="mt-3 divide-y">
+            {applications.map((a) => (
+              <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                <span>
+                  {a.display_name || a.email}{" "}
+                  <span className="text-sm text-muted-foreground">
+                    · {a.membership!.tier_name}, {a.membership!.term_label}
+                  </span>
+                </span>
+                <span className="space-x-1">
+                  <Button size="sm" onClick={() => decide(a.membership!.id, "approve")}>
+                    Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => decide(a.membership!.id, "decline")}
+                  >
+                    Decline
+                  </Button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section>
-        <h2 className="mb-2 text-lg font-semibold">Members</h2>
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Members</h2>
+          {canManageMembers && <Button onClick={() => setAdding(true)}>Add member</Button>}
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
+              <TableHead>Standing</TableHead>
+              <TableHead>Level</TableHead>
+              <TableHead>Expires</TableHead>
               {canAssignAdmin && <TableHead>Roles</TableHead>}
-              <TableHead>Joined</TableHead>
               <TableHead />
             </TableRow>
           </TableHeader>
@@ -231,59 +275,81 @@ export function MembersTab({
             {(members.data ?? []).map((m) => (
               <TableRow key={m.id}>
                 <TableCell>{m.display_name || "—"}</TableCell>
-                <TableCell>{m.email}</TableCell>
+                <TableCell>
+                  {m.email || "—"}
+                  {!m.user_id && (
+                    <Badge variant="outline" className="ml-2">
+                      No login
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <StandingBadge standing={standing(m.membership, graceDays, on)} />
+                </TableCell>
+                <TableCell className="text-sm">
+                  {m.membership ? `${m.membership.tier_name} · ${m.membership.term_label}` : "—"}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {m.membership?.status === "active" && m.membership.paid_through && (
+                    <span className="block">{m.membership.paid_through}</span>
+                  )}
+                  <span className="text-muted-foreground">{expirationLabel(m.membership, on)}</span>
+                </TableCell>
                 {canAssignAdmin && (
                   <TableCell>
-                    <div className="flex flex-wrap items-center gap-1">
-                      {(roles.data ?? [])
-                        .filter((r) => r.user_id === m.user_id)
-                        .map((r) => (
-                          <Badge key={r.id} variant="secondary" className="gap-1">
-                            {r.role_name}
-                            {canRemove(r, roles.data ?? [], org.parent_id !== null) && (
-                              <button
-                                aria-label={`Remove ${r.role_name} from ${m.email}`}
-                                onClick={() => unassign(r.id)}
+                    {m.user_id === null ? (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    ) : (
+                      <div className="flex flex-wrap items-center gap-1">
+                        {(roles.data ?? [])
+                          .filter((r) => r.user_id === m.user_id)
+                          .map((r) => (
+                            <Badge key={r.id} variant="secondary" className="gap-1">
+                              {r.role_name}
+                              {canRemove(r, roles.data ?? [], org.parent_id !== null) && (
+                                <button
+                                  aria-label={`Remove ${r.role_name} from ${m.email}`}
+                                  onClick={() => unassign(r.id)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              )}
+                            </Badge>
+                          ))}
+                        {(() => {
+                          const options = availableRoles(
+                            m.user_id!,
+                            orgId,
+                            roles.data ?? [],
+                            usable,
+                            grants,
+                            org,
+                          );
+                          if (options.length === 0) return null;
+                          return (
+                            <Select value="" onValueChange={(k) => assign(m.user_id!, k)}>
+                              <SelectTrigger
+                                className="h-7 w-28 text-xs"
+                                aria-label={`Add role for ${m.email}`}
                               >
-                                <X className="h-3 w-3" />
-                              </button>
-                            )}
-                          </Badge>
-                        ))}
-                      {(() => {
-                        const options = availableRoles(
-                          m.user_id,
-                          orgId,
-                          roles.data ?? [],
-                          usable,
-                          grants,
-                          org,
-                        );
-                        if (options.length === 0) return null;
-                        return (
-                          <Select value="" onValueChange={(k) => assign(m.user_id, k)}>
-                            <SelectTrigger
-                              className="h-7 w-28 text-xs"
-                              aria-label={`Add role for ${m.email}`}
-                            >
-                              <SelectValue placeholder="Add role" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {options.map((r) => (
-                                <SelectItem key={r.key} value={r.key}>
-                                  {r.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        );
-                      })()}
-                    </div>
+                                <SelectValue placeholder="Add role" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {options.map((r) => (
+                                  <SelectItem key={r.key} value={r.key}>
+                                    {r.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          );
+                        })()}
+                      </div>
+                    )}
                   </TableCell>
                 )}
-                <TableCell>{new Date(m.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
-                  <Button size="sm" variant="ghost" onClick={() => setDetails(m)}>
+                  <Button size="sm" variant="ghost" onClick={() => setDetailsId(m.id)}>
                     Details
                   </Button>
                 </TableCell>
@@ -336,10 +402,22 @@ export function MembersTab({
       )}
       <MemberDetailsDialog
         org={org}
-        profile={details}
+        member={details}
         canEdit={canManageMembers}
+        canRecordPayments={canRecordPayments}
+        canInvite={canInvite}
+        graceDays={graceDays}
         isSelf={!!details && details.user_id === me.data}
-        onClose={() => setDetails(null)}
+        onClose={() => setDetailsId(null)}
+      />
+      <AddMemberDialog
+        orgId={orgId}
+        open={adding}
+        onClose={() => setAdding(false)}
+        onCreated={(id) => {
+          setAdding(false);
+          setDetailsId(id);
+        }}
       />
     </div>
   );

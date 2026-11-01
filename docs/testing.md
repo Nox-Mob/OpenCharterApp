@@ -41,6 +41,7 @@ Current coverage:
 | `60_attributes` | Typed validation, inheritance, member self-edit, chapter fields, locked chapter fields |
 | `70_setup` | Permission checks, transactional apply, re-run, locks, chapter fields, membership levels |
 | `80_custom_roles` | Custom roles: inheritance, no permission escalation, retire not delete |
+| `95_memberships` | Term-end and standing rules (same cases as the TypeScript), member records without a login, recording joins and stacked renewals, payment permission, read isolation, no client writes, append-only history, approve / decline / cancel, grace from settings, claiming a record by invitation |
 | `90_tiers` | Membership levels and terms: isolation, term rules, parent control, retire not delete (deletes remove nothing), identity columns can't change |
 
 ## Adding a test

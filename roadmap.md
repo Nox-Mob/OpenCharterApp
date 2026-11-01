@@ -20,6 +20,7 @@ Full plan: docs/ and .lovable/plan/. Phase IDs map to docs/epic.md.
 - [x] CI runs on every branch and on pull requests
 - [x] Migrations 0004–0006 follow Lovable's import rules (full grants + RLS, no drops), checked in CI by `bun run check:migrations`
 - [x] E-10: setup card scrolls with long steps (title and Back / Save and continue stay visible)
+- [x] E-13a: memberships and standing (good / grace / lapsed, derived on read), admin-recorded joins, renewals and cash/check payments with stacked renewals, applications approve/decline, cancel and rejoin, members without a login that an invitation claims, "Your membership" card (D-131..D-134)
 - [x] E-11: an org's only level doesn't need a name; it's shown as "Membership" (D-126)
 - [x] E-11: membership levels and terms (Days / Months / Years or Lifetime, prices in cents, tax treatment), Membership levels tab, levels step in Membership setup (v2), parent decides whether chapters create their own levels
 - [x] E-10: setup engine (steps, conditions, drafts, review with diff, one-transaction apply) + Membership flow v1
@@ -27,7 +28,6 @@ Full plan: docs/ and .lovable/plan/. Phase IDs map to docs/epic.md.
 
 ## Open — Phase 1
 Plan for E-12 / E-13: docs/plans/e12-e13-payments-and-joining.md
-- [ ] E-13a: memberships and standing, admin-recorded joins, renewals and payments (no Stripe yet); admin-created members without a login (D-116)
 - [ ] E-12: per-org Stripe connection as a setup step (keys encrypted, webhooks per org) + a test gateway for demo orgs with accepted / declined card outcomes
 - [ ] E-13b: public join page, online renewal (pay per term, stacked renewals), pay-first approvals with refund on decline, parent-set auto-acceptance for chapters
 - [ ] E-14 directory/exports, E-15 receipts

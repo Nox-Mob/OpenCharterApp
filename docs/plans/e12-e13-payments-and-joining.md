@@ -12,7 +12,7 @@ Agreed 2026-11-01. Order follows D-117 (core first): **E-13a → E-12 → E-13b*
 
 New decision IDs reserved for these steps: D-127 (secret storage and Stripe client), D-128 (Playwright in CI), D-129 (test gateway limited to demo orgs or an env flag), D-130 (parent-set auto-acceptance).
 
-## E-13a: Memberships and standing, admin-recorded (no Stripe)
+## E-13a: Memberships and standing, admin-recorded (no Stripe) — done (D-131..D-134)
 Migration `0008_memberships.sql`, following D-125 (full grants, RLS through `has_permission` / `is_org_member`, no drops, no DELETE policies):
 - `org_member_profiles` changes:
   - `user_id` becomes nullable (an additive change, no drop).
@@ -43,7 +43,7 @@ Migration `0008_memberships.sql`, following D-125 (full grants, RLS through `has
   - Member details: membership history, Record payment, Renew, Cancel.
   - An "Applications" list of pending memberships with Approve / Decline.
 - Tests:
-  - `db/tests/A0_memberships.sql`: records without login only via admin; claim on invite; stacking renewal; cross-org denied; a member reads only their own; events and payments not writable by clients; deletes remove nothing.
+  - `db/tests/95_memberships.sql`: records without login only via admin; claim on invite; stacking renewal; cross-org denied; a member reads only their own; events and payments not writable by clients; deletes remove nothing.
   - `standing.test.ts`.
 
 ## E-12: Per-org Stripe connection (D-105, Direct mode only)
@@ -69,7 +69,7 @@ Then:
   - signature checks pass and fail (good, tampered, expired timestamp) against recorded fixtures
   - encryption round-trip
   - Stripe client calls against a fetch stub
-  - `db/tests/B0_payments.sql`: connection isolation; secrets not readable by `authenticated`; webhook event idempotency
+  - `db/tests/96_payments.sql`: connection isolation; secrets not readable by `authenticated`; webhook event idempotency
 - Out of scope, as already planned: Connect mode and the national fee (E-21), PayPal (E-21), two-level dues (E-18).
 
 ### Test gateway (demo dummy connection)

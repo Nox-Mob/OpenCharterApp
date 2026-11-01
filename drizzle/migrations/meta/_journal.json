@@ -57,6 +57,13 @@
       "when": 1793541600001,
       "tag": "0007_confirm_levels_applied",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793545200001,
+      "tag": "0008_memberships",
+      "breakpoints": true
     }
   ]
 }

@@ -18,6 +18,9 @@
 | **Postpaid dues** | Member is active while a balance accrues. Delinquency rules are set by each org's admins |
 | **Standing / good standing** | A derived status from membership state that gates officer eligibility, voting, approvals, and benefits |
 | **Paid-through date** | The date through which a prepaid membership is current |
+| **Member record** | A member added by an admin (for example a historical member) who has no login yet. An invitation to their email lets them claim it |
+| **Grace period** | Days after the paid-through date during which a member keeps good standing. Set per org, a national can lock it |
+| **Stacked renewal** | Renewing before the membership lapses adds the new term after the current paid-through date |
 | **Attribute** | An org-defined field on an entity, such as a member's rank or salutation, or a chapter's charter date |
 | **Ordered list attribute** | An attribute with ranked values (e.g., E1 to E6), so rules can say "at least E5" |
 | **Rule** | A declarative condition and effect, authored in the UI, evaluated by the rules engine |
