@@ -9,6 +9,7 @@ Every change must keep all of these green (instructions.md §3). CI runs them on
 | Types | `bun run typecheck` | `tsc --noEmit`, in strict mode |
 | Unit tests | `bun run test` | Vitest. Pure rules live next to their code (`*.test.ts`) |
 | Database rules | `TEST_DATABASE_URL=… bun run test:db` | Applies every migration to a throwaway Postgres and runs `db/tests/*.sql` |
+| Migration conventions | `bun run check:migrations` | Lovable's import rules for migrations from 0004 on: `org_id`, full grants to `authenticated`, RLS with `has_permission` / `is_org_member` policies, no `DROP TABLE` / `DROP COLUMN` (`scripts/migration-rules.ts`) |
 | Build | `bun run build` | Production build |
 
 ## Database rule tests
@@ -40,7 +41,7 @@ Current coverage:
 | `60_attributes` | Typed validation, inheritance, member self-edit, chapter fields, locked chapter fields |
 | `70_setup` | Permission checks, transactional apply, re-run, locks, chapter fields, membership levels |
 | `80_custom_roles` | Custom roles: inheritance, no permission escalation, retire not delete |
-| `90_tiers` | Membership levels and terms: isolation, term rules, parent control, retire not delete |
+| `90_tiers` | Membership levels and terms: isolation, term rules, parent control, retire not delete (deletes remove nothing), identity columns can't change |
 
 ## Adding a test
 

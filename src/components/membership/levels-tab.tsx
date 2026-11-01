@@ -17,7 +17,8 @@ import {
   tierErrorMessage,
   tiersQuery,
 } from "@/modules/membership/queries";
-import { EMPTY_TIER, TierDialog } from "./tier-editor";
+import { EMPTY_TIER } from "@/modules/membership/tiers";
+import { TierDialog } from "./tier-editor";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 

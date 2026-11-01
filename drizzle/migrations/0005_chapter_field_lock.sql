@@ -21,8 +21,7 @@ begin
   end if;
   return new;
 end $$;
-drop trigger attribute_definitions_subject on public.attribute_definitions;
-create trigger attribute_definitions_subject before insert or update on public.attribute_definitions
+create or replace trigger attribute_definitions_subject before insert or update on public.attribute_definitions
   for each row execute function public.attribute_definition_subject_check();
 
 create or replace function public.set_attribute_value(_def uuid, _entity uuid, _value jsonb)

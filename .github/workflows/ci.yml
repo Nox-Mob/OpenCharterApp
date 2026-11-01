@@ -27,6 +27,8 @@ jobs:
         run: bun run typecheck
       - name: Unit tests
         run: bun run test
+      - name: Migration conventions (Lovable)
+        run: bun run check:migrations
 
   database:
     name: Database rules

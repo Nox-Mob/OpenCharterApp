@@ -15,12 +15,11 @@ create trigger audit_roles after insert or update or delete on public.roles
 
 -- Visibility: platform roles, plus roles of any org in the reader's visible tree
 -- (a chapter member sees national's roles; a national admin sees chapter roles).
-drop policy "read roles" on public.roles;
-create policy "read roles" on public.roles for select to authenticated
+-- (alter policy, not drop + create: migrations never drop anything, D-125)
+alter policy "read roles" on public.roles
   using (org_id is null or public.can_see_org_tree(auth.uid(), org_id)
     or public.has_permission(auth.uid(), 'roles.manage', org_id));
-drop policy "read role permissions" on public.role_permissions;
-create policy "read role permissions" on public.role_permissions for select to authenticated
+alter policy "read role permissions" on public.role_permissions
   using (exists (select 1 from public.roles r where r.id = role_id));
 
 -- Roles that apply at an org: platform roles, its own, and its ancestors'.

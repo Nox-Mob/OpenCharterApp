@@ -33,14 +33,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export const EMPTY_TIER: Tier = {
-  key: "",
-  name: "",
-  description: "",
-  tax_treatment: "non_deductible",
-  terms: [newTerm()],
-};
-
 /** Controlled editor for one membership level and its terms (E-11). The key is fixed once saved. */
 export function TierEditor({
   value,

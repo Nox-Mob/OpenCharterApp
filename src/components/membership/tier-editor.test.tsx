@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { Tier } from "@/modules/membership/tiers";
-import { EMPTY_TIER, TierDialog } from "./tier-editor";
+import { EMPTY_TIER } from "@/modules/membership/tiers";
+import { TierDialog } from "./tier-editor";
 
 let latest: Tier = EMPTY_TIER;
 function Harness() {
