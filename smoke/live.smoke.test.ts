@@ -58,7 +58,10 @@ describe("0. migrations are live (handoff quick checks)", () => {
   });
 
   it("gateway secrets are not exposed through the API", async () => {
-    const { error } = await chapterAdmin.schema("private" as never).from("gateway_secrets").select("*");
+    const { error } = await chapterAdmin
+      .schema("private" as never)
+      .from("gateway_secrets")
+      .select("*");
     expect(error).not.toBeNull();
   });
 
@@ -163,13 +166,22 @@ describe("2. memberships and check payments (0008)", () => {
 
   it("standing rules: grace then lapsed", async () => {
     const args = { _status: "active", _lifetime: false, _grace: 30, _today: "2026-06-15" };
-    expect(await rpc(orgAdmin, "membership_standing", { ...args, _paid_through: "2026-07-01" })).toBe("good");
-    expect(await rpc(orgAdmin, "membership_standing", { ...args, _paid_through: "2026-06-01" })).toBe("grace");
-    expect(await rpc(orgAdmin, "membership_standing", { ...args, _paid_through: "2026-04-01" })).toBe("lapsed");
+    expect(
+      await rpc(orgAdmin, "membership_standing", { ...args, _paid_through: "2026-07-01" }),
+    ).toBe("good");
+    expect(
+      await rpc(orgAdmin, "membership_standing", { ...args, _paid_through: "2026-06-01" }),
+    ).toBe("grace");
+    expect(
+      await rpc(orgAdmin, "membership_standing", { ...args, _paid_through: "2026-04-01" }),
+    ).toBe("lapsed");
   });
 
   it("history shows the join with its payment", async () => {
-    const { data } = await orgAdmin.from("membership_events").select("*").eq("membership_id", membershipId);
+    const { data } = await orgAdmin
+      .from("membership_events")
+      .select("*")
+      .eq("membership_id", membershipId);
     expect(data!.length).toBe(1);
     expect(data![0].kind).toBe("joined");
     expect(data![0].payment_id).not.toBeNull();
@@ -177,7 +189,10 @@ describe("2. memberships and check payments (0008)", () => {
 
   it("history is append-only", async () => {
     await orgAdmin.from("membership_events").delete().eq("membership_id", membershipId);
-    const { data } = await orgAdmin.from("membership_events").select("id").eq("membership_id", membershipId);
+    const { data } = await orgAdmin
+      .from("membership_events")
+      .select("id")
+      .eq("membership_id", membershipId);
     expect(data!.length).toBe(1);
   });
 
@@ -192,16 +207,18 @@ describe("2. memberships and check payments (0008)", () => {
   });
 
   it("a second check stacks the renewal onto the paid-through date", async () => {
-    const before = (await orgAdmin.from("memberships").select("paid_through").eq("id", membershipId).single())
-      .data!.paid_through as string;
+    const before = (
+      await orgAdmin.from("memberships").select("paid_through").eq("id", membershipId).single()
+    ).data!.paid_through as string;
     await rpc(orgAdmin, "record_membership", {
       _profile: profileId,
       _term: termId,
       _amount_minor: 2500,
       _method: "cash",
     });
-    const after = (await orgAdmin.from("memberships").select("paid_through").eq("id", membershipId).single())
-      .data!.paid_through as string;
+    const after = (
+      await orgAdmin.from("memberships").select("paid_through").eq("id", membershipId).single()
+    ).data!.paid_through as string;
     expect(new Date(after).getFullYear()).toBe(new Date(before).getFullYear() + 1);
   });
 
@@ -226,7 +243,11 @@ describe("2. memberships and check payments (0008)", () => {
 
     it("receipts can't be edited", async () => {
       await orgAdmin.from("receipts").update({ number: "hacked" }).eq("id", receiptId);
-      const { data } = await orgAdmin.from("receipts").select("number").eq("id", receiptId).single();
+      const { data } = await orgAdmin
+        .from("receipts")
+        .select("number")
+        .eq("id", receiptId)
+        .single();
       expect(data!.number).not.toBe("hacked");
     });
 
@@ -247,7 +268,11 @@ describe("2. memberships and check payments (0008)", () => {
 
     it("void needs a reason-holder with permission, then shows VOID", async () => {
       await rpc(orgAdmin, "void_receipt", { _receipt: receiptId, _reason: "smoke test void" });
-      const { data } = await orgAdmin.from("receipts").select("status, void_reason").eq("id", receiptId).single();
+      const { data } = await orgAdmin
+        .from("receipts")
+        .select("status, void_reason")
+        .eq("id", receiptId)
+        .single();
       expect(data!.status).toBe("voided");
       expect(data!.void_reason).toBe("smoke test void");
     });
@@ -259,7 +284,10 @@ describe("2. memberships and check payments (0008)", () => {
 
   it("cancelling a membership is recorded in history", async () => {
     await rpc(orgAdmin, "cancel_membership", { _membership: membershipId, _note: "smoke cleanup" });
-    const { data } = await orgAdmin.from("membership_events").select("kind").eq("membership_id", membershipId);
+    const { data } = await orgAdmin
+      .from("membership_events")
+      .select("kind")
+      .eq("membership_id", membershipId);
     expect(data!.map((e) => e.kind)).toContain("cancelled");
   });
 });
@@ -275,7 +303,11 @@ describe("4. test gateway (0009)", () => {
 
   it("admin turns on test payments; badge reads test mode", async () => {
     await rpc(orgAdmin, "connect_test_gateway", { _org: ORG });
-    const { data } = await orgAdmin.from("gateway_connections").select("*").eq("org_id", ORG).single();
+    const { data } = await orgAdmin
+      .from("gateway_connections")
+      .select("*")
+      .eq("org_id", ORG)
+      .single();
     expect(data!.gateway).toBe("test");
     expect(data!.livemode).toBe(false);
     expect(data!.status).toBe("verified");
@@ -294,8 +326,11 @@ describe("4. test gateway (0009)", () => {
 
 describe("5. joining online (0010)", () => {
   async function requiredAnswers(): Promise<Record<string, unknown>> {
-    const info = (await rpc<Record<string, unknown>>(anon, "public_join_info", { _slug: "demo-national" })) ?? {};
-    const fields = ((info["fields"] ?? info["questions"] ?? []) as Array<Record<string, unknown>>) || [];
+    const info =
+      (await rpc<Record<string, unknown>>(anon, "public_join_info", { _slug: "demo-national" })) ??
+      {};
+    const fields =
+      ((info["fields"] ?? info["questions"] ?? []) as Array<Record<string, unknown>>) || [];
     const answers: Record<string, unknown> = {};
     for (const f of fields) {
       if (!f["required"]) continue;
@@ -374,12 +409,19 @@ describe("5. joining online (0010)", () => {
   });
 
   it("someone else can't complete the member's payment", async () => {
-    await rpcFails(orgAdmin, "complete_test_payment", { _payment: paymentId, _outcome: "accepted" });
+    await rpcFails(orgAdmin, "complete_test_payment", {
+      _payment: paymentId,
+      _outcome: "accepted",
+    });
   });
 
   it("accepted card: membership waits for approval and a receipt is issued", async () => {
     await rpc(member, "complete_test_payment", { _payment: paymentId, _outcome: "accepted" });
-    const { data } = await member.from("payments").select("status, gateway, livemode").eq("id", paymentId).single();
+    const { data } = await member
+      .from("payments")
+      .select("status, gateway, livemode")
+      .eq("id", paymentId)
+      .single();
     expect(data).toMatchObject({ status: "paid", gateway: "test", livemode: false });
     const approval = await rpc<boolean>(member, "effective_approval_required", { _org: ORG });
     const m = await memberMembership();
@@ -430,7 +472,9 @@ describe("5. joining online (0010)", () => {
     const pay = await rpc<string>(member, "begin_renewal", { _membership: m!.id, _term: termId });
     await rpc(member, "complete_test_payment", { _payment: pay, _outcome: "accepted" });
     const after = await memberMembership();
-    expect(new Date(after!.paid_through).getFullYear()).toBe(new Date(m!.paid_through).getFullYear() + 1);
+    expect(new Date(after!.paid_through).getFullYear()).toBe(
+      new Date(m!.paid_through).getFullYear() + 1,
+    );
   });
 
   it("decline with refund: a second application is refunded", async () => {
@@ -483,7 +527,11 @@ describe("6. exports (0011)", () => {
   });
 
   it("chapter admin can't export a sibling chapter", async () => {
-    await rpcFails(chapterAdmin, "log_member_export", { _org: DALLAS, _row_count: 1, _columns: ["x"] });
+    await rpcFails(chapterAdmin, "log_member_export", {
+      _org: DALLAS,
+      _row_count: 1,
+      _columns: ["x"],
+    });
   });
 
   it("saved views: managers save; a chapter can't save into its sibling", async () => {
@@ -503,7 +551,9 @@ describe("6. exports (0011)", () => {
 describe("7. directory (0012)", () => {
   it("opting out removes the member from the directory, opting in restores", async () => {
     // The member needs a current membership to be listed at all.
-    const pay = await rpc<string>(member, "begin_join", { _org: ORG, _term: termId }).catch(() => null);
+    const pay = await rpc<string>(member, "begin_join", { _org: ORG, _term: termId }).catch(
+      () => null,
+    );
     if (pay) {
       await rpc(member, "complete_test_payment", { _payment: pay, _outcome: "accepted" });
       const { data: m } = await orgAdmin
@@ -553,13 +603,21 @@ describe("8. board seats (0014)", () => {
   });
 
   it("a chapter admin can't define seats at the national", async () => {
-    await rpcFails(chapterAdmin, "define_seat", { _org: NATIONAL, _key: `x_${runId}`, _title: "x" });
+    await rpcFails(chapterAdmin, "define_seat", {
+      _org: NATIONAL,
+      _key: `x_${runId}`,
+      _title: "x",
+    });
   });
 
   it("the seat shows as vacant in Austin", async () => {
-    const board = await rpc<Array<{ template_id: string; holders: unknown[] }>>(chapterAdmin, "org_board", {
-      _org: AUSTIN,
-    });
+    const board = await rpc<Array<{ template_id: string; holders: unknown[] }>>(
+      chapterAdmin,
+      "org_board",
+      {
+        _org: AUSTIN,
+      },
+    );
     const seat = board.find((s) => s.template_id === seatId);
     expect(seat).toBeTruthy();
     expect(seat!.holders ?? []).toHaveLength(0);
@@ -574,7 +632,9 @@ describe("8. board seats (0014)", () => {
       _effective_from: new Date().toISOString().slice(0, 10),
       _bylaw_reference: "Art. IV §2",
     });
-    const board = await rpc<Array<Record<string, unknown>>>(chapterAdmin, "org_board", { _org: AUSTIN });
+    const board = await rpc<Array<Record<string, unknown>>>(chapterAdmin, "org_board", {
+      _org: AUSTIN,
+    });
     const seat = board.find((s) => s["template_id"] === seatId)!;
     expect(seat["term_count"]).toBe(2);
     expect(seat["term_unit"]).toBe("year");
@@ -597,7 +657,9 @@ describe("8. board seats (0014)", () => {
       _term_count: 2,
       _term_unit: "year",
     });
-    const board = await rpc<Array<{ template_id: string }>>(chapterAdmin, "org_board", { _org: AUSTIN });
+    const board = await rpc<Array<{ template_id: string }>>(chapterAdmin, "org_board", {
+      _org: AUSTIN,
+    });
     expect(board.find((s) => s.template_id === natSeat)).toBeUndefined();
   });
 
@@ -606,7 +668,11 @@ describe("8. board seats (0014)", () => {
       _org: NATIONAL,
       _display_name: `No Dues ${runId}`,
     });
-    await rpcFails(nationalAdmin, "appoint_officer", { _org: NATIONAL, _template: natSeat, _profile: stranger });
+    await rpcFails(nationalAdmin, "appoint_officer", {
+      _org: NATIONAL,
+      _template: natSeat,
+      _profile: stranger,
+    });
   });
 
   it("appointing a paid member fills the seat with a 2-year planned end", async () => {
@@ -614,23 +680,44 @@ describe("8. board seats (0014)", () => {
       _org: NATIONAL,
       _display_name: `Officer ${runId}`,
     });
-    await rpc(nationalAdmin, "record_membership", { _profile: pid, _term: termId, _method: "cash" });
+    await rpc(nationalAdmin, "record_membership", {
+      _profile: pid,
+      _term: termId,
+      _method: "cash",
+    });
     appointmentId = await rpc<string>(nationalAdmin, "appoint_officer", {
       _org: NATIONAL,
       _template: natSeat,
       _profile: pid,
     });
-    const { data } = await nationalAdmin.from("appointments").select("*").eq("id", appointmentId).single();
-    expect(new Date(data!.planned_end).getFullYear()).toBe(new Date(data!.starts_on).getFullYear() + 2);
-    const board = await rpc<Array<{ template_id: string; holders: unknown[] }>>(nationalAdmin, "org_board", {
-      _org: NATIONAL,
-    });
+    const { data } = await nationalAdmin
+      .from("appointments")
+      .select("*")
+      .eq("id", appointmentId)
+      .single();
+    expect(new Date(data!.planned_end).getFullYear()).toBe(
+      new Date(data!.starts_on).getFullYear() + 2,
+    );
+    const board = await rpc<Array<{ template_id: string; holders: unknown[] }>>(
+      nationalAdmin,
+      "org_board",
+      {
+        _org: NATIONAL,
+      },
+    );
     expect(board.find((s) => s.template_id === natSeat)!.holders).toHaveLength(1);
   });
 
   it("a chapter admin can't appoint at the national", async () => {
-    const pid = await rpc<string>(nationalAdmin, "admin_create_member", { _org: NATIONAL, _display_name: `X ${runId}` });
-    await rpcFails(chapterAdmin, "appoint_officer", { _org: NATIONAL, _template: natSeat, _profile: pid });
+    const pid = await rpc<string>(nationalAdmin, "admin_create_member", {
+      _org: NATIONAL,
+      _display_name: `X ${runId}`,
+    });
+    await rpcFails(chapterAdmin, "appoint_officer", {
+      _org: NATIONAL,
+      _template: natSeat,
+      _profile: pid,
+    });
   });
 
   it("ending the term moves them to past officers", async () => {
@@ -650,14 +737,21 @@ describe("8. board seats (0014)", () => {
   it("the national retires the seat (never deleted)", async () => {
     await rpc(nationalAdmin, "set_seat_active", { _template: seatId, _active: false });
     await rpc(nationalAdmin, "set_seat_active", { _template: natSeat, _active: false });
-    const { data } = await nationalAdmin.from("seat_templates").select("active").eq("id", seatId).single();
+    const { data } = await nationalAdmin
+      .from("seat_templates")
+      .select("active")
+      .eq("id", seatId)
+      .single();
     expect(data!.active).toBe(false);
   });
 });
 
 describe("9. cleanup of this run", () => {
   it("retire this run's level", async () => {
-    const res = await chapterAdmin.from("membership_tiers").update({ active: false }).eq("id", tierId);
+    const res = await chapterAdmin
+      .from("membership_tiers")
+      .update({ active: false })
+      .eq("id", tierId);
     expect(res.error).toBeNull();
   });
 });

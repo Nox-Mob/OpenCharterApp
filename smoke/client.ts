@@ -42,14 +42,22 @@ export async function signIn(email: string): Promise<Db> {
 }
 
 /** Calls an RPC and returns its data, throwing with the database message on error. */
-export async function rpc<T = unknown>(db: Db, fn: string, args: Record<string, unknown> = {}): Promise<T> {
+export async function rpc<T = unknown>(
+  db: Db,
+  fn: string,
+  args: Record<string, unknown> = {},
+): Promise<T> {
   const { data, error } = await db.rpc(fn, args);
   if (error) throw new Error(`${fn}: ${error.message}`);
   return data as T;
 }
 
 /** Expects an RPC to fail; returns the error message. */
-export async function rpcFails(db: Db, fn: string, args: Record<string, unknown> = {}): Promise<string> {
+export async function rpcFails(
+  db: Db,
+  fn: string,
+  args: Record<string, unknown> = {},
+): Promise<string> {
   const { error } = await db.rpc(fn, args);
   if (!error) throw new Error(`${fn} was expected to fail but succeeded`);
   return error.message;
