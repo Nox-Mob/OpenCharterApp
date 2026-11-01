@@ -1,6 +1,6 @@
 # Testing and CI
 
-Every change must keep all of these green (instructions.md §3). CI runs them on every push and pull request (`.github/workflows/ci.yml`).
+Every change must keep all of these green (instructions.md §3). CI runs them on every push to any branch and on every pull request (`.github/workflows/ci.yml`).
 
 | Check | Command | What it covers |
 |---|---|---|
@@ -37,8 +37,10 @@ Current coverage:
 | `30_invitations` | Single-use, email-bound, expiring invitations |
 | `40_settings` | National locks |
 | `50_roles` | Role assignment, last-admin protection |
-| `60_attributes` | Typed validation, inheritance, member self-edit |
-| `70_setup` | Permission checks, transactional apply, re-run, locks |
+| `60_attributes` | Typed validation, inheritance, member self-edit, chapter fields, locked chapter fields |
+| `70_setup` | Permission checks, transactional apply, re-run, locks, chapter fields, membership levels |
+| `80_custom_roles` | Custom roles: inheritance, no permission escalation, retire not delete |
+| `90_tiers` | Membership levels and terms: isolation, term rules, parent control, retire not delete |
 
 ## Adding a test
 

@@ -1,8 +1,13 @@
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createOrgSchema, slugify, type OrgType } from "@/lib/policy";
+import { myOrgsQuery, myPermissionsQuery } from "@/lib/orgs";
+import { canSetChapterField } from "@/modules/attributes/chapter-fields";
+import { attributeDefsQuery } from "@/modules/attributes/queries";
+import { firstValueError, saveAttributeValues } from "@/modules/attributes/values";
+import { AttributeValueInput } from "@/components/attributes/attribute-value-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,12 +42,34 @@ export function CreateOrgDialog({
   const [slug, setSlug] = useState("");
   const [type, setType] = useState<OrgType>(types[0]!);
   const [busy, setBusy] = useState(false);
+  const [details, setDetails] = useState<Record<string, unknown>>({});
+  // Chapter fields defined by the parent or its ancestors are asked for at creation (D-061).
+  const orgs = useQuery({ ...myOrgsQuery(), enabled: !!parentId });
+  const parent = orgs.data?.find((o) => o.id === parentId);
+  const defs = useQuery({
+    ...attributeDefsQuery(parentId ?? "", parent?.ancestor_ids ?? []),
+    enabled: !!parent,
+  });
+  const grants = useQuery({ ...myPermissionsQuery(), enabled: !!parentId });
+  // Only fields this person may set on the new chapter; locked ones need the defining org's admins.
+  const newChapter = { id: "new", ancestor_ids: parent ? [...parent.ancestor_ids, parent.id] : [] };
+  const chapterFields =
+    type === "chapter"
+      ? (defs.data ?? []).filter(
+          (d) =>
+            d.applies_to === "chapter" &&
+            d.active &&
+            canSetChapterField(d, newChapter, grants.data ?? []),
+        )
+      : [];
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const parsed = createOrgSchema.safeParse({ name, slug: slug || slugify(name), type, parentId });
     if (!parsed.success)
       return void toast.error(parsed.error.issues[0]?.message ?? "Invalid input");
+    const detailsError = firstValueError(chapterFields, details);
+    if (detailsError) return void toast.error(detailsError);
     setBusy(true);
     const { data, error } = await supabase.rpc("create_organization", {
       _name: parsed.data.name,
@@ -50,23 +77,33 @@ export function CreateOrgDialog({
       _type: parsed.data.type,
       ...(parsed.data.parentId ? { _parent: parsed.data.parentId } : {}),
     });
-    setBusy(false);
-    if (error)
+    if (error) {
+      setBusy(false);
       return void toast.error(
         error.message.includes("duplicate") ? "That web address is taken" : error.message,
       );
-    toast.success(`${parsed.data.name} created`);
+    }
+    try {
+      await saveAttributeValues(chapterFields, data as string, details);
+      toast.success(`${parsed.data.name} created`);
+    } catch {
+      toast.warning(
+        `${parsed.data.name} was created, but some chapter details weren't saved. Add them on the chapter's overview.`,
+      );
+    }
+    setBusy(false);
     await qc.invalidateQueries();
     setOpen(false);
     setName("");
     setSlug("");
+    setDetails({});
     onCreated?.(data as string);
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {parentId ? "Add a chapter or region" : "Create an organization"}
@@ -101,6 +138,24 @@ export function CreateOrgDialog({
               </SelectContent>
             </Select>
           </div>
+          {chapterFields.length > 0 && (
+            <fieldset className="space-y-3 rounded-md border p-3">
+              <legend className="px-1 text-sm font-medium">Chapter details</legend>
+              {chapterFields.map((d) => (
+                <div key={d.id} className="space-y-1">
+                  <Label>
+                    {d.label}
+                    {d.required ? " *" : ""}
+                  </Label>
+                  <AttributeValueInput
+                    def={d}
+                    value={details[d.id]}
+                    onChange={(v) => setDetails({ ...details, [d.id]: v })}
+                  />
+                </div>
+              ))}
+            </fieldset>
+          )}
           <Button type="submit" disabled={busy} className="w-full">
             {busy ? "Creating…" : "Create"}
           </Button>

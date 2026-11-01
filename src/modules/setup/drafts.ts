@@ -44,11 +44,29 @@ export async function saveDraft(orgId: string, flowId: string, answers: Answers)
   if (e2) throw e2;
 }
 
-export async function applyFlow(orgId: string, flowId: string, answers: Answers, plan: unknown) {
+/** Applied answers remember the flow version, so later versions can offer new options (§8). */
+export const VERSION_KEY = "_version";
+
+export function hasNewOptions(
+  state: { status: string; answers: Answers } | null | undefined,
+  flowVersion: number,
+): boolean {
+  if (!state || state.status !== "applied") return false;
+  const applied = Number(state.answers?.[VERSION_KEY] ?? 1);
+  return applied < flowVersion;
+}
+
+export async function applyFlow(
+  orgId: string,
+  flowId: string,
+  answers: Answers,
+  plan: unknown,
+  version = 1,
+) {
   const { error } = await supabase.rpc("apply_setup", {
     _org: orgId,
     _flow: flowId,
-    _answers: answers as never,
+    _answers: { ...answers, [VERSION_KEY]: version } as never,
     _plan: plan as never,
   });
   if (error) throw error;

@@ -27,6 +27,7 @@ export const attributeDefsQuery = (orgId: string, lineage: readonly string[]) =>
     },
   });
 
+/** Attribute values of one entity: a member profile, or a chapter (by org id). */
 export const memberValuesQuery = (profileId: string) =>
   queryOptions({
     queryKey: ["attribute-values", profileId],

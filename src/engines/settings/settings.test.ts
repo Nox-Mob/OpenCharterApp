@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveSetting, type SettingRow } from "./index";
+import { resolveFromAncestors, resolveSetting, settingsFor, type SettingRow } from "./index";
 
 const lineage = ["national", "chapter"];
 const row = (org_id: string, value: unknown, mode: SettingRow["mode"]): SettingRow => ({
@@ -49,5 +49,33 @@ describe("resolveSetting (inherit / override / locked)", () => {
       "",
     );
     expect(r.value).toBe("a");
+  });
+});
+
+describe("resolveFromAncestors", () => {
+  const three = ["national", "region", "chapter"];
+  it("ignores the org's own value", () => {
+    expect(resolveFromAncestors(three, [row("chapter", true, "override")], "k", "d")).toBe("d");
+  });
+  it("uses the nearest ancestor, but a locked one higher up wins", () => {
+    const rows = [row("national", false, "override"), row("region", true, "override")];
+    expect(resolveFromAncestors(three, rows, "k", null)).toBe(true);
+    const locked = [row("national", false, "locked"), row("region", true, "override")];
+    expect(resolveFromAncestors(three, locked, "k", null)).toBe(false);
+  });
+  it("top-level orgs have no ancestors", () => {
+    expect(resolveFromAncestors(["national"], [row("national", false, "locked")], "k", true)).toBe(
+      true,
+    );
+  });
+});
+
+describe("settingsFor", () => {
+  it("shows rules for sub-orgs only to nationals and regions", () => {
+    const keys = (t: string) => settingsFor(t).map((s) => s.key);
+    expect(keys("national")).toContain("membership.child_levels_allowed");
+    expect(keys("region")).toContain("membership.child_levels_allowed");
+    expect(keys("chapter")).not.toContain("membership.child_levels_allowed");
+    expect(keys("standalone")).not.toContain("membership.child_levels_allowed");
   });
 });

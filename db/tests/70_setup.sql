@@ -47,3 +47,81 @@ insert into public.setup_states (org_id, flow_id, answers) values ('22222222-000
 select tests.throws($$update public.setup_states set status = 'applied' where org_id = '22222222-0000-4000-8000-000000000002'$$, 'permission denied');
 select tests.reset_role();
 rollback;
+
+-- Chapter fields through setup (E-09): nationals may plan them, chapters may not
+begin;
+select tests.fixture();
+select tests.as_user('11111111-0000-4000-8000-000000000001');
+select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+  "attributes": [
+    {"key": "charter_date", "label": "Charter date", "data_type": "date", "applies_to": "chapter", "member_editable": true},
+    {"key": "charter_date", "label": "Charter date", "data_type": "date", "applies_to": "member"}
+  ]}$$);
+select tests.eq((select count(*) from public.attribute_definitions where applies_to = 'chapter'), 1::bigint, 'chapter field applied');
+select tests.eq((select member_editable from public.attribute_definitions where applies_to = 'chapter'), false, 'member switch cleared');
+-- re-running keeps one chapter field (updates by key)
+select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+  "attributes": [{"key": "charter_date", "label": "Chartered on", "data_type": "date", "applies_to": "chapter"}]}$$);
+select tests.eq((select label from public.attribute_definitions where applies_to = 'chapter'), 'Chartered on', 'chapter field relabelled');
+select tests.eq((select count(*) from public.attribute_definitions where applies_to = 'chapter'), 1::bigint, 'no duplicate chapter field');
+select tests.reset_role();
+select tests.as_user('11111111-0000-4000-8000-000000000002');
+select tests.throws($$select public.apply_setup('22222222-0000-4000-8000-000000000002', 'membership', '{}',
+  '{"attributes": [{"key": "x", "label": "X", "data_type": "text", "applies_to": "chapter"}]}')$$, 'only national or regional');
+select tests.reset_role();
+rollback;
+
+-- Setup carries chapter field locks, and fields keep their order after one with choices
+begin;
+select tests.fixture();
+select tests.as_user('11111111-0000-4000-8000-000000000001');
+select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+  "attributes": [
+    {"key": "rank", "label": "Rank", "data_type": "ordered",
+     "options": [{"value": "a"}, {"value": "b"}, {"value": "c"}]},
+    {"key": "phone", "label": "Phone", "data_type": "text"},
+    {"key": "charter_date", "label": "Charter date", "data_type": "date", "applies_to": "chapter", "locked": true}
+  ]}$$);
+select tests.eq((select locked from public.attribute_definitions where key = 'charter_date'), true, 'lock applied');
+select tests.eq((select sort_order from public.attribute_definitions where key = 'phone'), 20, 'second field keeps its order');
+select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+  "attributes": [{"key": "charter_date", "label": "Charter date", "data_type": "date", "applies_to": "chapter", "locked": false}]}$$);
+select tests.eq((select locked from public.attribute_definitions where key = 'charter_date'), false, 'lock removed on re-run');
+select tests.reset_role();
+rollback;
+
+-- Membership levels through setup (E-11): applied, re-run without duplicates, all or nothing
+begin;
+select tests.fixture();
+select tests.as_user('11111111-0000-4000-8000-000000000001');
+select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+  "tiers": [
+    {"key": "regular", "name": "Regular", "tax_treatment": "non_deductible", "terms": [
+      {"key": "1_year", "label": "1 year", "length_count": 1, "length_unit": "year", "price_minor": 2500},
+      {"key": "lifetime", "label": "Lifetime", "length_count": null, "length_unit": null, "price_minor": 30000}]},
+    {"key": "student", "name": "Student", "terms": [
+      {"key": "90_days", "label": "90 days", "length_count": 90, "length_unit": "day", "price_minor": 500}]}
+  ]}$$);
+select tests.eq((select count(*) from public.membership_tiers), 2::bigint, 'levels applied');
+select tests.eq((select count(*) from public.tier_terms), 3::bigint, 'terms applied');
+select tests.eq((select sort_order from public.membership_tiers where key = 'student'), 20, 'level order kept');
+select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+  "tiers": [{"key": "regular", "name": "Standard", "terms": [
+      {"key": "1_year", "label": "1 year", "length_count": 1, "length_unit": "year", "price_minor": 3000}]}]}$$);
+select tests.eq((select name from public.membership_tiers where key = 'regular'), 'Standard', 'level renamed');
+select tests.eq((select price_minor from public.tier_terms where key = '1_year'), 3000, 'price updated');
+select tests.eq((select count(*) from public.tier_terms), 3::bigint, 'no duplicate terms');
+-- a bad term rolls back the whole apply
+select tests.throws($$select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', '{
+  "tiers": [{"key": "regular", "name": "SHOULD NOT STICK", "terms": [
+    {"key": "x", "label": "X", "length_count": 2, "length_unit": null, "price_minor": 1}]}]}')$$, 'check constraint');
+select tests.eq((select name from public.membership_tiers where key = 'regular'), 'Standard', 'rolled back');
+select tests.reset_role();
+-- a chapter whose national disallows levels can't add them through setup either
+insert into public.org_settings (org_id, key, value, mode) values
+  ('22222222-0000-4000-8000-000000000001', 'membership.child_levels_allowed', 'false', 'locked');
+select tests.as_user('11111111-0000-4000-8000-000000000002');
+select tests.throws($$select public.apply_setup('22222222-0000-4000-8000-000000000002', 'membership', '{}',
+  '{"tiers": [{"key": "local", "name": "Local", "terms": []}]}')$$, 'parent organization manages');
+select tests.reset_role();
+rollback;

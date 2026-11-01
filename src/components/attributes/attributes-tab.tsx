@@ -5,16 +5,18 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Org } from "@/lib/orgs";
 import {
   attributeInputSchema,
+  forSubject,
   hasOptions,
   TYPE_LABELS,
-  VISIBILITY_LABELS,
+  visibilityLabels,
   type AttributeInput,
+  type AttributeSubject,
 } from "@/engines/attributes";
 import { attributeDefsQuery, type DefWithOptions } from "@/modules/attributes/queries";
-import { AttributeForm, EMPTY_ATTRIBUTE } from "./attribute-form";
+import { EMPTY_ATTRIBUTE } from "./attribute-form";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AttributeFieldDialog } from "./attribute-field-dialog";
 import {
   Table,
   TableBody,
@@ -28,14 +30,16 @@ export async function saveAttribute(
   orgId: string,
   input: AttributeInput,
   existing: DefWithOptions | null,
+  subject: AttributeSubject = "member",
 ) {
-  const parsed = attributeInputSchema.parse(input);
+  const parsed = forSubject(attributeInputSchema.parse(input), subject);
   let defId = existing?.id;
   if (!existing) {
     const { data, error } = await supabase
       .from("attribute_definitions")
       .insert({
         org_id: orgId,
+        applies_to: subject,
         key: parsed.key,
         label: parsed.label,
         data_type: parsed.data_type,
@@ -43,6 +47,7 @@ export async function saveAttribute(
         visibility: parsed.visibility,
         member_editable: parsed.member_editable,
         show_in_directory: parsed.show_in_directory,
+        locked: parsed.locked ?? false,
       })
       .select("id")
       .single();
@@ -57,6 +62,7 @@ export async function saveAttribute(
         visibility: parsed.visibility,
         member_editable: parsed.member_editable,
         show_in_directory: parsed.show_in_directory,
+        locked: parsed.locked ?? false,
       })
       .eq("id", existing.id);
     if (error) throw error;
@@ -90,7 +96,32 @@ export async function saveAttribute(
   }
 }
 
-export function AttributesTab({ org, canManage }: { org: Org; canManage: boolean }) {
+const COPY: Record<AttributeSubject, { intro: string; empty: string; add: string }> = {
+  member: {
+    intro:
+      "What your organization tracks about each member. Fields from a parent organization apply here too.",
+    empty: "No member fields yet.",
+    add: "Add a member field",
+  },
+  chapter: {
+    intro:
+      "What you track about each chapter, such as its charter date. Chapter admins fill these in on their chapter's overview.",
+    empty: "No chapter fields yet.",
+    add: "Add a chapter field",
+  },
+};
+
+export function AttributesTab({
+  org,
+  canManage,
+  subject = "member",
+}: {
+  org: Org;
+  canManage: boolean;
+  subject?: AttributeSubject;
+}) {
+  const copy = COPY[subject];
+  const labels = visibilityLabels(subject);
   const qc = useQueryClient();
   const { data: defs = [], isLoading } = useQuery(attributeDefsQuery(org.id, org.ancestor_ids));
   const [editing, setEditing] = useState<{
@@ -120,7 +151,7 @@ export function AttributesTab({ org, canManage }: { org: Org; canManage: boolean
       return void toast.error(parsed.error.issues[0]?.message ?? "Check the form");
     setBusy(true);
     try {
-      await saveAttribute(org.id, parsed.data, editing.def);
+      await saveAttribute(org.id, parsed.data, editing.def, subject);
       toast.success("Field saved");
       setEditing(null);
       qc.invalidateQueries({ queryKey: ["attribute-defs"] });
@@ -145,20 +176,17 @@ export function AttributesTab({ org, canManage }: { org: Org; canManage: boolean
   }
 
   if (isLoading) return <p className="text-muted-foreground">Loading…</p>;
-  const memberDefs = defs.filter((d) => d.applies_to === "member");
+  const memberDefs = defs.filter((d) => d.applies_to === subject);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-muted-foreground">
-          What your organization tracks about each member. Fields from a parent organization apply
-          here too.
-        </p>
+        <p className="text-muted-foreground">{copy.intro}</p>
         {canManage && <Button onClick={() => edit(null)}>Add field</Button>}
       </div>
       {memberDefs.length === 0 ? (
         <p className="rounded-md border border-dashed p-8 text-center text-muted-foreground">
-          No member fields yet.
+          {copy.empty}
         </p>
       ) : (
         <Table>
@@ -183,6 +211,11 @@ export function AttributesTab({ org, canManage }: { org: Org; canManage: boolean
                         Required
                       </Badge>
                     )}
+                    {d.locked && (
+                      <Badge variant="outline" className="ml-1">
+                        Locked
+                      </Badge>
+                    )}
                     {!d.active && (
                       <Badge variant="secondary" className="ml-1">
                         Retired
@@ -195,7 +228,7 @@ export function AttributesTab({ org, canManage }: { org: Org; canManage: boolean
                       ? ` · ${d.options.filter((o) => o.active).length} choices`
                       : ""}
                   </TableCell>
-                  <TableCell>{VISIBILITY_LABELS[d.visibility]}</TableCell>
+                  <TableCell>{labels[d.visibility]}</TableCell>
                   <TableCell>
                     {own ? "This organization" : <Badge variant="secondary">Inherited</Badge>}
                   </TableCell>
@@ -218,25 +251,18 @@ export function AttributesTab({ org, canManage }: { org: Org; canManage: boolean
         </Table>
       )}
 
-      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {editing?.def ? `Edit ${editing.def.label}` : "Add a member field"}
-            </DialogTitle>
-          </DialogHeader>
-          {editing && (
-            <AttributeForm
-              value={editing.input}
-              locked={!!editing.def}
-              onChange={(input) => setEditing({ ...editing, input })}
-            />
-          )}
-          <Button onClick={save} disabled={busy}>
-            {busy ? "Saving…" : "Save field"}
-          </Button>
-        </DialogContent>
-      </Dialog>
+      <AttributeFieldDialog
+        open={!!editing}
+        title={editing?.def ? `Edit ${editing.def.label}` : copy.add}
+        value={editing?.input ?? null}
+        locked={!!editing?.def}
+        onChange={(input) => editing && setEditing({ ...editing, input })}
+        onClose={() => setEditing(null)}
+        primaryLabel={busy ? "Saving…" : "Save field"}
+        onPrimary={save}
+        busy={busy}
+        subject={subject}
+      />
     </div>
   );
 }

@@ -18,6 +18,10 @@ export type AttributeType = (typeof ATTRIBUTE_TYPES)[number];
 export const VISIBILITIES = ["admins", "members", "public"] as const;
 export type Visibility = (typeof VISIBILITIES)[number];
 
+/** What an attribute describes. Chapter fields are defined by a national or region (D-061). */
+export const SUBJECTS = ["member", "chapter"] as const;
+export type AttributeSubject = (typeof SUBJECTS)[number];
+
 export const TYPE_LABELS: Record<AttributeType, string> = {
   text: "Text",
   number: "Number",
@@ -33,6 +37,24 @@ export const VISIBILITY_LABELS: Record<Visibility, string> = {
   public: "Anyone",
 };
 
+/** Same stored values, worded for chapter fields. */
+export const CHAPTER_VISIBILITY_LABELS: Record<Visibility, string> = {
+  admins: "National and chapter admins",
+  members: "Members of the chapter",
+  public: "Anyone",
+};
+
+export function visibilityLabels(subject: AttributeSubject): Record<Visibility, string> {
+  return subject === "chapter" ? CHAPTER_VISIBILITY_LABELS : VISIBILITY_LABELS;
+}
+
+/** Member-only switches have no meaning for chapter fields (the database clears them too). */
+export function forSubject(input: AttributeInput, subject: AttributeSubject): AttributeInput {
+  return subject === "chapter"
+    ? { ...input, member_editable: false, show_in_directory: false }
+    : { ...input, locked: false };
+}
+
 export type AttributeDef = {
   id: string;
   org_id: string;
@@ -43,6 +65,8 @@ export type AttributeDef = {
   visibility: Visibility;
   member_editable: boolean;
   show_in_directory: boolean;
+  /** Chapter fields only: only the defining org's admins can set the value (D-121). */
+  locked: boolean;
   sort_order: number;
   active: boolean;
 };
@@ -133,6 +157,8 @@ export const attributeInputSchema = z
     visibility: z.enum(VISIBILITIES),
     member_editable: z.boolean(),
     show_in_directory: z.boolean(),
+    /** Chapter fields only (D-121). */
+    locked: z.boolean().optional(),
     options: z.array(optionInputSchema),
   })
   .superRefine((v, ctx) => {
@@ -197,6 +223,53 @@ export const STARTER_ATTRIBUTES: readonly (Omit<AttributeInput, "options"> & {
     required: false,
     visibility: "admins",
     member_editable: true,
+    show_in_directory: false,
+    options: [],
+  },
+];
+
+/** Common chapter fields offered to nationals in setup (setup-engine.md §6.2). */
+export const STARTER_CHAPTER_ATTRIBUTES: readonly (Omit<AttributeInput, "options"> & {
+  options: { value: string; label: string }[];
+})[] = [
+  {
+    label: "Charter date",
+    key: "charter_date",
+    data_type: "date",
+    required: false,
+    visibility: "members",
+    member_editable: false,
+    show_in_directory: false,
+    locked: true,
+    options: [],
+  },
+  {
+    label: "Chapter number",
+    key: "chapter_number",
+    data_type: "text",
+    required: false,
+    visibility: "public",
+    member_editable: false,
+    show_in_directory: false,
+    options: [],
+  },
+  {
+    label: "Meeting place",
+    key: "meeting_place",
+    data_type: "text",
+    required: false,
+    visibility: "members",
+    member_editable: false,
+    show_in_directory: false,
+    options: [],
+  },
+  {
+    label: "Meeting schedule",
+    key: "meeting_schedule",
+    data_type: "text",
+    required: false,
+    visibility: "members",
+    member_editable: false,
     show_in_directory: false,
     options: [],
   },

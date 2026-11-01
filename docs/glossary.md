@@ -12,6 +12,7 @@
 | **Person** | A human in the system, who can hold memberships in one or more orgs |
 | **Member / membership** | A person's relationship to a specific org through a tier and term. A person can have national and chapter memberships |
 | **Tier** | A membership level defined by an org (name, price options, rules) |
+| **Term unit** | Days, months or years: the unit a term's length is counted in. A term with no unit is lifetime |
 | **Term** | A duration option for a tier (for example 1 year, 3 years, lifetime). Fully org-defined |
 | **Prepaid dues** | Member pays first, standing runs through the paid-through date |
 | **Postpaid dues** | Member is active while a balance accrues. Delinquency rules are set by each org's admins |

@@ -18,8 +18,24 @@ export const PERMISSIONS = [
   "audit.view",
   "attributes.manage",
   "setup.run",
+  "tiers.manage",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
+
+/** Plain-language names for the role editor. */
+export const PERMISSION_LABELS: Record<Permission, string> = {
+  "org.view": "See this organization and its chapters",
+  "org.manage": "Edit organization details and settings",
+  "org.create_child": "Create chapters and regions",
+  "members.view": "See member profiles",
+  "members.manage": "Edit member details",
+  "members.invite": "Invite people",
+  "roles.manage": "Manage roles and who holds them",
+  "audit.view": "See the audit log",
+  "attributes.manage": "Define member and chapter fields",
+  "setup.run": "Run guided setup",
+  "tiers.manage": "Define membership levels and prices",
+};
 
 export type OrgNode = { id: string; ancestor_ids: string[] };
 export type Grant = { org_id: string; permissions: readonly string[] };

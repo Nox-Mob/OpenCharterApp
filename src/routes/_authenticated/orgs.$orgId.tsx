@@ -6,6 +6,9 @@ import { CreateOrgDialog } from "@/components/create-org-dialog";
 import { MembersTab } from "@/components/org/members-tab";
 import { SettingsTab } from "@/components/org/settings-tab";
 import { AttributesTab } from "@/components/attributes/attributes-tab";
+import { ChapterFieldsCard } from "@/components/attributes/chapter-fields-card";
+import { RolesTab } from "@/components/org/roles-tab";
+import { LevelsTab } from "@/components/membership/levels-tab";
 import { SetupCard } from "@/components/setup/setup-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +51,9 @@ function OrgPage() {
   const canManage = hasPermission(grants, "org.manage", org);
   const canInvite = hasPermission(grants, "members.invite", org);
   const canSeeMembers = hasPermission(grants, "members.view", org);
+  const canManageRoles = hasPermission(grants, "roles.manage", org);
+  const canManageFields = hasPermission(grants, "attributes.manage", org);
+  const hasChapters = org.type === "national" || org.type === "region";
 
   return (
     <div>
@@ -72,30 +78,46 @@ function OrgPage() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           {canSeeMembers && <TabsTrigger value="members">Members</TabsTrigger>}
+          <TabsTrigger value="levels">Membership levels</TabsTrigger>
           <TabsTrigger value="fields">Member fields</TabsTrigger>
+          {hasChapters && <TabsTrigger value="chapter-fields">Chapter fields</TabsTrigger>}
+          {canManageRoles && <TabsTrigger value="roles">Roles</TabsTrigger>}
           {canManage && <TabsTrigger value="settings">Settings</TabsTrigger>}
-          {(org.type === "national" || org.type === "region") && (
-            <TabsTrigger value="chapters">Chapters</TabsTrigger>
-          )}
+          {hasChapters && <TabsTrigger value="chapters">Chapters</TabsTrigger>}
           {canAudit && <TabsTrigger value="audit">Audit log</TabsTrigger>}
         </TabsList>
-        <TabsContent value="overview" className="mt-6">
+        <TabsContent value="overview" className="mt-6 space-y-6">
           {hasPermission(grants, "setup.run", org) ? (
             <SetupCard org={org} />
           ) : (
             <p className="text-muted-foreground">Welcome to {org.name}.</p>
           )}
+          {org.type === "chapter" && <ChapterFieldsCard org={org} orgs={orgs} grants={grants} />}
+        </TabsContent>
+        <TabsContent value="levels" className="mt-6">
+          <LevelsTab org={org} orgs={orgs} canManage={hasPermission(grants, "tiers.manage", org)} />
         </TabsContent>
         <TabsContent value="fields" className="mt-6">
-          <AttributesTab org={org} canManage={hasPermission(grants, "attributes.manage", org)} />
+          <AttributesTab org={org} canManage={canManageFields} />
         </TabsContent>
+        {hasChapters && (
+          <TabsContent value="chapter-fields" className="mt-6">
+            <AttributesTab org={org} canManage={canManageFields} subject="chapter" />
+          </TabsContent>
+        )}
+        {canManageRoles && (
+          <TabsContent value="roles" className="mt-6">
+            <RolesTab org={org} orgs={orgs} grants={grants} />
+          </TabsContent>
+        )}
         {canSeeMembers && (
           <TabsContent value="members" className="mt-6">
             <MembersTab
               org={org}
               canInvite={canInvite}
-              canAssignAdmin={hasPermission(grants, "roles.manage", org)}
+              canAssignAdmin={canManageRoles}
               canManageMembers={hasPermission(grants, "members.manage", org)}
+              grants={grants}
             />
           </TabsContent>
         )}

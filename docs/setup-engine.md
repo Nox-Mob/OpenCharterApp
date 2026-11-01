@@ -73,7 +73,8 @@ Each flow lists the kind of questions it asks. Wording is illustrative.
 
 ### 6.3 Membership and dues
 - What membership levels do you offer? What is each called?
-- For each level: what terms are offered (any number, any length, lifetime optional) and the price per term.
+- For each level: what terms are offered (any number, any length, lifetime optional) and the price per term. *Built (E-11):* each term is a count plus a Days / Months / Years drop-down, or Lifetime. The step is skipped when a parent organization manages levels.
+- *National only:* may chapters create their own membership levels? (Built, D-123.)
 - **Is any level priced based on a member attribute?** If yes: which attribute, and a rule builder (e.g., rank E1 to E2 pays X, E3 to E4 pays Y, E5 to E6 pays Z).
 - **Should dues be reduced based on a previously defined attribute?** If yes: which attribute, what condition, and what reduction (fixed, percentage, or alternate price).
 - Prepaid or postpaid? If postpaid: when is the invoice issued, how many days until due, and **what happens when it is late** (grace days, when standing changes, who is notified).
@@ -130,7 +131,7 @@ Several questions need a rule rather than a single value. The setup engine embed
 - **No hidden state.** Everything setup does is visible in the normal admin screens afterward.
 - **Permissions apply.** A chapter admin only sees flows and options national has allowed. Locked settings display as read-only with an explanation.
 - **Auditable.** Applying a flow is a single audit event with a before/after diff.
-- **Accessible and mobile-friendly**, since many officers will do setup from a phone.
+- **Accessible and mobile-friendly**, since many officers will do setup from a phone. Each step card keeps its title and navigation buttons in view and scrolls its content, so long lists of fields or levels stay usable on small screens.
 - **Versioned flows.** When the product adds new questions in an update, existing orgs see a "new setup options available" prompt rather than a forced change.
 
 ## 9. Open design questions

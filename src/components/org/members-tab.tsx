@@ -3,8 +3,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { inviteSchema, inviteStatus, inviteUrl } from "@/modules/invitations";
-import { availableRoles, canRemove, type Assignment } from "@/modules/roles";
+import {
+  availableRoles,
+  canGrantRole,
+  canRemove,
+  rolesForOrg,
+  type Assignment,
+} from "@/modules/roles";
+import { rolesQuery } from "@/modules/roles/queries";
 import type { Org } from "@/lib/orgs";
+import type { Grant } from "@/lib/policy";
 import { MemberDetailsDialog } from "./member-details-dialog";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,11 +39,13 @@ export function MembersTab({
   canInvite,
   canAssignAdmin,
   canManageMembers,
+  grants,
 }: {
   org: Org;
   canInvite: boolean;
   canAssignAdmin: boolean;
   canManageMembers: boolean;
+  grants: Grant[];
 }) {
   const orgId = org.id;
   const qc = useQueryClient();
@@ -49,6 +59,11 @@ export function MembersTab({
     email: string;
     user_id: string;
   } | null>(null);
+  const allRoles = useQuery(rolesQuery());
+  const usable = rolesForOrg(allRoles.data ?? [], org);
+  const invitable = usable.filter(
+    (r) => r.key === "member" || (canAssignAdmin && canGrantRole(r, grants, org)),
+  );
   const roles = useQuery({
     queryKey: ["role-assignments", orgId],
     enabled: canAssignAdmin,
@@ -76,7 +91,12 @@ export function MembersTab({
       _user: userId,
       _role_key: roleKey,
     });
-    if (error) return void toast.error("Couldn't assign that role");
+    if (error)
+      return void toast.error(
+        error.message.includes("permissions you hold")
+          ? "You can only grant permissions you hold"
+          : "Couldn't assign that role",
+      );
     toast.success("Role assigned");
     qc.invalidateQueries();
   }
@@ -118,7 +138,7 @@ export function MembersTab({
   });
 
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"member" | "org_admin">("member");
+  const [role, setRole] = useState("member");
   const [link, setLink] = useState<string | null>(null);
 
   async function invite(e: React.FormEvent) {
@@ -157,13 +177,16 @@ export function MembersTab({
               className="max-w-xs"
               required
             />
-            <Select value={role} onValueChange={(v) => setRole(v as "member" | "org_admin")}>
+            <Select value={role} onValueChange={setRole}>
               <SelectTrigger className="w-44" aria-label="Role">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="member">Member</SelectItem>
-                {canAssignAdmin && <SelectItem value="org_admin">Organization admin</SelectItem>}
+                {invitable.map((r) => (
+                  <SelectItem key={r.key} value={r.key}>
+                    {r.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Button type="submit">Create invite link</Button>
@@ -227,23 +250,34 @@ export function MembersTab({
                             )}
                           </Badge>
                         ))}
-                      {availableRoles(m.user_id, orgId, roles.data ?? []).length > 0 && (
-                        <Select value="" onValueChange={(k) => assign(m.user_id, k)}>
-                          <SelectTrigger
-                            className="h-7 w-28 text-xs"
-                            aria-label={`Add role for ${m.email}`}
-                          >
-                            <SelectValue placeholder="Add role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableRoles(m.user_id, orgId, roles.data ?? []).map((r) => (
-                              <SelectItem key={r.key} value={r.key}>
-                                {r.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
+                      {(() => {
+                        const options = availableRoles(
+                          m.user_id,
+                          orgId,
+                          roles.data ?? [],
+                          usable,
+                          grants,
+                          org,
+                        );
+                        if (options.length === 0) return null;
+                        return (
+                          <Select value="" onValueChange={(k) => assign(m.user_id, k)}>
+                            <SelectTrigger
+                              className="h-7 w-28 text-xs"
+                              aria-label={`Add role for ${m.email}`}
+                            >
+                              <SelectValue placeholder="Add role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {options.map((r) => (
+                                <SelectItem key={r.key} value={r.key}>
+                                  {r.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        );
+                      })()}
                     </div>
                   </TableCell>
                 )}

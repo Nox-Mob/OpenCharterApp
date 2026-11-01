@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { ArrowDown, ArrowUp, X } from "lucide-react";
 import {
   ATTRIBUTE_TYPES,
@@ -6,8 +7,9 @@ import {
   toKey,
   TYPE_LABELS,
   VISIBILITIES,
-  VISIBILITY_LABELS,
+  visibilityLabels,
   type AttributeInput,
+  type AttributeSubject,
   type AttributeType,
   type Visibility,
 } from "@/engines/attributes";
@@ -39,12 +41,24 @@ export function AttributeForm({
   value,
   onChange,
   locked = false,
+  subject = "member",
 }: {
   value: AttributeInput;
   onChange: (v: AttributeInput) => void;
   locked?: boolean;
+  subject?: AttributeSubject;
 }) {
+  const labels = visibilityLabels(subject);
   const set = (patch: Partial<AttributeInput>) => onChange({ ...value, ...patch });
+  // After "Add choice", focus the new row and scroll it into view so long lists stay usable.
+  const lastChoice = useRef<HTMLInputElement>(null);
+  const focusNewChoice = useRef(false);
+  useEffect(() => {
+    if (!focusNewChoice.current) return;
+    focusNewChoice.current = false;
+    lastChoice.current?.focus();
+    lastChoice.current?.scrollIntoView?.({ block: "nearest" });
+  }, [value.options.length]);
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -90,6 +104,7 @@ export function AttributeForm({
             {value.options.map((o, i) => (
               <li key={i} className="flex items-center gap-2">
                 <Input
+                  ref={i === value.options.length - 1 ? lastChoice : undefined}
                   aria-label={`Choice ${i + 1}`}
                   value={o.label}
                   onChange={(e) => {
@@ -135,7 +150,10 @@ export function AttributeForm({
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => set({ options: [...value.options, { value: "", label: "" }] })}
+            onClick={() => {
+              focusNewChoice.current = true;
+              set({ options: [...value.options, { value: "", label: "" }] });
+            }}
           >
             Add choice
           </Button>
@@ -154,26 +172,40 @@ export function AttributeForm({
           <SelectContent>
             {VISIBILITIES.map((v) => (
               <SelectItem key={v} value={v}>
-                {VISIBILITY_LABELS[v]}
+                {labels[v]}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
-        {(
-          [
-            ["required", "Required"],
-            ["member_editable", "Members can edit their own"],
-            ["show_in_directory", "Show in directory"],
-          ] as const
+        {(subject === "chapter"
+          ? ([
+              ["required", "Required for every chapter"],
+              ["locked", "Locked: only your admins can set it"],
+            ] as const)
+          : ([
+              ["required", "Required"],
+              ["member_editable", "Members can edit their own"],
+              ["show_in_directory", "Show in directory"],
+            ] as const)
         ).map(([k, l]) => (
           <label key={k} className="flex items-center gap-2 text-sm">
-            <Switch checked={value[k]} onCheckedChange={(c) => set({ [k]: c })} aria-label={l} />
+            <Switch
+              checked={value[k] === true}
+              onCheckedChange={(c) => set({ [k]: c })}
+              aria-label={l}
+            />
             {l}
           </label>
         ))}
       </div>
+      {subject === "chapter" && value.locked && (
+        <p className="text-sm text-muted-foreground">
+          Chapter admins will see this value but can't change it. Your admins set it on each
+          chapter's overview.
+        </p>
+      )}
     </div>
   );
 }
