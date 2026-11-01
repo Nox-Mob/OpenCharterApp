@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import {
+  DEFAULT_LEVEL_NAME,
   newTerm,
   parsePrice,
   priceInput,
@@ -38,10 +39,16 @@ export function TierEditor({
   value,
   onChange,
   keyLocked = false,
+  nameOptional = false,
+  renameHint = false,
 }: {
   value: Tier;
   onChange: (v: Tier) => void;
   keyLocked?: boolean;
+  /** The org's only level: it may go unnamed and is then shown as "Membership" (D-126). */
+  nameOptional?: boolean;
+  /** Another level is still called "Membership": suggest renaming it. */
+  renameHint?: boolean;
 }) {
   const set = (patch: Partial<Tier>) => onChange({ ...value, ...patch });
   const setTerm = (i: number, t: Term) =>
@@ -49,11 +56,16 @@ export function TierEditor({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="tier-name">Level name</Label>
+        <Label htmlFor="tier-name">{nameOptional ? "Level name (optional)" : "Level name"}</Label>
+        {nameOptional && (
+          <p className="text-sm text-muted-foreground">
+            This is your only level, so it can go unnamed. Members will see "{DEFAULT_LEVEL_NAME}".
+          </p>
+        )}
         <Input
           id="tier-name"
           value={value.name}
-          placeholder="e.g. Regular"
+          placeholder={nameOptional ? DEFAULT_LEVEL_NAME : "e.g. Regular"}
           onChange={(e) =>
             set(
               keyLocked
@@ -62,6 +74,12 @@ export function TierEditor({
             )
           }
         />
+        {renameHint && (
+          <p className="text-sm text-muted-foreground">
+            Your other level is called "{DEFAULT_LEVEL_NAME}". Consider renaming it so members can
+            tell the two apart.
+          </p>
+        )}
       </div>
       <div className="space-y-2">
         <Label htmlFor="tier-description">Description</Label>
@@ -236,11 +254,15 @@ export function TierDialog({
   primaryLabel,
   onPrimary,
   busy = false,
+  nameOptional = false,
+  renameHint = false,
 }: {
   open: boolean;
   title: string;
   value: Tier | null;
   keyLocked?: boolean;
+  nameOptional?: boolean;
+  renameHint?: boolean;
   onChange: (v: Tier) => void;
   onClose: () => void;
   primaryLabel: string;
@@ -254,7 +276,15 @@ export function TierDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div data-testid="tier-scroll" className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
-          {value && <TierEditor value={value} onChange={onChange} keyLocked={keyLocked} />}
+          {value && (
+            <TierEditor
+              value={value}
+              onChange={onChange}
+              keyLocked={keyLocked}
+              nameOptional={nameOptional}
+              renameHint={renameHint}
+            />
+          )}
         </div>
         <DialogFooter className="border-t px-6 py-4">
           <Button onClick={onPrimary} disabled={busy}>

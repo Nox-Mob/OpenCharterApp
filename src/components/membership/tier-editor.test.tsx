@@ -5,11 +5,13 @@ import { EMPTY_TIER } from "@/modules/membership/tiers";
 import { TierDialog } from "./tier-editor";
 
 let latest: Tier = EMPTY_TIER;
-function Harness() {
+function Harness({ nameOptional = false, renameHint = false } = {}) {
   const [value, setValue] = useState<Tier>(EMPTY_TIER);
   latest = value;
   return (
     <TierDialog
+      nameOptional={nameOptional}
+      renameHint={renameHint}
       open
       title="New membership level"
       value={value}
@@ -55,5 +57,21 @@ describe("TierDialog", () => {
   it("shows the chosen unit in the drop-down (new terms default to 1 year)", () => {
     render(<Harness />);
     expect(screen.getByLabelText("Term 1 unit")).toHaveTextContent("Years");
+  });
+});
+
+describe("single-level naming (D-126)", () => {
+  it("marks the name optional for the only level", () => {
+    render(<Harness nameOptional />);
+    expect(screen.getByLabelText("Level name (optional)")).toHaveAttribute(
+      "placeholder",
+      "Membership",
+    );
+    expect(screen.getByText(/so it can go unnamed/)).toBeInTheDocument();
+  });
+  it("requires a name otherwise, and can suggest renaming the other level", () => {
+    render(<Harness renameHint />);
+    expect(screen.getByLabelText("Level name")).toBeInTheDocument();
+    expect(screen.getByText(/Consider renaming it/)).toBeInTheDocument();
   });
 });

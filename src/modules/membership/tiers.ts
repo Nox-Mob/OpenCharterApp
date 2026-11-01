@@ -187,6 +187,24 @@ export function describeTier(t: Pick<Tier, "name" | "terms">): string {
     .join(", ")}`;
 }
 
+/** What an unnamed level is called when it's the org's only one (D-126). */
+export const DEFAULT_LEVEL_NAME = "Membership";
+const DEFAULT_LEVEL_KEY = "membership";
+
+/**
+ * Fill in the name of an org's only level when it was left blank (D-126). Members and
+ * receipts then read "Membership". With more than one level, every level needs a name.
+ * A saved level keeps its key; a new unnamed one gets the key "membership".
+ */
+export function normalizeTier(
+  t: Tier,
+  { onlyLevel }: { onlyLevel: boolean },
+): { tier: Tier } | { error: string } {
+  if (t.name.trim()) return { tier: t };
+  if (!onlyLevel) return { error: "Give each level a name, since you offer more than one" };
+  return { tier: { ...t, name: DEFAULT_LEVEL_NAME, key: t.id ? t.key : DEFAULT_LEVEL_KEY } };
+}
+
 /** A blank level for the editor: one 1-year term at no price yet. */
 export const EMPTY_TIER: Tier = {
   key: "",

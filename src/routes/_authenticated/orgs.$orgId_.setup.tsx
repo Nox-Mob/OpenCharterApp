@@ -26,7 +26,13 @@ import { initialAnswers, membershipFlow } from "@/modules/membership/setup-flow"
 import { applyFlow, saveDraft, setupStateQuery } from "@/modules/setup/drafts";
 import { attributeDefsQuery } from "@/modules/attributes/queries";
 import { childLevelsAllowedQuery, tiersQuery } from "@/modules/membership/queries";
-import { describeTier, tierInputSchema, type Tier } from "@/modules/membership/tiers";
+import {
+  DEFAULT_LEVEL_NAME,
+  describeTier,
+  normalizeTier,
+  tierInputSchema,
+  type Tier,
+} from "@/modules/membership/tiers";
 import { EMPTY_TIER } from "@/modules/membership/tiers";
 import { TierDialog } from "@/components/membership/tier-editor";
 import { EMPTY_ATTRIBUTE } from "@/components/attributes/attribute-form";
@@ -403,15 +409,20 @@ function LevelDiff({ planned, existing }: { planned: Tier[]; existing: Tier[] })
 
 function TiersQuestion({ value, onChange }: { value: Tier[]; onChange: (v: Tier[]) => void }) {
   const [editing, setEditing] = useState<{ index: number | null; input: Tier } | null>(null);
+  // Other levels in these answers; with none, this one may go unnamed (D-126).
+  const others = value.filter((_, i) => i !== editing?.index);
+  const onlyLevel = others.length === 0;
   function saveEdit() {
     if (!editing) return;
-    const parsed = tierInputSchema.safeParse(editing.input);
+    const normalized = normalizeTier(editing.input, { onlyLevel });
+    if ("error" in normalized) return void toast.error(normalized.error);
+    const parsed = tierInputSchema.safeParse(normalized.tier);
     if (!parsed.success)
       return void toast.error(parsed.error.issues[0]?.message ?? "Check the level");
     if (value.some((t, i) => t.key === parsed.data.key && i !== editing.index))
       return void toast.error("You already have a level with that name");
     const next = [...value];
-    const tier = { ...editing.input, ...parsed.data };
+    const tier = { ...normalized.tier, ...parsed.data };
     if (editing.index === null) next.push(tier);
     else next[editing.index] = tier;
     onChange(next);
@@ -421,7 +432,7 @@ function TiersQuestion({ value, onChange }: { value: Tier[]; onChange: (v: Tier[
     <div className="space-y-4">
       {value.length === 0 ? (
         <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-          No levels yet. Most organizations start with one, such as "Regular".
+          No levels yet. If you only offer one kind of membership, you don't need to name it.
         </p>
       ) : (
         <ul className="divide-y rounded-md border">
@@ -460,6 +471,8 @@ function TiersQuestion({ value, onChange }: { value: Tier[]; onChange: (v: Tier[
         title={editing?.index === null ? "New membership level" : "Edit level"}
         value={editing?.input ?? null}
         keyLocked={editing?.index !== null && !!editing?.input.id}
+        nameOptional={onlyLevel}
+        renameHint={!onlyLevel && others.some((t) => t.name === DEFAULT_LEVEL_NAME)}
         onChange={(input) => editing && setEditing({ ...editing, input })}
         onClose={() => setEditing(null)}
         primaryLabel="Done"
