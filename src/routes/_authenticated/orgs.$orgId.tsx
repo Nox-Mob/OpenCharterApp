@@ -8,6 +8,7 @@ import { SettingsTab } from "@/components/org/settings-tab";
 import { AttributesTab } from "@/components/attributes/attributes-tab";
 import { ChapterFieldsCard } from "@/components/attributes/chapter-fields-card";
 import { RolesTab } from "@/components/org/roles-tab";
+import { LevelsTab } from "@/components/membership/levels-tab";
 import { SetupCard } from "@/components/setup/setup-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -77,6 +78,7 @@ function OrgPage() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           {canSeeMembers && <TabsTrigger value="members">Members</TabsTrigger>}
+          <TabsTrigger value="levels">Membership levels</TabsTrigger>
           <TabsTrigger value="fields">Member fields</TabsTrigger>
           {hasChapters && <TabsTrigger value="chapter-fields">Chapter fields</TabsTrigger>}
           {canManageRoles && <TabsTrigger value="roles">Roles</TabsTrigger>}
@@ -91,6 +93,9 @@ function OrgPage() {
             <p className="text-muted-foreground">Welcome to {org.name}.</p>
           )}
           {org.type === "chapter" && <ChapterFieldsCard org={org} orgs={orgs} grants={grants} />}
+        </TabsContent>
+        <TabsContent value="levels" className="mt-6">
+          <LevelsTab org={org} orgs={orgs} canManage={hasPermission(grants, "tiers.manage", org)} />
         </TabsContent>
         <TabsContent value="fields" className="mt-6">
           <AttributesTab org={org} canManage={canManageFields} />

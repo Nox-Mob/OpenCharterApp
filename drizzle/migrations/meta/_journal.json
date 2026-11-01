@@ -43,6 +43,13 @@
       "when": 1793539200000,
       "tag": "0005_chapter_field_lock",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793541600000,
+      "tag": "0006_membership_levels",
+      "breakpoints": true
     }
   ]
 }

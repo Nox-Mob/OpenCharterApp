@@ -14,6 +14,8 @@ export type SettingDef = {
   description: string;
   kind: "boolean" | "text" | "number";
   default: boolean | string | number;
+  /** "parents": a rule a national or region sets for the orgs below it. */
+  appliesTo?: "all" | "parents";
 };
 
 export const SETTINGS: readonly SettingDef[] = [
@@ -23,6 +25,15 @@ export const SETTINGS: readonly SettingDef[] = [
     description: "When off, chapters show the national logo.",
     kind: "boolean",
     default: true,
+  },
+  {
+    key: "membership.child_levels_allowed",
+    label: "Chapters may create their own membership levels",
+    description:
+      "When off, chapters use your membership levels and can't add their own. Enforced in the database.",
+    kind: "boolean",
+    default: true,
+    appliesTo: "parents",
   },
   {
     key: "membership.approval_required",
@@ -46,6 +57,36 @@ export const SETTINGS: readonly SettingDef[] = [
     default: "",
   },
 ];
+
+/** Settings shown for an org: rules for sub-orgs only appear on orgs that have them. */
+export function settingsFor(orgType: string): SettingDef[] {
+  const parent = orgType === "national" || orgType === "region";
+  return SETTINGS.filter((s) => (s.appliesTo ?? "all") === "all" || parent);
+}
+
+/**
+ * Value of a setting as set by an org's ancestors only (mirrors public.ancestor_setting):
+ * a locked ancestor wins, else the nearest ancestor with a value. The org's own row is ignored,
+ * so a sub-org can't grant itself a right its parent controls.
+ */
+export function resolveFromAncestors(
+  lineage: readonly string[],
+  rows: readonly SettingRow[],
+  key: string,
+  fallback: unknown,
+): unknown {
+  const ancestors = lineage.slice(0, -1);
+  const byOrg = new Map(rows.filter((r) => r.key === key).map((r) => [r.org_id, r]));
+  for (const id of ancestors) {
+    const r = byOrg.get(id);
+    if (r?.mode === "locked") return r.value;
+  }
+  for (let i = ancestors.length - 1; i >= 0; i--) {
+    const r = byOrg.get(ancestors[i]!);
+    if (r && r.mode !== "inherit") return r.value;
+  }
+  return fallback;
+}
 
 export type Resolved = {
   value: unknown;

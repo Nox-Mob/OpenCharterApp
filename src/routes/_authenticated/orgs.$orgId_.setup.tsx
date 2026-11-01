@@ -25,6 +25,9 @@ import type { DefWithOptions } from "@/modules/attributes/queries";
 import { initialAnswers, membershipFlow } from "@/modules/membership/setup-flow";
 import { applyFlow, saveDraft, setupStateQuery } from "@/modules/setup/drafts";
 import { attributeDefsQuery } from "@/modules/attributes/queries";
+import { childLevelsAllowedQuery, tiersQuery } from "@/modules/membership/queries";
+import { describeTier, tierInputSchema, type Tier } from "@/modules/membership/tiers";
+import { EMPTY_TIER, TierDialog } from "@/components/membership/tier-editor";
 import { EMPTY_ATTRIBUTE } from "@/components/attributes/attribute-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,9 +73,18 @@ function SetupPage() {
 function Wizard({ org }: { org: Org }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const ctx: FlowContext = useMemo(() => ({ orgType: org.type, orgName: org.name }), [org]);
   const state = useQuery(setupStateQuery(org.id, membershipFlow.id));
   const defs = useQuery(attributeDefsQuery(org.id, org.ancestor_ids));
+  const tiers = useQuery(tiersQuery(org.id, org.ancestor_ids));
+  const levelsAllowed = useQuery(childLevelsAllowedQuery(org.id, org.ancestor_ids));
+  const ctx: FlowContext = useMemo(
+    () => ({
+      orgType: org.type,
+      orgName: org.name,
+      childLevelsAllowed: levelsAllowed.data !== false,
+    }),
+    [org, levelsAllowed.data],
+  );
   const [answers, setAnswers] = useState<Answers | null>(null);
   const [stepIdx, setStepIdx] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -83,16 +95,36 @@ function Wizard({ org }: { org: Org }) {
     () => ownFields(defs.data, org.id, "chapter"),
     [defs.data, org.id],
   );
+  const existingTiers = useMemo(
+    () =>
+      (tiers.data ?? [])
+        .filter((t) => t.org_id === org.id && t.active)
+        .map((t) => ({ ...t, terms: t.terms.filter((x) => x.active !== false) })),
+    [tiers.data, org.id],
+  );
 
   useEffect(() => {
-    if (answers || state.isLoading || defs.isLoading) return;
+    if (answers || state.isLoading || defs.isLoading || tiers.isLoading || levelsAllowed.isLoading)
+      return;
     const base = initialAnswers(state.data?.answers, ctx);
     // Re-running pre-fills from current configuration (setup-engine.md §4)
     if (!state.data?.answers?.["attributes"]) base["attributes"] = existingOwn.map(toInput);
     if (!state.data?.answers?.["chapter_attributes"])
       base["chapter_attributes"] = existingChapter.map(toInput);
+    if (!state.data?.answers?.["tiers"]) base["tiers"] = existingTiers;
     setAnswers(base);
-  }, [answers, state.isLoading, state.data, defs.isLoading, existingOwn, existingChapter, ctx]);
+  }, [
+    answers,
+    state.isLoading,
+    state.data,
+    defs.isLoading,
+    tiers.isLoading,
+    levelsAllowed.isLoading,
+    existingOwn,
+    existingChapter,
+    existingTiers,
+    ctx,
+  ]);
 
   if (!answers) return <p className="text-muted-foreground">Loading…</p>;
   const steps = visibleSteps(membershipFlow, answers, ctx);
@@ -124,7 +156,13 @@ function Wizard({ org }: { org: Org }) {
     }
     setBusy(true);
     try {
-      await applyFlow(org.id, membershipFlow.id, final, membershipFlow.plan(final, ctx));
+      await applyFlow(
+        org.id,
+        membershipFlow.id,
+        final,
+        membershipFlow.plan(final, ctx),
+        membershipFlow.version,
+      );
       toast.success("Setup applied");
       await qc.invalidateQueries();
       navigate({ to: "/orgs/$orgId", params: { orgId: org.id } });
@@ -142,6 +180,9 @@ function Wizard({ org }: { org: Org }) {
   const plannedAttrs = (answers["attributes"] as AttributeInput[]) ?? [];
   const plannedChapter = steps.some((s) => s.id === "chapter_fields")
     ? ((answers["chapter_attributes"] as AttributeInput[]) ?? [])
+    : [];
+  const plannedTiers = steps.some((s) => s.id === "levels")
+    ? ((answers["tiers"] as Tier[]) ?? [])
     : [];
   return (
     <div className="mx-auto max-w-2xl">
@@ -209,6 +250,7 @@ function Wizard({ org }: { org: Org }) {
               existing={existingChapter}
               tab="Chapter fields"
             />
+            <LevelDiff planned={plannedTiers} existing={existingTiers} />
           </>
         ) : (
           <div className="space-y-5">
@@ -288,11 +330,13 @@ function QuestionField({
             subject={q.subject ?? "member"}
           />
         );
+      case "tiers":
+        return <TiersQuestion value={(value as Tier[]) ?? []} onChange={onChange} />;
     }
   })();
   return (
     <div className="space-y-2">
-      {q.type !== "attributes" && <Label htmlFor={id}>{q.label}</Label>}
+      {q.type !== "attributes" && q.type !== "tiers" && <Label htmlFor={id}>{q.label}</Label>}
       {q.help && <p className="text-sm text-muted-foreground">{q.help}</p>}
       {body}
       {error && <p className="text-sm text-destructive">{error}</p>}
@@ -325,6 +369,103 @@ function toInput({
   ...rest
 }: OwnField): AttributeInput {
   return rest;
+}
+
+/** Levels compared by key and content (terms and prices included). */
+function LevelDiff({ planned, existing }: { planned: Tier[]; existing: Tier[] }) {
+  if (planned.length === 0) return null;
+  const sig = (t: Tier) => describeTier(t) + t.description + t.tax_treatment;
+  const items = diffByKey(
+    planned.map((t) => ({ key: t.key, label: sig(t) })),
+    existing.map((t) => ({ key: t.key, label: sig(t) })),
+  );
+  return (
+    <div className="mt-4">
+      <p className="font-medium">Membership levels</p>
+      <ul className="mt-2 space-y-1 text-sm">
+        {items.map((d, i) => (
+          <li key={d.key} className="flex items-center gap-2">
+            <Badge variant={d.change === "same" ? "outline" : "default"}>
+              {d.change === "add" ? "New" : d.change === "update" ? "Changed" : "No change"}
+            </Badge>
+            {describeTier(planned[i]!)}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Levels or terms you removed here are not deleted. Retire them from the Membership levels
+        tab.
+      </p>
+    </div>
+  );
+}
+
+function TiersQuestion({ value, onChange }: { value: Tier[]; onChange: (v: Tier[]) => void }) {
+  const [editing, setEditing] = useState<{ index: number | null; input: Tier } | null>(null);
+  function saveEdit() {
+    if (!editing) return;
+    const parsed = tierInputSchema.safeParse(editing.input);
+    if (!parsed.success)
+      return void toast.error(parsed.error.issues[0]?.message ?? "Check the level");
+    if (value.some((t, i) => t.key === parsed.data.key && i !== editing.index))
+      return void toast.error("You already have a level with that name");
+    const next = [...value];
+    const tier = { ...editing.input, ...parsed.data };
+    if (editing.index === null) next.push(tier);
+    else next[editing.index] = tier;
+    onChange(next);
+    setEditing(null);
+  }
+  return (
+    <div className="space-y-4">
+      {value.length === 0 ? (
+        <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+          No levels yet. Most organizations start with one, such as "Regular".
+        </p>
+      ) : (
+        <ul className="divide-y rounded-md border">
+          {value.map((t, i) => (
+            <li key={t.key} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+              <span>{describeTier(t)}</span>
+              <span className="space-x-1 whitespace-nowrap">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setEditing({ index: i, input: t })}
+                >
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onChange(value.filter((_, j) => j !== i))}
+                >
+                  Remove
+                </Button>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setEditing({ index: null, input: EMPTY_TIER })}
+      >
+        Add a level
+      </Button>
+      <TierDialog
+        open={!!editing}
+        title={editing?.index === null ? "New membership level" : "Edit level"}
+        value={editing?.input ?? null}
+        keyLocked={editing?.index !== null && !!editing?.input.id}
+        onChange={(input) => editing && setEditing({ ...editing, input })}
+        onClose={() => setEditing(null)}
+        primaryLabel="Done"
+        onPrimary={saveEdit}
+      />
+    </div>
+  );
 }
 
 function FieldDiff({

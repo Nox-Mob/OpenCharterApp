@@ -19,11 +19,11 @@ Full plan: docs/ and .lovable/plan/. Phase IDs map to docs/epic.md.
 - [x] E-09: locked chapter fields (only the national sets them, e.g. Charter date)
 - [x] CI runs on every branch and on pull requests
 - [x] E-10: setup card scrolls with long steps (title and Back / Save and continue stay visible)
+- [x] E-11: membership levels and terms (Days / Months / Years or Lifetime, prices in cents, tax treatment), Membership levels tab, levels step in Membership setup (v2), parent decides whether chapters create their own levels
 - [x] E-10: setup engine (steps, conditions, drafts, review with diff, one-transaction apply) + Membership flow v1
 - [x] CI: lint, formatting, types, unit tests, database rule tests, build
 
 ## Open — Phase 1
-- [ ] E-11 tiers/terms (adds tier questions to the Membership flow)
 - [ ] E-12 per-org Stripe connection as a setup step (each org brings its own Stripe account)
 - [ ] E-13 signup/renewals, E-14 directory/exports, E-15 receipts
 

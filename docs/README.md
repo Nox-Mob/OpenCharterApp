@@ -66,7 +66,7 @@ Every diagram (Mermaid or image) is followed by a **"Diagram description"** bloc
 
 ## Current status
 
-Built so far: sign-in, organization hierarchy, roles with downward-only permissions, org-defined custom roles and a role assignment screen, audit log, invitations, tax profiles, inherited and locked settings, logos, custom member and chapter fields, and the guided setup engine with its first Membership flow. See `/roadmap.md` for what's left.
+Built so far: sign-in, organization hierarchy, roles with downward-only permissions, org-defined custom roles and a role assignment screen, audit log, invitations, tax profiles, inherited and locked settings, logos, custom member and chapter fields (chapter fields can be locked by the national), membership levels and terms, and the guided setup engine with its first Membership flow. See `/roadmap.md` for what's left.
 
 ### Previous status
 

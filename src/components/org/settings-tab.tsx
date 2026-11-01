@@ -3,7 +3,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Org } from "@/lib/orgs";
-import { resolveSetting, SETTINGS, type SettingMode, type SettingRow } from "@/engines/settings";
+import {
+  resolveSetting,
+  settingsFor,
+  type SettingDef,
+  type SettingMode,
+  type SettingRow,
+} from "@/engines/settings";
 import { logoUrl, resolveLogo, uploadLogo, validateLogo } from "@/modules/branding";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,7 +75,7 @@ export function SettingsTab({
       <section className="rounded-md border bg-card p-5">
         <h2 className="text-lg font-semibold">Rules for this organization</h2>
         <div className="mt-4 space-y-6">
-          {SETTINGS.map((def) => (
+          {settingsFor(org.type).map((def) => (
             <SettingRowEditor
               key={def.key}
               orgId={org.id}
@@ -291,7 +297,7 @@ function SettingRowEditor({
 }: {
   orgId: string;
   hasChildren: boolean;
-  def: (typeof SETTINGS)[number];
+  def: SettingDef;
   own: SettingRow | undefined;
   resolved: ReturnType<typeof resolveSetting>;
   nameOf: (id: string | null) => string;

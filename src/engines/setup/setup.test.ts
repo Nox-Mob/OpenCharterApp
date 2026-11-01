@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { diffByKey, pruneAnswers, validateStep, visibleSteps, type Step } from "./index";
 import { initialAnswers, membershipFlow } from "@/modules/membership/setup-flow";
 import { STARTER_ATTRIBUTES, STARTER_CHAPTER_ATTRIBUTES } from "@/engines/attributes";
+import { newTerm, withLength, type Tier } from "@/modules/membership/tiers";
 
 const national = { orgType: "national", orgName: "Nat" };
 const chapter = { orgType: "chapter", orgName: "Austin" };
@@ -64,6 +65,7 @@ describe("membership plan", () => {
       { key: "membership.approval_required", value: false, mode: "locked" },
       { key: "membership.grace_days", value: 30, mode: "locked" },
       { key: "branding.chapter_logo_allowed", value: false, mode: "locked" },
+      { key: "membership.child_levels_allowed", value: true, mode: "locked" },
     ]);
   });
   it("a standalone org never locks and has no chapter settings", () => {
@@ -73,6 +75,7 @@ describe("membership plan", () => {
     );
     expect(plan.settings.every((s) => s.mode === "override")).toBe(true);
     expect(plan.settings.map((s) => s.key)).not.toContain("branding.chapter_logo_allowed");
+    expect(plan.settings.map((s) => s.key)).not.toContain("membership.child_levels_allowed");
   });
   it("attributes are planned as member attributes", () => {
     const plan = membershipFlow.plan(
@@ -145,5 +148,94 @@ describe("diffByKey", () => {
       ],
     );
     expect(d.map((x) => x.change)).toEqual(["same", "add", "update"]);
+  });
+});
+
+describe("membership levels (E-11)", () => {
+  const regular: Tier = {
+    key: "regular",
+    name: "Regular",
+    description: "",
+    tax_treatment: "non_deductible",
+    terms: [
+      { ...newTerm(), price_minor: 2500 },
+      { ...withLength(newTerm(), null), price_minor: 30000 },
+    ],
+  };
+  const managedChapter = { ...chapter, childLevelsAllowed: false };
+  it("asks for levels unless a parent manages them", () => {
+    const ids = (ctx: typeof national) => visibleSteps(membershipFlow, {}, ctx).map((s) => s.id);
+    expect(ids(standalone)).toContain("levels");
+    expect(ids(chapter)).toContain("levels");
+    expect(ids(managedChapter)).not.toContain("levels");
+  });
+  it("plans levels with their terms in minor units", () => {
+    const plan = membershipFlow.plan(
+      { ...initialAnswers(null, standalone), tiers: [regular] },
+      standalone,
+    );
+    expect(plan.tiers).toEqual([
+      {
+        key: "regular",
+        name: "Regular",
+        description: "",
+        tax_treatment: "non_deductible",
+        terms: [
+          {
+            key: "1_year",
+            label: "1 year",
+            length_count: 1,
+            length_unit: "year",
+            price_minor: 2500,
+            currency: "USD",
+          },
+          {
+            key: "lifetime",
+            label: "Lifetime",
+            length_count: null,
+            length_unit: null,
+            price_minor: 30000,
+            currency: "USD",
+          },
+        ],
+      },
+    ]);
+  });
+  it("never sends levels when a parent manages them", () => {
+    const plan = membershipFlow.plan(
+      { ...initialAnswers(null, managedChapter), tiers: [regular] },
+      managedChapter,
+    );
+    expect(plan).not.toHaveProperty("tiers");
+  });
+  it("lets a national keep chapters on its levels", () => {
+    const plan = membershipFlow.plan(
+      { ...initialAnswers(null, national), child_levels_allowed: false },
+      national,
+    );
+    expect(plan.settings).toContainEqual({
+      key: "membership.child_levels_allowed",
+      value: false,
+      mode: "locked",
+    });
+    expect(
+      membershipFlow.summarize(
+        { ...initialAnswers(null, national), child_levels_allowed: false },
+        national,
+      ),
+    ).toContain("Chapters use your membership levels");
+  });
+  it("summarizes levels with their prices", () => {
+    const lines = membershipFlow.summarize(
+      { ...initialAnswers(null, standalone), tiers: [regular] },
+      standalone,
+    );
+    expect(lines).toContain("Regular: 1 year $25.00, Lifetime $300.00");
+    expect(
+      membershipFlow.summarize(initialAnswers(null, managedChapter), managedChapter),
+    ).toContain("Membership levels come from your parent organization");
+  });
+  it("is version 2", () => {
+    expect(membershipFlow.version).toBe(2);
   });
 });

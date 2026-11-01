@@ -259,6 +259,50 @@ export type Database = {
           },
         ]
       }
+      membership_tiers: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string
+          id: string
+          key: string
+          name: string
+          org_id: string
+          sort_order: number
+          tax_treatment: Database["public"]["Enums"]["tax_treatment"]
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          id?: string
+          key: string
+          name: string
+          org_id: string
+          sort_order?: number
+          tax_treatment?: Database["public"]["Enums"]["tax_treatment"]
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          id?: string
+          key?: string
+          name?: string
+          org_id?: string
+          sort_order?: number
+          tax_treatment?: Database["public"]["Enums"]["tax_treatment"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_tiers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_member_profiles: {
         Row: {
           created_at: string
@@ -592,6 +636,66 @@ export type Database = {
           },
         ]
       }
+      tier_terms: {
+        Row: {
+          active: boolean
+          created_at: string
+          currency: string
+          id: string
+          key: string
+          label: string
+          length_count: number | null
+          length_unit: Database["public"]["Enums"]["term_unit"] | null
+          org_id: string
+          price_minor: number
+          sort_order: number
+          tier_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          id?: string
+          key: string
+          label: string
+          length_count?: number | null
+          length_unit?: Database["public"]["Enums"]["term_unit"] | null
+          org_id: string
+          price_minor: number
+          sort_order?: number
+          tier_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          id?: string
+          key?: string
+          label?: string
+          length_count?: number | null
+          length_unit?: Database["public"]["Enums"]["term_unit"] | null
+          org_id?: string
+          price_minor?: number
+          sort_order?: number
+          tier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tier_terms_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tier_terms_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -725,6 +829,8 @@ export type Database = {
       org_type: "platform" | "national" | "region" | "chapter" | "standalone"
       setting_mode: "inherit" | "override" | "locked"
       setup_status: "in_progress" | "applied" | "needs_review"
+      tax_treatment: "deductible" | "non_deductible" | "partial"
+      term_unit: "day" | "month" | "year"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -866,6 +972,8 @@ export const Constants = {
       org_type: ["platform", "national", "region", "chapter", "standalone"],
       setting_mode: ["inherit", "override", "locked"],
       setup_status: ["in_progress", "applied", "needs_review"],
+      tax_treatment: ["deductible", "non_deductible", "partial"],
+      term_unit: ["day", "month", "year"],
     },
   },
 } as const

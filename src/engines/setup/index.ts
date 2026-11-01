@@ -40,9 +40,15 @@ export type Question =
       help?: string;
       /** What the fields describe; defaults to members. */
       subject?: "member" | "chapter";
-    };
+    }
+  | { id: string; type: "tiers"; label: string; help?: string };
 
-export type FlowContext = { orgType: string; orgName: string };
+export type FlowContext = {
+  orgType: string;
+  orgName: string;
+  /** False when a parent org manages membership levels for this org (D-123). */
+  childLevelsAllowed?: boolean;
+};
 
 export type Step = {
   id: string;
@@ -54,6 +60,8 @@ export type Step = {
 
 export type Flow<P> = {
   id: string;
+  /** Bumped when questions are added, so orgs that already applied see "new setup options" (§8). */
+  version: number;
   title: string;
   description: string;
   steps: Step[];

@@ -1,17 +1,35 @@
 import { forSubject, type AttributeInput, type AttributeSubject } from "@/engines/attributes";
+import { describeTier, type Tier } from "./tiers";
 import type { Answers, Flow, FlowContext } from "@/engines/setup";
 
 /**
- * Membership setup flow v1 (setup-engine.md §6.1 basics, §6.2 incl. chapter fields,
- * §6.3 joining/grace). Tier and price questions are added with E-11.
+ * Membership setup flow (setup-engine.md §6.1 basics, §6.2 incl. chapter fields,
+ * §6.3 levels, terms and prices, joining/grace).
+ * v2 (E-11) added membership levels and the "may chapters create their own levels" rule.
  */
+export type TierPlan = {
+  key: string;
+  name: string;
+  description: string;
+  tax_treatment: Tier["tax_treatment"];
+  terms: {
+    key: string;
+    label: string;
+    length_count: number | null;
+    length_unit: "day" | "month" | "year" | null;
+    price_minor: number;
+    currency: string;
+  }[];
+};
 export type MembershipPlan = {
   tax: { legal_name: string; ein: string; tax_status: string };
   attributes: (AttributeInput & { applies_to: AttributeSubject })[];
   settings: { key: string; value: unknown; mode: "override" | "locked" }[];
+  tiers?: TierPlan[];
 };
 
 const isParent = (ctx: FlowContext) => ctx.orgType === "national" || ctx.orgType === "region";
+const ownsLevels = (ctx: FlowContext) => ctx.childLevelsAllowed !== false;
 
 export const TAX_STATUSES = [
   { value: "501(c)(3)", label: "501(c)(3) charity" },
@@ -22,6 +40,7 @@ export const TAX_STATUSES = [
 
 export const membershipFlow: Flow<MembershipPlan> = {
   id: "membership",
+  version: 2,
   title: "Membership setup",
   description:
     "Tell us about your organization, what you track about members, and how joining works.",
@@ -71,6 +90,14 @@ export const membershipFlow: Flow<MembershipPlan> = {
       ],
     },
     {
+      id: "levels",
+      title: "Membership levels",
+      description:
+        "The levels people can join at, how long each membership lasts, and what it costs. You can change these later.",
+      when: (_a, ctx) => ownsLevels(ctx),
+      questions: [{ id: "tiers", type: "tiers", label: "Membership levels" }],
+    },
+    {
       id: "joining",
       title: "Joining and renewals",
       questions: [
@@ -105,6 +132,12 @@ export const membershipFlow: Flow<MembershipPlan> = {
           type: "boolean",
           label: "May chapters upload their own logo?",
         },
+        {
+          id: "child_levels_allowed",
+          type: "boolean",
+          label: "May chapters create their own membership levels?",
+          help: "When off, chapters use your levels and can't add their own.",
+        },
       ],
     },
   ],
@@ -114,6 +147,8 @@ export const membershipFlow: Flow<MembershipPlan> = {
     tax_status: "",
     attributes: [],
     chapter_attributes: [],
+    tiers: [],
+    child_levels_allowed: true,
     approval_required: false,
     grace_days: 30,
     lock_joining: false,
@@ -132,6 +167,12 @@ export const membershipFlow: Flow<MembershipPlan> = {
         : "New members join without approval",
       `Grace period: ${Number(a["grace_days"] ?? 0)} days`,
     ];
+    if (ownsLevels(ctx)) {
+      const tiers = (a["tiers"] as Tier[] | undefined) ?? [];
+      lines.push(...(tiers.length ? tiers.map(describeTier) : ["No membership levels yet"]));
+    } else {
+      lines.push("Membership levels come from your parent organization");
+    }
     if (isParent(ctx)) {
       const chapterAttrs = (a["chapter_attributes"] as AttributeInput[] | undefined) ?? [];
       lines.push(
@@ -149,6 +190,11 @@ export const membershipFlow: Flow<MembershipPlan> = {
           ? "Chapters use your logo"
           : "Chapters may upload their own logo",
       );
+      lines.push(
+        a["child_levels_allowed"] === false
+          ? "Chapters use your membership levels"
+          : "Chapters may create their own membership levels",
+      );
     }
     return lines;
   },
@@ -162,6 +208,11 @@ export const membershipFlow: Flow<MembershipPlan> = {
       settings.push({
         key: "branding.chapter_logo_allowed",
         value: a["chapter_logo_allowed"] !== false,
+        mode: "locked",
+      });
+      settings.push({
+        key: "membership.child_levels_allowed",
+        value: a["child_levels_allowed"] !== false,
         mode: "locked",
       });
     }
@@ -182,9 +233,32 @@ export const membershipFlow: Flow<MembershipPlan> = {
         ).map((x) => ({ ...forSubject(x, "chapter"), applies_to: "chapter" as const })),
       ],
       settings,
+      // Left out entirely when a parent manages levels, so setup never touches them.
+      ...(ownsLevels(ctx)
+        ? { tiers: ((a["tiers"] as Tier[] | undefined) ?? []).map(toTierPlan) }
+        : {}),
     };
   },
 };
+
+function toTierPlan(t: Tier): TierPlan {
+  return {
+    key: t.key,
+    name: t.name.trim(),
+    description: t.description.trim(),
+    tax_treatment: t.tax_treatment,
+    terms: t.terms
+      .filter((x) => x.active !== false)
+      .map((x) => ({
+        key: x.key,
+        label: x.label,
+        length_count: x.length_count,
+        length_unit: x.length_unit,
+        price_minor: x.price_minor,
+        currency: x.currency,
+      })),
+  };
+}
 
 export function initialAnswers(saved: Answers | null | undefined, ctx: FlowContext): Answers {
   return { ...membershipFlow.defaults(ctx), ...(saved ?? {}) };
