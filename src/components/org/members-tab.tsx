@@ -19,12 +19,26 @@ import {
   membersQuery,
   membershipErrorMessage,
 } from "@/modules/membership/memberships";
-import { expirationLabel, standing, today } from "@/modules/membership/standing";
+import { expirationLabel, STANDING_LABELS, standing, today } from "@/modules/membership/standing";
 import { StandingBadge } from "@/components/membership/standing-badge";
 import { AddMemberDialog } from "@/components/membership/add-member-dialog";
 import { useFeatureReady } from "@/lib/db/readiness";
 import { declineApplication } from "@/modules/payments/payments.functions";
 import { MemberDetailsDialog } from "./member-details-dialog";
+import { RosterToolbar } from "@/components/members/roster-toolbar";
+import { attributeDefsQuery, orgMemberValuesQuery } from "@/modules/attributes/queries";
+import {
+  EMPTY_FILTER,
+  exportColumns,
+  filterRoster,
+  logExport,
+  sortRoster,
+  toCsv,
+  toRosterRows,
+  type RosterField,
+  type RosterFilter,
+  type RosterSort,
+} from "@/modules/members/roster";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -126,6 +140,63 @@ export function MembersTab({
   const graceDays = grace.data ?? 30;
   const on = today();
   const details = (members.data ?? []).find((m) => m.id === detailsId) ?? null;
+  // Member list tools (E-14): search, filters, sort, saved views and audited export.
+  const exportsReady = useFeatureReady("exports") === true;
+  const defs = useQuery(attributeDefsQuery(org.id, org.ancestor_ids));
+  const values = useQuery(orgMemberValuesQuery(orgId));
+  const [filter, setFilter] = useState<RosterFilter>(EMPTY_FILTER);
+  const [sort, setSort] = useState<RosterSort>("name");
+  const rosterFields: RosterField[] = (defs.data ?? [])
+    .filter((d) => d.applies_to === "member" && d.active)
+    .map((d) => ({
+      id: d.id,
+      label: d.label,
+      data_type: d.data_type,
+      visibility: d.visibility,
+      options: d.options,
+    }));
+  const rows = toRosterRows(members.data ?? [], values.data ?? {}, graceDays, on);
+  const visible = sortRoster(filterRoster(rows, filter, rosterFields), sort);
+  const levels = [
+    ...new Map(
+      rows
+        .filter((r) => r.membership)
+        .map((r) => [
+          r.membership!.tier_id,
+          { id: r.membership!.tier_id, name: r.membership!.tier_name },
+        ]),
+    ).values(),
+  ];
+  const canExport = exportsReady && hasPermission(grants, "members.export", org);
+
+  async function exportCsv() {
+    const columns = exportColumns(
+      rosterFields,
+      hasPermission(grants, "members.view", org),
+      (s) => STANDING_LABELS[s],
+    ).filter(
+      (c) =>
+        ready || !["standing", "level", "term", "member_since", "paid_through"].includes(c.key),
+    );
+    try {
+      // Audited first (D-138); no log, no file.
+      await logExport(
+        orgId,
+        visible.length,
+        columns.map((c) => c.label),
+        filter,
+      );
+    } catch {
+      return void toast.error("Couldn't export: you may not have permission to export members");
+    }
+    const blob = new Blob(["\uFEFF" + toCsv(visible, columns)], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${org.slug}-members-${on}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast.success(`Exported ${visible.length} member${visible.length === 1 ? "" : "s"}`);
+  }
   const applications = (members.data ?? []).filter((m) => m.membership?.status === "pending");
   const joiningReady = useFeatureReady("joining") === true;
   async function decide(membershipId: string, action: "approve" | "decline") {
@@ -269,6 +340,24 @@ export function MembersTab({
           <h2 className="text-lg font-semibold">Members</h2>
           {ready && canManageMembers && <Button onClick={() => setAdding(true)}>Add member</Button>}
         </div>
+        <div className="mb-3">
+          <RosterToolbar
+            orgId={orgId}
+            filter={filter}
+            onFilter={setFilter}
+            sort={sort}
+            onSort={setSort}
+            fields={rosterFields}
+            levels={levels}
+            showMembership={ready}
+            canSaveViews={exportsReady && canManageMembers}
+            canUseViews={exportsReady}
+            canExport={canExport}
+            onExport={exportCsv}
+            shown={visible.length}
+            total={rows.length}
+          />
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
@@ -286,7 +375,7 @@ export function MembersTab({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(members.data ?? []).map((m) => (
+            {visible.map((m) => (
               <TableRow key={m.id}>
                 <TableCell>{m.display_name || "—"}</TableCell>
                 <TableCell>

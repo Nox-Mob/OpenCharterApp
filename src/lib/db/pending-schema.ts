@@ -7,7 +7,7 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When Lovable applies a migration, delete its section here (the generated types take over).
- * Pending: 0008_memberships, 0009_payments_gateway, 0010_joining.
+ * Pending: 0008_memberships, 0009_payments_gateway, 0010_joining, 0011_member_exports.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,26 @@ export type PendingEnums = {
 
 /** Tables added or changed by pending migrations (a changed table replaces the generated one). */
 export type PendingTables = {
+  member_segments: {
+    Row: {
+      created_at: string;
+      created_by: string | null;
+      filter: Json;
+      id: string;
+      name: string;
+      org_id: string;
+    };
+    Insert: {
+      created_at?: string;
+      created_by?: string | null;
+      filter?: Json;
+      id?: string;
+      name: string;
+      org_id: string;
+    };
+    Update: Partial<PendingTables["member_segments"]["Insert"]>;
+    Relationships: [];
+  };
   gateway_connections: {
     Row: {
       account_label: string;
@@ -368,6 +388,10 @@ export type PendingTables = {
 };
 
 export type PendingFunctions = {
+  log_member_export: {
+    Args: { _columns: string[]; _filter?: Json; _org: string; _row_count: number };
+    Returns: undefined;
+  };
   begin_join: { Args: { _answers?: Json; _org: string; _term: string }; Returns: string };
   begin_renewal: { Args: { _membership: string; _term: string }; Returns: string };
   complete_gateway_payment: {

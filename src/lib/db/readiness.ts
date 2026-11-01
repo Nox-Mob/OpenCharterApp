@@ -9,6 +9,11 @@ import { db } from "./pending-schema";
 export const FEATURES = {
   memberships: { migration: "0008_memberships", label: "Memberships", table: "memberships" },
   payments: { migration: "0009_payments_gateway", label: "Payments", table: "gateway_connections" },
+  exports: {
+    migration: "0011_member_exports",
+    label: "Member exports and saved views",
+    table: "member_segments",
+  },
   joining: {
     migration: "0010_joining",
     label: "Online joining and renewal",

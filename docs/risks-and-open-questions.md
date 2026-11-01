@@ -22,7 +22,7 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 | Q-08 | P2 | **Award appeals mechanics.** Appeal to whom, how many times, and within what window? Set by the owning org, but what options do we offer? | Appeal to a chosen higher level, one appeal, configurable window |
 | Q-09 | P2 | **Who can nominate for awards?** Any member, officers only, or per award? | Per award setting |
 | Q-10 | P2 | **Rank attribute scope.** One rank list per org, or can there be several (e.g., by branch)? | Attributes are generic, so an org can define several. Rules reference a specific attribute |
-| Q-11 | P2 | **Member privacy defaults** for directory and exports, and the admin override policy | Org-level default, member-level preference, national decides whether admins can override |
+| Q-11 | P2 | *Partly addressed by D-138: exports respect field visibility and are audited; per-member preferences still open.* **Member privacy defaults** for directory and exports, and the admin override policy | Org-level default, member-level preference, national decides whether admins can override |
 | Q-12 | P2 | **Currency and locale.** USD and US tax only for v1? | Yes, but no hard-coded currency assumptions |
 | Q-13 | P3 | **Name and branding** for the project | TBD |
 | Q-14 | P3 | **Hosted tiers and thresholds** (chapters > 5, members < 100, and so on) | Remains configuration. Decide before E-42 |

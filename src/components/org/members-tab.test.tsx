@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Org } from "@/lib/orgs";
 import { PERMISSIONS } from "@/lib/policy";
@@ -16,9 +16,19 @@ const results: Record<string, { data?: unknown; error?: unknown }> = {
         email: "m@test.org",
         created_at: "2026-01-01",
       },
+      {
+        id: "p2",
+        user_id: "u2",
+        display_name: "Pat Person",
+        email: "pat@test.org",
+        created_at: "2026-01-02",
+      },
     ],
   },
   roles: { data: [] },
+  member_segments: { error: { code: "PGRST205", message: "Could not find the table" } },
+  attribute_definitions: { data: [] },
+  attribute_values: { data: [] },
   role_assignments: { data: [] },
   invitations: { data: [] },
 };
@@ -71,6 +81,13 @@ describe("MembersTab before migration 0008", () => {
     expect(await screen.findByText("Morgan Member")).toBeInTheDocument();
     expect(screen.queryByText("Standing")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Add member" })).not.toBeInTheDocument();
+    // search works before any new migration; export waits for 0011 (audited exports)
+    expect(screen.getByText("Showing 2 of 2")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Search members"), { target: { value: "pat" } });
+    expect(screen.queryByText("Morgan Member")).not.toBeInTheDocument();
+    expect(screen.getByText("Pat Person")).toBeInTheDocument();
+    expect(screen.getByText("Showing 1 of 2")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Export CSV" })).not.toBeInTheDocument();
     // only columns that exist before 0008 were requested
     expect(selects.every((c) => !c.includes("memberships") && !c.includes("source"))).toBe(true);
   });
