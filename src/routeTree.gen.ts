@@ -16,7 +16,13 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedOrgsOrgIdRouteImport } from './routes/_authenticated/orgs.$orgId'
+import { Route as AuthenticatedReceiptsReceiptIdRouteImport } from './routes/_authenticated/receipts.$receiptId'
+import { Route as JoinOrgSlugIndexRouteImport } from './routes/join.$orgSlug.index'
+import { Route as JoinOrgSlugCancelledRouteImport } from './routes/join.$orgSlug.cancelled'
+import { Route as AuthenticatedJoinOrgSlugDoneRouteImport } from './routes/_authenticated/join.$orgSlug.done'
 import { Route as AuthenticatedOrgsOrgIdSetupRouteImport } from './routes/_authenticated/orgs.$orgId_.setup'
+import { Route as AuthenticatedPayTestPaymentIdRouteImport } from './routes/_authenticated/pay.test.$paymentId'
+import { Route as ApiPublicStripeOrgIdRouteImport } from './routes/api/public/stripe.$orgId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,12 +58,45 @@ const AuthenticatedOrgsOrgIdRoute = AuthenticatedOrgsOrgIdRouteImport.update({
   path: '/orgs/$orgId',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedReceiptsReceiptIdRoute =
+  AuthenticatedReceiptsReceiptIdRouteImport.update({
+    id: '/receipts/$receiptId',
+    path: '/receipts/$receiptId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const JoinOrgSlugIndexRoute = JoinOrgSlugIndexRouteImport.update({
+  id: '/join/$orgSlug/',
+  path: '/join/$orgSlug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JoinOrgSlugCancelledRoute = JoinOrgSlugCancelledRouteImport.update({
+  id: '/join/$orgSlug/cancelled',
+  path: '/join/$orgSlug/cancelled',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedJoinOrgSlugDoneRoute =
+  AuthenticatedJoinOrgSlugDoneRouteImport.update({
+    id: '/join/$orgSlug/done',
+    path: '/join/$orgSlug/done',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOrgsOrgIdSetupRoute =
   AuthenticatedOrgsOrgIdSetupRouteImport.update({
     id: '/orgs/$orgId_/setup',
     path: '/orgs/$orgId/setup',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPayTestPaymentIdRoute =
+  AuthenticatedPayTestPaymentIdRouteImport.update({
+    id: '/pay/test/$paymentId',
+    path: '/pay/test/$paymentId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ApiPublicStripeOrgIdRoute = ApiPublicStripeOrgIdRouteImport.update({
+  id: '/api/public/stripe/$orgId',
+  path: '/api/public/stripe/$orgId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -66,7 +105,13 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/invite/$token': typeof InviteTokenRoute
   '/orgs/$orgId': typeof AuthenticatedOrgsOrgIdRoute
+  '/receipts/$receiptId': typeof AuthenticatedReceiptsReceiptIdRoute
+  '/join/$orgSlug/cancelled': typeof JoinOrgSlugCancelledRoute
+  '/join/$orgSlug/': typeof JoinOrgSlugIndexRoute
+  '/join/$orgSlug/done': typeof AuthenticatedJoinOrgSlugDoneRoute
   '/orgs/$orgId/setup': typeof AuthenticatedOrgsOrgIdSetupRoute
+  '/pay/test/$paymentId': typeof AuthenticatedPayTestPaymentIdRoute
+  '/api/public/stripe/$orgId': typeof ApiPublicStripeOrgIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,7 +120,13 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/invite/$token': typeof InviteTokenRoute
   '/orgs/$orgId': typeof AuthenticatedOrgsOrgIdRoute
+  '/receipts/$receiptId': typeof AuthenticatedReceiptsReceiptIdRoute
+  '/join/$orgSlug/cancelled': typeof JoinOrgSlugCancelledRoute
+  '/join/$orgSlug': typeof JoinOrgSlugIndexRoute
+  '/join/$orgSlug/done': typeof AuthenticatedJoinOrgSlugDoneRoute
   '/orgs/$orgId/setup': typeof AuthenticatedOrgsOrgIdSetupRoute
+  '/pay/test/$paymentId': typeof AuthenticatedPayTestPaymentIdRoute
+  '/api/public/stripe/$orgId': typeof ApiPublicStripeOrgIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,7 +137,13 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/invite/$token': typeof InviteTokenRoute
   '/_authenticated/orgs/$orgId': typeof AuthenticatedOrgsOrgIdRoute
+  '/_authenticated/receipts/$receiptId': typeof AuthenticatedReceiptsReceiptIdRoute
+  '/join/$orgSlug/cancelled': typeof JoinOrgSlugCancelledRoute
+  '/join/$orgSlug/': typeof JoinOrgSlugIndexRoute
+  '/_authenticated/join/$orgSlug/done': typeof AuthenticatedJoinOrgSlugDoneRoute
   '/_authenticated/orgs/$orgId_/setup': typeof AuthenticatedOrgsOrgIdSetupRoute
+  '/_authenticated/pay/test/$paymentId': typeof AuthenticatedPayTestPaymentIdRoute
+  '/api/public/stripe/$orgId': typeof ApiPublicStripeOrgIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,7 +154,13 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/invite/$token'
     | '/orgs/$orgId'
+    | '/receipts/$receiptId'
+    | '/join/$orgSlug/cancelled'
+    | '/join/$orgSlug/'
+    | '/join/$orgSlug/done'
     | '/orgs/$orgId/setup'
+    | '/pay/test/$paymentId'
+    | '/api/public/stripe/$orgId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -106,7 +169,13 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/invite/$token'
     | '/orgs/$orgId'
+    | '/receipts/$receiptId'
+    | '/join/$orgSlug/cancelled'
+    | '/join/$orgSlug'
+    | '/join/$orgSlug/done'
     | '/orgs/$orgId/setup'
+    | '/pay/test/$paymentId'
+    | '/api/public/stripe/$orgId'
   id:
     | '__root__'
     | '/'
@@ -116,7 +185,13 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/invite/$token'
     | '/_authenticated/orgs/$orgId'
+    | '/_authenticated/receipts/$receiptId'
+    | '/join/$orgSlug/cancelled'
+    | '/join/$orgSlug/'
+    | '/_authenticated/join/$orgSlug/done'
     | '/_authenticated/orgs/$orgId_/setup'
+    | '/_authenticated/pay/test/$paymentId'
+    | '/api/public/stripe/$orgId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -125,6 +200,9 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  JoinOrgSlugCancelledRoute: typeof JoinOrgSlugCancelledRoute
+  JoinOrgSlugIndexRoute: typeof JoinOrgSlugIndexRoute
+  ApiPublicStripeOrgIdRoute: typeof ApiPublicStripeOrgIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -178,6 +256,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrgsOrgIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/receipts/$receiptId': {
+      id: '/_authenticated/receipts/$receiptId'
+      path: '/receipts/$receiptId'
+      fullPath: '/receipts/$receiptId'
+      preLoaderRoute: typeof AuthenticatedReceiptsReceiptIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/join/$orgSlug/': {
+      id: '/join/$orgSlug/'
+      path: '/join/$orgSlug'
+      fullPath: '/join/$orgSlug/'
+      preLoaderRoute: typeof JoinOrgSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/join/$orgSlug/cancelled': {
+      id: '/join/$orgSlug/cancelled'
+      path: '/join/$orgSlug/cancelled'
+      fullPath: '/join/$orgSlug/cancelled'
+      preLoaderRoute: typeof JoinOrgSlugCancelledRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/join/$orgSlug/done': {
+      id: '/_authenticated/join/$orgSlug/done'
+      path: '/join/$orgSlug/done'
+      fullPath: '/join/$orgSlug/done'
+      preLoaderRoute: typeof AuthenticatedJoinOrgSlugDoneRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/orgs/$orgId_/setup': {
       id: '/_authenticated/orgs/$orgId_/setup'
       path: '/orgs/$orgId/setup'
@@ -185,19 +291,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrgsOrgIdSetupRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pay/test/$paymentId': {
+      id: '/_authenticated/pay/test/$paymentId'
+      path: '/pay/test/$paymentId'
+      fullPath: '/pay/test/$paymentId'
+      preLoaderRoute: typeof AuthenticatedPayTestPaymentIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/stripe/$orgId': {
+      id: '/api/public/stripe/$orgId'
+      path: '/api/public/stripe/$orgId'
+      fullPath: '/api/public/stripe/$orgId'
+      preLoaderRoute: typeof ApiPublicStripeOrgIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedOrgsOrgIdRoute: typeof AuthenticatedOrgsOrgIdRoute
+  AuthenticatedReceiptsReceiptIdRoute: typeof AuthenticatedReceiptsReceiptIdRoute
+  AuthenticatedJoinOrgSlugDoneRoute: typeof AuthenticatedJoinOrgSlugDoneRoute
   AuthenticatedOrgsOrgIdSetupRoute: typeof AuthenticatedOrgsOrgIdSetupRoute
+  AuthenticatedPayTestPaymentIdRoute: typeof AuthenticatedPayTestPaymentIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedOrgsOrgIdRoute: AuthenticatedOrgsOrgIdRoute,
+  AuthenticatedReceiptsReceiptIdRoute: AuthenticatedReceiptsReceiptIdRoute,
+  AuthenticatedJoinOrgSlugDoneRoute: AuthenticatedJoinOrgSlugDoneRoute,
   AuthenticatedOrgsOrgIdSetupRoute: AuthenticatedOrgsOrgIdSetupRoute,
+  AuthenticatedPayTestPaymentIdRoute: AuthenticatedPayTestPaymentIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -209,6 +335,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   InviteTokenRoute: InviteTokenRoute,
+  JoinOrgSlugCancelledRoute: JoinOrgSlugCancelledRoute,
+  JoinOrgSlugIndexRoute: JoinOrgSlugIndexRoute,
+  ApiPublicStripeOrgIdRoute: ApiPublicStripeOrgIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

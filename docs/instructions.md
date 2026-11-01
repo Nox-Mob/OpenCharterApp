@@ -40,8 +40,10 @@ A commit that does not meet all four is not ready. Reviewers should reject it, a
 bun run lint
 bun run format:check
 bun run typecheck
-bun run test        # unit tests
-bun run test:db     # database rules (needs TEST_DATABASE_URL, see testing.md)
+bun run test              # unit and component tests
+bun run check:migrations  # Lovable's migration rules (D-125)
+bun run test:db           # database rules (needs TEST_DATABASE_URL, see testing.md)
+bun run build
 ```
 
 *(Script names are the standard set established in E-01. If a script is missing, adding it is part of E-01, not a reason to skip the check.)*
@@ -49,7 +51,7 @@ bun run test:db     # database rules (needs TEST_DATABASE_URL, see testing.md)
 ## 4. Project rules
 
 ### Tooling
-- **npm only.** No Bun, Yarn, or pnpm. Commit `package-lock.json`. Use `npm ci` in CI.
+- **Bun only** (D-104, which supersedes the original npm-only rule because the Lovable toolchain requires Bun). No npm, Yarn, or pnpm. Commit `bun.lock`. CI uses `bun install --frozen-lockfile`.
 - TypeScript in strict mode. No `any` without a comment explaining why.
 - Validation with **Zod** at every boundary (forms, server actions, route handlers, webhooks, rule and setup definitions).
 - Configuration through **environment variables**, documented in `.env.example`. No host-specific features, so packaging can come later (D-011, D-012).
@@ -59,6 +61,7 @@ bun run test:db     # database rules (needs TEST_DATABASE_URL, see testing.md)
 - **Every tenant-owned table has `org_id`** and a row-level security policy (D-031, D-003). No exceptions without a recorded decision.
 - Application code still checks access. RLS is the safety net, not the only gate.
 - **Migration conventions (Lovable import rules, D-125).** Every new tenant table has `org_id uuid not null references public.organizations(id)`, `grant select, insert, update, delete on public.<table> to authenticated`, `enable row level security`, and policies using `public.has_permission` or `public.is_org_member`. Never `DROP TABLE` or `DROP COLUMN`: add columns and leave deprecation comments. Use `alter policy` and `create or replace trigger` instead of dropping and recreating. "Retire, never delete" means having no DELETE policy, and columns that must not change are guarded by a trigger. `bun run check:migrations` enforces this from migration 0004 on.
+- **Migrations Lovable hasn't applied yet (D-135).** Lovable applies migrations to the live database, sometimes later than they're merged. Put types for unapplied tables and functions in `src/lib/db/pending-schema.ts` (never hand-edit the generated `src/integrations/supabase/types.ts`). Put screens that need them behind the readiness guard (`<RequiresDatabase>`), and list the migration under "Pending migrations for Lovable" in `/roadmap.md`. Once Lovable has applied a migration, never edit it again.
 - **All authorization goes through the policy layer.** Never write ad hoc permission checks in components or routes.
 - Permissions inherit **downward only** (D-032).
 - **Nothing crosses orgs.** A person is global (login identity only). Profile data, attributes, preferences, and settings belong to the person's membership in a specific org and are never copied, pre-filled, or revealed to another org (D-036, D-037).
@@ -182,7 +185,7 @@ Every diagram is followed by a "Diagram description" block explaining in plain p
 Rules that depend on memory will be forgotten, so automate them where possible. This is part of E-01:
 
 - **Pre-commit hook** (for example Husky with lint-staged): runs lint, typecheck, and the tests related to changed files. Block the commit on failure.
-- **CI pipeline** on every push and pull request: install with `npm ci`, lint, typecheck, full unit and integration tests, tenant-isolation suite, and e2e on the main branch or before merge.
+- **CI pipeline** on every push to any branch and on pull requests: install with `bun install --frozen-lockfile`, migration-rule check, lint, typecheck, full unit and integration tests, tenant-isolation suite, and e2e on the main branch or before merge.
 - **Coverage gate:** fail CI if coverage on changed code drops below the threshold set in E-01.
 - **Docs check in CI** (lightweight): fail the build if source under `src/` changed but no documentation or test file changed in the same pull request, with an explicit override label for genuine exceptions such as pure refactors. This is a prompt for reviewers, not a substitute for them.
 - **Branch protection:** no direct pushes to the main branch, required passing checks, at least one review.

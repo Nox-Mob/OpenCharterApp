@@ -27,6 +27,22 @@ export const attributeDefsQuery = (orgId: string, lineage: readonly string[]) =>
     },
   });
 
+/** Every member's field values in an org, keyed by profile id then field id (E-14 lists). */
+export const orgMemberValuesQuery = (orgId: string) =>
+  queryOptions({
+    queryKey: ["attribute-values", "org", orgId],
+    queryFn: async (): Promise<Record<string, Record<string, unknown>>> => {
+      const { data, error } = await supabase
+        .from("attribute_values")
+        .select("entity_id,definition_id,value")
+        .eq("org_id", orgId);
+      if (error) throw error;
+      const out: Record<string, Record<string, unknown>> = {};
+      for (const v of data ?? []) (out[v.entity_id] ??= {})[v.definition_id] = v.value as unknown;
+      return out;
+    },
+  });
+
 /** Attribute values of one entity: a member profile, or a chapter (by org id). */
 export const memberValuesQuery = (profileId: string) =>
   queryOptions({

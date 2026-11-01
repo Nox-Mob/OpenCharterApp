@@ -42,9 +42,24 @@ Current coverage:
 | `70_setup` | Permission checks, transactional apply, re-run, locks, chapter fields, membership levels |
 | `80_custom_roles` | Custom roles: inheritance, no permission escalation, retire not delete |
 | `95_memberships` | Term-end and standing rules (same cases as the TypeScript), member records without a login, recording joins and stacked renewals, payment permission, read isolation, no client writes, append-only history, approve / decline / cancel, grace from settings, claiming a record by invitation |
+| `96_payments_gateway` | Test gateway limited to demo orgs (or the platform flag), Stripe credentials only sealed and only by payment managers, secrets and server-only functions unreachable by clients, connection visibility, webhook events claimed once, disconnect removes credentials |
+| `97_joining` | Join info without signing in, starting a join (validation, nothing written but a pending payment), only the server role completes payments, duplicate and mismatched events, renewal stacking, failures, partial and full refunds, approval rules from the parent (D-130), claiming a record by paying, test checkout outcomes, decline with refund |
+| `98_exports` | Exports audited with the exporter, row count and columns, permission and sibling checks, saved views (managers save, viewers read, isolation) |
+| `99_privacy` | Directory shows only current, listed members with directory fields members may see; opting out / in / back to default; org default; outsiders and siblings refused; including opted-out members in exports needs the parent's permission |
+| `9B_board` | Seats a national defines apply to its chapters, chapters add their own only when allowed, each chapter's own term with by-law history (append-only, term in force on the start date, "apply to current officers" logged), seat counts, good standing, the seat's role granted and revoked without touching a role held by hand, no escalation, history can't be changed or deleted, custom titles and the parent's rule, isolation |
+| `9A_receipts` | Receipt issued for each paid payment and frozen, numbering per org and year with no gaps, can't be changed or deleted, payer and admin access, void / issue again / reissue versions, partial and full refunds |
 | `90_tiers` | Membership levels and terms: isolation, term rules, parent control, retire not delete (deletes remove nothing), identity columns can't change |
+
+## Migrations Lovable hasn't applied yet
+
+Migrations are tested here before Lovable applies them to the live database. Until then:
+
+- Types for them go in `src/lib/db/pending-schema.ts`, not the generated `types.ts`. Use the `db` client from there.
+- Screens that need them sit behind the readiness guard (`src/lib/db/readiness.ts`, `<RequiresDatabase>`). Add a feature entry with the migration name and a probe table or function.
+- Add the migration to "Pending migrations for Lovable" in `/roadmap.md`. Once applied, remove its section from `pending-schema.ts` and mark it applied.
 
 ## Adding a test
 
 - Put a new business rule as a pure function under `src/engines` or `src/modules`, with a `*.test.ts` next to it.
 - Add a database test whenever a policy, grant, trigger or RPC changes.
+- Tests that need WebCrypto (signatures, encryption) start with `// @vitest-environment node`.

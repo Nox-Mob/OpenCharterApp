@@ -51,6 +51,7 @@ Conventions to assume at schema time: every tenant-owned table carries `org_id`;
 | Membership | (person, org, tier, term, status, start, paid-through, source). *Built (E-13a):* `memberships`, one current row per member profile and org: tier, term, status (pending / active / cancelled / declined), joined_on, paid_through, lifetime (D-131) |
 | Membership event history | Joined, renewed, lapsed, upgraded, cancelled. *Built:* append-only `membership_events` (joined / renewed / approved / declined / cancelled) with the period covered and the payment |
 | Standing | Derived state (good standing, grace, lapsed, delinquent). Possibly materialized for query speed. *Built:* derived on read from paid_through and the grace period (`membership_standing`, `src/modules/membership/standing.ts`), not stored (D-111) |
+| Directory listing | *Built (E-14):* `org_member_profiles.directory_listed` (null = the org default), read through `member_directory` (D-139) |
 | Member record | *Built (E-13a):* `org_member_profiles` may have no login (`user_id` null, source admin / import) for historical members; an invitation claims it (D-116, D-134) |
 | Invoice / balance (postpaid) | Amount, due date, status, line items |
 | Dues policy | Per org: grace days, delinquency rules, national control mode for chapter dues (none / optional range / required) |
@@ -64,8 +65,8 @@ Conventions to assume at schema time: every tenant-owned table carries `org_id`;
 | Payment line item | What was paid for (membership, donation, ticket, award option, add-on), tax treatment, fair-market value |
 | Refund | Linked to payment |
 | National fee rule | Percentage or fixed, applicable item types |
-| Receipt | Org, payment or manual source, number, template version, rendered content, status (issued, voided, superseded) |
-| Receipt template | Org-owned, inherits from national, versioned |
+| Receipt | Org, payment or manual source, number, template version, rendered content, status (issued, voided, superseded). *Built (E-15):* `receipts` (number per org and year, frozen snapshot, status, supersedes_id, void reason) and `receipt_counters` (D-140) |
+| Receipt template | Org-owned, inherits from national, versioned. *For now (E-15):* fixed layout with placeholder tax wording per tax treatment plus the org's `receipts.footer`; templates come with E-36 |
 | Cart / order | Groups line items. Separate payments per receiving entity |
 
 **Design point:** the **payer** and the **beneficiary** are different concepts (a chapter may pay for a member's award).
@@ -74,9 +75,10 @@ Conventions to assume at schema time: every tenant-owned table carries `org_id`;
 
 | Entity | Notes |
 |---|---|
-| Board seat template | Defined by national: canonical role, default title, required, count, term length, linked permission set |
-| Board seat | Instance in an org, optional custom display title, status (filled, vacant) |
-| Appointment | (person, seat, start, end, how: appointed, elected) |
+| Board seat template | Defined by national: canonical role, default title, required, count, term length, linked permission set. *Built (E-17):* `seat_templates` (org, key, title, required, seat_count, suggested term, role_id, scope self / chapters, retire not delete, D-141) |
+| Board seat | Instance in an org, optional custom display title, status (filled, vacant). *Built (E-17):* derived by `org_board`; custom titles in `seat_title_overrides` |
+| Seat term rule | *Built (E-17):* `seat_terms`, each org's own term per seat with effective date and by-law reference, append-only (D-142) |
+| Appointment | (person, seat, start, end, how: appointed, elected). *Built (E-17):* `appointments` (seat number, starts_on, planned_end, ended_on, reason, the role assignment it created); elections come with E-27 |
 | Vacancy tracking | Derived or recorded vacancy start for alerting |
 | Report type | Defined by national, schedule, form |
 | Board report | Chapter submission, status (draft, submitted, acknowledged, changes requested), due date |

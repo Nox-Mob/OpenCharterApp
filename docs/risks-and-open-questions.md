@@ -22,7 +22,7 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 | Q-08 | P2 | **Award appeals mechanics.** Appeal to whom, how many times, and within what window? Set by the owning org, but what options do we offer? | Appeal to a chosen higher level, one appeal, configurable window |
 | Q-09 | P2 | **Who can nominate for awards?** Any member, officers only, or per award? | Per award setting |
 | Q-10 | P2 | **Rank attribute scope.** One rank list per org, or can there be several (e.g., by branch)? | Attributes are generic, so an org can define several. Rules reference a specific attribute |
-| Q-11 | P2 | **Member privacy defaults** for directory and exports, and the admin override policy | Org-level default, member-level preference, national decides whether admins can override |
+| ~~Q-11~~ | ~~P2~~ | *Resolved 2026-11-01 as D-139 (the proposed default).* **Member privacy defaults** for directory and exports, and the admin override policy | Org-level default, member-level preference, national decides whether admins can override |
 | Q-12 | P2 | **Currency and locale.** USD and US tax only for v1? | Yes, but no hard-coded currency assumptions |
 | Q-13 | P3 | **Name and branding** for the project | TBD |
 | Q-14 | P3 | **Hosted tiers and thresholds** (chapters > 5, members < 100, and so on) | Remains configuration. Decide before E-42 |
@@ -76,3 +76,7 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 - **R-20 Self-hosting (principle 6):** building on Lovable Cloud ties auth and jobs to managed services. Mitigation: keep business rules in SQL functions and `src/lib/policy`, so a self-host port replaces only adapters.
 - **R-21 Logo lock enforcement:** today the "chapters may use their own logo" rule only hides the upload control. Resolution respects the lock, so the national logo still shows, but a chapter admin could still store a logo file. Revisit if this matters.
 - **R-22 Demo data:** demo accounts and orgs exist in the live database (docs/demo-data.md). They must be removed before launch.
+
+## Added 2026-11-01
+- **R-23 Migrations blocked by hosting limits:** Lovable applies migrations to the live database and can be unavailable (for example a credit cap), while merged code already expects the new schema. Mitigation (D-135): migrations are prepared and tested locally, types for them live outside the generated file, and a readiness guard shows "needs a database update" instead of failing. The pending list in `roadmap.md` says what to apply, in order.
+- **R-24 License file:** AGPL-3.0 is decided (D-020), but the repository has no `LICENSE` file yet. Add the official AGPL-3.0 text before the first public release.

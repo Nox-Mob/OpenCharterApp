@@ -75,6 +75,8 @@ Each flow lists the kind of questions it asks. Wording is illustrative.
 - What membership levels do you offer? What is each called?
 - For each level: what terms are offered (any number, any length, lifetime optional) and the price per term. *Built (E-11):* each term is a count plus a Days / Months / Years drop-down, or Lifetime. The step is skipped when a parent organization manages levels.
 - *National only:* may chapters create their own membership levels? (Built, D-123.)
+- *National only:* how are new members of your chapters accepted: automatically, always reviewed by an admin, or each chapter decides? A chapter whose parent decides doesn't see its own approval question. (Built, D-130.) The grace-period lock is a separate switch.
+- Questions may carry their own `when` condition (like steps), so a question can hide based on earlier answers or the org; hidden answers are dropped before the plan is made.
 - **Is any level priced based on a member attribute?** If yes: which attribute, and a rule builder (e.g., rank E1 to E2 pays X, E3 to E4 pays Y, E5 to E6 pays Z).
 - **Should dues be reduced based on a previously defined attribute?** If yes: which attribute, what condition, and what reduction (fixed, percentage, or alternate price).
 - Prepaid or postpaid? If postpaid: when is the invoice issued, how many days until due, and **what happens when it is late** (grace days, when standing changes, who is notified).

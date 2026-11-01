@@ -19,10 +19,29 @@ import {
   membersQuery,
   membershipErrorMessage,
 } from "@/modules/membership/memberships";
-import { expirationLabel, standing, today } from "@/modules/membership/standing";
+import { expirationLabel, STANDING_LABELS, standing, today } from "@/modules/membership/standing";
 import { StandingBadge } from "@/components/membership/standing-badge";
 import { AddMemberDialog } from "@/components/membership/add-member-dialog";
+import { useFeatureReady } from "@/lib/db/readiness";
+import { declineApplication } from "@/modules/payments/payments.functions";
 import { MemberDetailsDialog } from "./member-details-dialog";
+import { RosterToolbar } from "@/components/members/roster-toolbar";
+import { attributeDefsQuery, orgMemberValuesQuery } from "@/modules/attributes/queries";
+import { privacyRulesQuery } from "@/modules/members/privacy";
+import {
+  EMPTY_FILTER,
+  exportableRows,
+  isListed,
+  exportColumns,
+  filterRoster,
+  logExport,
+  sortRoster,
+  toCsv,
+  toRosterRows,
+  type RosterField,
+  type RosterFilter,
+  type RosterSort,
+} from "@/modules/members/roster";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,15 +136,95 @@ export function MembersTab({
     toast.success("Role removed");
     qc.invalidateQueries();
   }
-  const members = useQuery(membersQuery(orgId));
-  const grace = useQuery(graceDaysQuery(orgId));
+  // Membership features wait for migration 0008 (readiness guard, D-135).
+  const ready = useFeatureReady("memberships") === true;
+  const directoryReady = useFeatureReady("directory") === true;
+  const members = useQuery(membersQuery(orgId, ready, directoryReady));
+  const privacy = useQuery({
+    ...privacyRulesQuery(orgId, org.ancestor_ids),
+    enabled: directoryReady,
+  });
+  const [includeOptedOut, setIncludeOptedOut] = useState(false);
+  const grace = useQuery({ ...graceDaysQuery(orgId), enabled: ready });
   const graceDays = grace.data ?? 30;
   const on = today();
   const details = (members.data ?? []).find((m) => m.id === detailsId) ?? null;
+  // Member list tools (E-14): search, filters, sort, saved views and audited export.
+  const exportsReady = useFeatureReady("exports") === true;
+  const defs = useQuery(attributeDefsQuery(org.id, org.ancestor_ids));
+  const values = useQuery(orgMemberValuesQuery(orgId));
+  const [filter, setFilter] = useState<RosterFilter>(EMPTY_FILTER);
+  const [sort, setSort] = useState<RosterSort>("name");
+  const rosterFields: RosterField[] = (defs.data ?? [])
+    .filter((d) => d.applies_to === "member" && d.active)
+    .map((d) => ({
+      id: d.id,
+      label: d.label,
+      data_type: d.data_type,
+      visibility: d.visibility,
+      options: d.options,
+    }));
+  const rows = toRosterRows(members.data ?? [], values.data ?? {}, graceDays, on);
+  const visible = sortRoster(filterRoster(rows, filter, rosterFields), sort);
+  const levels = [
+    ...new Map(
+      rows
+        .filter((r) => r.membership)
+        .map((r) => [
+          r.membership!.tier_id,
+          { id: r.membership!.tier_id, name: r.membership!.tier_name },
+        ]),
+    ).values(),
+  ];
+  const canExport = exportsReady && hasPermission(grants, "members.export", org);
+  // Members who opted out of the directory stay out of exports unless included (D-139).
+  const listedByDefault = privacy.data?.listedByDefault ?? true;
+  const overrideAllowed = privacy.data?.adminOverrideAllowed ?? true;
+  const optedOut = directoryReady ? visible.filter((r) => !isListed(r, listedByDefault)).length : 0;
+  const toExport = directoryReady
+    ? exportableRows(visible, { orgDefault: listedByDefault, includeOptedOut, overrideAllowed })
+    : visible;
+
+  async function exportCsv() {
+    const columns = exportColumns(
+      rosterFields,
+      hasPermission(grants, "members.view", org),
+      (s) => STANDING_LABELS[s],
+    ).filter(
+      (c) =>
+        ready || !["standing", "level", "term", "member_since", "paid_through"].includes(c.key),
+    );
+    try {
+      // Audited first (D-138); no log, no file.
+      await logExport(
+        orgId,
+        toExport.length,
+        columns.map((c) => c.label),
+        { ...filter, include_opted_out: includeOptedOut && overrideAllowed },
+      );
+    } catch {
+      return void toast.error("Couldn't export: you may not have permission to export members");
+    }
+    const blob = new Blob(["\uFEFF" + toCsv(toExport, columns)], {
+      type: "text/csv;charset=utf-8",
+    });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${org.slug}-members-${on}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast.success(`Exported ${toExport.length} member${toExport.length === 1 ? "" : "s"}`);
+  }
   const applications = (members.data ?? []).filter((m) => m.membership?.status === "pending");
+  const joiningReady = useFeatureReady("joining") === true;
   async function decide(membershipId: string, action: "approve" | "decline") {
     try {
-      await decideMembership(membershipId, action);
+      if (action === "decline" && joiningReady) {
+        // Online applicants paid first: declining refunds them (E-13b).
+        const r = await declineApplication({ data: { membershipId, note: "" } });
+        if (r.refund === "failed")
+          toast.warning("Declined, but the refund didn't go through. Refund it in Stripe.");
+      } else await decideMembership(membershipId, action);
       toast.success(action === "approve" ? "Application approved" : "Application declined");
       qc.invalidateQueries({ queryKey: ["members", orgId] });
     } catch (e) {
@@ -224,7 +323,7 @@ export function MembersTab({
         </section>
       )}
 
-      {canManageMembers && applications.length > 0 && (
+      {ready && canManageMembers && applications.length > 0 && (
         <section className="rounded-md border bg-card p-5">
           <h2 className="text-lg font-semibold">Applications ({applications.length})</h2>
           <ul className="mt-3 divide-y">
@@ -257,22 +356,48 @@ export function MembersTab({
       <section>
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Members</h2>
-          {canManageMembers && <Button onClick={() => setAdding(true)}>Add member</Button>}
+          {ready && canManageMembers && <Button onClick={() => setAdding(true)}>Add member</Button>}
+        </div>
+        <div className="mb-3">
+          <RosterToolbar
+            orgId={orgId}
+            filter={filter}
+            onFilter={setFilter}
+            sort={sort}
+            onSort={setSort}
+            fields={rosterFields}
+            levels={levels}
+            showMembership={ready}
+            canSaveViews={exportsReady && canManageMembers}
+            canUseViews={exportsReady}
+            canExport={canExport}
+            onExport={exportCsv}
+            optedOut={canExport ? optedOut : 0}
+            includeOptedOut={includeOptedOut}
+            onIncludeOptedOut={setIncludeOptedOut}
+            overrideAllowed={overrideAllowed}
+            shown={visible.length}
+            total={rows.length}
+          />
         </div>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Standing</TableHead>
-              <TableHead>Level</TableHead>
-              <TableHead>Expires</TableHead>
+              {ready && (
+                <>
+                  <TableHead>Standing</TableHead>
+                  <TableHead>Level</TableHead>
+                  <TableHead>Expires</TableHead>
+                </>
+              )}
               {canAssignAdmin && <TableHead>Roles</TableHead>}
               <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(members.data ?? []).map((m) => (
+            {visible.map((m) => (
               <TableRow key={m.id}>
                 <TableCell>{m.display_name || "—"}</TableCell>
                 <TableCell>
@@ -282,19 +407,32 @@ export function MembersTab({
                       No login
                     </Badge>
                   )}
-                </TableCell>
-                <TableCell>
-                  <StandingBadge standing={standing(m.membership, graceDays, on)} />
-                </TableCell>
-                <TableCell className="text-sm">
-                  {m.membership ? `${m.membership.tier_name} · ${m.membership.term_label}` : "—"}
-                </TableCell>
-                <TableCell className="text-sm">
-                  {m.membership?.status === "active" && m.membership.paid_through && (
-                    <span className="block">{m.membership.paid_through}</span>
+                  {directoryReady && !isListed(m, listedByDefault) && (
+                    <Badge variant="outline" className="ml-2">
+                      Not in directory
+                    </Badge>
                   )}
-                  <span className="text-muted-foreground">{expirationLabel(m.membership, on)}</span>
                 </TableCell>
+                {ready && (
+                  <>
+                    <TableCell>
+                      <StandingBadge standing={standing(m.membership, graceDays, on)} />
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {m.membership
+                        ? `${m.membership.tier_name} · ${m.membership.term_label}`
+                        : "—"}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {m.membership?.status === "active" && m.membership.paid_through && (
+                        <span className="block">{m.membership.paid_through}</span>
+                      )}
+                      <span className="text-muted-foreground">
+                        {expirationLabel(m.membership, on)}
+                      </span>
+                    </TableCell>
+                  </>
+                )}
                 {canAssignAdmin && (
                   <TableCell>
                     {m.user_id === null ? (

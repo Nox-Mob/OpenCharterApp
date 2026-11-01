@@ -31,6 +31,7 @@
 | **Board seat template** | National's definition of a board role (required, count, term, permissions) |
 | **Seat** | An instance of a template in a specific chapter |
 | **Appointment** | A person occupying a seat for a time period |
+| **Seat term rule** | An org's own term length for a seat, from its by-laws, with the date it takes effect. A by-law change adds a new rule; old ones are kept |
 | **Custom title** | A chapter's display name for a seat (the underlying role does not change) |
 | **Required seat** | A seat national requires to be filled at all times. Vacancies trigger alerts |
 | **Board report** | A periodic report chapters submit to national |
@@ -58,6 +59,7 @@
 | **501(c)(19)** | US tax status commonly used by veterans organizations |
 | **501(c)(3)** | US tax status for charitable organizations |
 | **Receipt (manual)** | A receipt created by an admin for cash, check, or in-kind gifts |
+| **Receipt version** | A receipt that replaces an earlier one (after a correction or a partial refund). The earlier one is kept, marked replaced |
 | **Void and reissue** | Correcting a receipt by invalidating it and issuing a new version, with audit trail |
 | **RLS** | PostgreSQL row-level security, used as a tenant-isolation safety net |
 | **Modular monolith** | One deployable app organized into strictly bounded modules |

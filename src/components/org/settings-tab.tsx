@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Org } from "@/lib/orgs";
 import {
+  resolveDef,
   resolveSetting,
   settingsFor,
   type SettingDef,
@@ -82,7 +83,7 @@ export function SettingsTab({
               hasChildren={org.type === "national" || org.type === "region"}
               def={def}
               own={settings.find((s) => s.org_id === org.id && s.key === def.key)}
-              resolved={resolveSetting(ids, settings, def.key, def.default)}
+              resolved={resolveDef(ids, settings, def)}
               nameOf={nameOf}
               onSaved={refresh}
             />
@@ -304,7 +305,10 @@ function SettingRowEditor({
   onSaved: () => void;
 }) {
   const locked = resolved.lockedBy !== null;
-  const [value, setValue] = useState<unknown>(own?.value ?? resolved.value);
+  // A locked or parent-decided setting shows the value that actually applies.
+  const [value, setValue] = useState<unknown>(
+    locked ? resolved.value : (own?.value ?? resolved.value),
+  );
   const [mode, setMode] = useState<SettingMode>(own?.mode ?? "override");
 
   async function save() {
@@ -335,6 +339,20 @@ function SettingRowEditor({
           />
         ) : null}
       </div>
+      {def.kind === "choice" && (
+        <Select value={String(value ?? def.default)} disabled={locked} onValueChange={setValue}>
+          <SelectTrigger aria-label={def.label} className="w-72">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {(def.options ?? []).map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
       {def.kind === "text" && (
         <Input
           aria-label={def.label}
@@ -361,7 +379,7 @@ function SettingRowEditor({
       </p>
       {!locked && (
         <div className="flex items-center gap-2">
-          {hasChildren && (
+          {hasChildren && def.appliesTo !== "parents" && (
             <Select value={mode} onValueChange={(v) => setMode(v as SettingMode)}>
               <SelectTrigger className="w-56" aria-label="Chapter rule">
                 <SelectValue />

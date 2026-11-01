@@ -2,9 +2,11 @@
 
 High-level only. This describes the shape of the system and the shared engines. Schemas, APIs, and screens come later.
 
+> **Current stack (D-100..D-104, D-111).** The original plan named Next.js, pg-boss, Better Auth and Caddy. The Lovable toolchain replaced those. The app is **TanStack Start (React 19, Vite) running on edge workers**, with **Lovable Cloud** for Postgres (with row-level security), Auth (email/password and Google) and Storage. Background work is planned as a **Postgres jobs table plus scheduled server routes** (E-08, deferred). Bun is the package manager. Per-org web addresses and the reverse proxy (E-07, E-22, F-11) are deferred. The structure below (modules, engines, tenancy, RLS) still applies; where a section names the old tools, read it with this substitution.
+
 ## 1. Architectural style
 
-A **modular monolith**: one Next.js + TypeScript codebase, one deployable app, one PostgreSQL database. Modules are separated by folder and enforced boundaries (each module exposes a small public interface and does not reach into another module's tables). This keeps self-hosting simple while leaving room to extract services later if ever needed.
+A **modular monolith**: one TypeScript codebase (TanStack Start), one deployable app, one PostgreSQL database. Modules are separated by folder and enforced boundaries (each module exposes a small public interface and does not reach into another module's tables). This keeps self-hosting simple while leaving room to extract services later if ever needed.
 
 ## 2. System context
 
@@ -18,17 +20,17 @@ flowchart LR
         PUB[Public visitors]
     end
 
-    subgraph App["Membership Platform (Next.js modular monolith)"]
+    subgraph App["Membership Platform (TanStack Start modular monolith on edge workers)"]
         WEB[Web UI: public sites and portal]
-        API[Server actions and route handlers]
+        API[Server functions and server routes]
         ENG[Shared engines]
         MOD[Domain modules]
-        JOBS[pg-boss workers]
+        JOBS[Scheduled routes over a jobs table]
     end
 
-    DB[(PostgreSQL)]
-    S3[(S3-compatible storage)]
-    PROXY[Reverse proxy: Caddy<br/>wildcard and custom-domain SSL]
+    DB[(Lovable Cloud Postgres with RLS)]
+    S3[(Lovable Cloud Storage)]
+    PROXY[Edge hosting<br/>custom domains later via reverse proxy]
     STRIPE[Stripe]
     PAYPAL[PayPal]
     EMAIL[Email provider<br/>Resend or Postmark]
@@ -54,7 +56,7 @@ flowchart LR
     EMAIL -- bounces/events --> API
 ```
 
-> **Diagram description:** A left-to-right system context diagram. On the left are five user groups: Members, Chapter admins and officers, National admins and committees, Platform admin, and Public visitors. All five connect to a reverse proxy (Caddy, handling wildcard and custom-domain SSL). The proxy passes traffic to the Web UI (public sites and portal), which sits inside a box labeled Membership Platform (Next.js modular monolith). That box contains five parts: Web UI, Server actions and route handlers (the API), Shared engines, Domain modules, and pg-boss workers. Inside the box, the Web UI calls the API, the API calls the Domain modules, and the Domain modules call the Shared engines. The Domain modules and the Shared engines both read and write PostgreSQL. The pg-boss workers also use PostgreSQL and send mail through the email provider (Resend or Postmark). The Domain modules additionally connect to S3-compatible storage, Stripe, and PayPal. Stripe and PayPal send webhooks back to the API, and the email provider sends bounce and delivery events back to the API. The reverse proxy is the intended target and its packaging is deferred (F-11).
+> **Diagram description:** A left-to-right system context diagram. On the left are five user groups: Members, Chapter admins and officers, National admins and committees, Platform admin, and Public visitors. All five connect to the edge hosting layer (custom domains come later through a reverse proxy). The hosting layer passes traffic to the Web UI (public sites and portal), which sits inside a box labeled Membership Platform (TanStack Start modular monolith on edge workers). That box contains five parts: Web UI, Server functions and server routes (the API), Shared engines, Domain modules, and Scheduled routes over a jobs table. Inside the box, the Web UI calls the API, the API calls the Domain modules, and the Domain modules call the Shared engines. The Domain modules and the Shared engines both read and write Lovable Cloud Postgres, where row-level security isolates tenants. The scheduled routes also use Postgres and send mail through the email provider. The Domain modules additionally connect to Lovable Cloud Storage, Stripe, and PayPal. Stripe and PayPal send webhooks back to the API (one webhook address per organization), and the email provider sends bounce and delivery events back to the API. Email, scheduled jobs and PayPal are planned but not built yet.
 
 ## 3. Organization hierarchy
 
@@ -152,7 +154,7 @@ flowchart TB
 | **Setup engine** | Guided questionnaires that create configuration for each module, re-runnable, with national-driven setup for chapters. See `setup-engine.md` | Every configurable module |
 | **Approval workflow engine** | Multi-step approvals with configurable steps, approver resolution (by role, rank, chapter), escalation, delegation to national, outcomes, appeals, batch approval, and audit | Awards first, then documents, applications, bylaw changes |
 | **Form builder** | Org-defined forms with fields, conditional logic, file uploads, and linkage to attributes. Submissions are stored as structured data | Award submissions, applications, event registration, board reports |
-| **Automation engine** | Domain events → jobs via pg-boss: scheduled checks, reminders, escalations, and notifications | All modules |
+| **Automation engine** | Domain events → jobs in a Postgres jobs table, run by scheduled server routes (D-103; replaces pg-boss): scheduled checks, reminders, escalations, and notifications | All modules |
 | **Notification and signed-action links** | Email and in-app notifications. **Signed one-click links** carry a single-use, expiring token bound to the approver and the specific request | Approvals, reminders, invitations |
 | **Audit log** | Append-only record of admin actions, financial changes, governance, documents, awards, exports, elections | All modules |
 | **Payment gateway abstraction** | One interface, Stripe and PayPal adapters, per-org credentials or connected accounts, transaction records capture receiving org, gateway, fees | Dues, donations, events, awards, future store |
@@ -245,21 +247,21 @@ Rank-based approval: when an approver must hold a certain rank, the chapter pres
 
 ## 12. Deployment topology (target state, packaging deferred to F-11)
 
-This is where we are heading. **Docker image, Compose file, and Caddy configuration are not built early** (D-012). During early development the app runs locally against a local Postgres using environment variables, and wildcard subdomains are tested with `*.localhost`.
+**Today:** the app is hosted by Lovable. TanStack Start runs on edge workers, and Lovable Cloud provides Postgres, Auth and Storage. Migrations in `drizzle/migrations` are applied by Lovable (D-125, D-135). **Self-host packaging** (Docker image, Compose file, reverse-proxy configuration) **is not built early** (D-012). The target topology for self-hosting:
 
 ```mermaid
 flowchart LR
-    I[Internet] --> C[Caddy<br/>wildcard and on-demand TLS]
-    C --> A[App container<br/>Next.js]
-    A --> W[Worker container<br/>pg-boss, same image]
-    A --> D[(PostgreSQL)]
-    W --> D
+    I[Internet] --> C[Reverse proxy<br/>wildcard and on-demand TLS]
+    C --> A[App<br/>TanStack Start server]
+    A --> D[(PostgreSQL with RLS)]
+    S[Scheduler<br/>calls scheduled routes] --> A
     A --> O[(Object storage)]
+    A --> AU[Auth service<br/>Supabase-compatible]
 ```
 
-> **Diagram description:** A left-to-right deployment diagram of the target topology (packaging deferred to F-11). Internet traffic goes to Caddy (wildcard and on-demand TLS), which forwards to an App container running Next.js. The App container connects to a Worker container (pg-boss, same image), to a PostgreSQL database, and to object storage. The Worker container also connects to PostgreSQL.
+> **Diagram description:** A left-to-right deployment diagram of the self-host target (packaging deferred to F-11). Internet traffic goes to a reverse proxy (wildcard and on-demand TLS), which forwards to the App, a TanStack Start server. The App connects to a PostgreSQL database with row-level security, to object storage, and to a Supabase-compatible auth service. A scheduler calls the App's scheduled routes, which process the jobs table. On the hosted service, Lovable Cloud provides the database, auth, storage and edge hosting instead.
 
-- **Self-host (later, F-11):** a Compose setup brings up app, worker, Postgres, and Caddy. Object storage can be MinIO or an external S3.
+- **Self-host (later, F-11):** a Compose setup brings up the app, Postgres, a Supabase-compatible auth service, object storage (MinIO or S3) and the reverse proxy. Business rules live in SQL functions and `src/lib/policy` so only adapters change (R-20).
 - **Hosted:** the same code and image, multiple installs or a multi-tenant install, plus the platform-tier admin and billing.
 - Configuration through environment variables. No dependency on a single cloud vendor's proprietary features.
 
@@ -276,19 +278,20 @@ flowchart LR
 | Testing | Unit and integration with Vitest, end-to-end flows with Playwright, with tenant-isolation tests as a first-class category |
 | Backups | Documented backup and restore for self-hosters, automated for hosted |
 
-## 14. Suggested repository layout (illustrative)
+## 14. Repository layout
 
 ```
 /src
-  /app                 Next.js routes (public, portal, admin, api)
+  /routes              TanStack Start routes (public, portal, admin, api)
   /modules             domain modules, each with its own public interface
     /organizations /members /dues /governance /elections
     /documents /awards /payments /receipts /events ...
   /engines             attributes, rules, setup, approvals, forms,
                        automation, notifications, audit, payments-core
-  /db                  schema, migrations, RLS policies
-  /lib                 shared utilities
-/docker                (added later, F-11) compose files, Caddy config
+  /lib                 shared utilities, policy layer, db readiness
+/drizzle/migrations    SQL migrations (schema, RLS policies, RPCs)
+/db/tests              database rule tests
+/docker                (added later, F-11) compose files, proxy config
 /docs                  these planning docs
 ```
 
