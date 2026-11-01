@@ -483,17 +483,17 @@ describe("6. exports (0011)", () => {
   });
 
   it("chapter admin can't export a sibling chapter", async () => {
-    await rpcFails(orgAdmin, "log_member_export", { _org: DALLAS, _row_count: 1, _columns: ["x"] });
+    await rpcFails(chapterAdmin, "log_member_export", { _org: DALLAS, _row_count: 1, _columns: ["x"] });
   });
 
-  it("saved views: managers save, isolation holds", async () => {
+  it("saved views: managers save; a chapter can't save into its sibling", async () => {
     const res = await orgAdmin
       .from("member_segments")
       .insert({ org_id: ORG, name: `Smoke ${runId}`, filter: { standing: "good" } })
       .select("id")
       .single();
     expect(res.error).toBeNull();
-    const sibling = await orgAdmin
+    const sibling = await chapterAdmin
       .from("member_segments")
       .insert({ org_id: DALLAS, name: `Smoke ${runId}`, filter: {} });
     expect(sibling.error).not.toBeNull();
@@ -587,46 +587,69 @@ describe("8. board seats (0014)", () => {
     expect(data!.length).toBe(1);
   });
 
+  let natSeat: string;
+
+  it("national defines its own (self) Treasurer seat with a 2-year term", async () => {
+    natSeat = await rpc<string>(nationalAdmin, "define_seat", {
+      _org: NATIONAL,
+      _key: `treas_${runId}`,
+      _title: `Treasurer ${runId}`,
+      _term_count: 2,
+      _term_unit: "year",
+    });
+    const board = await rpc<Array<{ template_id: string }>>(chapterAdmin, "org_board", { _org: AUSTIN });
+    expect(board.find((s) => s.template_id === natSeat)).toBeUndefined();
+  });
+
   it("only a member in good standing can be appointed", async () => {
-    const stranger = await rpc<string>(chapterAdmin, "admin_create_member", {
-      _org: AUSTIN,
+    const stranger = await rpc<string>(nationalAdmin, "admin_create_member", {
+      _org: NATIONAL,
       _display_name: `No Dues ${runId}`,
     });
-    await rpcFails(chapterAdmin, "appoint_officer", { _org: AUSTIN, _template: seatId, _profile: stranger });
+    await rpcFails(nationalAdmin, "appoint_officer", { _org: NATIONAL, _template: natSeat, _profile: stranger });
   });
 
   it("appointing a paid member fills the seat with a 2-year planned end", async () => {
-    const pid = await rpc<string>(chapterAdmin, "admin_create_member", {
-      _org: AUSTIN,
+    const pid = await rpc<string>(nationalAdmin, "admin_create_member", {
+      _org: NATIONAL,
       _display_name: `Officer ${runId}`,
     });
-    await rpc(chapterAdmin, "record_membership", { _profile: pid, _term: termId, _method: "cash" });
-    appointmentId = await rpc<string>(chapterAdmin, "appoint_officer", {
-      _org: AUSTIN,
-      _template: seatId,
+    await rpc(nationalAdmin, "record_membership", { _profile: pid, _term: termId, _method: "cash" });
+    appointmentId = await rpc<string>(nationalAdmin, "appoint_officer", {
+      _org: NATIONAL,
+      _template: natSeat,
       _profile: pid,
     });
-    const { data } = await chapterAdmin.from("appointments").select("*").eq("id", appointmentId).single();
-    const end = new Date(data!.planned_end);
-    expect(end.getFullYear()).toBe(new Date(data!.starts_on).getFullYear() + 2);
-    const board = await rpc<Array<{ template_id: string; holders: unknown[] }>>(chapterAdmin, "org_board", {
-      _org: AUSTIN,
+    const { data } = await nationalAdmin.from("appointments").select("*").eq("id", appointmentId).single();
+    expect(new Date(data!.planned_end).getFullYear()).toBe(new Date(data!.starts_on).getFullYear() + 2);
+    const board = await rpc<Array<{ template_id: string; holders: unknown[] }>>(nationalAdmin, "org_board", {
+      _org: NATIONAL,
     });
-    expect(board.find((s) => s.template_id === seatId)!.holders).toHaveLength(1);
+    expect(board.find((s) => s.template_id === natSeat)!.holders).toHaveLength(1);
+  });
+
+  it("a chapter admin can't appoint at the national", async () => {
+    const pid = await rpc<string>(nationalAdmin, "admin_create_member", { _org: NATIONAL, _display_name: `X ${runId}` });
+    await rpcFails(chapterAdmin, "appoint_officer", { _org: NATIONAL, _template: natSeat, _profile: pid });
   });
 
   it("ending the term moves them to past officers", async () => {
-    await rpc(chapterAdmin, "end_appointment", { _appointment: appointmentId, _reason: "smoke" });
+    await rpc(nationalAdmin, "end_appointment", { _appointment: appointmentId, _reason: "smoke" });
     const hist = await rpc<Array<{ appointment_id: string; ended_on: string | null }>>(
-      chapterAdmin,
+      nationalAdmin,
       "board_history",
-      { _org: AUSTIN },
+      { _org: NATIONAL },
     );
     expect(hist.find((h) => h.appointment_id === appointmentId)!.ended_on).not.toBeNull();
   });
 
+  it("an ended appointment can't be ended again", async () => {
+    await rpcFails(nationalAdmin, "end_appointment", { _appointment: appointmentId });
+  });
+
   it("the national retires the seat (never deleted)", async () => {
     await rpc(nationalAdmin, "set_seat_active", { _template: seatId, _active: false });
+    await rpc(nationalAdmin, "set_seat_active", { _template: natSeat, _active: false });
     const { data } = await nationalAdmin.from("seat_templates").select("active").eq("id", seatId).single();
     expect(data!.active).toBe(false);
   });
