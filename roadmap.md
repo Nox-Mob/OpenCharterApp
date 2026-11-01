@@ -7,13 +7,15 @@ Apply these in order (Lovable → apply pending migrations). Step-by-step instru
 
 | Migration | Enables | Status |
 |---|---|---|
-| `0008_memberships` | E-13a memberships, standing, recorded payments, member records without a login | Waiting (Lovable credit cap) |
-| `0009_payments_gateway` | E-12 per-org Stripe / test gateway connections, encrypted credentials, webhook event log. Also needs the Lovable Cloud secret `GATEWAY_ENCRYPTION_KEY` (`openssl rand -base64 32`) | Waiting |
-| `0010_joining` | E-13b public join page, checkout, payment completion and refunds, online renewal, decline with refund | Waiting |
-| `0011_member_exports` | E-14 audited CSV export (`members.export` permission) and saved views of the member list | Waiting |
-| `0012_member_privacy` | E-14 member directory, each member's directory choice, export privacy rule from the parent | Waiting |
-| `0013_receipts` | E-15 automatic, numbered, immutable receipts; void / reissue; refund handling; receipts for payments recorded earlier | Waiting |
-| `0014_board_seats` | E-17 board seats, each org's own seat terms with by-law history, appointments that grant and revoke the seat's role, `governance.manage` / `governance.define` permissions | Waiting |
+| `0008_memberships` | E-13a memberships, standing, recorded payments, member records without a login | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
+| `0009_payments_gateway` | E-12 per-org Stripe / test gateway connections, encrypted credentials, webhook event log. Also needs the Lovable Cloud secret `GATEWAY_ENCRYPTION_KEY` (`openssl rand -base64 32`) | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
+| `0010_joining` | E-13b public join page, checkout, payment completion and refunds, online renewal, decline with refund | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
+| `0011_member_exports` | E-14 audited CSV export (`members.export` permission) and saved views of the member list | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
+| `0012_member_privacy` | E-14 member directory, each member's directory choice, export privacy rule from the parent | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
+| `0013_receipts` | E-15 automatic, numbered, immutable receipts; void / reissue; refund handling; receipts for payments recorded earlier | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
+| `0014_board_seats` | E-17 board seats, each org's own seat terms with by-law history, appointments that grant and revoke the seat's role, `governance.manage` / `governance.define` permissions | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
+
+Note: Lovable added `0015_confirm_0008_0014_applied` (a table comment only) to trigger the apply. Number the next fix migration `0016` or later.
 
 ## Done
 - [x] Step 0: planning docs in /docs, decisions for the Lovable stack recorded (D-100+)
