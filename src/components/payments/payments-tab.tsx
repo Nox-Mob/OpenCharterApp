@@ -13,6 +13,9 @@ import {
   paymentsQuery,
 } from "@/modules/payments/queries";
 import { isDemoOrgId } from "@/modules/payments/test-gateway";
+import { Link } from "@tanstack/react-router";
+import { useFeatureReady } from "@/lib/db/readiness";
+import { orgReceiptsQuery } from "@/modules/receipts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +36,8 @@ export function PaymentsTab({ org, canManage }: { org: Org; canManage: boolean }
   const qc = useQueryClient();
   const connection = useQuery(connectionQuery(org.id));
   const payments = useQuery(paymentsQuery(org.id));
+  const receiptsReady = useFeatureReady("receipts") === true;
+  const receipts = useQuery({ ...orgReceiptsQuery(org.id), enabled: receiptsReady });
   const [secretKey, setSecretKey] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
   const [busy, setBusy] = useState(false);
@@ -222,6 +227,7 @@ export function PaymentsTab({ org, canManage }: { org: Org; canManage: boolean }
                 <TableHead>Amount</TableHead>
                 <TableHead>How</TableHead>
                 <TableHead>Status</TableHead>
+                {receiptsReady && <TableHead>Receipt</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -255,6 +261,21 @@ export function PaymentsTab({ org, canManage }: { org: Org; canManage: boolean }
                     )}
                   </TableCell>
                   <TableCell>{STATUS_LABELS[p.status]}</TableCell>
+                  {receiptsReady && (
+                    <TableCell>
+                      {receipts.data?.[p.id] ? (
+                        <Link
+                          to="/receipts/$receiptId"
+                          params={{ receiptId: receipts.data[p.id]!.id }}
+                          className="underline"
+                        >
+                          {receipts.data[p.id]!.number}
+                        </Link>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

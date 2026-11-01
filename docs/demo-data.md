@@ -30,7 +30,7 @@ All accounts share the same password: `OpenCharterDemo!2026`
 Run these steps in order.
 
 1. Delete the files under `branding/d1000000-*` in storage.
-2. Delete the rows in `member_segments`, `webhook_events` and `gateway_connections`, and in `private.gateway_secrets` (as the database owner), then the rows in `payments` (they are kept even when a membership goes), then `memberships` (their `membership_events` go with them), then `tier_terms`, `membership_tiers`, `attribute_values`, `attribute_options`, `attribute_definitions`, `setup_states`, `org_settings`, `tax_profiles`, `invitations`, `role_assignments` and `org_member_profiles` whose `org_id` starts with `d1000000-`.
+2. Delete the rows in `receipt_counters` (receipts go with their payments), `member_segments`, `webhook_events` and `gateway_connections`, and in `private.gateway_secrets` (as the database owner), then the rows in `payments` (they are kept even when a membership goes), then `memberships` (their `membership_events` go with them), then `tier_terms`, `membership_tiers`, `attribute_values`, `attribute_options`, `attribute_definitions`, `setup_states`, `org_settings`, `tax_profiles`, `invitations`, `role_assignments` and `org_member_profiles` whose `org_id` starts with `d1000000-`.
 3. Delete the chapters, then the national. Parents are protected while they still have children.
 4. Delete the `auth.users` rows whose `id` starts with `d0000000-`.
 5. Audit events stay in the log by design (the log is append-only). Add a note in the risks doc if you want them purged too.

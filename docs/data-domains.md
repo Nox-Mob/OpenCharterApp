@@ -65,8 +65,8 @@ Conventions to assume at schema time: every tenant-owned table carries `org_id`;
 | Payment line item | What was paid for (membership, donation, ticket, award option, add-on), tax treatment, fair-market value |
 | Refund | Linked to payment |
 | National fee rule | Percentage or fixed, applicable item types |
-| Receipt | Org, payment or manual source, number, template version, rendered content, status (issued, voided, superseded) |
-| Receipt template | Org-owned, inherits from national, versioned |
+| Receipt | Org, payment or manual source, number, template version, rendered content, status (issued, voided, superseded). *Built (E-15):* `receipts` (number per org and year, frozen snapshot, status, supersedes_id, void reason) and `receipt_counters` (D-140) |
+| Receipt template | Org-owned, inherits from national, versioned. *For now (E-15):* fixed layout with placeholder tax wording per tax treatment plus the org's `receipts.footer`; templates come with E-36 |
 | Cart / order | Groups line items. Separate payments per receiving entity |
 
 **Design point:** the **payer** and the **beneficiary** are different concepts (a chapter may pay for a member's award).

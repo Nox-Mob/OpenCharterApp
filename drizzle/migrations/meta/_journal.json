@@ -92,6 +92,13 @@
       "when": 1793559600001,
       "tag": "0012_member_privacy",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793563200001,
+      "tag": "0013_receipts",
+      "breakpoints": true
     }
   ]
 }

@@ -13,6 +13,8 @@ import {
 } from "@/modules/membership/memberships";
 import { expirationLabel, standing, today } from "@/modules/membership/standing";
 import { StandingBadge } from "./standing-badge";
+import { Link } from "@tanstack/react-router";
+import { orgReceiptsQuery } from "@/modules/receipts";
 import { useFeatureReady } from "@/lib/db/readiness";
 import { declineApplication } from "@/modules/payments/payments.functions";
 import { RecordMembershipDialog } from "./record-membership-dialog";
@@ -45,6 +47,8 @@ export function MembershipPanel({
   const history = useQuery({ ...membershipHistoryQuery(m?.id ?? ""), enabled: !!m });
   const [recording, setRecording] = useState(false);
   const joiningReady = useFeatureReady("joining") === true;
+  const receiptsReady = useFeatureReady("receipts") === true;
+  const receipts = useQuery({ ...orgReceiptsQuery(org.id), enabled: receiptsReady && !!m });
   const on = today();
   const s = standing(m, graceDays, on);
 
@@ -150,6 +154,18 @@ export function MembershipPanel({
                     {e.payment.method
                       ? ` by ${PAYMENT_METHOD_LABELS[e.payment.method as PaymentMethod].toLowerCase()}`
                       : ""}
+                    {receipts.data?.[e.payment.id] && (
+                      <>
+                        {" · "}
+                        <Link
+                          to="/receipts/$receiptId"
+                          params={{ receiptId: receipts.data[e.payment.id]!.id }}
+                          className="underline"
+                        >
+                          Receipt {receipts.data[e.payment.id]!.number}
+                        </Link>
+                      </>
+                    )}
                   </span>
                 )}
                 {e.note && <span className="block">{e.note}</span>}

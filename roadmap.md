@@ -12,6 +12,7 @@ Apply these in order (Lovable → apply pending migrations). Until a migration i
 | `0010_joining` | E-13b public join page, checkout, payment completion and refunds, online renewal, decline with refund | Waiting |
 | `0011_member_exports` | E-14 audited CSV export (`members.export` permission) and saved views of the member list | Waiting |
 | `0012_member_privacy` | E-14 member directory, each member's directory choice, export privacy rule from the parent | Waiting |
+| `0013_receipts` | E-15 automatic, numbered, immutable receipts; void / reissue; refund handling; receipts for payments recorded earlier | Waiting |
 
 ## Done
 - [x] Step 0: planning docs in /docs, decisions for the Lovable stack recorded (D-100+)
@@ -43,7 +44,7 @@ Plan for E-12 / E-13: docs/plans/e12-e13-payments-and-joining.md
 - [ ] E-12 (built, waiting for 0009): Payments tab to connect Stripe (key checked, sealed, stored privately) or the demo test gateway, payments list. Remaining: the webhook route and checkout come with E-13b; a "Connect payments" step in guided setup needs the setup page to run more than one flow
 - [ ] E-13b (built, waiting for 0008–0010): public join page `/join/<slug>`, Stripe / test checkout, webhook endpoint per org, return page that waits for confirmation, test checkout with accepted / declined / insufficient funds / slow / cancel, online renewal, decline with refund, join link on the Payments tab. Remaining: a Playwright end-to-end test once the database has the migrations
 - [ ] E-14 (built; search, filters and the expiring report work now, the rest waits for 0011–0012): search, filters by standing / level / member field ("at least" for ranks), "expiring within 30 / 60 / 90 days", sorting, audited privacy-aware CSV export, saved views, member directory with each member's own listing choice (D-138, D-139)
-- [ ] E-15 receipts
+- [ ] E-15 (built, waiting for 0008–0013): automatic receipts on payment, numbered per org and year, immutable with void / reissue versions, refunds void or replace, printable receipt page with the issuing org's logo, receipt links for admins and members, footer setting. Remaining: receipt wording reviewed by a CPA (R-07), emailing receipts (E-08 follow-up), templates and manual receipts (E-36)
 
 ## Deferred (user decision 2026-10-30: core first, automations later)
 - [ ] E-07: per-org web addresses (subdomain / `/o/$slug`)

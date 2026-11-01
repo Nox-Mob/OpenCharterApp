@@ -7,7 +7,7 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When Lovable applies a migration, delete its section here (the generated types take over).
- * Pending: 0008_memberships … 0012_member_privacy (see roadmap.md).
+ * Pending: 0008_memberships … 0013_receipts (see roadmap.md).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,7 @@ import type { Database, Json } from "@/integrations/supabase/types";
 type Generated = Database["public"];
 
 export type PendingEnums = {
+  receipt_status: "issued" | "voided" | "superseded";
   gateway_status: "verified" | "disabled";
   membership_event_kind: "joined" | "renewed" | "approved" | "declined" | "cancelled";
   membership_status: "pending" | "active" | "cancelled" | "declined";
@@ -27,6 +28,40 @@ export type PendingEnums = {
 
 /** Tables added or changed by pending migrations (a changed table replaces the generated one). */
 export type PendingTables = {
+  receipts: {
+    Row: {
+      id: string;
+      issued_at: string;
+      number: string;
+      org_id: string;
+      payment_id: string;
+      seq: number;
+      snapshot: Json;
+      status: PendingEnums["receipt_status"];
+      supersedes_id: string | null;
+      void_reason: string | null;
+      voided_at: string | null;
+      voided_by: string | null;
+      year: number;
+    };
+    Insert: {
+      id?: string;
+      issued_at?: string;
+      number: string;
+      org_id: string;
+      payment_id: string;
+      seq: number;
+      snapshot: Json;
+      status?: PendingEnums["receipt_status"];
+      supersedes_id?: string | null;
+      void_reason?: string | null;
+      voided_at?: string | null;
+      voided_by?: string | null;
+      year: number;
+    };
+    Update: Partial<PendingTables["receipts"]["Insert"]>;
+    Relationships: [];
+  };
   member_segments: {
     Row: {
       created_at: string;
@@ -391,6 +426,9 @@ export type PendingTables = {
 };
 
 export type PendingFunctions = {
+  issue_receipt: { Args: { _payment: string }; Returns: string };
+  reissue_receipt: { Args: { _reason: string; _receipt: string }; Returns: string };
+  void_receipt: { Args: { _reason: string; _receipt: string }; Returns: undefined };
   member_directory: {
     Args: { _org: string };
     Returns: { display_name: string; fields: Json; profile_id: string }[];

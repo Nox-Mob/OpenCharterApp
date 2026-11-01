@@ -58,6 +58,7 @@
 | **501(c)(19)** | US tax status commonly used by veterans organizations |
 | **501(c)(3)** | US tax status for charitable organizations |
 | **Receipt (manual)** | A receipt created by an admin for cash, check, or in-kind gifts |
+| **Receipt version** | A receipt that replaces an earlier one (after a correction or a partial refund). The earlier one is kept, marked replaced |
 | **Void and reissue** | Correcting a receipt by invalidating it and issuing a new version, with audit trail |
 | **RLS** | PostgreSQL row-level security, used as a tenant-isolation safety net |
 | **Modular monolith** | One deployable app organized into strictly bounded modules |

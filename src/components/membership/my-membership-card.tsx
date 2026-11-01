@@ -6,6 +6,8 @@ import { beginRenewal, joinErrorMessage, joinInfoQuery } from "@/modules/members
 import { formatPrice, lengthOf, termLabel } from "@/modules/membership/tiers";
 import { startCheckout } from "@/modules/payments/payments.functions";
 import { Button } from "@/components/ui/button";
+import { Link } from "@tanstack/react-router";
+import { myReceiptsQuery } from "@/modules/receipts";
 import type { Org } from "@/lib/orgs";
 import { graceDaysQuery, myMembershipQuery } from "@/modules/membership/memberships";
 import { addDays, expirationLabel, standing, today } from "@/modules/membership/standing";
@@ -16,6 +18,8 @@ export function MyMembershipCard({ org }: { org: Org }) {
   const mine = useQuery(myMembershipQuery(org.id));
   const grace = useQuery(graceDaysQuery(org.id));
   const joiningReady = useFeatureReady("joining") === true;
+  const receiptsReady = useFeatureReady("receipts") === true;
+  const myReceipts = useQuery({ ...myReceiptsQuery(org.id), enabled: receiptsReady });
   const join = useQuery({ ...joinInfoQuery(org.slug), enabled: joiningReady });
   const [termId, setTermId] = useState("");
   const [busy, setBusy] = useState(false);
@@ -71,6 +75,25 @@ export function MyMembershipCard({ org }: { org: Org }) {
         </p>
       )}
       {s === "pending" && <p className="mt-2 text-sm">An admin will review your application.</p>}
+      {receiptsReady && (myReceipts.data?.length ?? 0) > 0 && (
+        <div className="mt-4 text-sm">
+          <p className="font-medium">Your receipts</p>
+          <ul className="mt-1 space-y-1">
+            {myReceipts.data!.map((r) => (
+              <li key={r.id}>
+                <Link to="/receipts/$receiptId" params={{ receiptId: r.id }} className="underline">
+                  {r.number}
+                </Link>{" "}
+                <span className="text-muted-foreground">
+                  {r.snapshot.received_on} ·{" "}
+                  {formatPrice(r.snapshot.net_minor, r.snapshot.currency)}
+                  {r.status !== "issued" ? ` · ${r.status === "voided" ? "void" : "replaced"}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {canRenew && chosen && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {terms.length > 1 && (

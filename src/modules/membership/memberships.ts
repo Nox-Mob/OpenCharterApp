@@ -122,7 +122,7 @@ export type MembershipEvent = {
   created_at: string;
   tier_name: string;
   term_label: string;
-  payment: { amount_minor: number; currency: string; method: string | null } | null;
+  payment: { id: string; amount_minor: number; currency: string; method: string | null } | null;
 };
 
 export const membershipHistoryQuery = (membershipId: string) =>
@@ -132,7 +132,7 @@ export const membershipHistoryQuery = (membershipId: string) =>
       const { data, error } = await supabase
         .from("membership_events")
         .select(
-          "id,kind,period_start,period_end,note,created_at,membership_tiers(name),tier_terms(label),payments(amount_minor,currency,method)",
+          "id,kind,period_start,period_end,note,created_at,membership_tiers(name),tier_terms(label),payments(id,amount_minor,currency,method)",
         )
         .eq("membership_id", membershipId)
         .order("id", { ascending: false });

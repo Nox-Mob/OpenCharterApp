@@ -88,6 +88,14 @@ export const SETTINGS: readonly SettingDef[] = [
     appliesTo: "parents",
   },
   {
+    key: "receipts.footer",
+    label: "Receipt footer",
+    description:
+      "Printed at the bottom of every receipt, e.g. a thank-you or your address. Shown on receipts issued from now on.",
+    kind: "text",
+    default: "",
+  },
+  {
     key: "contact.email",
     label: "Public contact email",
     description: "Shown on public pages and receipts.",
