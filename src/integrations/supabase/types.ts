@@ -1721,6 +1721,7 @@ export type Database = {
         Returns: boolean
       }
       public_join_info: { Args: { _slug: string }; Returns: Json }
+      purge_smoke_data: { Args: { _since: string }; Returns: Json }
       recalculate_planned_ends: {
         Args: { _org: string; _template: string }
         Returns: number
