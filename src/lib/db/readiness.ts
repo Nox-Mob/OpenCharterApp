@@ -16,6 +16,7 @@ export const FEATURES = {
     args: { _org: "00000000-0000-0000-0000-000000000000" },
   },
   receipts: { migration: "0013_receipts", label: "Receipts", table: "receipts" },
+  board: { migration: "0014_board_seats", label: "Board and officers", table: "seat_templates" },
   exports: {
     migration: "0011_member_exports",
     label: "Member exports and saved views",

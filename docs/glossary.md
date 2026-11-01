@@ -31,6 +31,7 @@
 | **Board seat template** | National's definition of a board role (required, count, term, permissions) |
 | **Seat** | An instance of a template in a specific chapter |
 | **Appointment** | A person occupying a seat for a time period |
+| **Seat term rule** | An org's own term length for a seat, from its by-laws, with the date it takes effect. A by-law change adds a new rule; old ones are kept |
 | **Custom title** | A chapter's display name for a seat (the underlying role does not change) |
 | **Required seat** | A seat national requires to be filled at all times. Vacancies trigger alerts |
 | **Board report** | A periodic report chapters submit to national |

@@ -11,6 +11,7 @@ import { RolesTab } from "@/components/org/roles-tab";
 import { LevelsTab } from "@/components/membership/levels-tab";
 import { PaymentsTab } from "@/components/payments/payments-tab";
 import { MembersDirectory } from "@/components/members/members-directory";
+import { BoardTab } from "@/components/governance/board-tab";
 import { DirectoryPreference } from "@/components/members/directory-preference";
 import { MyMembershipCard } from "@/components/membership/my-membership-card";
 import { RequiresDatabase } from "@/components/db/requires-database";
@@ -86,6 +87,7 @@ function OrgPage() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           {canSeeMembers && <TabsTrigger value="members">Members</TabsTrigger>}
           <TabsTrigger value="directory">Directory</TabsTrigger>
+          <TabsTrigger value="board">Board</TabsTrigger>
           <TabsTrigger value="levels">Membership levels</TabsTrigger>
           <TabsTrigger value="fields">Member fields</TabsTrigger>
           {hasChapters && <TabsTrigger value="chapter-fields">Chapter fields</TabsTrigger>}
@@ -112,6 +114,16 @@ function OrgPage() {
         <TabsContent value="directory" className="mt-6">
           <RequiresDatabase feature="directory">
             <MembersDirectory orgId={org.id} />
+          </RequiresDatabase>
+        </TabsContent>
+        <TabsContent value="board" className="mt-6">
+          <RequiresDatabase feature="board">
+            <BoardTab
+              org={org}
+              grants={grants}
+              canManage={hasPermission(grants, "governance.manage", org)}
+              canDefine={hasPermission(grants, "governance.define", org)}
+            />
           </RequiresDatabase>
         </TabsContent>
         <TabsContent value="levels" className="mt-6">

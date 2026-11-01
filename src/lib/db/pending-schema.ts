@@ -7,7 +7,7 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When Lovable applies a migration, delete its section here (the generated types take over).
- * Pending: 0008_memberships … 0013_receipts (see roadmap.md).
+ * Pending: 0008_memberships … 0014_board_seats (see roadmap.md).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,7 @@ import type { Database, Json } from "@/integrations/supabase/types";
 type Generated = Database["public"];
 
 export type PendingEnums = {
+  seat_scope: "self" | "chapters";
   receipt_status: "issued" | "voided" | "superseded";
   gateway_status: "verified" | "disabled";
   membership_event_kind: "joined" | "renewed" | "approved" | "declined" | "cancelled";
@@ -28,6 +29,44 @@ export type PendingEnums = {
 
 /** Tables added or changed by pending migrations (a changed table replaces the generated one). */
 export type PendingTables = {
+  seat_templates: {
+    Row: {
+      active: boolean;
+      created_at: string;
+      default_term_count: number | null;
+      default_term_unit: Generated["Enums"]["term_unit"] | null;
+      description: string;
+      id: string;
+      key: string;
+      org_id: string;
+      required: boolean;
+      role_id: string | null;
+      scope: PendingEnums["seat_scope"];
+      seat_count: number;
+      sort_order: number;
+      title: string;
+    };
+    Insert: never;
+    Update: never;
+    Relationships: [];
+  };
+  seat_terms: {
+    Row: {
+      bylaw_reference: string;
+      created_at: string;
+      effective_from: string;
+      id: string;
+      length_count: number | null;
+      length_unit: Generated["Enums"]["term_unit"] | null;
+      note: string;
+      org_id: string;
+      set_by: string | null;
+      template_id: string;
+    };
+    Insert: never;
+    Update: never;
+    Relationships: [];
+  };
   receipts: {
     Row: {
       id: string;
@@ -426,6 +465,102 @@ export type PendingTables = {
 };
 
 export type PendingFunctions = {
+  org_board: {
+    Args: { _org: string };
+    Returns: {
+      template_id: string;
+      owner_org_id: string;
+      key: string;
+      title: string;
+      default_title: string;
+      description: string;
+      required: boolean;
+      seat_count: number;
+      scope: PendingEnums["seat_scope"];
+      role_id: string | null;
+      term_count: number | null;
+      term_unit: Generated["Enums"]["term_unit"] | null;
+      term_source: "org" | "default";
+      term_since: string | null;
+      bylaw_reference: string;
+      holders: Json;
+    }[];
+  };
+  board_history: {
+    Args: { _org: string };
+    Returns: {
+      appointment_id: string;
+      template_id: string;
+      display_name: string;
+      seat_number: number;
+      starts_on: string;
+      planned_end: string | null;
+      ended_on: string;
+      end_reason: string;
+    }[];
+  };
+  define_seat: {
+    Args: {
+      _org: string;
+      _key: string;
+      _title: string;
+      _description?: string;
+      _required?: boolean;
+      _seat_count?: number;
+      _term_count?: number;
+      _term_unit?: Generated["Enums"]["term_unit"];
+      _role?: string;
+      _scope?: PendingEnums["seat_scope"];
+      _sort_order?: number;
+    };
+    Returns: string;
+  };
+  update_seat: {
+    Args: {
+      _template: string;
+      _title: string;
+      _description: string;
+      _required: boolean;
+      _seat_count: number;
+      _term_count?: number;
+      _term_unit?: Generated["Enums"]["term_unit"];
+      _role?: string;
+      _sort_order?: number;
+    };
+    Returns: undefined;
+  };
+  set_seat_active: { Args: { _template: string; _active: boolean }; Returns: undefined };
+  set_seat_title: {
+    Args: { _org: string; _template: string; _title: string };
+    Returns: undefined;
+  };
+  set_seat_term: {
+    Args: {
+      _org: string;
+      _template: string;
+      _count?: number;
+      _unit?: Generated["Enums"]["term_unit"];
+      _effective_from: string;
+      _bylaw_reference?: string;
+      _note?: string;
+    };
+    Returns: string;
+  };
+  recalculate_planned_ends: { Args: { _org: string; _template: string }; Returns: number };
+  appoint_officer: {
+    Args: {
+      _org: string;
+      _template: string;
+      _profile: string;
+      _starts_on?: string;
+      _seat_number?: number;
+    };
+    Returns: string;
+  };
+  end_appointment: {
+    Args: { _appointment: string; _reason?: string; _ended_on?: string };
+    Returns: undefined;
+  };
   issue_receipt: { Args: { _payment: string }; Returns: string };
   reissue_receipt: { Args: { _reason: string; _receipt: string }; Returns: string };
   void_receipt: { Args: { _reason: string; _receipt: string }; Returns: undefined };

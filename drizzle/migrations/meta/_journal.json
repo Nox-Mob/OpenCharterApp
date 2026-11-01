@@ -99,6 +99,13 @@
       "when": 1793563200001,
       "tag": "0013_receipts",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793566800001,
+      "tag": "0014_board_seats",
+      "breakpoints": true
     }
   ]
 }

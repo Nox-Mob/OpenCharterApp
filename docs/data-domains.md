@@ -75,9 +75,10 @@ Conventions to assume at schema time: every tenant-owned table carries `org_id`;
 
 | Entity | Notes |
 |---|---|
-| Board seat template | Defined by national: canonical role, default title, required, count, term length, linked permission set |
-| Board seat | Instance in an org, optional custom display title, status (filled, vacant) |
-| Appointment | (person, seat, start, end, how: appointed, elected) |
+| Board seat template | Defined by national: canonical role, default title, required, count, term length, linked permission set. *Built (E-17):* `seat_templates` (org, key, title, required, seat_count, suggested term, role_id, scope self / chapters, retire not delete, D-141) |
+| Board seat | Instance in an org, optional custom display title, status (filled, vacant). *Built (E-17):* derived by `org_board`; custom titles in `seat_title_overrides` |
+| Seat term rule | *Built (E-17):* `seat_terms`, each org's own term per seat with effective date and by-law reference, append-only (D-142) |
+| Appointment | (person, seat, start, end, how: appointed, elected). *Built (E-17):* `appointments` (seat number, starts_on, planned_end, ended_on, reason, the role assignment it created); elections come with E-27 |
 | Vacancy tracking | Derived or recorded vacancy start for alerting |
 | Report type | Defined by national, schedule, form |
 | Board report | Chapter submission, status (draft, submitted, acknowledged, changes requested), due date |
