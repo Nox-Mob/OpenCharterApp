@@ -16,13 +16,17 @@ select tests.throws($$insert into public.tier_terms (tier_id, org_id, key, label
   values ('55555555-0000-4000-8000-000000000001', '22222222-0000-4000-8000-000000000001', 'zero', 'Zero', 0, 'month', 100)$$, 'check constraint');
 select tests.throws($$insert into public.tier_terms (tier_id, org_id, key, label, length_count, length_unit, price_minor)
   values ('55555555-0000-4000-8000-000000000001', '22222222-0000-4000-8000-000000000001', 'neg', 'Neg', 1, 'day', -1)$$, 'check constraint');
--- retire, never delete
-select tests.throws($$delete from public.tier_terms where key = 'lifetime'$$, 'permission denied');
-select tests.throws($$delete from public.membership_tiers where key = 'regular'$$, 'permission denied');
+-- retire, never delete: DELETE is granted (Lovable convention, D-125) but no policy allows it
+delete from public.tier_terms where key = 'lifetime';
+delete from public.membership_tiers where key = 'regular';
 update public.tier_terms set active = false where key = 'lifetime';
--- key and org can't be changed by the client
-select tests.throws($$update public.membership_tiers set org_id = '22222222-0000-4000-8000-000000000002'$$, 'permission denied');
+-- identity columns can't be changed by the client
+select tests.throws($$update public.membership_tiers set org_id = '22222222-0000-4000-8000-000000000002'$$, 'can''t be changed');
+select tests.throws($$update public.membership_tiers set key = 'renamed'$$, 'can''t be changed');
+select tests.throws($$update public.tier_terms set key = 'renamed' where key = '1_year'$$, 'can''t be changed');
 select tests.reset_role();
+select tests.eq((select count(*) from public.membership_tiers where key = 'regular'), 1::bigint, 'level not deleted');
+select tests.eq((select count(*) from public.tier_terms), 2::bigint, 'terms not deleted');
 select tests.eq((select active from public.tier_terms where key = 'lifetime'), false, 'term retired');
 
 -- a member can read levels but not write them
@@ -42,6 +46,10 @@ select tests.throws($$insert into public.tier_terms (tier_id, org_id, key, label
   values ('55555555-0000-4000-8000-000000000001', '22222222-0000-4000-8000-000000000002', 'cheap', 'Cheap', 1, 'year', 1)$$, 'row-level security');
 select tests.reset_role();
 select tests.eq((select org_id from public.tier_terms where key = '6_months'), '22222222-0000-4000-8000-000000000002'::uuid, 'term org forced');
+-- a term can't be moved to another org's level
+select tests.as_user('11111111-0000-4000-8000-000000000001');
+select tests.throws($$update public.tier_terms set tier_id = '55555555-0000-4000-8000-000000000001' where key = '6_months'$$, 'another level');
+select tests.reset_role();
 
 -- outsiders and sibling chapters see nothing of chapter A's levels
 select tests.as_user('11111111-0000-4000-8000-000000000004');

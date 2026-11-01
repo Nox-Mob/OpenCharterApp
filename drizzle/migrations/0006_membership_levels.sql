@@ -3,6 +3,11 @@
 -- (day, month, year) or lifetime, priced in integer minor units. A parent org decides whether
 -- its sub-orgs may create their own levels (setting membership.child_levels_allowed).
 -- Levels and terms are retired (active = false), never deleted.
+--
+-- Lovable conventions (D-125): full SELECT/INSERT/UPDATE/DELETE grants, RLS, and policies using
+-- has_permission / is_org_member. The rules still hold:
+-- - "retire, never delete": there is no DELETE policy, so RLS lets no client delete a row
+-- - identity columns (org_id, key, tier_id) can't change: tier_identity_guard rejects it
 
 insert into public.permissions (key, description) values ('tiers.manage', 'Define membership levels and terms')
   on conflict do nothing;
@@ -26,12 +31,16 @@ create table public.membership_tiers (
   unique (org_id, key)
 );
 create index on public.membership_tiers (org_id);
-grant select, insert on public.membership_tiers to authenticated;
-grant update (name, description, tax_treatment, sort_order, active) on public.membership_tiers to authenticated;
+grant select, insert, update, delete on public.membership_tiers to authenticated;
+comment on table public.membership_tiers is
+  'Membership levels (E-11). Retire with active = false; there is no DELETE policy, so rows are never deleted.';
 grant all on public.membership_tiers to service_role;
 alter table public.membership_tiers enable row level security;
+-- Read: members of the org (or of any org below it) and anyone who can view it.
 create policy "tree members read tiers" on public.membership_tiers for select to authenticated
-  using (public.can_see_org_tree(auth.uid(), org_id));
+  using (public.is_org_member(auth.uid(), org_id)
+    or public.has_permission(auth.uid(), 'org.view', org_id)
+    or public.can_see_org_tree(auth.uid(), org_id));
 create policy "managers insert tiers" on public.membership_tiers for insert to authenticated
   with check (public.has_permission(auth.uid(), 'tiers.manage', org_id));
 create policy "managers update tiers" on public.membership_tiers for update to authenticated
@@ -59,12 +68,15 @@ create table public.tier_terms (
       or (length_count between 1 and 1000 and length_unit is not null))
 );
 create index on public.tier_terms (org_id);
-grant select, insert on public.tier_terms to authenticated;
-grant update (label, length_count, length_unit, price_minor, currency, sort_order, active) on public.tier_terms to authenticated;
+grant select, insert, update, delete on public.tier_terms to authenticated;
+comment on table public.tier_terms is
+  'Terms of a membership level (E-11). Retire with active = false; there is no DELETE policy, so rows are never deleted.';
 grant all on public.tier_terms to service_role;
 alter table public.tier_terms enable row level security;
 create policy "tree members read terms" on public.tier_terms for select to authenticated
-  using (public.can_see_org_tree(auth.uid(), org_id));
+  using (public.is_org_member(auth.uid(), org_id)
+    or public.has_permission(auth.uid(), 'org.view', org_id)
+    or public.can_see_org_tree(auth.uid(), org_id));
 create policy "managers insert terms" on public.tier_terms for insert to authenticated
   with check (public.has_permission(auth.uid(), 'tiers.manage', org_id));
 create policy "managers update terms" on public.tier_terms for update to authenticated
@@ -72,6 +84,26 @@ create policy "managers update terms" on public.tier_terms for update to authent
   with check (public.has_permission(auth.uid(), 'tiers.manage', org_id));
 create trigger audit_tier_terms after insert or update or delete on public.tier_terms
   for each row execute function public.audit_row_change();
+
+-- A level keeps its org and key, and a term keeps its level (the UPDATE grant covers every column).
+create or replace function public.tier_identity_guard()
+returns trigger language plpgsql set search_path = public as $$
+begin
+  if new.org_id is distinct from old.org_id or new.key is distinct from old.key then
+    raise exception 'a level''s organization and key can''t be changed';
+  end if;
+  if tg_table_name = 'tier_terms' then
+    -- nested: plpgsql would read new.tier_id even on membership_tiers in a combined condition
+    if (to_jsonb(new)->>'tier_id') is distinct from (to_jsonb(old)->>'tier_id') then
+      raise exception 'a term can''t move to another level';
+    end if;
+  end if;
+  return new;
+end $$;
+create trigger membership_tiers_identity before update on public.membership_tiers
+  for each row execute function public.tier_identity_guard();
+create trigger tier_terms_identity before update on public.tier_terms
+  for each row execute function public.tier_identity_guard();
 
 -- A term always belongs to its level's org.
 create or replace function public.tier_term_org_check()

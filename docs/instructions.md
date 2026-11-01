@@ -58,6 +58,7 @@ bun run test:db     # database rules (needs TEST_DATABASE_URL, see testing.md)
 ### Tenancy and security (the highest-risk area)
 - **Every tenant-owned table has `org_id`** and a row-level security policy (D-031, D-003). No exceptions without a recorded decision.
 - Application code still checks access. RLS is the safety net, not the only gate.
+- **Migration conventions (Lovable import rules, D-125).** Every new tenant table has `org_id uuid not null references public.organizations(id)`, `grant select, insert, update, delete on public.<table> to authenticated`, `enable row level security`, and policies using `public.has_permission` or `public.is_org_member`. Never `DROP TABLE` or `DROP COLUMN`: add columns and leave deprecation comments. Use `alter policy` and `create or replace trigger` instead of dropping and recreating. "Retire, never delete" means having no DELETE policy, and columns that must not change are guarded by a trigger. `bun run check:migrations` enforces this from migration 0004 on.
 - **All authorization goes through the policy layer.** Never write ad hoc permission checks in components or routes.
 - Permissions inherit **downward only** (D-032).
 - **Nothing crosses orgs.** A person is global (login identity only). Profile data, attributes, preferences, and settings belong to the person's membership in a specific org and are never copied, pre-filled, or revealed to another org (D-036, D-037).

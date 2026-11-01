@@ -186,3 +186,12 @@ export function describeTier(t: Pick<Tier, "name" | "terms">): string {
     .map((x) => `${termLabel(lengthOf(x))} ${formatPrice(x.price_minor, x.currency)}`)
     .join(", ")}`;
 }
+
+/** A blank level for the editor: one 1-year term at no price yet. */
+export const EMPTY_TIER: Tier = {
+  key: "",
+  name: "",
+  description: "",
+  tax_treatment: "non_deductible",
+  terms: [newTerm()],
+};

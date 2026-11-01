@@ -18,6 +18,7 @@ Full plan: docs/ and .lovable/plan/. Phase IDs map to docs/epic.md.
 - [x] E-09: chapter fields (national/region defines them in a tab and in Membership setup; chapters fill them in on their overview and when created)
 - [x] E-09: locked chapter fields (only the national sets them, e.g. Charter date)
 - [x] CI runs on every branch and on pull requests
+- [x] Migrations 0004–0006 follow Lovable's import rules (full grants + RLS, no drops), checked in CI by `bun run check:migrations`
 - [x] E-10: setup card scrolls with long steps (title and Back / Save and continue stay visible)
 - [x] E-11: membership levels and terms (Days / Months / Years or Lifetime, prices in cents, tax treatment), Membership levels tab, levels step in Membership setup (v2), parent decides whether chapters create their own levels
 - [x] E-10: setup engine (steps, conditions, drafts, review with diff, one-transaction apply) + Membership flow v1
