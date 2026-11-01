@@ -139,7 +139,7 @@ Status key: **Decided** (final for now), **Default** (working assumption, confir
 | D-112 | Attribute values are written only through `set_attribute_value`, which checks permission, scope and type. Removed choices and fields are retired, never deleted, so stored values keep their meaning | Decided |
 | D-113 | Setup flows are TypeScript definitions (`src/engines/setup` + module flows). They produce a plan that `apply_setup` applies in one transaction. Re-running updates records by key and never duplicates | Decided |
 | D-114 | A top-level organization must keep at least one admin. A chapter may have none, because its parent's admins still manage it | Decided |
-| D-115 | CI runs lint, formatting, type checks, unit tests, database rule tests against a throwaway Postgres with a stub of the managed schemas, and a production build | Decided |
+| D-115 | CI runs lint, formatting, type checks, unit tests, database rule tests against a throwaway Postgres with a stub of the managed schemas, and a production build, on every push to any branch and on pull requests | Decided |
 | D-116 | **Member records (resolves Q-06).** Every new self-signup has an email and an account. Admins may create a member record with no email or login for historical members; it can be claimed later by invitation | Decided |
 | D-117 | Membership core first: tiers, memberships, standing and the roster work with admin-recorded payments before Stripe checkout is added | Decided |
 | D-118 | Receipts are in-app only in Phase 1 (view and print in the portal). Email delivery comes with E-08 | Decided |

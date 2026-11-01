@@ -1,8 +1,10 @@
 name: CI
 
+# Runs on every branch so work-in-progress branches are checked before they're needed,
+# plus pull requests (D-115).
 on:
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
 
 concurrency:

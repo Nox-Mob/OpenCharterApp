@@ -1,6 +1,6 @@
 # Testing and CI
 
-Every change must keep all of these green (instructions.md §3). CI runs them on every push and pull request (`.github/workflows/ci.yml`).
+Every change must keep all of these green (instructions.md §3). CI runs them on every push to any branch and on every pull request (`.github/workflows/ci.yml`).
 
 | Check | Command | What it covers |
 |---|---|---|
