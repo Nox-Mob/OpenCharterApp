@@ -24,6 +24,7 @@ export type Database = {
           id: string
           key: string
           label: string
+          locked: boolean
           member_editable: boolean
           org_id: string
           required: boolean
@@ -40,6 +41,7 @@ export type Database = {
           id?: string
           key: string
           label: string
+          locked?: boolean
           member_editable?: boolean
           org_id: string
           required?: boolean
@@ -56,6 +58,7 @@ export type Database = {
           id?: string
           key?: string
           label?: string
+          locked?: boolean
           member_editable?: boolean
           org_id?: string
           required?: boolean
@@ -252,6 +255,50 @@ export type Database = {
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      membership_tiers: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string
+          id: string
+          key: string
+          name: string
+          org_id: string
+          sort_order: number
+          tax_treatment: Database["public"]["Enums"]["tax_treatment"]
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          id?: string
+          key: string
+          name: string
+          org_id: string
+          sort_order?: number
+          tax_treatment?: Database["public"]["Enums"]["tax_treatment"]
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          id?: string
+          key?: string
+          name?: string
+          org_id?: string
+          sort_order?: number
+          tax_treatment?: Database["public"]["Enums"]["tax_treatment"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_tiers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -465,18 +512,27 @@ export type Database = {
       }
       roles: {
         Row: {
+          active: boolean
+          created_at: string
+          description: string
           id: string
           key: string
           name: string
           org_id: string | null
         }
         Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string
           id?: string
           key: string
           name: string
           org_id?: string | null
         }
         Update: {
+          active?: boolean
+          created_at?: string
+          description?: string
           id?: string
           key?: string
           name?: string
@@ -580,12 +636,73 @@ export type Database = {
           },
         ]
       }
+      tier_terms: {
+        Row: {
+          active: boolean
+          created_at: string
+          currency: string
+          id: string
+          key: string
+          label: string
+          length_count: number | null
+          length_unit: Database["public"]["Enums"]["term_unit"] | null
+          org_id: string
+          price_minor: number
+          sort_order: number
+          tier_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          id?: string
+          key: string
+          label: string
+          length_count?: number | null
+          length_unit?: Database["public"]["Enums"]["term_unit"] | null
+          org_id: string
+          price_minor: number
+          sort_order?: number
+          tier_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          currency?: string
+          id?: string
+          key?: string
+          label?: string
+          length_count?: number | null
+          length_unit?: Database["public"]["Enums"]["term_unit"] | null
+          org_id?: string
+          price_minor?: number
+          sort_order?: number
+          tier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tier_terms_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tier_terms_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: string }
+      ancestor_setting: { Args: { _key: string; _org: string }; Returns: Json }
       apply_setup: {
         Args: { _answers: Json; _flow: string; _org: string; _plan: Json }
         Returns: undefined
@@ -607,6 +724,10 @@ export type Database = {
         Args: { _org: string; _user: string }
         Returns: boolean
       }
+      check_role_permissions: {
+        Args: { _org: string; _perms: string[]; _uid: string }
+        Returns: undefined
+      }
       create_invitation: {
         Args: { _email: string; _org: string; _role_key?: string }
         Returns: string
@@ -620,6 +741,16 @@ export type Database = {
         }
         Returns: string
       }
+      create_role: {
+        Args: {
+          _description: string
+          _key: string
+          _name: string
+          _org: string
+          _perms: string[]
+        }
+        Returns: string
+      }
       get_invitation: {
         Args: { _token: string }
         Returns: {
@@ -629,6 +760,10 @@ export type Database = {
       }
       has_permission: {
         Args: { _org: string; _perm: string; _user: string }
+        Returns: boolean
+      }
+      holds_all_role_permissions: {
+        Args: { _org: string; _role: string; _user: string }
         Returns: boolean
       }
       is_org_member: { Args: { _org: string; _user: string }; Returns: boolean }
@@ -652,9 +787,30 @@ export type Database = {
         }[]
       }
       remove_role: { Args: { _assignment: string }; Returns: undefined }
+      resolve_role: { Args: { _key: string; _org: string }; Returns: string }
       revoke_invitation: { Args: { _id: string }; Returns: undefined }
+      role_applies_at: {
+        Args: {
+          _org: string
+          _role: Database["public"]["Tables"]["roles"]["Row"]
+        }
+        Returns: boolean
+      }
       set_attribute_value: {
         Args: { _def: string; _entity: string; _value: Json }
+        Returns: undefined
+      }
+      set_role_active: {
+        Args: { _active: boolean; _role: string }
+        Returns: undefined
+      }
+      update_role: {
+        Args: {
+          _description: string
+          _name: string
+          _perms: string[]
+          _role: string
+        }
         Returns: undefined
       }
       validate_attribute_value: {
@@ -690,6 +846,8 @@ export type Database = {
       org_type: "platform" | "national" | "region" | "chapter" | "standalone"
       setting_mode: "inherit" | "override" | "locked"
       setup_status: "in_progress" | "applied" | "needs_review"
+      tax_treatment: "deductible" | "non_deductible" | "partial"
+      term_unit: "day" | "month" | "year"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -831,6 +989,8 @@ export const Constants = {
       org_type: ["platform", "national", "region", "chapter", "standalone"],
       setting_mode: ["inherit", "override", "locked"],
       setup_status: ["in_progress", "applied", "needs_review"],
+      tax_treatment: ["deductible", "non_deductible", "partial"],
+      term_unit: ["day", "month", "year"],
     },
   },
 } as const
