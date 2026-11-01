@@ -4,7 +4,7 @@
  * Each run creates its own uniquely named records inside the demo orgs only.
  * Run: bun run test:smoke
  */
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { anonClient, DEMO, rpc, rpcFails, runId, signIn, type Db } from "./client";
 
 const AUSTIN = DEMO.orgs.austin;
@@ -22,6 +22,15 @@ let memberUserId: string;
 let tierId: string;
 let orgAdmin: Db;
 let termId: string;
+
+// Everything this run writes is removed afterwards; demo data from before the run stays (D-150).
+const runStartedAt = new Date(Date.now() - 5_000).toISOString();
+
+afterAll(async () => {
+  if (!nationalAdmin) return;
+  const removed = await rpc(nationalAdmin, "purge_smoke_data", { _since: runStartedAt });
+  console.info("smoke cleanup removed", removed);
+});
 
 beforeAll(async () => {
   [nationalAdmin, chapterAdmin, member] = await Promise.all([
