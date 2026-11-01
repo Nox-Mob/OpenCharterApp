@@ -92,3 +92,38 @@ select tests.as_user('11111111-0000-4000-8000-000000000001');
 select tests.eq((select count(*) from public.attribute_values), 3::bigint, 'national reads chapter values');
 select tests.reset_role();
 rollback;
+
+-- Locked chapter fields (D-121): only the defining org's admins set them
+begin;
+select tests.fixture();
+select tests.as_user('11111111-0000-4000-8000-000000000001');
+insert into public.attribute_definitions (id, org_id, applies_to, key, label, data_type, visibility, locked) values
+  ('44444444-0000-4000-8000-000000000021', '22222222-0000-4000-8000-000000000001', 'chapter', 'charter_date', 'Charter date', 'date', 'members', true);
+insert into public.attribute_definitions (id, org_id, key, label, data_type, locked) values
+  ('44444444-0000-4000-8000-000000000022', '22222222-0000-4000-8000-000000000001', 'rank', 'Rank', 'text', true);
+-- member fields can't be locked
+select tests.eq((select locked from public.attribute_definitions where key = 'rank'), false, 'member field not lockable');
+update public.attribute_definitions set locked = true where key = 'rank';
+select tests.eq((select locked from public.attribute_definitions where key = 'rank'), false, 'member field not lockable on update');
+-- national admin sets the locked value
+select public.set_attribute_value('44444444-0000-4000-8000-000000000021', '22222222-0000-4000-8000-000000000002', '"1999-09-09"');
+select tests.reset_role();
+
+-- chapter admin can read it but neither change nor clear it
+select tests.as_user('11111111-0000-4000-8000-000000000002');
+select tests.eq((select value #>> '{}' from public.attribute_values where entity_id = '22222222-0000-4000-8000-000000000002'), '1999-09-09', 'chapter reads locked value');
+select tests.throws($$select public.set_attribute_value('44444444-0000-4000-8000-000000000021', '22222222-0000-4000-8000-000000000002', '"2001-01-01"')$$, 'locked by your national');
+select tests.throws($$select public.set_attribute_value('44444444-0000-4000-8000-000000000021', '22222222-0000-4000-8000-000000000002', null)$$, 'locked by your national');
+-- and can't unlock national's field
+update public.attribute_definitions set locked = false where key = 'charter_date';
+select tests.reset_role();
+select tests.eq((select locked from public.attribute_definitions where key = 'charter_date'), true, 'chapter cannot unlock');
+
+-- once national unlocks it, the chapter may edit again
+select tests.as_user('11111111-0000-4000-8000-000000000001');
+update public.attribute_definitions set locked = false where key = 'charter_date';
+select tests.reset_role();
+select tests.as_user('11111111-0000-4000-8000-000000000002');
+select public.set_attribute_value('44444444-0000-4000-8000-000000000021', '22222222-0000-4000-8000-000000000002', '"2001-01-01"');
+select tests.reset_role();
+rollback;

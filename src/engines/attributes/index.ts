@@ -52,7 +52,7 @@ export function visibilityLabels(subject: AttributeSubject): Record<Visibility, 
 export function forSubject(input: AttributeInput, subject: AttributeSubject): AttributeInput {
   return subject === "chapter"
     ? { ...input, member_editable: false, show_in_directory: false }
-    : input;
+    : { ...input, locked: false };
 }
 
 export type AttributeDef = {
@@ -65,6 +65,8 @@ export type AttributeDef = {
   visibility: Visibility;
   member_editable: boolean;
   show_in_directory: boolean;
+  /** Chapter fields only: only the defining org's admins can set the value (D-121). */
+  locked: boolean;
   sort_order: number;
   active: boolean;
 };
@@ -155,6 +157,8 @@ export const attributeInputSchema = z
     visibility: z.enum(VISIBILITIES),
     member_editable: z.boolean(),
     show_in_directory: z.boolean(),
+    /** Chapter fields only (D-121). */
+    locked: z.boolean().optional(),
     options: z.array(optionInputSchema),
   })
   .superRefine((v, ctx) => {
@@ -236,6 +240,7 @@ export const STARTER_CHAPTER_ATTRIBUTES: readonly (Omit<AttributeInput, "options
     visibility: "members",
     member_editable: false,
     show_in_directory: false,
+    locked: true,
     options: [],
   },
   {

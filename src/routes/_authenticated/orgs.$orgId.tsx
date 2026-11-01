@@ -90,7 +90,7 @@ function OrgPage() {
           ) : (
             <p className="text-muted-foreground">Welcome to {org.name}.</p>
           )}
-          {org.type === "chapter" && <ChapterFieldsCard org={org} canEdit={canManage} />}
+          {org.type === "chapter" && <ChapterFieldsCard org={org} orgs={orgs} grants={grants} />}
         </TabsContent>
         <TabsContent value="fields" className="mt-6">
           <AttributesTab org={org} canManage={canManageFields} />

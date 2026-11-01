@@ -70,3 +70,22 @@ select tests.throws($$select public.apply_setup('22222222-0000-4000-8000-0000000
   '{"attributes": [{"key": "x", "label": "X", "data_type": "text", "applies_to": "chapter"}]}')$$, 'only national or regional');
 select tests.reset_role();
 rollback;
+
+-- Setup carries chapter field locks, and fields keep their order after one with choices
+begin;
+select tests.fixture();
+select tests.as_user('11111111-0000-4000-8000-000000000001');
+select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+  "attributes": [
+    {"key": "rank", "label": "Rank", "data_type": "ordered",
+     "options": [{"value": "a"}, {"value": "b"}, {"value": "c"}]},
+    {"key": "phone", "label": "Phone", "data_type": "text"},
+    {"key": "charter_date", "label": "Charter date", "data_type": "date", "applies_to": "chapter", "locked": true}
+  ]}$$);
+select tests.eq((select locked from public.attribute_definitions where key = 'charter_date'), true, 'lock applied');
+select tests.eq((select sort_order from public.attribute_definitions where key = 'phone'), 20, 'second field keeps its order');
+select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+  "attributes": [{"key": "charter_date", "label": "Charter date", "data_type": "date", "applies_to": "chapter", "locked": false}]}$$);
+select tests.eq((select locked from public.attribute_definitions where key = 'charter_date'), false, 'lock removed on re-run');
+select tests.reset_role();
+rollback;

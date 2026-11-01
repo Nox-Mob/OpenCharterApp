@@ -180,7 +180,10 @@ export function AttributeForm({
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         {(subject === "chapter"
-          ? ([["required", "Required for every chapter"]] as const)
+          ? ([
+              ["required", "Required for every chapter"],
+              ["locked", "Locked: only your admins can set it"],
+            ] as const)
           : ([
               ["required", "Required"],
               ["member_editable", "Members can edit their own"],
@@ -188,11 +191,21 @@ export function AttributeForm({
             ] as const)
         ).map(([k, l]) => (
           <label key={k} className="flex items-center gap-2 text-sm">
-            <Switch checked={value[k]} onCheckedChange={(c) => set({ [k]: c })} aria-label={l} />
+            <Switch
+              checked={value[k] === true}
+              onCheckedChange={(c) => set({ [k]: c })}
+              aria-label={l}
+            />
             {l}
           </label>
         ))}
       </div>
+      {subject === "chapter" && value.locked && (
+        <p className="text-sm text-muted-foreground">
+          Chapter admins will see this value but can't change it. Your admins set it on each
+          chapter's overview.
+        </p>
+      )}
     </div>
   );
 }

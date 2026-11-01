@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createOrgSchema, slugify, type OrgType } from "@/lib/policy";
-import { myOrgsQuery } from "@/lib/orgs";
+import { myOrgsQuery, myPermissionsQuery } from "@/lib/orgs";
+import { canSetChapterField } from "@/modules/attributes/chapter-fields";
 import { attributeDefsQuery } from "@/modules/attributes/queries";
 import { firstValueError, saveAttributeValues } from "@/modules/attributes/values";
 import { AttributeValueInput } from "@/components/attributes/attribute-value-input";
@@ -49,9 +50,17 @@ export function CreateOrgDialog({
     ...attributeDefsQuery(parentId ?? "", parent?.ancestor_ids ?? []),
     enabled: !!parent,
   });
+  const grants = useQuery({ ...myPermissionsQuery(), enabled: !!parentId });
+  // Only fields this person may set on the new chapter; locked ones need the defining org's admins.
+  const newChapter = { id: "new", ancestor_ids: parent ? [...parent.ancestor_ids, parent.id] : [] };
   const chapterFields =
     type === "chapter"
-      ? (defs.data ?? []).filter((d) => d.applies_to === "chapter" && d.active)
+      ? (defs.data ?? []).filter(
+          (d) =>
+            d.applies_to === "chapter" &&
+            d.active &&
+            canSetChapterField(d, newChapter, grants.data ?? []),
+        )
       : [];
 
   async function submit(e: React.FormEvent) {

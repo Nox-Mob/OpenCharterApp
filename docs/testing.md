@@ -37,7 +37,7 @@ Current coverage:
 | `30_invitations` | Single-use, email-bound, expiring invitations |
 | `40_settings` | National locks |
 | `50_roles` | Role assignment, last-admin protection |
-| `60_attributes` | Typed validation, inheritance, member self-edit, chapter fields |
+| `60_attributes` | Typed validation, inheritance, member self-edit, chapter fields, locked chapter fields |
 | `70_setup` | Permission checks, transactional apply, re-run, locks, chapter fields |
 | `80_custom_roles` | Custom roles: inheritance, no permission escalation, retire not delete |
 

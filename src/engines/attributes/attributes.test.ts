@@ -115,6 +115,9 @@ describe("attributeInputSchema", () => {
     for (const s of [...STARTER_ATTRIBUTES, ...STARTER_CHAPTER_ATTRIBUTES])
       expect(attributeInputSchema.safeParse(s).success).toBe(true);
   });
+  it("charter date starts locked so only the national sets it", () => {
+    expect(STARTER_CHAPTER_ATTRIBUTES.find((s) => s.key === "charter_date")?.locked).toBe(true);
+  });
   it("chapter starters never use member-only switches", () => {
     for (const s of STARTER_CHAPTER_ATTRIBUTES)
       expect([s.member_editable, s.show_in_directory]).toEqual([false, false]);
@@ -138,7 +141,11 @@ describe("subjects", () => {
       member_editable: false,
       show_in_directory: false,
     });
-    expect(forSubject(m, "member")).toBe(m);
+    expect(forSubject(m, "member")).toEqual({ ...m, locked: false });
+  });
+  it("only chapter fields can be locked", () => {
+    expect(forSubject({ ...input, locked: true }, "member").locked).toBe(false);
+    expect(forSubject({ ...input, locked: true }, "chapter").locked).toBe(true);
   });
   it("words visibility for the subject", () => {
     expect(visibilityLabels("chapter").admins).toBe("National and chapter admins");

@@ -47,6 +47,7 @@ export async function saveAttribute(
         visibility: parsed.visibility,
         member_editable: parsed.member_editable,
         show_in_directory: parsed.show_in_directory,
+        locked: parsed.locked ?? false,
       })
       .select("id")
       .single();
@@ -61,6 +62,7 @@ export async function saveAttribute(
         visibility: parsed.visibility,
         member_editable: parsed.member_editable,
         show_in_directory: parsed.show_in_directory,
+        locked: parsed.locked ?? false,
       })
       .eq("id", existing.id);
     if (error) throw error;
@@ -207,6 +209,11 @@ export function AttributesTab({
                     {d.required && (
                       <Badge variant="outline" className="ml-1">
                         Required
+                      </Badge>
+                    )}
+                    {d.locked && (
+                      <Badge variant="outline" className="ml-1">
+                        Locked
                       </Badge>
                     )}
                     {!d.active && (

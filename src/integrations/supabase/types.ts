@@ -24,6 +24,7 @@ export type Database = {
           id: string
           key: string
           label: string
+          locked: boolean
           member_editable: boolean
           org_id: string
           required: boolean
@@ -40,6 +41,7 @@ export type Database = {
           id?: string
           key: string
           label: string
+          locked?: boolean
           member_editable?: boolean
           org_id: string
           required?: boolean
@@ -56,6 +58,7 @@ export type Database = {
           id?: string
           key?: string
           label?: string
+          locked?: boolean
           member_editable?: boolean
           org_id?: string
           required?: boolean

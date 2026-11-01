@@ -14,7 +14,7 @@ Conventions to assume at schema time: every tenant-owned table carries `org_id`;
 | Tax profile | Legal name, EIN, tax status, address, per org |
 | Branding asset | Org, kind (logo light, logo dark, icon, email header), storage key, variants, status. Resolution falls back chapter → region → national → platform. Override allowed mode set by national |
 | Organization settings | Key/value or typed settings with inherit / override / locked mode |
-| Chapter attribute definitions and values | Defined by national or region, values per chapter (e.g., charter date). Stored in `attribute_definitions` with `applies_to = 'chapter'` and `attribute_values` keyed by the chapter's org id (D-120) |
+| Chapter attribute definitions and values | Defined by national or region, values per chapter (e.g., charter date). Stored in `attribute_definitions` with `applies_to = 'chapter'` and `attribute_values` keyed by the chapter's org id (D-120). A `locked` field is set only by the defining org (D-121) |
 | Domain | Hostname, org, kind (subdomain or custom), verification status, TLS status |
 
 ## 2. Identity, roles, access (first pass)
