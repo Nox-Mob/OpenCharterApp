@@ -259,6 +259,87 @@ export type Database = {
           },
         ]
       }
+      membership_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          id: number
+          kind: Database["public"]["Enums"]["membership_event_kind"]
+          membership_id: string
+          note: string
+          org_id: string
+          payment_id: string | null
+          period_end: string | null
+          period_start: string | null
+          term_id: string | null
+          tier_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          id?: number
+          kind: Database["public"]["Enums"]["membership_event_kind"]
+          membership_id: string
+          note?: string
+          org_id: string
+          payment_id?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          term_id?: string | null
+          tier_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          id?: number
+          kind?: Database["public"]["Enums"]["membership_event_kind"]
+          membership_id?: string
+          note?: string
+          org_id?: string
+          payment_id?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          term_id?: string | null
+          tier_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_events_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_events_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_events_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "tier_terms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_events_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       membership_tiers: {
         Row: {
           active: boolean
@@ -303,30 +384,107 @@ export type Database = {
           },
         ]
       }
+      memberships: {
+        Row: {
+          created_at: string
+          id: string
+          joined_on: string | null
+          lifetime: boolean
+          org_id: string
+          paid_through: string | null
+          profile_id: string
+          status: Database["public"]["Enums"]["membership_status"]
+          term_id: string
+          tier_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          joined_on?: string | null
+          lifetime?: boolean
+          org_id: string
+          paid_through?: string | null
+          profile_id: string
+          status: Database["public"]["Enums"]["membership_status"]
+          term_id: string
+          tier_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          joined_on?: string | null
+          lifetime?: boolean
+          org_id?: string
+          paid_through?: string | null
+          profile_id?: string
+          status?: Database["public"]["Enums"]["membership_status"]
+          term_id?: string
+          tier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memberships_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "org_member_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "tier_terms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_member_profiles: {
         Row: {
+          claimed_at: string | null
           created_at: string
           display_name: string
           email: string
           id: string
           org_id: string
-          user_id: string
+          source: string
+          user_id: string | null
         }
         Insert: {
+          claimed_at?: string | null
           created_at?: string
           display_name?: string
           email?: string
           id?: string
           org_id: string
-          user_id: string
+          source?: string
+          user_id?: string | null
         }
         Update: {
+          claimed_at?: string | null
           created_at?: string
           display_name?: string
           email?: string
           id?: string
           org_id?: string
-          user_id?: string
+          source?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -419,6 +577,88 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount_minor: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          gateway: Database["public"]["Enums"]["payment_gateway"]
+          gateway_ref: string | null
+          id: string
+          livemode: boolean
+          membership_id: string | null
+          method: Database["public"]["Enums"]["payment_method"] | null
+          note: string
+          org_id: string
+          payer_user_id: string | null
+          profile_id: string | null
+          purpose: Database["public"]["Enums"]["payment_purpose"]
+          received_on: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+        }
+        Insert: {
+          amount_minor: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          gateway?: Database["public"]["Enums"]["payment_gateway"]
+          gateway_ref?: string | null
+          id?: string
+          livemode?: boolean
+          membership_id?: string | null
+          method?: Database["public"]["Enums"]["payment_method"] | null
+          note?: string
+          org_id: string
+          payer_user_id?: string | null
+          profile_id?: string | null
+          purpose: Database["public"]["Enums"]["payment_purpose"]
+          received_on?: string | null
+          status: Database["public"]["Enums"]["payment_status"]
+        }
+        Update: {
+          amount_minor?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          gateway?: Database["public"]["Enums"]["payment_gateway"]
+          gateway_ref?: string | null
+          id?: string
+          livemode?: boolean
+          membership_id?: string | null
+          method?: Database["public"]["Enums"]["payment_method"] | null
+          note?: string
+          org_id?: string
+          payer_user_id?: string | null
+          profile_id?: string | null
+          purpose?: Database["public"]["Enums"]["payment_purpose"]
+          received_on?: string | null
+          status?: Database["public"]["Enums"]["payment_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "org_member_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -702,6 +942,39 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { _token: string }; Returns: string }
+      admin_create_member: {
+        Args: { _display_name: string; _email?: string; _org: string }
+        Returns: string
+      }
+      approve_membership: {
+        Args: { _membership: string; _note?: string }
+        Returns: undefined
+      }
+      cancel_membership: {
+        Args: { _membership: string; _note?: string }
+        Returns: undefined
+      }
+      decline_membership: {
+        Args: { _membership: string; _note?: string }
+        Returns: undefined
+      }
+      grace_days: { Args: { _org: string }; Returns: number }
+      record_membership: {
+        Args: {
+          _amount_minor?: number
+          _method?: Database["public"]["Enums"]["payment_method"]
+          _note?: string
+          _paid_on?: string
+          _profile: string
+          _starts_on?: string
+          _term: string
+        }
+        Returns: string
+      }
+      update_member_record: {
+        Args: { _display_name: string; _email: string; _profile: string }
+        Returns: undefined
+      }
       ancestor_setting: { Args: { _key: string; _org: string }; Returns: Json }
       apply_setup: {
         Args: { _answers: Json; _flow: string; _org: string; _plan: Json }
@@ -843,7 +1116,18 @@ export type Database = {
         | "multi_choice"
         | "ordered"
       attribute_visibility: "admins" | "members" | "public"
+      membership_event_kind:
+        | "joined"
+        | "renewed"
+        | "approved"
+        | "declined"
+        | "cancelled"
+      membership_status: "pending" | "active" | "cancelled" | "declined"
       org_type: "platform" | "national" | "region" | "chapter" | "standalone"
+      payment_gateway: "manual" | "stripe" | "test"
+      payment_method: "cash" | "check" | "card" | "bank_transfer" | "other"
+      payment_purpose: "join" | "renew"
+      payment_status: "pending" | "paid" | "refunded" | "failed"
       setting_mode: "inherit" | "override" | "locked"
       setup_status: "in_progress" | "applied" | "needs_review"
       tax_treatment: "deductible" | "non_deductible" | "partial"
@@ -986,7 +1270,13 @@ export const Constants = {
         "ordered",
       ],
       attribute_visibility: ["admins", "members", "public"],
+      membership_event_kind: ["joined", "renewed", "approved", "declined", "cancelled"],
+      membership_status: ["pending", "active", "cancelled", "declined"],
       org_type: ["platform", "national", "region", "chapter", "standalone"],
+      payment_gateway: ["manual", "stripe", "test"],
+      payment_method: ["cash", "check", "card", "bank_transfer", "other"],
+      payment_purpose: ["join", "renew"],
+      payment_status: ["pending", "paid", "refunded", "failed"],
       setting_mode: ["inherit", "override", "locked"],
       setup_status: ["in_progress", "applied", "needs_review"],
       tax_treatment: ["deductible", "non_deductible", "partial"],

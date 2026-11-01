@@ -8,6 +8,8 @@ import {
   TAX_TREATMENT_LABELS,
   termLabel,
   tierInputSchema,
+  normalizeTier,
+  DEFAULT_LEVEL_NAME,
   type Tier,
 } from "@/modules/membership/tiers";
 import {
@@ -47,9 +49,15 @@ export function LevelsTab({
   const mayCreate = canManage && allowed.data !== false;
   const parentName = orgs.find((o) => o.id === org.parent_id)?.name ?? "Your parent organization";
 
+  // Other active levels of this org (the parent's levels don't count, D-126).
+  const others = own.filter((t) => t.active && t.id !== editing?.tier?.id);
+  const onlyLevel = others.length === 0;
+
   async function save() {
     if (!editing) return;
-    const parsed = tierInputSchema.safeParse(editing.input);
+    const normalized = normalizeTier(editing.input, { onlyLevel });
+    if ("error" in normalized) return void toast.error(normalized.error);
+    const parsed = tierInputSchema.safeParse(normalized.tier);
     if (!parsed.success)
       return void toast.error(parsed.error.issues[0]?.message ?? "Check the level");
     setBusy(true);
@@ -137,6 +145,8 @@ export function LevelsTab({
         title={editing?.tier ? `Edit ${editing.tier.name}` : "Add a membership level"}
         value={editing?.input ?? null}
         keyLocked={!!editing?.tier}
+        nameOptional={onlyLevel}
+        renameHint={!onlyLevel && others.some((t) => t.name === DEFAULT_LEVEL_NAME)}
         onChange={(input) => editing && setEditing({ ...editing, input })}
         onClose={() => setEditing(null)}
         primaryLabel={busy ? "Saving…" : "Save level"}

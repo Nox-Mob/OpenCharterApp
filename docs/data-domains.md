@@ -48,9 +48,10 @@ Conventions to assume at schema time: every tenant-owned table carries `org_id`;
 | Membership program / tier | Owned by an org (national or chapter), name, status, tax treatment, billing timing (prepaid or postpaid), approval required. *Built (E-11):* `membership_tiers` (key, name, description, tax_treatment, active). Billing timing comes with E-20 and approval stays an org setting (D-124). Sub-orgs may only create levels when their parent allows it (D-123) |
 | Term option | Per tier: label, duration (or lifetime), price. Fully org-defined. *Built (E-11):* `tier_terms` (length_count + length_unit day/month/year, or both null for lifetime; price_minor; currency), D-122 |
 | Pricing rule | Rule record linked to a tier (attribute-based pricing or reductions), evaluated by the rules engine |
-| Membership | (person, org, tier, term, status, start, paid-through, source) |
-| Membership event history | Joined, renewed, lapsed, upgraded, cancelled |
-| Standing | Derived state (good standing, grace, lapsed, delinquent). Possibly materialized for query speed |
+| Membership | (person, org, tier, term, status, start, paid-through, source). *Built (E-13a):* `memberships`, one current row per member profile and org: tier, term, status (pending / active / cancelled / declined), joined_on, paid_through, lifetime (D-131) |
+| Membership event history | Joined, renewed, lapsed, upgraded, cancelled. *Built:* append-only `membership_events` (joined / renewed / approved / declined / cancelled) with the period covered and the payment |
+| Standing | Derived state (good standing, grace, lapsed, delinquent). Possibly materialized for query speed. *Built:* derived on read from paid_through and the grace period (`membership_standing`, `src/modules/membership/standing.ts`), not stored (D-111) |
+| Member record | *Built (E-13a):* `org_member_profiles` may have no login (`user_id` null, source admin / import) for historical members; an invitation claims it (D-116, D-134) |
 | Invoice / balance (postpaid) | Amount, due date, status, line items |
 | Dues policy | Per org: grace days, delinquency rules, national control mode for chapter dues (none / optional range / required) |
 
@@ -59,7 +60,7 @@ Conventions to assume at schema time: every tenant-owned table carries `org_id`;
 | Entity | Notes |
 |---|---|
 | Gateway connection | Org, gateway type (Stripe or PayPal), credentials or connected account reference (encrypted), status |
-| Payment / transaction | Receiving org, gateway, gateway reference, payer (person or other), gross, fees, national fee, status, item references |
+| Payment / transaction | Receiving org, gateway, gateway reference, payer (person or other), gross, fees, national fee, status, item references. *Built (E-13a):* `payments` (org, membership, member, payer, purpose join / renew, amount_minor, currency, status, gateway manual / stripe / test, method, received_on, note). Fees and the national fee come with E-12 / E-21 |
 | Payment line item | What was paid for (membership, donation, ticket, award option, add-on), tax treatment, fair-market value |
 | Refund | Linked to payment |
 | National fee rule | Percentage or fixed, applicable item types |

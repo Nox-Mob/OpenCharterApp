@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_LEVEL_NAME,
+  EMPTY_TIER,
+  normalizeTier,
   describeTier,
   formatPrice,
   newTerm,
@@ -132,5 +135,32 @@ describe("describeTier", () => {
         ],
       }),
     ).toBe("Regular: 1 year $25.00, Lifetime $300.00");
+  });
+});
+
+describe("normalizeTier (D-126)", () => {
+  const blank = { ...EMPTY_TIER, terms: [{ ...newTerm(), price_minor: 2500 }] };
+  it("names an unnamed only-level Membership", () => {
+    const r = normalizeTier(blank, { onlyLevel: true });
+    expect(r).toEqual({ tier: { ...blank, name: "Membership", key: "membership" } });
+    expect(tierInputSchema.safeParse("tier" in r ? r.tier : null).success).toBe(true);
+  });
+  it("treats a name of only spaces as blank", () => {
+    expect(normalizeTier({ ...blank, name: "  " }, { onlyLevel: true })).toMatchObject({
+      tier: { name: DEFAULT_LEVEL_NAME },
+    });
+  });
+  it("requires a name when the org has more than one level", () => {
+    expect(normalizeTier(blank, { onlyLevel: false })).toEqual({
+      error: "Give each level a name, since you offer more than one",
+    });
+  });
+  it("leaves named levels alone and keeps a saved level's key", () => {
+    const named = { ...blank, name: "Regular", key: "regular" };
+    expect(normalizeTier(named, { onlyLevel: false })).toEqual({ tier: named });
+    const saved = { ...blank, id: "x", key: "old_key" };
+    expect(normalizeTier(saved, { onlyLevel: true })).toMatchObject({
+      tier: { name: "Membership", key: "old_key" },
+    });
   });
 });
