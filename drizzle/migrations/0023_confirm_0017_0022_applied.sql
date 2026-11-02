@@ -1,0 +1,1 @@
+COMMENT ON TABLE public.pricing_rules IS 'Pricing rules by member fields (0021). Write only via save_pricing_rule / set_pricing_rule_active.';
