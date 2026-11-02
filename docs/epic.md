@@ -63,7 +63,7 @@ Status for Phases 1–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly 
 |---|---|---|---|
 | E-16 | Chapter creation wizard and chapter attributes | National-led chapter creation, national-defined chapter attributes (e.g., charter date), prompts for required officers | ✅ Cleared |
 | E-17 | Board role templates and appointments | National-defined seats (required, count, term, permissions), custom titles, appointments with history, access grant and revoke | ✅ Cleared |
-| E-18 | Two-level dues and national controls | National and chapter tiers, none/optional-range/required chapter dues, locked or suggested structures, two-payment checkout UX | 🟡 Cleared, follow-ups |
+| E-18 | Two-level dues and national controls | National and chapter tiers, none/optional-range/required chapter dues, locked or suggested structures (chapter chooses copy or linked, D-165), two-payment checkout UX; alternative model: national membership with a home chapter (D-166) | 🟡 Cleared, follow-ups |
 | E-19 | Rules engine and attribute-based pricing | Declarative rules UI, pricing by attribute (e.g., rank bands), reused later for eligibility and approvals | ✅ Cleared |
 | E-20 | Postpaid dues | Balances, invoices, due dates, delinquency, admin-defined enforcement as inheritable settings (D-161), manual payment recording, **parent orgs invoicing subordinate orgs** (national fee, D-162) | ⬜ Not started |
 | E-21 | Per-org gateways and PayPal | Each org connects Stripe or PayPal, **Direct mode only** (Connect dropped, D-162), PayPal adapter. The national fee is invoiced through E-20 | 🟠 Partly built (Stripe done; PayPal open) |

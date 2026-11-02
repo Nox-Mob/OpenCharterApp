@@ -70,10 +70,11 @@ Work in waves. Each item follows the commit rules (tests, docs, migration conven
 | A1 | Live Stripe test-mode run on a non-demo test org: connect, join, webhook, refund, decline with refund | E-12 | Steps in `user-testing.md` §10. Add the outcome to the smoke suite if a Stripe test key can be stored as a CI secret |
 | A2 | Playwright end-to-end tests for join → test checkout → approval → renewal, Membership setup, Board setup, chapter wizard | cross-cutting | Chromium is available; run against a local build with a seeded database. Closes the §5 gap |
 | A3 | Transaction CSV export (payments, refunds, receiving org, tax treatment), audited, for one org and for a national's tree | E-12, E-23 | D-047; reuse the report-export audit (`log_report_export`) |
-| A4 | National-suggested level structures: the national publishes template levels; a chapter adopts one (copy, then edit within the price range) | E-18 | D-055. Needs a decision: copy-on-adopt vs. live link |
+| A4 | Suggested levels: the national marks levels as suggested; a chapter starts from one and chooses **Copy** or **Linked** (same price, or a set reduction), with an explanation of each | E-18 | D-165; design notes in §5 |
 | A5 | National standing on the chapter's Members page; national-dues reminder in "Actions needed" | E-18 | Read-only; aggregate through a definer function so chapters don't read the national's roster |
 | A6 | Pricing step in Membership setup | E-19, E-10 | Writes `pricing_rules` through `apply_setup` |
 | A7 | Members "everyone" view: chosen fields as columns; export across chapters applying each chapter's directory rule per row | E-14 | D-154 follow-up |
+| A8 | **Membership model: national membership with a home chapter**, as an alternative to separate memberships | E-13, E-18 | D-166. Larger than the other A items (data model, join, Members, Board, reports); settle the open questions in §5 first. Do it before E-20 and E-27, which depend on who counts as a chapter's member |
 
 ### Wave B: infrastructure that unblocks the rest (≈ 2 sprints)
 
@@ -99,7 +100,7 @@ Work in waves. Each item follows the commit rules (tests, docs, migration conven
 | D2 | Board reports: national defines types and schedules, chapters submit, national reviews, overdue tracking | E-25 | D-073; setup flow §6.5 "Board report types and schedules" |
 | D3 | Vacancy alerts and the national oversight dashboard (vacancies, overdue reports, document compliance) | E-25 | Alerts need B1; the dashboard extends Reports |
 | D4 | Document repository | E-26 | D-075; private bucket under `<org_id>/`, signed URLs (like branding, D-109); review flow through the approval engine; setup flow §6.7 |
-| D5 | Elections | E-27 | D-074, D-163, R-13; private choices, voters see their own ballot until the next election for that position, admins read-only, results after certification; eligibility through the rules engine; certification makes results immutable and appoints through `appoint_officer`; setup flow §6.6 |
+| D5 | Elections | E-27 | D-074, D-163, D-167, R-13; the org chooses first past the post or ranked choice; private choices, voters see their own ballot until the next election for that position, admins read-only, results after certification; eligibility through the rules engine; certification makes results immutable and appoints through `appoint_officer`; setup flow §6.6 |
 | D6 | Automation engine: the `architecture.md` §10 inventory on top of B1 | E-28 | Consolidates the reminders and alerts built in B2, D2, D3 |
 
 ### Decisions
@@ -113,14 +114,17 @@ Settled on 2026-11-02:
 | C1 | Postpaid options are inheritable settings: the parent sets them, subordinates where allowed (D-161) |
 | C2 | Direct payments only; parents invoice subordinate orgs; hosting is billed outside the app (D-162) |
 | D5 | Ballots: who voted for whom is never shown to members; voters see their own ballot until the next election for that position; admins can view but not change; results after a winner is certified (D-163) |
+| D5 | Voting method: each org chooses first past the post or ranked choice to match its by-laws (D-167) |
 | F-11 | Packaging direction: lightweight standalone install with Docker Compose (D-160) |
+| A4 | Suggested levels: the chapter chooses Copy or Linked (same price or a set reduction), with an explanation on screen (D-165) |
+| A8 | A national can choose "national membership with a home chapter" instead of separate memberships (D-166, direction) |
 
 Still open:
 
 | For | Question |
 |---|---|
-| A4 | Suggested level structures: when a chapter starts from a level the national suggests, does it get its own copy (later national changes don't affect it) or stay linked (national changes flow down, the chapter only sets its price)? Recommended: its own copy |
-| D5 | Ranked-choice counting method (recommended: instant runoff), and confirm that admins may see individual ballots (D-163 assumes yes, read-only and audited) |
+| A8 | The questions for the home-chapter model, listed in §5 |
+| D5 | Confirm that admins may see individual ballots (D-163 assumes yes, read-only and audited) |
 | F-11 | Hosted Supabase project vs. self-hosted subset as the default install (D-160) |
 
 ## 4. Documentation updates
@@ -162,4 +166,32 @@ To do as each wave lands (owner: whoever ships the item):
   - the Lovable-specific pieces (auth helper, error reporting) need a non-Lovable fallback
   - scheduled routes need a cron runner in Compose
   - storage signed URLs work against the self-hosted Storage API
+
+### A4 suggested levels (D-165)
+- **National side:** a "Suggest to chapters" switch on a level (Settings → Membership levels). Only shown when chapters may have their own levels.
+- **Chapter side:** a "Start from a suggested level" button opens a dialog with the two choices side by side:
+  - **Copy:** "Your own level. You can rename it and set your own price. If {national} changes theirs later, yours stays as it is."
+  - **Linked:** "Stays the same as {national}'s level: same name and terms, and it changes when theirs does. You choose your price: the same as theirs, or a set amount or percentage less."
+- **Data:** the chapter's level records where it came from and how: `source_tier_id`, `link_mode` (`copy` or `linked`) and, for linked levels, a price rule (`same`, `minus_amount`, `minus_percent`). The database computes a linked price from the national's price (minor units, rounded to the cent) and keeps it within the national's chapter price range (D-146).
+- **When the national changes or retires a level:** linked chapter levels update in the same transaction, and a retired one is retired at the chapter with a notice on the chapter's Membership levels page. Existing memberships keep the term they paid for.
+- **Switching:** "Make it our own" turns a linked level into a copy (one way only).
+- **Tests:** price rules (same, amount, percent, range clamp, rounding), the national's change flowing to linked but not to copied levels, retirement, permissions and tenant isolation.
+
+### A8 national membership with a home chapter (D-166)
+- **Setting:** `membership.model` at the national: `separate` (default, today) or `home_chapter`. It's locked for the whole tree and decided by the national only.
+- **Joining:** the national's join page asks "Which chapter do you belong to?" (a list of its chapters, optionally "None for now"). A chapter's join page sends people to the national's, with that chapter preselected.
+- **Data:** the membership stays at the national. A new `home_org_id` on the national membership, plus an append-only `affiliation_history` (from, to, when, by whom), both owned by the national (`org_id` = national) so tenant rules hold. Chapter admins read their affiliated members through definer functions (like the roll-ups), never by widening RLS on the national's tables.
+- **What changes for chapters:**
+  - Members page: lists members whose home chapter is this one, with standing from their national membership
+  - Board: officers must have this chapter as their home chapter and be in good standing at the national
+  - Directory, Overview numbers and Reports count affiliated members
+  - Membership levels and chapter dues are hidden (there are none)
+- **What changes for members:** the Overview shows "Your chapter: Austin" with "Change chapter". Changing ends the old affiliation and starts the new one; seats held in the old chapter end with the reason "changed chapter".
+- **Privacy (D-036, D-037):** choosing a chapter is the member sharing their record with it. The chapter sees the fields marked visible to members or to chapter admins, not admin-only national fields.
+- **Questions to settle before building:**
+  1. Can someone be a member with no chapter ("member at large")?
+  2. Can members change chapter themselves at any time, or does the new chapter (or the national) approve it?
+  3. Can a person belong to more than one chapter (e.g. a home chapter plus a second one)?
+  4. In this model, may chapters still charge optional local dues, or never?
+  5. Can a national switch models later? Switching with existing chapter memberships needs a one-time conversion, so the recommendation is to choose during setup and lock it once members exist.
 

@@ -72,3 +72,7 @@
 | **Direct mode** | Each org collects into its own Stripe (or PayPal) account. The only mode we support (D-162); a parent's fee is invoiced to the subordinate org. *Connect mode was dropped* |
 | **Email transport** | How the app sends email: Lovable's built-in email or the client's own server, set by `EMAIL_TRANSPORT` (D-159) |
 | **Send-from address** | The address an org's emails come from; chapters inherit their parent's unless allowed their own (D-159) |
+| **Suggested level / Copy / Linked** | A level a national offers its chapters to start from. *Copy*: the chapter's own level, unaffected by later national changes. *Linked*: follows the national's level; the chapter's price is the same or a set reduction (D-165) |
+| **Membership model** | How a national's tree handles membership: *separate memberships* (national and chapter each have their own) or *national membership with a home chapter* (D-166) |
+| **Home chapter (affiliation)** | In the home-chapter model, the chapter a national member has chosen to belong to. A selection, not a second membership; it can change, with history kept (D-166) |
+| **First past the post / Ranked choice** | The two voting methods an org can choose for its elections (D-167). First past the post: one choice per seat, most votes wins. Ranked choice: voters rank candidates, counted by instant runoff (single transferable vote for several seats) |

@@ -109,7 +109,7 @@ The overview shows a card per flow from `src/modules/setup/flows.ts` (Membership
 
 ### 6.6 Elections
 - Who is eligible to vote and to run (membership status, minimum membership length, cutoff date logic)?
-- Default voting method (single choice or ranked choice, chapter can choose if allowed).
+- Voting method, chosen by each org to match its by-laws: first past the post or ranked choice (D-167), with the by-law reference. Fixed per election once voting opens.
 - Nomination method, voting window length, quorum requirements.
 
 ### 6.7 Documents
