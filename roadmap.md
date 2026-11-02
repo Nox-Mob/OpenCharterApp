@@ -1,5 +1,7 @@
 # OpenCharterApp roadmap
 
+Testing by hand: docs/user-testing.md (updated with every feature).
+
 Full plan: docs/ and .lovable/plan/. Phase IDs map to docs/epic.md.
 
 ## Pending migrations for Lovable

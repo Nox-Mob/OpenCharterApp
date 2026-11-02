@@ -92,7 +92,7 @@ TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres bun run t
 bun run build
 ```
 
-`test:db` creates and drops its own throwaway database (`oc_rules_test`), applies every migration and runs `db/tests/*.sql`. **Never point it at the real project database.** Details are in [`docs/testing.md`](docs/testing.md).
+`test:db` creates and drops its own throwaway database (`oc_rules_test`), applies every migration and runs `db/tests/*.sql`. **Never point it at the real project database.** Details are in [`docs/testing.md`](docs/testing.md). For checking the app by hand, follow [`docs/user-testing.md`](docs/user-testing.md).
 
 ### Database changes
 
