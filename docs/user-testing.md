@@ -30,10 +30,17 @@ Use a private browser window for a second account at the same time. Test only in
 ## 2. Organizations and chapters
 **Where:** dashboard, org page, Chapters tab.
 1. As **National**, open Demo National Association. Expect tabs: Overview, Members, Directory, Board, Membership levels, Member fields, Chapter fields, Roles, Payments, Settings, Chapters, Audit log.
-2. Chapters tab → "Add chapter". Fill in the name and the national's chapter fields (e.g. Charter date). Expect it in the list and in the org switcher.
-3. Open the new chapter. Expect "← Demo National Association" at the top.
+2. Chapters tab → "Add chapter". The wizard asks, step by step:
+   - **Name and type.** Try a region too: it skips the chapter steps.
+   - **Chapter details:** the national's chapter fields, e.g. Charter date. Required ones are checked.
+   - **Chapter admin:** an email to invite as admin, or blank.
+   - **Required officers:** only if the national has required seats for chapters (Board tab or Board setup). An email per seat, or blank.
 
-**Also try:** a chapter name with accents or an apostrophe; check the suggested web address (slug).
+   After "Create", you see the invitation links to copy, and "Open …" goes to the new chapter. Expect it in the Chapters list and the org switcher; its Board tab shows the required seats as **Vacant**.
+3. Open an officer's invitation link in a private window and accept it. Then appoint that person on the chapter's Board tab (they need a membership in good standing first, unless the rule is off).
+4. Open the new chapter. Expect "← Demo National Association" at the top.
+
+**Also try:** a chapter name with accents or an apostrophe, and check the suggested web address (slug); a bad email (it stops before anything is created); the same email for the admin and an officer (one invitation).
 
 ## 3. Settings, locks, tax profile, logo
 **Where:** Settings tab.
