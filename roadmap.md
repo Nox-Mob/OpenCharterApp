@@ -59,7 +59,7 @@ None. `0000`–`0028` are applied (the `GATEWAY_ENCRYPTION_KEY` secret is set); 
 ## Open (plan: docs/plans/phases-1-3-review.md)
 Phases 1 and 2 meet their exit criteria; Phase 3 doesn't yet. Remaining work, in waves:
 
-**Wave A: Phase 1–2 gaps, then the MVP release v0.1.0** (plan: docs/plans/wave-a-mvp.md; decisions M1–M4 needed first)
+**Wave A: Phase 1–2 gaps, then the MVP release v0.1.0** (plan: docs/plans/wave-a-mvp.md; MVP decisions D-169..D-172: no email in the MVP, Playwright, demo data kept for now, v0.1.0)
 - [ ] A1 Live Stripe test-mode run on a non-demo test org (connect, join, webhook, refund) (E-12)
 - [ ] A2 Playwright end-to-end tests: join → checkout → approval → renewal, Membership setup, Board setup, chapter wizard
 - [ ] A3 Transaction CSV export for one org and a national's tree, audited (D-047; E-12, E-23)

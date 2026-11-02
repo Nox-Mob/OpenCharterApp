@@ -1,6 +1,6 @@
 # Wave A and the MVP release
 
-Status: **plan**, 2026-11-02. Builds on `docs/plans/phases-1-3-review.md` (Wave A items A1–A8) and the decisions up to D-168.
+Status: **plan, decisions settled**, 2026-11-02. Builds on `docs/plans/phases-1-3-review.md` (Wave A items A1–A8) and the decisions up to D-168.
 
 ## 1. Goal
 
@@ -28,14 +28,14 @@ And when we can show it's safe:
 - PayPal, custom domains, approvals, board reports, documents, elections, automation.
 - packaging for self-hosting (F-11). The MVP runs on Lovable Cloud; the Docker / hosted-Supabase install (D-160) follows.
 
-## 3. Decisions needed before Sprint 1
+## 3. Decisions for the MVP (settled 2026-11-02 as D-169..D-172)
 
-| # | Question | Recommendation |
+| # | Question | Decision (as recommended) |
 |---|---|---|
-| M1 | Ship the MVP without automatic email (copy-a-link invitations, no reminders), or pull a minimal B1 (invitations and payment confirmations only) into the MVP? | Ship without; announce email as the first update. It keeps the MVP to about 3 sprints |
-| M2 | Add Playwright as a dev dependency for end-to-end tests (`instructions.md` §10 asks for a decision before adding dependencies) | Yes, `@playwright/test`, Chromium only, run in CI on pull requests to `main` |
-| M3 | Demo organizations and accounts in the MVP database: keep them (clearly badged, for training) or remove them at release (`docs/demo-data.md` cleanup)? | Keep the demo national for now (it's isolated, never emails, D-148); remove before onboarding a second real national |
-| M4 | Version and release notes | `0.1.0` in `package.json`, a `CHANGELOG.md`, and a `v0.1.0` tag on `main` |
+| M1 | Ship the MVP without automatic email (copy-a-link invitations, no reminders), or pull a minimal B1 (invitations and payment confirmations only) into the MVP? | Ship without; announce email as the first update. It keeps the MVP to about 3 sprints (D-169) |
+| M2 | Add Playwright as a dev dependency for end-to-end tests (`instructions.md` §10 asks for a decision before adding dependencies) | Yes, `@playwright/test`, Chromium only, run in CI on pull requests to `main` (D-170) |
+| M3 | Demo organizations and accounts in the MVP database: keep them (clearly badged, for training) or remove them at release (`docs/demo-data.md` cleanup)? | Keep the demo national for now (it's isolated, never emails, D-148); remove before onboarding a second real national (D-171) |
+| M4 | Version and release notes | `0.1.0` in `package.json`, a `CHANGELOG.md`, and a `v0.1.0` tag on `main` (D-172) |
 
 ## 4. Wave A items
 
@@ -91,7 +91,7 @@ Design in `phases-1-3-review.md` §5 (D-165).
 - Export across chapters, applying each chapter's directory rule per row (D-139). It resolves each org's rule the way `privacyRulesQuery` does today, so nobody opted out slips through.
 
 ### A2 End-to-end tests (M, start in Sprint 1, grows with each item)
-Depends on M2.
+Playwright approved (D-170).
 - Playwright against `bun run build` + preview, with the database tests' Postgres and seeded demo-like data, or against a dedicated test project on Lovable Cloud if the auth stub isn't enough. **Spike first (1 day).**
 - **Flows:**
   1. sign up and join with the test gateway, then approval
@@ -126,7 +126,7 @@ Depends on M2.
 2. Lovable has applied every pending migration; `bun run test:smoke` passes against the live backend.
 3. Full pass of `docs/user-testing.md` as National, Chapter and Member, on desktop and phone width.
 4. Security review (R1) signed off; accessibility pass (R2) done.
-5. Decisions M1–M4 recorded in `decisions.md`.
+5. Decisions M1–M4 recorded in `decisions.md` (done: D-169..D-172).
 6. `package.json` version `0.1.0`, `CHANGELOG.md`, README "Where it stands" updated.
 7. Pull request `BoardUpdates` → `main` with the checklist from `instructions.md` §8; reviewed and merged (no force-push; Lovable syncs from `main`).
 8. Tag `v0.1.0` and publish release notes, listing what's not in the MVP (§2).
@@ -135,7 +135,7 @@ Depends on M2.
 
 | Sprint | Work |
 |---|---|
-| 1 | M1–M4 decided; A2 spike and harness; A8 part 1 (setting, data, RPCs, join, change chapter); A3 |
+| 1 | A2 spike and harness; A8 part 1 (setting, data, RPCs, join, change chapter); A3 |
 | 2 | A8 part 2 (Members, Board, directory, overview, reports in the home-chapter model); A4; A5; end-to-end tests for both |
 | 3 | A6; A7; A1 live Stripe check; R1–R7; release checklist and v0.1.0 |
 

@@ -47,6 +47,8 @@ To remove someone, delete their row. At launch, remove the demo accounts from th
 
 ## Cleanup
 
+The demo data stays through the MVP (D-171) and is removed before a second real national is onboarded.
+
 Run these steps in order.
 
 1. Switch off the smoke-test cleanup: add a migration that replaces `public.purge_smoke_data` with a function that only raises "smoke cleanup is disabled" (D-150), and stop running `bun run test:smoke` against production.
