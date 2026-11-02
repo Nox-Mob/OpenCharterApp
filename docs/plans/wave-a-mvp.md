@@ -90,7 +90,7 @@ Design in `phases-1-3-review.md` §5 (D-165).
 - A column picker for member fields (saved per viewer in the browser).
 - Export across chapters, applying each chapter's directory rule per row (D-139). It resolves each org's rule the way `privacyRulesQuery` does today, so nobody opted out slips through.
 
-### A2 End-to-end tests (M, start in Sprint 1, grows with each item)
+### A2 End-to-end tests (M, start in Sprint 1, grows with each item): harness built in Sprint 1 (D-175)
 Playwright approved (D-170).
 - Playwright against `bun run build` + preview, with the database tests' Postgres and seeded demo-like data, or against a dedicated test project on Lovable Cloud if the auth stub isn't enough. **Spike first (1 day).**
 - **Flows:**

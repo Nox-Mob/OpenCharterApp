@@ -14,7 +14,7 @@ function env(name: string): string {
 }
 
 export const DEMO = {
-  password: process.env["SMOKE_DEMO_PASSWORD"] ?? "OpenCharterDemo!2026",
+  password: process.env["SMOKE_DEMO_PASSWORD"] || "OpenCharterDemo!2026",
   national: "demo-national@opencharter.test",
   chapter: "demo-chapter@opencharter.test",
   member: "demo-member@opencharter.test",

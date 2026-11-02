@@ -66,7 +66,7 @@ Phases 1 and 2 meet their exit criteria; Phase 3 doesn't yet. Remaining work, in
 
 **Wave A: Phase 1–2 gaps, then the MVP release v0.1.0** (plan: docs/plans/wave-a-mvp.md; MVP decisions D-169..D-172: no email in the MVP, Playwright, demo data kept for now, v0.1.0)
 - [ ] A1 Live Stripe test-mode run on a non-demo test org (connect, join, webhook, refund) (E-12)
-- [ ] A2 Playwright end-to-end tests: join → checkout → approval → renewal, Membership setup, Board setup, chapter wizard
+- [x] A2 Playwright end-to-end harness and first specs: menu by role, view as member, members across chapters, board contact email, setup, join-page required questions; checkout test against a deployed site (D-175). Still to add as their migrations are applied: Membership / Board setup apply, chapter wizard, appoint officer, renewal, A8 join with a chapter and change chapter, A3 export
 - [x] A3 Transaction CSV export for one org and a national's tree, audited (D-173; built, waiting for 0029)
 - [ ] A4 Suggested levels: a chapter starts from the national's level and chooses Copy or Linked (same price or a set reduction), with an explanation (D-165; E-18)
 - [x] A8 Membership model "national membership with a home chapter" (D-166): one national membership; the member picks one chapter or none (or the national's at-large chapter, e.g. an online chapter) and changes it freely; chapters may bill local dues themselves; the national's choice of model is permanent (built, waiting for 0030; D-174)

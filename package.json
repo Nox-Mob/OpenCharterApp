@@ -17,7 +17,8 @@
     "test:db": "bash scripts/db-test.sh",
     "check:migrations": "bun scripts/check-migrations.ts",
     "ci": "bun run lint && bun run format:check && bun run typecheck && bun run test && bun run check:migrations",
-    "test:smoke": "vitest run --config vitest.smoke.config.ts"
+    "test:smoke": "vitest run --config vitest.smoke.config.ts",
+    "test:e2e": "playwright test"
   },
   "overrides": {
     "rolldown": "1.2.1"
@@ -81,6 +82,7 @@
   "devDependencies": {
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "2.26.5",
+    "@playwright/test": "1.63.0",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
     "@types/node": "^22.16.5",

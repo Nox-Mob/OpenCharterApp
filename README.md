@@ -81,6 +81,7 @@ bun run test                 # unit and component tests (Vitest)
 bun run check:migrations     # Lovable's migration rules
 TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres bun run test:db
 bun run build
+bun run test:e2e             # end-to-end, in Chromium (needs network; see docs/testing.md)
 ```
 
 `test:db` creates and drops its own throwaway database (`oc_rules_test`), applies every migration and runs `db/tests/*.sql`. **Never point it at the real project database.** Details are in [`docs/testing.md`](docs/testing.md). For checking the app by hand, follow [`docs/user-testing.md`](docs/user-testing.md).

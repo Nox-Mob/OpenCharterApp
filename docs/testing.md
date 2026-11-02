@@ -11,6 +11,25 @@ Every change must keep all of these green (instructions.md §3). CI runs them on
 | Database rules | `TEST_DATABASE_URL=… bun run test:db` | Applies every migration to a throwaway Postgres and runs `db/tests/*.sql` |
 | Migration conventions | `bun run check:migrations` | Lovable's import rules for migrations from 0004 on: `org_id`, full grants to `authenticated`, RLS with `has_permission` / `is_org_member` policies, no `DROP TABLE` / `DROP COLUMN` (`scripts/migration-rules.ts`) |
 | Build | `bun run build` | Production build |
+| End to end | `bun run test:e2e` | Playwright in Chromium against the live demo backend (D-170). In CI on pull requests to `main` only |
+
+## End-to-end tests
+
+`bun run test:e2e` (Playwright, Chromium only, D-170) starts the dev server on `127.0.0.1:4310` and drives the real screens, signed in as the demo accounts (docs/demo-data.md), against the live Lovable Cloud backend, like the smoke test. Specs live in `e2e/`; `e2e/helpers.ts` signs in through the real sign-in page.
+
+| Spec | What it checks |
+|---|---|
+| `navigation` | The left-hand menu for a national admin (no Directory), "View as member" and back, the member view (Overview, Directory, Board, own cards), a chapter admin's Reports for their chapter only |
+| `members` | A national's Members page lists every chapter's members with their organization |
+| `board-setup` | A chapter's board and the contact-email choice (opened, not saved); guided setup under Settings → Setup |
+| `join` | The join page asks every required question (Rank) before payment; joining with the test gateway and returning to the app's own address (D-158) |
+
+Notes:
+- **Starting a checkout needs the service-role secret**, which only the deployed app has. The checkout test therefore runs only with `E2E_BASE_URL` (a deployed preview or the published site) or a local server started with `SUPABASE_SERVICE_ROLE_KEY`; otherwise it's skipped with that reason.
+- **Clean-up:** tests that write (joining) remove what they created in the demo orgs afterwards with `purge_smoke_data` (D-150). Don't edit the demo orgs while they run.
+- **Features waiting for a migration** can only be tested end to end once Lovable has applied it. Add the spec in the same change; it skips (or is marked `test.fixme`) until then.
+- **Behind an outbound proxy** (some sandboxes), the browser uses `HTTPS_PROXY` for the backend and bypasses it for the local server.
+- In CI the job installs Chromium, uses the repository variable `E2E_BASE_URL` when set, and uploads traces when a test fails.
 
 ## Live smoke test
 

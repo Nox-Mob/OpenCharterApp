@@ -8,6 +8,9 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+# Playwright (bun run test:e2e)
+test-results/
+playwright-report/
 dist
 dist-ssr
 .output
