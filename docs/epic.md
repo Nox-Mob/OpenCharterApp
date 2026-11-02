@@ -39,7 +39,7 @@ Status for Phases 1–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly 
 | E-05 | RBAC and permissions | Roles, permissions, scoped assignments with downward inheritance, policy layer |
 | E-06 | Audit log | Append-only log and viewer, hooks for all modules |
 | E-07 | Host-based tenant resolution | Wildcard subdomain mapping (tested locally with `*.localhost`), org context per request, RLS wiring, tenant-isolation tests. **Deferred** (D-111): RLS and tenant-isolation tests are done; per-org web addresses wait |
-| E-08 | Jobs, email, and notifications infrastructure | Postgres jobs table and scheduled server routes (D-103, replacing pg-boss), email provider integration, template system, signed-action link service. **Deferred** (D-111); its email follow-up list is in `roadmap.md` |
+| E-08 | Jobs, email, and notifications infrastructure | Postgres jobs table and scheduled server routes (D-103, replacing pg-boss), email through Lovable's email or the client's own server chosen by `EMAIL_TRANSPORT`, server settings and send-from address per org (D-159), template system, signed-action links that open a signed-in confirmation page (D-164). **Deferred** (D-111); its email follow-up list is in `roadmap.md` |
 
 **Exit:** a national and a chapter can exist, users can sign in on the right subdomain, a chapter admin sees only their chapter, and every action is audited.
 
@@ -65,8 +65,8 @@ Status for Phases 1–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly 
 | E-17 | Board role templates and appointments | National-defined seats (required, count, term, permissions), custom titles, appointments with history, access grant and revoke | ✅ Cleared |
 | E-18 | Two-level dues and national controls | National and chapter tiers, none/optional-range/required chapter dues, locked or suggested structures, two-payment checkout UX | 🟡 Cleared, follow-ups |
 | E-19 | Rules engine and attribute-based pricing | Declarative rules UI, pricing by attribute (e.g., rank bands), reused later for eligibility and approvals | ✅ Cleared |
-| E-20 | Postpaid dues | Balances, invoices, due dates, delinquency, admin-defined enforcement, manual payment recording | ⬜ Not started |
-| E-21 | Per-org gateways, PayPal, optional national fee | Each org connects Stripe or PayPal, **Stripe Connect and Direct modes**, PayPal adapter, national fee on chapter transactions | 🟠 Partly built (Direct Stripe only) |
+| E-20 | Postpaid dues | Balances, invoices, due dates, delinquency, admin-defined enforcement as inheritable settings (D-161), manual payment recording, **parent orgs invoicing subordinate orgs** (national fee, D-162) | ⬜ Not started |
+| E-21 | Per-org gateways and PayPal | Each org connects Stripe or PayPal, **Direct mode only** (Connect dropped, D-162), PayPal adapter. The national fee is invoiced through E-20 | 🟠 Partly built (Stripe done; PayPal open) |
 | E-22 | Custom domains | Domain settings, DNS verification, on-demand TLS, subdomain remains default. **Needs a reverse proxy, so F-11 must be pulled forward before or with this epic** | ⬜ Not started (keep deferred until F-11) |
 | E-23 | National roll-up reporting | Cross-chapter membership and revenue reporting | ✅ Cleared |
 
@@ -196,7 +196,7 @@ flowchart TD
 | F-08 | Tool-specific accounting export formats |
 | F-09 | Internationalization and multi-currency |
 | F-10 | Mobile app or PWA enhancements |
-| F-11 | **Deployment packaging:** Docker image, Docker Compose, Caddy configuration, backup and restore notes, upgrade notes (moved from E-02). Pull forward before E-22 (custom domains) or E-42 (hosted billing), or sooner if we need a shared test environment |
+| F-11 | **Deployment packaging:** a lightweight standalone install (D-160): Docker image, Docker Compose (app + hosted Supabase, or app + a minimal self-hosted Supabase subset), Caddy configuration, backup and restore notes, upgrade notes (moved from E-02). Pull forward before E-22 (custom domains) or E-42 (hosted billing), or sooner if we need a shared test environment |
 
 ## 5. Scrum guidance
 

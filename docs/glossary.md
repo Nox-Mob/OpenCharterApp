@@ -69,4 +69,6 @@
 | **Org switcher** | UI for a person with roles in several orgs to choose the active org context. Data stays separate per org |
 | **Branding** | An org's logo, icon, colors, and header image. Chapters can override national's defaults |
 | **Logo override** | A chapter-supplied logo that replaces the inherited national logo for that chapter's site, emails, and receipts |
-| **Stripe Connect mode / Direct mode** | Two ways to connect Stripe: national as platform with automatic fees, or each org on its own account with fees invoiced |
+| **Direct mode** | Each org collects into its own Stripe (or PayPal) account. The only mode we support (D-162); a parent's fee is invoiced to the subordinate org. *Connect mode was dropped* |
+| **Email transport** | How the app sends email: Lovable's built-in email or the client's own server, set by `EMAIL_TRANSPORT` (D-159) |
+| **Send-from address** | The address an org's emails come from; chapters inherit their parent's unless allowed their own (D-159) |

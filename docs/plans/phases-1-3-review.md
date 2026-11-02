@@ -41,7 +41,7 @@ Two things hold back most of what's left:
 | E-18 Two-level dues + national controls | 🟡 | National-first two payments, chapter dues none / optional / required, price range, "chapters use our levels" (D-146) | **"Suggested" level structures** from the national (D-055: locked *or suggested*); national standing next to chapter standing on the chapter's Members page; linked renewals; national-dues reminder in "Actions needed" |
 | E-19 Rules + attribute-based pricing | ✅ | Declarative conditions shared by SQL and TypeScript, pricing per term, quotes (D-147); `9G` | Pricing step in setup; reuse for eligibility and approvers comes with E-24 / E-27 / E-31 |
 | E-20 Postpaid dues | ⬜ | Nothing built (no balances, invoices or due dates) | Whole epic (D-053, D-054, Q-15, R-14) |
-| E-21 Per-org gateways, PayPal, national fee | 🟠 | Each org connects its own Stripe (Direct mode) | **Stripe Connect mode and the national fee** (D-041, D-049, R-01); **PayPal adapter** (D-043, R-02); fee-by-invoice fallback (D-048) |
+| E-21 Per-org gateways and PayPal | 🟠 | Each org connects its own Stripe (Direct mode) | **PayPal adapter** (D-043, R-02). Connect mode is dropped and the national fee is invoiced through E-20 (D-162) |
 | E-22 Custom domains | ⬜ | Nothing built; needs a reverse proxy, so F-11 first; per-org addresses (E-07) are deferred too | Whole epic; recommend keeping it deferred until hosting is decided (R-08, Q-14) |
 | E-23 National roll-ups | ✅ | Reports for the org and every org below it (chapter admins: their chapter), overview numbers (D-145, D-152); `9E`, `9I` | Revenue export across chapters with the transaction CSV (D-047) |
 
@@ -79,16 +79,16 @@ Work in waves. Each item follows the commit rules (tests, docs, migration conven
 
 | # | Item | Epic | Notes |
 |---|---|---|---|
-| B1 | **Un-defer E-08:** jobs table, scheduled server routes (D-103), email provider, templates, signed-action links (single-use, expiring, confirmation page; never change state on GET) | E-08 | Decide Q-05 (sender identity) and the provider. Respect `emails_allowed` for demo orgs (D-148). Then work the email list in `roadmap.md` (Deferred) |
+| B1 | **Un-defer E-08:** jobs table and scheduled server routes (D-103); email through `EMAIL_TRANSPORT` = `lovable` or `smtp` with Settings → Email (server, login, test send, send-from address) (D-159); templates; signed-action links to a signed-in confirmation page (D-164) | E-08 | Design notes in §5. Respect `emails_allowed` for demo orgs (D-148). Then work the email list in `roadmap.md` (Deferred) |
 | B2 | Lapse job and renewal reminders | E-13 | First consumer of B1 |
 
 ### Wave C: money features (≈ 3–4 sprints, can run in parallel with Wave D)
 
 | # | Item | Epic | Notes |
 |---|---|---|---|
-| C1 | Postpaid dues: balances, invoices, due dates, delinquency, admin-defined enforcement, manual payment against an invoice | E-20 | D-053, D-054; settle Q-15 (reminder cadence) and R-14 (overall standing with mixed levels) first |
-| C2 | Stripe Connect mode with the optional national fee | E-21 | D-049, R-01; national onboarding of connected accounts; Direct mode stays the default |
-| C3 | PayPal adapter (direct, no fee split) | E-21 | R-02; the fee falls back to invoicing (D-048) |
+| C1 | Postpaid dues: balances, invoices, due dates, delinquency, enforcement as inheritable settings, manual payment against an invoice | E-20 | D-053, D-054, D-161; settle R-14 (overall standing with mixed levels) in its design |
+| C2 | Parent orgs invoice subordinate orgs (the national fee, or anything else), paid like any invoice | E-20 | D-162; reuses C1's invoices with an org as the payer |
+| C3 | PayPal adapter (Direct, no fee split) | E-21 | R-02 |
 | — | Custom domains | E-22 | **Keep deferred** until F-11 and a hosting decision; record it in `epic.md` like E-07 / E-08 |
 
 ### Wave D: Phase 3 (≈ 6–8 sprints)
@@ -99,18 +99,29 @@ Work in waves. Each item follows the commit rules (tests, docs, migration conven
 | D2 | Board reports: national defines types and schedules, chapters submit, national reviews, overdue tracking | E-25 | D-073; setup flow §6.5 "Board report types and schedules" |
 | D3 | Vacancy alerts and the national oversight dashboard (vacancies, overdue reports, document compliance) | E-25 | Alerts need B1; the dashboard extends Reports |
 | D4 | Document repository | E-26 | D-075; private bucket under `<org_id>/`, signed URLs (like branding, D-109); review flow through the approval engine; setup flow §6.7 |
-| D5 | Elections | E-27 | D-074, R-13; eligibility through the rules engine; certification makes results immutable and appoints through `appoint_officer`; setup flow §6.6 |
+| D5 | Elections | E-27 | D-074, D-163, R-13; private choices, voters see their own ballot until the next election for that position, admins read-only, results after certification; eligibility through the rules engine; certification makes results immutable and appoints through `appoint_officer`; setup flow §6.6 |
 | D6 | Automation engine: the `architecture.md` §10 inventory on top of B1 | E-28 | Consolidates the reminders and alerts built in B2, D2, D3 |
 
-### Decisions needed before starting
+### Decisions
+
+Settled on 2026-11-02:
+
+| For | Decision |
+|---|---|
+| B1 | Email: `EMAIL_TRANSPORT` = Lovable's email or the client's own server; server settings and login on Settings → Email; send-from address per org (D-159) |
+| B1, D1 | Approval links open a confirmation page that requires sign-in; the decision happens on submit (D-164) |
+| C1 | Postpaid options are inheritable settings: the parent sets them, subordinates where allowed (D-161) |
+| C2 | Direct payments only; parents invoice subordinate orgs; hosting is billed outside the app (D-162) |
+| D5 | Ballots: who voted for whom is never shown to members; voters see their own ballot until the next election for that position; admins can view but not change; results after a winner is certified (D-163) |
+| F-11 | Packaging direction: lightweight standalone install with Docker Compose (D-160) |
+
+Still open:
 
 | For | Question |
 |---|---|
-| A4 | Suggested level structures: copy-on-adopt or a live link to the national's template? |
-| B1 | Email provider and sender identity (Q-05); signed-link confirmation (Q-07, recommended: confirmation page) |
-| C1 | Postpaid reminder cadence (Q-15) and how overall standing combines prepaid and postpaid levels (R-14) |
-| C2 | Is Connect mode needed for the first national, or is Direct + invoiced fee enough for now? |
-| D5 | Ballot secrecy beyond D-074 (admin-visible votes accepted)? Ranked-choice method (instant runoff)? |
+| A4 | Suggested level structures: when a chapter starts from a level the national suggests, does it get its own copy (later national changes don't affect it) or stay linked (national changes flow down, the chapter only sets its price)? Recommended: its own copy |
+| D5 | Ranked-choice counting method (recommended: instant runoff), and confirm that admins may see individual ballots (D-163 assumes yes, read-only and audited) |
+| F-11 | Hosted Supabase project vs. self-hosted subset as the default install (D-160) |
 
 ## 4. Documentation updates
 
@@ -123,8 +134,32 @@ Done with this review:
 To do as each wave lands (owner: whoever ships the item):
 - `README.md` "Where it stands" and `docs/user-testing.md` for every user-facing change.
 - `docs/data-domains.md` "Built" markers for new tables (balances, invoices, approvals, reports, documents, elections, jobs).
-- `docs/architecture.md` §6 (approval and automation engines), §8 (Connect, PayPal), §10 (automation inventory status), §11 (documents storage), each with its diagram description.
+- `docs/architecture.md` §6 (approval and automation engines), §8 (PayPal; §8 already says Direct only), §10 (automation inventory status), §11 (documents storage), each with its diagram description.
 - `docs/glossary.md`: board report, approval chain, ballot, certification, invoice / balance, role email, member view.
-- `docs/risks-and-open-questions.md`: close Q-05, Q-07, Q-15 when decided; update R-01, R-02, R-13, R-14.
+- `docs/risks-and-open-questions.md`: Q-05, Q-07, Q-15 closed and R-01 closed (2026-11-02); update R-02, R-14 as their epics land.
 - `docs/testing.md`: an end-to-end section once A2 lands.
 - `docs/instructions.md` §9: CI doesn't yet have the pre-commit hook, coverage gate or docs check it describes. Either add them (small, in Wave A) or mark them as planned so the doc stays true.
+
+## 5. Design notes from the 2026-11-02 decisions
+
+### E-08 email (D-159)
+- **One interface, two transports.** `sendEmail({ orgId, to, subject, html, text, replyTo })` in a new `src/engines/notifications`, with a `lovable` adapter (Lovable Cloud email) and an `smtp` adapter. `EMAIL_TRANSPORT` picks one per deployment; if it's unset, nothing is sent and the app says email isn't configured.
+- **Where it runs.** Lovable's hosting runs on edge workers, where `lovable` is the natural choice. A self-hosted install (D-160) runs the Node server, where an SMTP client library works. A provider with an HTTP API can be added later as a third adapter behind the same interface.
+- **Settings → Email** (top-level org admins, `org.manage`):
+  - `smtp` only: host, port, security (TLS / STARTTLS), username, password, sealed like Stripe keys (D-127) in the `private` schema and never shown again
+  - send-from address and display name per org; chapters inherit unless the parent allows their own (D-108)
+  - "Send a test email"
+  - a short note on SPF / DKIM for their domain
+- **Safety.** Demo orgs never send (`emails_allowed`, D-148). Every send is a job (retries, idempotent per message) and logged without the body. Links in emails never change anything on open (D-164).
+
+### F-11 packaging (D-160)
+- **Shape:** one image for the app (Node server build of TanStack Start), Docker Compose, Caddy for TLS.
+- **Two profiles:**
+  1. app + a hosted Supabase project: one small container, the cheapest to run
+  2. app + a minimal self-hosted Supabase subset (Postgres, Auth, REST, Storage): fully self-contained, needs more memory
+- **Already in our favour:** configuration is environment-driven (D-011); migrations and RLS already run on plain Postgres (`db/ci/supabase-stub.sql`).
+- **To check when F-11 starts:**
+  - the Lovable-specific pieces (auth helper, error reporting) need a non-Lovable fallback
+  - scheduled routes need a cron runner in Compose
+  - storage signed URLs work against the self-hosted Storage API
+

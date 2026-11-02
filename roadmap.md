@@ -63,19 +63,19 @@ Phases 1 and 2 meet their exit criteria; Phase 3 doesn't yet. Remaining work, in
 - [ ] A1 Live Stripe test-mode run on a non-demo test org (connect, join, webhook, refund) (E-12)
 - [ ] A2 Playwright end-to-end tests: join → checkout → approval → renewal, Membership setup, Board setup, chapter wizard
 - [ ] A3 Transaction CSV export for one org and a national's tree, audited (D-047; E-12, E-23)
-- [ ] A4 National-suggested level structures for chapters (D-055; E-18) — needs a decision
+- [ ] A4 National-suggested level structures for chapters (D-055; E-18) — needs a decision: copy or linked
 - [ ] A5 National standing on the chapter's Members page; national-dues reminder in "Actions needed" (E-18)
 - [ ] A6 Pricing step in Membership setup (E-19)
 - [ ] A7 Members "everyone" view: chosen fields as columns; cross-chapter export with each chapter's directory rule (E-14)
 - [ ] Member overview next items (docs/plans/member-overview.md); view as a specific member (needs a decision)
 
 **Wave B: infrastructure**
-- [ ] B1 Un-defer E-08: jobs, scheduled routes, email, signed-action links (decide Q-05, Q-07)
+- [ ] B1 Un-defer E-08: jobs, scheduled routes, email via `EMAIL_TRANSPORT` (Lovable email or the client's own server, Settings → Email, send-from address) (D-159), signed-in confirmation page for links (D-164)
 - [ ] B2 Lapse job and renewal reminders (E-13)
 
 **Wave C: money**
-- [ ] C1 E-20 postpaid dues (decide Q-15, R-14)
-- [ ] C2 E-21 Stripe Connect mode and the optional national fee (D-049)
+- [ ] C1 E-20 postpaid dues, options as inheritable settings (D-161)
+- [ ] C2 E-20 parent orgs invoice subordinate orgs (national fee; D-162, Direct payments only)
 - [ ] C3 E-21 PayPal adapter
 - E-22 custom domains stay deferred until F-11 and a hosting decision
 
@@ -84,7 +84,7 @@ Phases 1 and 2 meet their exit criteria; Phase 3 doesn't yet. Remaining work, in
 - [ ] D2 E-25 board reports (types, schedules, submit, review, overdue)
 - [ ] D3 E-25 vacancy alerts and national oversight dashboard
 - [ ] D4 E-26 document repository
-- [ ] D5 E-27 elections
+- [ ] D5 E-27 elections (private choices, own ballot visible until the next election, admins read-only, results after certification; D-163)
 - [ ] D6 E-28 automation engine
 
 **Other**

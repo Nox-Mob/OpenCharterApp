@@ -194,7 +194,7 @@ Modules call engines and each other only through public interfaces.
 - **One gateway interface** (create payment, create subscription, refund, webhook handling, payout reference) with **Stripe** first and **PayPal** later.
 - **Each org connects its own account.** Every transaction stores: receiving org, gateway, gateway reference, gross, fees, any national fee, and the item type it paid for.
 - **Two entities, two payments.** If a member owes both national and chapter dues, checkout produces two independent payments with two receipts. The cart UX presents them together but they are processed separately.
-- **National fee:** optional. Stripe runs in one of two modes (D-049): **Connect**, where national's account is the Connect platform and application fees apply automatically, or **Direct**, where each org uses its own account and the fee is settled by invoice. PayPal mechanism is deferred, with invoicing the chapter as the fallback.
+- **National fee:** optional, settled by invoice: a parent org invoices a subordinate org through E-20's invoicing (D-162). Payments are **Direct** only: each org collects into its own Stripe (or later PayPal) account; Stripe Connect is not used (supersedes the two-mode plan in D-049).
 - **Webhooks** are the source of truth for payment state. Handlers are idempotent.
 - Card data never touches our servers (PCI SAQ-A scope).
 

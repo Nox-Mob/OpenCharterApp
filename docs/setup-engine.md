@@ -87,7 +87,7 @@ Each flow lists the kind of questions it asks. Wording is illustrative.
 - *Built (Membership setup v4, D-146, once 0020 is applied):* "Must chapter members also be members of your organization?", "Must every chapter charge its own dues?" and the lowest / highest chapter price. "May chapters create their own membership levels?" off means no chapter dues. Locked or suggested level structures come later.
 
 ### 6.4 Payments
-- Connect Stripe and/or PayPal. *National:* use Stripe Connect (automatic fee) or let each org connect directly (fee by invoice)?
+- Connect Stripe and/or PayPal; each org connects its own account (Direct only, D-162). *National:* charge chapters a fee? It is invoiced to each chapter (E-20).
 - Optional: charge chapters a fee? Percentage or fixed, and which transaction types.
 - Receipt template basics (header, signature, footer) and who receives receipt copies.
 - *Built:* the overview's "Connect payments" card shows whether a gateway is connected and opens the Payments tab (`?tab=payments`). Keys are sealed on the server, so connecting can't go through `apply_setup`.
