@@ -148,6 +148,39 @@ vi.mock("@/integrations/supabase/client", () => ({
     from: (t: string) => builder(t),
     rpc: async (fn: string) => {
       if (fn === "org_board") return { data: board, error: null };
+      if (fn === "org_board_contacts")
+        return {
+          data: [
+            {
+              template_id: "t1",
+              title: "Commander",
+              sort_order: 1,
+              seat_number: 1,
+              display_name: "Casey",
+              email: "commander@austin.org",
+              email_source: "role",
+            },
+            {
+              template_id: "t2",
+              title: "Treasurer",
+              sort_order: 2,
+              seat_number: 1,
+              display_name: "Morgan",
+              email: "m@test.org",
+              email_source: "officer",
+            },
+            {
+              template_id: "t3",
+              title: "Secretary",
+              sort_order: 3,
+              seat_number: null,
+              display_name: null,
+              email: "secretary@austin.org",
+              email_source: "role",
+            },
+          ],
+          error: null,
+        };
       if (fn === "grace_days") return { data: 30, error: null };
       if (fn === "lineage_settings")
         return {
@@ -183,8 +216,9 @@ const austin = {
   ancestor_ids: ["nat"],
 } as Org;
 
-function renderIt() {
+function renderIt(contactsReady = false) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  qc.setQueryData(["db-ready", "seat_contacts"], contactsReady);
   return render(
     <QueryClientProvider client={qc}>
       <MemberOverview org={austin} orgs={[nat, austin]} />
@@ -230,5 +264,18 @@ describe("MemberOverview (D-153)", () => {
     expect(within(contact).getByText("Commander")).toBeInTheDocument();
     expect(within(contact).getByText("Casey")).toBeInTheDocument();
     expect(within(contact).queryByText("Secretary")).not.toBeInTheDocument();
+  });
+
+  it("shows each seat's role email or the officer's own (D-156)", async () => {
+    renderIt(true);
+    const contact = await screen.findByRole("region", { name: "Board and who to contact" });
+    expect(await within(contact).findByText("commander@austin.org")).toHaveAttribute(
+      "href",
+      "mailto:commander@austin.org",
+    );
+    expect(within(contact).getByText("m@test.org")).toBeInTheDocument();
+    // a vacant seat with a role email can still be reached
+    expect(within(contact).getByText("Vacant")).toBeInTheDocument();
+    expect(within(contact).getByText("secretary@austin.org")).toBeInTheDocument();
   });
 });

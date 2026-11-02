@@ -31,27 +31,19 @@ The full vision, scope and feature map are in [`docs/README.md`](docs/README.md)
 
 Working today:
 
-- sign-in and invitations
-- national / chapter hierarchy
-- roles, including custom roles with downward-only permissions
-- audit log
-- settings with locks
-- branding and logos
-- member and chapter fields
-- guided setup
-- membership levels and terms
-- memberships with standing, recorded payments, online joining and renewal (Stripe or the demo test gateway)
-- member lists, audited exports and the member directory
-- receipts
-- board seats and terms, including seats shared by a national and all its chapters
-- reports and an Overview with numbers for admins and a personal view for members
-- "View as member" preview for admins
+- **Accounts and organizations:** sign-in (email / password, Google), invitations, the national → region → chapter hierarchy, a chapter creation wizard, demo organizations for testing
+- **Permissions:** roles, including custom roles, with permissions that flow down only; an append-only audit log; settings a national can lock for its chapters
+- **Configuration:** guided setup (membership and board), member and chapter fields, membership levels and terms, pricing rules by member fields, two-level (national + chapter) dues, branding and logos
+- **Members and money:** memberships and standing, joining and renewing online (Stripe, or a test gateway in demo orgs), payments recorded by hand, numbered receipts, member lists with filters, saved views and audited exports, a member directory with each member's privacy choice
+- **Governance:** board seats (for one org, its chapters, or both), each org's own terms from its by-laws, appointments that grant and remove the seat's role
+- **The org page:** a left-hand menu (Overview, Members or Directory, Board, Reports, Chapters, Settings)
+  - admins see overview numbers and reports (chapter admins for their chapter only), and every member of the orgs they manage
+  - members see what they need to do, their profile, their roles and seats, and who to contact
+  - admins can preview the page "as a member"
 
-Every migration up to `0024` is applied.
+Built and waiting for a database update (migration `0026`): board contact emails, a role email per seat (e.g. president@…) or the officer's own email.
 
-Next: see the open items in the roadmap.
-
-Progress lives in [`roadmap.md`](roadmap.md).
+Next: the open items in [`roadmap.md`](roadmap.md).
 
 ## Install and run
 

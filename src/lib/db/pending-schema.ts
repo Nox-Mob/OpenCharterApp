@@ -7,7 +7,7 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When Lovable applies a migration, delete its section here (the generated types take over).
- * Pending: none (0000–0024 are applied; see roadmap.md).
+ * Pending: 0026_seat_contacts (see roadmap.md).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,8 +17,41 @@ type Generated = Database["public"];
 
 // Add types for a migration here while Lovable hasn't applied it yet; delete them once applied.
 export type PendingEnums = Record<never, never>;
-export type PendingTables = Record<never, never>;
-export type PendingFunctions = Record<never, never>;
+export type PendingTables = {
+  // 0026_seat_contacts
+  seat_contacts: {
+    Row: {
+      id: string;
+      org_id: string;
+      template_id: string;
+      role_email: string | null;
+      updated_by: string | null;
+      updated_at: string;
+    };
+    Insert: never;
+    Update: never;
+    Relationships: [];
+  };
+};
+export type PendingFunctions = {
+  // 0026_seat_contacts
+  set_seat_contact: {
+    Args: { _org: string; _template: string; _role_email: string | null };
+    Returns: undefined;
+  };
+  org_board_contacts: {
+    Args: { _org: string };
+    Returns: {
+      template_id: string;
+      title: string;
+      sort_order: number;
+      seat_number: number | null;
+      display_name: string | null;
+      email: string | null;
+      email_source: "role" | "officer" | "none";
+    }[];
+  };
+};
 
 export type FullDatabase = Omit<Database, "public"> & {
   public: {

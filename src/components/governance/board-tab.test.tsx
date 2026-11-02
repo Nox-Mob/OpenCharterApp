@@ -66,9 +66,13 @@ vi.mock("@/integrations/supabase/client", () => {
   const chain: Record<string, unknown> = {};
   for (const m of ["select", "eq", "order", "in"]) chain[m] = () => chain;
   chain["then"] = (resolve: (v: unknown) => void) => resolve({ data: [], error: null });
+  const contacts: Record<string, unknown> = {};
+  for (const m of ["select", "eq", "order", "in"]) contacts[m] = () => contacts;
+  contacts["then"] = (resolve: (v: unknown) => void) =>
+    resolve({ data: [{ template_id: "t1", role_email: "president@a.org" }], error: null });
   return {
     supabase: {
-      from: () => chain,
+      from: (t: string) => (t === "seat_contacts" ? contacts : chain),
       rpc: vi.fn(async (fn: string) => ({
         data: fn === "org_board" ? board : fn === "board_history" ? history : null,
         error: null,
@@ -77,6 +81,8 @@ vi.mock("@/integrations/supabase/client", () => {
   };
 });
 
+import { fireEvent } from "@testing-library/react";
+import { supabase } from "@/integrations/supabase/client";
 import { BoardTab } from "./board-tab";
 
 const chapterA: Org = {
@@ -90,8 +96,9 @@ const chapterA: Org = {
   logo_path: null,
 };
 
-function renderTab(canManage: boolean) {
+function renderTab(canManage: boolean, contactsReady = false) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  qc.setQueryData(["db-ready", "seat_contacts"], contactsReady);
   return render(
     <QueryClientProvider client={qc}>
       <BoardTab org={chapterA} grants={[]} canManage={canManage} canDefine={false} />
@@ -122,5 +129,31 @@ describe("BoardTab", () => {
     expect(screen.queryByRole("button", { name: "Appoint" })).toBeNull();
     expect(screen.queryByRole("button", { name: "End term" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Change term" })).toBeNull();
+  });
+
+  it("shows each seat's contact and switches a seat back to the officer's own email", async () => {
+    renderTab(true, true);
+    expect(await screen.findByText("president@a.org")).toBeInTheDocument();
+    expect(screen.getByText("(role email)")).toBeInTheDocument();
+    expect(screen.getByText("the officer's own email")).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("button", { name: "Contact email" })[0]!);
+    expect(await screen.findByLabelText("Role email")).toHaveValue("president@a.org");
+    fireEvent.click(screen.getByRole("radio", { name: "The officer's own email" }));
+    expect(screen.queryByLabelText("Role email")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await vi.waitFor(() =>
+      expect(supabase.rpc).toHaveBeenCalledWith("set_seat_contact", {
+        _org: "a",
+        _template: "t1",
+        _role_email: null,
+      }),
+    );
+  });
+
+  it("hides contact controls before migration 0026", async () => {
+    renderTab(true, false);
+    expect(await screen.findByRole("heading", { name: "Commander" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Contact email" })).toBeNull();
+    expect(screen.queryByText(/Contact:/)).toBeNull();
   });
 });

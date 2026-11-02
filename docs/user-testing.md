@@ -28,7 +28,7 @@ Use a private browser window for a second account at the same time. Test only in
 **Also try:** opening the same invite link a second time after accepting (it should say it's used).
 
 ## 2. Organizations and chapters
-**Where:** dashboard, org page, Chapters tab.
+**Where:** dashboard, org page, Chapters.
 1. As **National**, open Demo National Association. Expect a menu on the left (a "Section" dropdown on a phone): Overview, Members, Board, Reports, Chapters, Settings (no Directory: admins have Members), and under Settings: General, Setup, Membership levels, Member fields, Chapter fields, Roles, Payments, Audit log. As **Chapter** (Austin) expect the same without Chapters, with Reports showing only Austin. As **Member** expect only Overview, Directory and Board (and Chapters at a national).
 2. Chapters tab → "Add chapter". The wizard asks, step by step:
    - **Name and type.** Try a region too: it skips the chapter steps.
@@ -43,7 +43,7 @@ Use a private browser window for a second account at the same time. Test only in
 **Also try:** a chapter name with accents or an apostrophe, and check the suggested web address (slug); a bad email (it stops before anything is created); the same email for the admin and an officer (one invitation).
 
 ## 2b. Demo organizations (for QA)
-**Where:** Dashboard → create an organization; the new org's Settings tab. Needs migration 0022; until then the option doesn't appear.
+**Where:** Dashboard → create an organization; the new org's Settings → General.
 1. As **National** (a platform operator), create an organization and tick **This is a demo organization**. It shows a **Demo** badge on its page and in the dashboard list.
 2. Run setup from scratch in it: Membership setup, Board setup, add chapters (they're demo too: the wizard says "Demo, like …"), turn on test payments, join, pay.
 3. In a private window, sign in as an account that isn't an operator: the demo checkbox doesn't appear when creating an org.
@@ -53,7 +53,7 @@ Use a private browser window for a second account at the same time. Test only in
 **Also try:** creating a chapter under a production national: no demo option there.
 
 ## 3. Settings, locks, tax profile, logo
-**Where:** Settings tab.
+**Where:** Settings → General.
 1. As **National**, lock a setting (e.g. grace period). As **Chapter**, open Austin → Settings. Expect it read-only with "Locked by a parent organization".
 2. Tax profile: enter a legal name and EIN (`12-3456789`) → "Save tax profile". A wrong format should show "EIN must look like 12-3456789".
 3. Logo: upload a PNG at the national. Austin shows the national logo unless it uploads its own (and the national allows it).
@@ -61,19 +61,19 @@ Use a private browser window for a second account at the same time. Test only in
 **Also try:** a large image; an SVG.
 
 ## 4. Roles
-**Where:** Roles tab.
+**Where:** Settings → Roles.
 1. As **National**, "Add role" (e.g. "Newsletter editor" with "See member profiles"). As **Chapter**, check that Austin can use it.
 2. Assign a role to a member, then remove it. The last admin of the national can't be removed.
 3. As **Chapter**, try to create a role with a permission you don't hold. It shouldn't be offered.
 
 ## 5. Member and chapter fields
-**Where:** Member fields / Chapter fields tabs.
+**Where:** Settings → Member fields / Chapter fields.
 1. "Add field" with a choice list of 20+ options. Expect the dialog to scroll while the title and Save stay visible.
 2. Make an ordered list (e.g. Rank E-1…E-9) and use it later in the member filters ("at least").
 3. Lock a chapter field (e.g. Charter date) at the national. As **Chapter**, Austin's overview shows it read-only.
 
 ## 6. Membership setup and levels
-**Where:** Overview → setup card; Membership levels tab.
+**Where:** Settings → Setup (Membership setup card); Settings → Membership levels.
 1. As **National**, open setup and walk through every step. "Review and apply" should show what changes.
 2. Membership levels: "Add level" with two terms (1 year, Lifetime). Prices show in dollars.
 3. An org with only one level shows it as "Membership" without needing a name.
@@ -81,9 +81,9 @@ Use a private browser window for a second account at the same time. Test only in
 **Also try:** run setup a second time and change one answer. Only that change should be listed.
 
 ## 6b. Setup hub and Board setup
-**Where:** Settings → Setup (cards), then each card's button. Board setup needs migration 0018; until then its card doesn't show.
+**Where:** Settings → Setup (cards), then each card's button.
 1. As **National**, Settings → Setup shows **Membership setup**, **Board setup** and **Connect payments**. "Connect payments" opens the Payments tab and says "Done" once test payments are on.
-2. Board setup → **Officer seats**: tick President and Treasurer; set President to "Every chapter", required, 2 years; add "Chaplain" for the national itself. With migration 0024, a third choice "<national> and every chapter" appears; pick it for Secretary and check both the national's and Austin's Board tab list Secretary.
+2. Board setup → **Officer seats**: tick President and Treasurer; set President to "Every chapter", required, 2 years; add "Chaplain" for the national itself. A third choice "<national> and every chapter" appears; pick it for Secretary and check both the national's and Austin's Board tab list Secretary.
 3. **Officer rules**: turn off "May chapters add their own seats?".
 4. **Terms from your by-laws**: for Treasurer, tick "set our own term", 3 years, today, "Bylaws Art. II". Review the summary, then "Apply setup".
 5. Board tab: the seats are there with the right terms. Run Board setup again and apply without changes; nothing new appears in each seat's term history.
@@ -92,7 +92,7 @@ Use a private browser window for a second account at the same time. Test only in
 **Also try:** the browser Back button and a page reload in the middle of a flow (your answers are kept as a draft); a phone-sized window for the seat list.
 
 ## 7. Members, payments recorded by hand, standing
-**Where:** Members tab, member details.
+**Where:** Members, member details.
 1. As **National**, "Add member" without an email. Expect "Contact (no login yet)".
 2. Open the member → "Record membership", 1 year, paid by check. Expect the standing to be Good, "Paid through" one year minus a day, and a History entry with the payment.
 3. Record a renewal. Expect it to start the day after the current paid-through date.
@@ -101,7 +101,7 @@ Use a private browser window for a second account at the same time. Test only in
 **Also try:** a historical member with a start date years ago; check the standing (Grace or Lapsed) and "expires in".
 
 ## 8. Finding and exporting members
-**Where:** Members tab toolbar.
+**Where:** Members toolbar.
 0. As **National**, the Members page opens on "Everyone in Demo National Association and below": members of Austin and Dallas are listed with an Organization column and their email, including anyone who opted out of the directory. Their rows have "Open" (goes to that chapter's Members page). Switch to "Only Demo National Association" for roles, Details and Export CSV. As **Chapter** (Austin) only Austin's members are listed and there's no switch. Admins have no Directory item.
 1. Search by part of a name or email, with and without accents.
 2. Filter by standing, level, a member field, and "Expiring within 30 / 60 / 90 days". Check the "Showing x of y" count.
@@ -116,7 +116,7 @@ Use a private browser window for a second account at the same time. Test only in
 2. The Directory never shows email addresses, only fields marked "show in directory".
 
 ## 10. Payments tab and test payments
-**Where:** Payments tab (demo orgs only).
+**Where:** Settings → Payments (demo orgs only).
 1. As **National**, "Use test payments (demo only)". Expect the "Test mode" badge and a join page link.
 2. Read the Stripe connection instructions and the webhook address. Are they clear enough for a treasurer?
 
@@ -137,7 +137,7 @@ Use a private browser window for a second account at the same time. Test only in
 1. As **Member**, "Renew online (…)" and pay with "Card accepted". Paid-through moves forward by one term from the old date, not from today.
 
 ## 12c. Pricing rules (price by member fields)
-**Where:** Membership levels tab → click a term (e.g. "1 year · $50.00"). Needs migration 0021; until then terms aren't clickable.
+**Where:** Settings → Membership levels → click a term (e.g. "1 year · $50.00").
 1. As the admin of the org that owns the level, add a rule: condition "Rank is at least E-5", "they pay" $30. Add another: "Veteran is yes", a 20% discount. Reorder with "Order" if needed. The list reads in plain words, and the term shows "· 2 pricing rules".
 2. Open the join page signed out: the term says the price can depend on your answers.
 3. Sign in and answer Rank E-5: the pay button shows $30.00. Change to E-2 with Veteran yes: $40.00. With neither: the usual price.
@@ -148,7 +148,7 @@ Use a private browser window for a second account at the same time. Test only in
 **Also try:** a chapter rule priced outside the national's range (refused); a rule with no conditions (applies to everyone).
 
 ## 12b. Two-level dues (national and chapter)
-**Where:** Demo National → Membership setup ("Rules for your chapters"), then `/join/demo-austin`. Needs migration 0020; until then these questions don't appear.
+**Where:** Demo National → Membership setup ("Rules for your chapters"), then `/join/demo-austin`.
 1. As **National**, run Membership setup. Turn on "Must chapter members also be members of your organization?". Set a chapter price range, e.g. lowest $10, highest $30. Apply.
 2. As **Chapter**, Austin → Membership levels: the range is shown. Try a term priced at $50; it's refused with the range.
 3. In a private window, open `/join/demo-austin` signed out. It mentions two payments. Sign in as an account that isn't a national member. Expect "Step 1 of 2: Demo National Association dues" and a "Join … first" button.
@@ -159,7 +159,7 @@ Use a private browser window for a second account at the same time. Test only in
 **Also try:** "No chapter dues" (turn off "May chapters create their own membership levels?"): Austin's join page sends people to the national.
 
 ## 13. Receipts
-**Where:** Payments tab → Receipt column; Your membership → Your receipts; member History.
+**Where:** Settings → Payments → Receipt column; Your membership → Your receipts; member History.
 1. Open a receipt: number (`2026-00001` style), legal name, EIN, payer, items, amount, method, tax wording, footer, logo.
 2. "Print": check the print preview. It fits one page and the buttons don't print.
 3. As **National**, "Void" with a reason. The receipt shows VOID.
@@ -169,7 +169,7 @@ Use a private browser window for a second account at the same time. Test only in
 **Can't test yet:** the tax wording is a placeholder until a CPA or attorney reviews it (R-07). Emailing receipts waits for E-08.
 
 ## 14. Board
-**Where:** Board tab.
+**Where:** Board.
 1. As **National**: "Add seat" → President, "Every chapter below…", required, suggested term 2 years. Add a national-only seat too (e.g. Treasurer, linked to a role).
 2. As **Chapter**, Austin → Board: President shows **Vacant**, and the warning lists it.
 3. "Change term": 1 year, today's date, by-law reference "Bylaws Art. IV §2". Expect "Term: 1 year (Bylaws Art. IV §2, since …)" and an entry in "Term history".
@@ -179,25 +179,27 @@ Use a private browser window for a second account at the same time. Test only in
 7. For a seat with a linked role: after appointing, the person appears with that role in Roles. After "End term", the role is gone (unless they also had it by hand).
 8. Past officers lists the ended term with the reason.
 
-9. **The national and every chapter** (needs migration 0024): as **National**, "Add seat" → Vice President, Used by "Demo National Association and every chapter below it". It appears on the national's Board tab *and* on Austin's, and each fills its own. Edit the seat and change "Used by" to "Every chapter below…": refused with a clear message while the national has someone in it; after "End term" at the national, it saves and the seat leaves the national's Board tab.
+9. **The national and every chapter**: as **National**, "Add seat" → Vice President, Used by "Demo National Association and every chapter below it". It appears on the national's Board tab *and* on Austin's, and each fills its own. Edit the seat and change "Used by" to "Every chapter below…": refused with a clear message while the national has someone in it; after "End term" at the national, it saves and the seat leaves the national's Board tab.
+
+10. **Contact email** (needs migration 0026): as **Chapter**, Austin → Board → President → "Contact email". Choose "A role email for this seat", enter `President@DemoAustin.xyz` and save: the seat shows "Contact: president@demoaustin.xyz (role email)". Try `not-an-email` (refused). Switch back to "The officer's own email". As **Member**, Austin's Overview → "Board and who to contact" shows the role email for President instead of the president's own email, and the officer's own email for seats without one. Give a vacant seat a role email: it's listed as "Vacant" with that email.
 
 **Also try:** as **National**, turn off "Chapters may rename the board seats you define" in Settings, then try "Rename here" in Austin.
 Also: edit a seat and set "No role" and a suggested term of "No fixed term"; and "Change term" to "No fixed term". Both should save (fixed 2026-11-02).
 
 ## 14a. Overview
-**Where:** Overview. The numbers need migration 0024; until then admins see only their membership card.
+**Where:** Overview.
 1. As **National**: "At a glance" shows Current members, Chapters, Average members per chapter, Lifetime members (with "N other current members · X% lifetime" and a bar), New in the last 30 days, Waiting for approval, Renewals due in 30 days, Revenue this year and Vacant required seats. A person in both the national and a chapter counts once. "See each chapter on the Reports page" opens Reports.
 2. As **Chapter**, Austin: the same tiles for Austin only, without Chapters or the average.
 3. As **Member**: no numbers. Instead:
    - **Actions needed**: e.g. "Your membership ends on … (in N days)" with Renew, "Complete your profile: …" if a required field the member may edit is empty, "Your term as … ends on …" for a seat ending within 30 days, or "You're all set".
    - **Your profile**: name, email and member fields (no admin-only fields). "Edit" shows only the fields members may change; save and reload.
    - **Your roles and seats**: seats held here with dates, and roles.
-   - **Board and who to contact**: the officers by seat (vacant seats left out) and the contact email from Settings → General (or the national's, marked with its name).
+   - **Board and who to contact**: the general email from Settings → General (or the national's, marked with its name), then the officers by seat, each with the seat's role email or, if it has none, the officer's own email (with migration 0026; names only before). Vacant seats appear only if they have a role email.
    - "Your membership" and the directory choice as before.
 4. **View as member**: as **National**, click "View as member" next to the org name. The menu shrinks to Overview, Directory, Board (and Chapters), a banner explains it's a preview, and the Overview shows your own member cards. Switch sections; the preview stays on until "Exit member view".
 
 ## 14b. Reports
-**Where:** Demo National → Reports tab. Needs migration 0019; until then the tab says it needs a database update.
+**Where:** Demo National → Reports.
 1. **Members:** one row per organization (chapters indented under the national) and a Total row. Check the counts against each chapter's Members tab. The standing bar shows good / grace / lapsed / pending; hovering a segment shows the count and share.
 2. **Revenue:** defaults to this year so far. Change the dates. Test payments aren't counted; a partly refunded payment shows the refund and the net amount.
 3. **Boards:** required seats with nobody in them are listed per chapter; "Terms past their end" counts officers still serving after their planned end.
@@ -207,7 +209,7 @@ Also: edit a seat and set "No role" and a suggested term of "No fixed term"; and
 **Also try:** dark mode (the standing colors should still read clearly); a phone-sized window (the tables scroll sideways).
 
 ## 15. Audit log
-**Where:** Audit log tab.
+**Where:** Settings → Audit log.
 1. After the steps above, the log shows who did what (role changes, payments, receipts voided, exports, appointments).
 2. Nothing in the app offers to edit or delete log entries.
 

@@ -1,33 +1,31 @@
 # OpenCharterApp roadmap
 
-Testing by hand: docs/user-testing.md (updated with every feature).
-
-Full plan: docs/ and .lovable/plan/. Phase IDs map to docs/epic.md.
+Testing by hand: docs/user-testing.md (updated with every feature). Full plan: docs/ (phase IDs map to docs/epic.md). Decisions: docs/decisions.md.
 
 ## Pending migrations for Lovable
-Apply these in order (Lovable → apply pending migrations). Step-by-step instructions, checks and the smoke test: docs/lovable-handoff.md. Done so far: `0000`–`0024` applied and the `GATEWAY_ENCRYPTION_KEY` secret set. Until a migration is applied, the screens that need it show "needs a database update" instead of failing (D-135).
+`0000`–`0025` are applied (the `GATEWAY_ENCRYPTION_KEY` secret is set). Apply the ones below in order (Lovable → apply pending migrations); steps and checks are in docs/lovable-handoff.md. Until a migration is applied, the screens that need it show "needs a database update" or simply leave the feature out (D-135).
 
 | Migration | Enables | Status |
 |---|---|---|
-| `0008_memberships` | E-13a memberships, standing, recorded payments, member records without a login | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-| `0009_payments_gateway` | E-12 per-org Stripe / test gateway connections, encrypted credentials, webhook event log. Needs the Lovable Cloud secret `GATEWAY_ENCRYPTION_KEY` (set) | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-| `0010_joining` | E-13b public join page, checkout, payment completion and refunds, online renewal, decline with refund | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-| `0011_member_exports` | E-14 audited CSV export (`members.export` permission) and saved views of the member list | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-| `0012_member_privacy` | E-14 member directory, each member's directory choice, export privacy rule from the parent | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-| `0013_receipts` | E-15 automatic, numbered, immutable receipts; void / reissue; refund handling; receipts for payments recorded earlier | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-| `0014_board_seats` | E-17 board seats, each org's own seat terms with by-law history, appointments that grant and revoke the seat's role, `governance.manage` / `governance.define` permissions | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-| `0015_confirm_0008_0014_applied` | Added by Lovable to trigger the apply (a table comment only) | Applied 2026-11-01 |
-| `0016_purge_smoke_data` | Added by Lovable: `purge_smoke_data` cleans up after a live smoke run in the demo orgs (D-150) | Applied 2026-11-01 |
-| `0017_purge_audit_summary` | The purge records one summary audit event with what it removed; restores the `seat_templates` comment | Applied 2026-11-02 |
-| `0018_setup_governance` | Board setup: `apply_setup` learns the `seats` and `seat_terms` sections; `apply_setup_sections()` for the readiness check | Applied 2026-11-02 |
-| `0019_rollups` | E-23 Reports tab: member, revenue and board roll-ups across a national's chapters (aggregates only), audited report exports | Applied 2026-11-02 |
-| `0020_two_level_dues` | E-18 national dues required for chapter members (two payments, national first), chapter dues none / optional / required, chapter price range | Applied 2026-11-02 |
-| `0021_pricing_rules` | E-19 attribute-based pricing: rules per term (conditions on member fields → a price or a discount), charged when joining and renewing online | Applied 2026-11-02 |
-| `0022_demo_orgs` | Demo organizations: platform operators (the demo accounts), `is_demo` on organizations (inherited, can't change), create and delete demo orgs, test gateway and "no email" follow the flag | Applied 2026-11-02 |
-| `0023_confirm_0017_0022_applied` | Added by Lovable to trigger the apply (a table comment only) | Applied 2026-11-02 |
-| `0024_board_scope_and_overview` | Board seats for an org *and* its chapters (`seat_scope` value `self_and_chapters`), `set_seat_scope` to change who uses a seat, `org_overview_stats` for the Overview page (D-151, D-152) | Applied 2026-11-02 via marker `0025` |
+| `0026_seat_contacts` | Board contact emails: per seat, a role email (e.g. president@…) *or* the officer's own email; `set_seat_contact`, `org_board_contacts` for "Board and who to contact" (D-156) | Waiting |
 
 ## Done
+### November 2026
+- [x] Board contact emails (built, waiting for 0026): on the Board page, "Contact email" per seat sets a role email or shows the officer's own email, never both; members see it in "Board and who to contact", including vacant seats that have a role email (D-156)
+- [x] Members page for admins covers everyone in the org and every org below it (chapter admins: their chapter), with organization and email, regardless of directory choices; admins no longer get the Directory (D-154)
+- [x] "View as member" preview for admins (UI only; the database still applies their real permissions) (D-155)
+- [x] Member overview: Actions needed, Your profile (view and edit own fields), Your roles and seats, Board and who to contact (D-153)
+- [x] Org page: left-hand menu (Overview, Members (admins) or Directory (members), Board, Reports, Chapters, Settings); admin pages under Settings, Setup moved there (D-152)
+- [x] Overview numbers for admins: members, chapters, average per chapter, lifetime vs other, new, pending, renewals due, revenue this year, vacant seats; chapter admins see their chapter, and get Reports for it (D-152, 0024)
+- [x] Board seats used by a national *and* every chapter; an existing seat's "Used by" can be changed (D-151, 0024)
+- [x] Demo organizations: platform operators create them; chapters inherit the flag; Demo badge; delete with everything in it; never emails; test payments (D-148, 0022)
+- [x] E-19: rules engine and pricing rules per term (D-147, 0021)
+- [x] E-18: two-level dues (national first, then chapter; two payments and receipts), chapter dues none / optional / required, chapter price range, Membership setup v4 (D-146, 0020)
+- [x] E-23: Reports with members by standing, revenue per currency, board vacancies, audited CSV exports (D-145, 0019)
+- [x] Setup hub and Board setup (D-143, 0018)
+- [x] E-16: chapter creation wizard (D-144)
+
+### Earlier
 - [x] E-12: Payments tab to connect Stripe (key checked, sealed, stored privately) or the demo test gateway, payments list, webhook route (applied 2026-11-01)
 - [x] E-13b: public join page `/join/<slug>`, Stripe / test checkout, webhook endpoint per org, return page, test checkout outcomes, online renewal, decline with refund (applied 2026-11-01; covered by `bun run test:smoke`)
 - [x] E-14: search, filters, "expiring within 30 / 60 / 90 days", sorting, audited privacy-aware CSV export, saved views, member directory with each member's own listing choice (D-138, D-139)
@@ -60,21 +58,12 @@ Apply these in order (Lovable → apply pending migrations). Step-by-step instru
 - [x] CI: lint, formatting, types, unit tests, database rule tests, build
 
 ## Open — Phase 1
-Plan for E-12 / E-13: docs/plans/e12-e13-payments-and-joining.md
-- [x] E-16: chapter creation wizard (name and type, chapter fields, first admin invitation, invitations for the required officers, links to copy; seats show Vacant until appointed) (D-144)
-- [x] Demo organizations (applied 0022 2026-11-02): platform operators can mark a new national or standalone org as demo; chapters inherit it; Demo badge; delete a demo org with everything in it; never emails; test payments allowed (D-148)
-- [x] E-19 (applied 0021 2026-11-02): rules engine (conditions on member fields, shared by TypeScript and SQL with the same test cases) and pricing rules per term: click a term on the Membership levels tab, add rules like "Rank is at least E-5 → $30" or "Veteran is yes → 20% off"; joining and renewing charge the member's price and show it first (D-147). Remaining: a pricing step in guided setup, eligibility and approver rules (E-24, E-31)
-- [x] E-18 (applied 0020 2026-11-02): two-level dues: the national can require its own membership for chapter members (join page step 1 of 2 → national, step 2 → chapter; two payments and receipts), chapter dues none / optional / required, a price range for chapter terms, Membership setup v4 for parents (D-146). Remaining: national standing next to chapter standing in the chapter's Members tab, linked renewals
-- [x] E-23 (applied 0019 2026-11-02): Reports tab for nationals and regions with members by standing (standing bar, new, expiring 30 / 60 / 90), revenue per currency for a date range, board vacancies and terms past their end, audited CSV exports (D-145)
-- [x] Setup hub and Board setup (applied 0018 2026-11-02; the Membership and "Connect payments" cards work now): a card per setup flow, `?flow=board`, seats / officer rules / terms from your by-laws (D-143)
-- [x] Board seats for the national *and* every chapter (0024 applied 2026-11-02): "Used by" has a third choice, "<org> and every chapter below it", in the seat editor and Board setup, and an existing seat's "Used by" can be changed in the seat editor (D-151)
-- [x] Org page: left-hand menu (Overview, Members (admins) or Directory (members), Board, Reports, Chapters, Settings) with the admin pages under Settings, Setup moved there from the Overview (D-152)
-- [x] Overview numbers (0024 applied 2026-11-02): members, chapters, average per chapter, lifetime vs other, new, pending, renewals due, revenue this year, vacant seats; a chapter admin sees their chapter only. Reports for chapter admins (their chapter only) work now (D-152)
-- [x] Member overview: Actions needed (join / pending / renew soon / grace / lapsed, missing required profile fields, a board term ending), Your profile (view and edit your own fields), Your roles and seats, Board and who to contact (officers plus the org's contact email) (D-153). Later items in docs/plans/member-overview.md
-- [x] Admins: the Members page lists everyone in the org and every org below it (a chapter admin only their chapter), with organization and email, whatever members chose for the directory; admins no longer get the Directory page (D-154)
-- [x] "View as member" preview for admins, so a demo admin can check the member view without signing out (UI only; the database still applies their real permissions) (D-155)
-- [ ] View as a *specific* member (impersonation with an audit trail) — needs a decision and server-side support; the D-155 preview covers the common case
-- [ ] Members page "everyone" view: show chosen member fields (e.g. phone) as columns, and export across chapters once each chapter's directory rule is applied per row
+- [ ] Apply `0026_seat_contacts` (Lovable)
+- [ ] Member overview, next items from docs/plans/member-overview.md: all my memberships in one place, membership history, organization info; decide whether officers' own emails need the officer's consent (today the chapter chooses per seat, D-156)
+- [ ] Members page "everyone" view: chosen member fields (e.g. phone) as columns; export across chapters with each chapter's directory rule applied per row
+- [ ] View as a *specific* member (impersonation with an audit trail): needs a decision and server-side support; the D-155 preview covers the common case
+- [ ] E-19 remaining: a pricing step in guided setup; eligibility and approver rules (E-24, E-31)
+- [ ] E-18 remaining: national standing next to chapter standing on the chapter's Members page; linked renewals; a national-dues reminder in "Actions needed"
 - [ ] Phase 1 follow-ups: receipt wording reviewed by a CPA (R-07); templates and manual receipts (E-36); elections (E-27) and vacancy alerts (E-25)
 
 ## Deferred (user decision 2026-10-30: core first, automations later)

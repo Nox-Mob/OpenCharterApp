@@ -172,6 +172,66 @@ export const extraSeatsAllowedQuery = (orgId: string, lineage: readonly string[]
     },
   });
 
+// ----- contact emails (0026, D-156) -----
+
+export type BoardContact = {
+  key: string;
+  title: string;
+  /** null for a vacant seat listed because it has a role email */
+  name: string | null;
+  email: string | null;
+  source: "role" | "officer" | "none";
+};
+
+/** Role emails this org set, by seat (seats without one show each officer's own email). */
+export const seatContactsQuery = (orgId: string) =>
+  queryOptions({
+    queryKey: ["seat-contacts", orgId],
+    queryFn: async (): Promise<Record<string, string>> => {
+      const { data, error } = await db
+        .from("seat_contacts")
+        .select("template_id,role_email")
+        .eq("org_id", orgId);
+      if (error) throw error;
+      return Object.fromEntries(
+        (data ?? []).filter((r) => r.role_email).map((r) => [r.template_id, r.role_email!]),
+      );
+    },
+  });
+
+/** Who to contact at an org: each officer with the seat's role email or their own (definer RPC). */
+export const boardContactsQuery = (orgId: string) =>
+  queryOptions({
+    queryKey: ["board-contacts", orgId],
+    queryFn: async (): Promise<BoardContact[]> => {
+      const { data, error } = await db.rpc("org_board_contacts", { _org: orgId });
+      if (error) throw error;
+      return (data ?? []).map((r) => ({
+        key: `${r.template_id}:${r.seat_number ?? "role"}`,
+        title: r.title,
+        name: r.display_name,
+        email: r.email,
+        source: r.email_source,
+      }));
+    },
+  });
+
+export const roleEmailSchema = z.union([
+  z.literal(""),
+  z.string().trim().toLowerCase().email("Enter a valid email address").max(254),
+]);
+
+/** Set a seat's role email here, or "" to show each officer's own email instead. */
+export async function setSeatContact(orgId: string, templateId: string, roleEmail: string) {
+  const email = roleEmailSchema.parse(roleEmail.trim());
+  const { error } = await db.rpc("set_seat_contact", {
+    _org: orgId,
+    _template: templateId,
+    _role_email: email === "" ? null : email,
+  });
+  if (error) throw error;
+}
+
 // ----- pure helpers -----
 
 const UNIT: Record<TermUnit, [string, string]> = {
@@ -396,6 +456,7 @@ export function boardErrorMessage(message: string): string {
     ["keep at least one admin", "An organization must keep at least one admin"],
     ["role is retired", "The seat's role is retired"],
     ["isn't used here", "That seat isn't used here"],
+    ["valid email", "Enter a valid email address"],
     [
       "no longer be used",
       "End the current terms where this seat would no longer be used, then change who uses it",

@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import type { Org } from "@/lib/orgs";
 import { attributeDefsQuery, memberValuesQuery } from "@/modules/attributes/queries";
 import { firstValueError, saveAttributeValues } from "@/modules/attributes/values";
-import { boardQuery } from "@/modules/governance/seats";
+import { boardContactsQuery, boardQuery, type BoardContact } from "@/modules/governance/seats";
+import { useFeatureReady } from "@/lib/db/readiness";
 import { graceDaysQuery, myMembershipQuery } from "@/modules/membership/memberships";
 import { today } from "@/modules/membership/standing";
 import {
@@ -270,10 +271,19 @@ function MyRolesCard({ org, profileId }: { org: Org; profileId: string }) {
   );
 }
 
+/**
+ * Officers and how to reach them (D-156): each seat shows its role email if the org set one,
+ * otherwise the officer's own email. Before migration 0026 it lists names only.
+ */
 function WhoToContact({ org, orgs }: { org: Org; orgs: readonly Org[] }) {
-  const board = useQuery(boardQuery(org.id));
+  const contactsReady = useFeatureReady("seat_contacts") === true;
+  const board = useQuery({ ...boardQuery(org.id), enabled: !contactsReady });
+  const contacts = useQuery({ ...boardContactsQuery(org.id), enabled: contactsReady });
   const contact = useQuery(contactEmailQuery(org.id, org.ancestor_ids));
-  const list = officers(board.data ?? []);
+  const list: BoardContact[] = contactsReady
+    ? (contacts.data ?? [])
+    : officers(board.data ?? []).map((o) => ({ ...o, email: null, source: "none" as const }));
+  const loading = contactsReady ? contacts.isLoading : board.isLoading;
   const from = contact.data?.fromOrgId
     ? orgs.find((o) => o.id === contact.data!.fromOrgId)
     : undefined;
@@ -284,7 +294,7 @@ function WhoToContact({ org, orgs }: { org: Org; orgs: readonly Org[] }) {
       </h2>
       {contact.data?.email && (
         <p className="mt-2 text-sm">
-          Email{" "}
+          General email{" "}
           <a className="text-primary hover:underline" href={`mailto:${contact.data.email}`}>
             {contact.data.email}
           </a>
@@ -293,14 +303,24 @@ function WhoToContact({ org, orgs }: { org: Org; orgs: readonly Org[] }) {
           )}
         </p>
       )}
-      {board.isLoading ? null : list.length === 0 ? (
+      {loading ? null : list.length === 0 ? (
         <p className="mt-2 text-sm text-muted-foreground">No officers are listed yet.</p>
       ) : (
-        <dl className="mt-3 grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)] gap-x-4 gap-y-1 text-sm">
+        <dl className="mt-3 grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm">
           {list.map((o) => (
             <div key={o.key} className="contents">
               <dt className="text-muted-foreground">{o.title}</dt>
-              <dd>{o.name}</dd>
+              <dd className="min-w-0">
+                {o.name ?? <span className="text-muted-foreground">Vacant</span>}
+                {o.email && (
+                  <a
+                    className="block break-words text-primary hover:underline"
+                    href={`mailto:${o.email}`}
+                  >
+                    {o.email}
+                  </a>
+                )}
+              </dd>
             </div>
           ))}
         </dl>

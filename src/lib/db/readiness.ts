@@ -68,19 +68,17 @@ export const FEATURES = {
     args: {},
     applied: true,
   },
-  board_scope: {
-    migration: "0024_board_scope_and_overview",
-    label: "Seats for an organization and its chapters",
-    rpc: "set_seat_scope",
-    args: { _template: "00000000-0000-0000-0000-000000000000", _scope: "self" },
-    applied: true,
-  },
   overview: {
     migration: "0024_board_scope_and_overview",
     label: "Overview numbers",
     rpc: "org_overview_stats",
     args: { _org: "00000000-0000-0000-0000-000000000000" },
     applied: true,
+  },
+  seat_contacts: {
+    migration: "0026_seat_contacts",
+    label: "Board contact emails",
+    table: "seat_contacts",
   },
   exports: {
     migration: "0011_member_exports",

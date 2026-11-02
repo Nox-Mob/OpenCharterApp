@@ -21,9 +21,13 @@ import {
   plannedEnd,
   scopeLabel,
   SEAT_SCOPES,
+  roleEmailSchema,
+  seatContactsQuery,
   seatInputSchema,
+  seatKey,
   seatTermLabel,
   setSeatActive,
+  setSeatContact,
   setSeatScope,
   setSeatTerm,
   setSeatTitle,
@@ -39,6 +43,7 @@ import {
   type SeatTerm,
 } from "@/modules/governance/seats";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -85,10 +90,21 @@ export function BoardTab({
   const rules = useQuery(termRulesQuery(org.id));
   const [appointing, setAppointing] = useState<Seat | null>(null);
   const [termFor, setTermFor] = useState<Seat | null>(null);
+  const [contactFor, setContactFor] = useState<Seat | null>(null);
+  // Contact emails need migration 0026 (D-135, D-156).
+  const contactsReady = useFeatureReady("seat_contacts") === true;
+  const contacts = useQuery({ ...seatContactsQuery(org.id), enabled: contactsReady });
   const [historyFor, setHistoryFor] = useState<string | null>(null);
 
   const refresh = () => {
-    for (const k of ["board", "board-history", "seat-terms", "seat-templates"])
+    for (const k of [
+      "board",
+      "board-history",
+      "seat-terms",
+      "seat-templates",
+      "seat-contacts",
+      "board-contacts",
+    ])
       qc.invalidateQueries({ queryKey: [k, org.id] });
   };
 
@@ -152,6 +168,19 @@ export function BoardTab({
                     <p className="text-sm text-muted-foreground">{s.description}</p>
                   )}
                   <p className="text-sm">{termSummary(s)}</p>
+                  {contactsReady && (
+                    <p className="text-sm">
+                      Contact:{" "}
+                      {contacts.data?.[s.template_id] ? (
+                        <>
+                          <span>{contacts.data[s.template_id]}</span>{" "}
+                          <span className="text-muted-foreground">(role email)</span>
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">the officer&apos;s own email</span>
+                      )}
+                    </p>
+                  )}
                   {s.holders.length > 0 ? (
                     <ul className="space-y-1 text-sm">
                       {s.holders.map((h) => (
@@ -199,6 +228,11 @@ export function BoardTab({
                     {canManage && (
                       <Button size="sm" variant="outline" onClick={() => setTermFor(s)}>
                         Change term
+                      </Button>
+                    )}
+                    {canManage && contactsReady && (
+                      <Button size="sm" variant="outline" onClick={() => setContactFor(s)}>
+                        Contact email
                       </Button>
                     )}
                     {canManage && inherited && (
@@ -287,6 +321,18 @@ export function BoardTab({
           onClose={() => setAppointing(null)}
           onDone={() => {
             setAppointing(null);
+            refresh();
+          }}
+        />
+      )}
+      {contactFor && (
+        <ContactDialog
+          org={org}
+          seat={contactFor}
+          current={contacts.data?.[contactFor.template_id] ?? ""}
+          onClose={() => setContactFor(null)}
+          onDone={() => {
+            setContactFor(null);
             refresh();
           }}
         />
@@ -423,6 +469,99 @@ function AppointDialog({
   );
 }
 
+/**
+ * How members reach a seat's holder (D-156): either a role email for the seat, or each
+ * officer's own email. Never both.
+ */
+function ContactDialog({
+  org,
+  seat,
+  current,
+  onClose,
+  onDone,
+}: {
+  org: Org;
+  seat: Seat;
+  current: string;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [mode, setMode] = useState<"officer" | "role">(current ? "role" : "officer");
+  const [email, setEmail] = useState(current);
+  const [busy, setBusy] = useState(false);
+
+  async function save() {
+    const value = mode === "role" ? email.trim() : "";
+    if (mode === "role") {
+      const parsed = roleEmailSchema.safeParse(value);
+      if (!parsed.success || value === "")
+        return void toast.error("Enter the role email, e.g. president@example.org");
+    }
+    setBusy(true);
+    try {
+      await setSeatContact(org.id, seat.template_id, value);
+      toast.success("Contact saved");
+      onDone();
+    } catch (e) {
+      toast.error(boardErrorMessage(String((e as Error).message)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>How members reach the {seat.title}</DialogTitle>
+        </DialogHeader>
+        <RadioGroup
+          value={mode}
+          onValueChange={(v) => setMode(v as "officer" | "role")}
+          className="space-y-3"
+        >
+          <label className="flex items-start gap-2 text-sm">
+            <RadioGroupItem value="officer" aria-label="The officer's own email" />
+            <span>
+              <span className="font-medium">The officer&apos;s own email</span>
+              <span className="block text-muted-foreground">
+                Whoever holds the seat is listed with the email on their member record.
+              </span>
+            </span>
+          </label>
+          <label className="flex items-start gap-2 text-sm">
+            <RadioGroupItem value="role" aria-label="A role email for this seat" />
+            <span>
+              <span className="font-medium">A role email for this seat</span>
+              <span className="block text-muted-foreground">
+                Stays the same when the officer changes. The officer&apos;s own email isn&apos;t
+                shown.
+              </span>
+            </span>
+          </label>
+        </RadioGroup>
+        {mode === "role" && (
+          <div className="space-y-2">
+            <Label htmlFor="role-email">Role email</Label>
+            <Input
+              id="role-email"
+              type="email"
+              placeholder={`${seatKey(seat.default_title).replace(/_/g, "")}@example.org`}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+        )}
+        <DialogFooter>
+          <Button onClick={save} disabled={busy}>
+            {busy ? "Saving…" : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function TermDialog({
   org,
   seat,
@@ -548,8 +687,6 @@ function SeatEditor({
   } | null>(null);
   const [busy, setBusy] = useState(false);
   const canScopeChapters = org.type === "national" || org.type === "region";
-  // "This org and every chapter" and changing a seat's scope need migration 0024 (D-135).
-  const scopeReady = useFeatureReady("board_scope") === true;
   const usableRoles = rolesForOrg(roles.data ?? [], org).filter((r) =>
     canGrantRole(r, grants, org),
   );
@@ -685,7 +822,7 @@ function SeatEditor({
                   onChange={(e) => set({ description: e.target.value })}
                 />
               </div>
-              {canScopeChapters && (scopeReady || !editing.id) && (
+              {canScopeChapters && (
                 <div className="space-y-2">
                   <Label>Used by</Label>
                   <Select
@@ -696,13 +833,11 @@ function SeatEditor({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {SEAT_SCOPES.filter((sc) => scopeReady || sc !== "self_and_chapters").map(
-                        (sc) => (
-                          <SelectItem key={sc} value={sc}>
-                            {scopeLabel(sc, org.name)}
-                          </SelectItem>
-                        ),
-                      )}
+                      {SEAT_SCOPES.map((sc) => (
+                        <SelectItem key={sc} value={sc}>
+                          {scopeLabel(sc, org.name)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">

@@ -14,6 +14,7 @@ import {
   seatInputSchema,
   seatKey,
   seatTermLabel,
+  setSeatContact,
   setSeatScope,
   setSeatTerm,
   updateSeat,
@@ -211,5 +212,21 @@ describe("writes send every argument the SQL function has", () => {
       _scope: "self_and_chapters",
     });
     await expect(setSeatScope("t1", "nobody" as never)).rejects.toThrow();
+  });
+
+  it("set_seat_contact: a role email (normalised) or null for the officer's own", async () => {
+    await setSeatContact("a", "t1", "  President@DemoAustin.XYZ ");
+    expect(rpc).toHaveBeenLastCalledWith("set_seat_contact", {
+      _org: "a",
+      _template: "t1",
+      _role_email: "president@demoaustin.xyz",
+    });
+    await setSeatContact("a", "t1", "");
+    expect(rpc).toHaveBeenLastCalledWith("set_seat_contact", {
+      _org: "a",
+      _template: "t1",
+      _role_email: null,
+    });
+    await expect(setSeatContact("a", "t1", "nope")).rejects.toThrow();
   });
 });
