@@ -6,6 +6,7 @@ import {
   joinBlocker,
   joinErrorMessage,
   joinOutcome,
+  joinStep,
   type JoinInfo,
   type PaymentProgress,
 } from "./joining";
@@ -120,5 +121,26 @@ describe("joinErrorMessage", () => {
     expect(joinErrorMessage("Phone is required")).toBe("Phone is required");
     expect(joinErrorMessage("you're already a member; renew instead")).toMatch(/Renew/);
     expect(joinErrorMessage("boom")).toBe("Something went wrong. Please try again.");
+  });
+});
+
+describe("two-level dues (D-146)", () => {
+  const info = {
+    national_dues: { required: true, national: { id: "n", name: "Nat", slug: "nat" } },
+  };
+  it("works out which step the join page is on", () => {
+    expect(joinStep({}, undefined)).toBeNull();
+    expect(
+      joinStep({ national_dues: { required: false, national: null } }, { national_state: "none" }),
+    ).toBeNull();
+    expect(joinStep(info, undefined)).toBeNull();
+    expect(joinStep(info, { national_state: "none" })).toBe("national_first");
+    expect(joinStep(info, { national_state: "pending" })).toBe("chapter");
+    expect(joinStep(info, { national_state: "current" })).toBe("chapter");
+  });
+  it("explains the national requirement", () => {
+    expect(joinErrorMessage("national membership required: join Nat first")).toBe(
+      "Join the national organization first, then the chapter.",
+    );
   });
 });

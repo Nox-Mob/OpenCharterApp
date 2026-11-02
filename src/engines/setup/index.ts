@@ -57,6 +57,8 @@ export type FlowContext = {
   childLevelsAllowed?: boolean;
   /** Set when a parent org decides how this org's new members are accepted (D-130). */
   parentApproval?: "auto" | "review";
+  /** Migration 0020 is applied: national and chapter dues rules can be set (D-146). */
+  twoLevelDues?: boolean;
   /** Board setup: what applies at this org (from org_board and the parent's rules). */
   board?: {
     /** False when a parent turned off governance.chapter_extra_seats_allowed. */
@@ -89,9 +91,16 @@ export type Flow<P> = {
   defaults: (ctx: FlowContext) => Answers;
   summarize: (a: Answers, ctx: FlowContext) => string[];
   plan: (a: Answers, ctx: FlowContext) => P;
+  /** The version for an org type, when new questions only reach some orgs (default: version). */
+  versionFor?: (ctx: Pick<FlowContext, "orgType" | "twoLevelDues">) => number;
   /** Checks answers the generic question rules can't (e.g. a list of seats); null when fine. */
   validate?: (a: Answers, ctx: FlowContext) => string | null;
 };
+
+export const flowVersion = (
+  flow: Pick<Flow<unknown>, "version" | "versionFor">,
+  ctx: Pick<FlowContext, "orgType" | "twoLevelDues">,
+) => flow.versionFor?.(ctx) ?? flow.version;
 
 export function visibleSteps(flow: Flow<unknown>, a: Answers, ctx: FlowContext): Step[] {
   return flow.steps.filter((s) => !s.when || s.when(a, ctx));

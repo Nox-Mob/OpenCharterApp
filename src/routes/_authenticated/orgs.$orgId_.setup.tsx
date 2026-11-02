@@ -8,6 +8,7 @@ import { diffByKey, type Answers, type FlowContext } from "@/engines/setup";
 import { FlowWizard } from "@/components/setup/flow-wizard";
 import { BoardSetup } from "@/components/governance/board-setup";
 import { RequiresDatabase } from "@/components/db/requires-database";
+import { useFeatureReady } from "@/lib/db/readiness";
 import { isSetupFlowId, type SetupFlowId } from "@/modules/setup/flows";
 import {
   attributeInputSchema,
@@ -93,14 +94,16 @@ function MembershipSetup({ org }: { org: Org }) {
   const tiers = useQuery(tiersQuery(org.id, org.ancestor_ids));
   const levelsAllowed = useQuery(childLevelsAllowedQuery(org.id, org.ancestor_ids));
   const parentApproval = useQuery(parentApprovalQuery(org.id, org.ancestor_ids));
+  const twoLevelDues = useFeatureReady("two_level_dues");
   const ctx: FlowContext = useMemo(
     () => ({
       orgType: org.type,
       orgName: org.name,
       childLevelsAllowed: levelsAllowed.data !== false,
+      twoLevelDues: twoLevelDues === true,
       ...(parentApproval.data ? { parentApproval: parentApproval.data } : {}),
     }),
-    [org, levelsAllowed.data, parentApproval.data],
+    [org, levelsAllowed.data, parentApproval.data, twoLevelDues],
   );
 
   const existingOwn = useMemo(() => ownFields(defs.data, org.id, "member"), [defs.data, org.id]);
@@ -121,7 +124,8 @@ function MembershipSetup({ org }: { org: Org }) {
     defs.isLoading ||
     tiers.isLoading ||
     levelsAllowed.isLoading ||
-    parentApproval.isLoading;
+    parentApproval.isLoading ||
+    twoLevelDues === undefined;
   // Computed once when loading finishes, so later refetches don't reset the wizard.
   const [initial, setInitial] = useState<Answers | null>(null);
   if (!initial && !loading) {

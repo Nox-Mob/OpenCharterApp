@@ -72,4 +72,12 @@ Apply each in order after the ones above. Each is additive and passes the D-125 
 
 | 10 | `0019_rollups.sql` | Reports: `org_rollup_members`, `org_rollup_revenue`, `org_rollup_governance`, `log_report_export` | As the demo national admin: `select * from public.org_rollup_members('d1000000-0000-4000-8000-000000000001');` lists the national and its chapters |
 
-After applying, run `bun run test:smoke` as usual and regenerate the types. Once 0018 and 0019 are applied, mark the `board_setup` and `reports` features in `src/lib/db/readiness.ts` as `applied: true` (we can do that).
+| 11 | `0020_two_level_dues.sql` | Two-level dues: `join_requirements`, national dues check in `begin_join` / `payment_succeeded` / `approve_membership`, chapter price range trigger, "no chapter dues" in `tier_parent_check` and `public_join_info` | `select public.public_join_info('demo-austin') -> 'national_dues';` returns `{"required": false, ...}` until the national turns it on |
+
+After applying, run `bun run test:smoke` as usual and regenerate the types. Once 0018–0020 are applied, mark the `board_setup`, `reports` and `two_level_dues` features in `src/lib/db/readiness.ts` as `applied: true` (we can do that).
+
+### Smoke-test additions for 0018–0020
+Please add these to `smoke/live.smoke.test.ts` (they clean up through `purge_smoke_data` like the rest):
+- **Board setup (0018):** as the national admin, `apply_setup(national, 'board', …)` with one chapter seat and a term for the national's own seat; applying it twice leaves one seat and one term rule.
+- **Reports (0019):** `org_rollup_members(national)` lists the national and both chapters with totals matching the members recorded in the run; the chapter admin is refused for the national.
+- **Two-level dues (0020):** set `membership.national_dues_required = true` (locked) at the national for the run, then as the member: `begin_join(austin, …)` is refused with "national membership required"; join the national with the test gateway; then the Austin join waits for approval until the national membership is approved. Reset the setting afterwards.

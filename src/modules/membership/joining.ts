@@ -33,6 +33,11 @@ export type JoinInfo = {
   gateway: "stripe" | "test" | null;
   livemode: boolean;
   approval_required: boolean;
+  /** Two-level dues (0020, D-146); absent before that migration. */
+  national_dues?: {
+    required: boolean;
+    national: { id: string; name: string; slug: string } | null;
+  };
   levels: JoinLevel[];
   fields: JoinField[];
 };
@@ -46,6 +51,52 @@ export const joinInfoQuery = (slug: string) =>
       return (data as unknown as JoinInfo | null) ?? null;
     },
   });
+
+export type JoinRequirements = {
+  national_required: boolean;
+  national: { id: string; name: string; slug: string };
+  /** current = good standing or grace; pending = paid, waiting for approval */
+  national_state: "current" | "pending" | "none";
+};
+
+/** What joining needs from the signed-in person (only asked when national dues apply). */
+export const joinRequirementsQuery = (orgId: string) =>
+  queryOptions({
+    queryKey: ["join-requirements", orgId],
+    queryFn: async (): Promise<JoinRequirements> => {
+      const { data, error } = await db.rpc("join_requirements", { _org: orgId });
+      if (error) throw error;
+      return data as unknown as JoinRequirements;
+    },
+  });
+
+/** Which of the two steps the join page is on (D-146); null when there's only one. */
+export function joinStep(
+  info: Pick<JoinInfo, "national_dues">,
+  req: Pick<JoinRequirements, "national_state"> | undefined,
+): "national_first" | "chapter" | null {
+  if (!info.national_dues?.required || !info.national_dues.national) return null;
+  if (!req) return null;
+  return req.national_state === "none" ? "national_first" : "chapter";
+}
+
+/** Remembers which chapter to continue to after paying national dues (this browser tab only). */
+const THEN_KEY = "oc.join.then";
+export function rememberNextJoin(slug: string | null) {
+  try {
+    if (slug) sessionStorage.setItem(THEN_KEY, slug);
+    else sessionStorage.removeItem(THEN_KEY);
+  } catch {
+    // storage unavailable: the member can go back to the chapter's join page themselves
+  }
+}
+export function nextJoin(): string | null {
+  try {
+    return sessionStorage.getItem(THEN_KEY);
+  } catch {
+    return null;
+  }
+}
 
 /** Why the join page can't take a payment, or null when it can. */
 export function joinBlocker(info: JoinInfo): string | null {
@@ -160,6 +211,7 @@ export function joinErrorMessage(message: string): string {
     ["isn't offered here", "That membership level isn't offered anymore."],
     ["invalid value", "One of your answers isn't valid. Check the form."],
     ["lifetime member", "You're already a lifetime member."],
+    ["national membership required", "Join the national organization first, then the chapter."],
   ];
   const hit = known.find(([k]) => message.includes(k));
   if (hit && hit[1] === "") return message.charAt(0).toUpperCase() + message.slice(1);

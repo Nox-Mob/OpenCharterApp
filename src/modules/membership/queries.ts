@@ -33,14 +33,43 @@ export const childLevelsAllowedQuery = (orgId: string, lineage: readonly string[
       if (lineage.length === 0) return true;
       const { data, error } = await supabase.rpc("lineage_settings", { _org: orgId });
       if (error) throw error;
+      const rows = (data ?? []) as SettingRow[];
+      const chain = [...lineage, orgId];
       return (
-        resolveFromAncestors(
-          [...lineage, orgId],
-          (data ?? []) as SettingRow[],
-          "membership.child_levels_allowed",
-          true,
-        ) !== false
+        resolveFromAncestors(chain, rows, "membership.child_levels_allowed", true) !== false &&
+        // "No chapter dues" also means chapters use the parent's levels (D-146).
+        resolveFromAncestors(chain, rows, "membership.chapter_dues", "optional") !== "none"
       );
+    },
+  });
+
+export type ChapterDuesRule = {
+  mode: "none" | "optional" | "required";
+  /** cents; null = no limit */
+  min: number | null;
+  max: number | null;
+};
+
+/** The national's rules for this chapter's own dues (D-055, D-146). */
+export const chapterDuesRuleQuery = (orgId: string, lineage: readonly string[]) =>
+  queryOptions({
+    queryKey: ["chapter-dues-rule", orgId],
+    queryFn: async (): Promise<ChapterDuesRule> => {
+      if (lineage.length === 0) return { mode: "optional", min: null, max: null };
+      const { data, error } = await supabase.rpc("lineage_settings", { _org: orgId });
+      if (error) throw error;
+      const rows = (data ?? []) as SettingRow[];
+      const chain = [...lineage, orgId];
+      const limit = (key: string) => {
+        const v = Number(resolveFromAncestors(chain, rows, key, 0));
+        return Number.isFinite(v) && v > 0 ? v : null;
+      };
+      const mode = resolveFromAncestors(chain, rows, "membership.chapter_dues", "optional");
+      return {
+        mode: mode === "none" || mode === "required" ? mode : "optional",
+        min: limit("membership.chapter_dues_min_minor"),
+        max: limit("membership.chapter_dues_max_minor"),
+      };
     },
   });
 
@@ -131,5 +160,11 @@ export function tierErrorMessage(message: string): string {
   if (message.includes("parent organization manages"))
     return "Your parent organization manages membership levels";
   if (message.includes("duplicate")) return "A level with that name already exists";
+  // e.g. "chapter dues must be between 10.00 and 30.00 (set by your national)" (D-146)
+  const range = /chapter dues must be between ([\d.]+) and ([\w .]+?) \(/.exec(message);
+  if (range)
+    return range[2] === "any amount"
+      ? `Your national requires chapter prices of at least $${range[1]}`
+      : `Your national requires chapter prices between $${range[1]} and $${range[2]}`;
   return "Couldn't save the level";
 }

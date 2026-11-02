@@ -11,6 +11,9 @@ import {
   joinBlocker,
   joinErrorMessage,
   joinInfoQuery,
+  joinRequirementsQuery,
+  joinStep,
+  rememberNextJoin,
   type JoinField,
 } from "@/modules/membership/joining";
 import { formatPrice, lengthOf, termLabel } from "@/modules/membership/tiers";
@@ -51,6 +54,11 @@ export function JoinForm({ orgSlug }: { orgSlug: string }) {
     void supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
   }, []);
   const defs = useMemo(() => (info.data?.fields ?? []).map(toDef), [info.data]);
+  // Two-level dues (D-146): the national's membership comes first.
+  const req = useQuery({
+    ...joinRequirementsQuery(info.data?.org.id ?? ""),
+    enabled: !!info.data?.national_dues?.required && signedIn === true,
+  });
 
   if (info.isLoading || signedIn === null) return <p className="text-muted-foreground">Loading…</p>;
   if (!info.data)
@@ -61,6 +69,8 @@ export function JoinForm({ orgSlug }: { orgSlug: string }) {
   const chosen =
     terms.find((x) => x.term.id === termId) ?? (terms.length === 1 ? terms[0] : undefined);
   const here = `/join/${orgSlug}`;
+  const national = j.national_dues?.required ? j.national_dues.national : null;
+  const step = joinStep(j, req.data);
 
   async function pay() {
     if (!chosen) return void toast.error("Choose a membership");
@@ -90,6 +100,13 @@ export function JoinForm({ orgSlug }: { orgSlug: string }) {
       <div className="rule-brass pt-6">
         <p className="text-sm text-muted-foreground">Become a member of</p>
         <h1 className="text-3xl font-semibold">{j.org.name}</h1>
+        {step && (
+          <p className="mt-2 text-sm font-medium">
+            {step === "national_first"
+              ? `Step 1 of 2: ${national!.name} dues`
+              : `Step 2 of 2: ${j.org.name} dues`}
+          </p>
+        )}
         {j.payments_enabled && !j.livemode && (
           <Badge variant="secondary" className="mt-2">
             Test payments: no real money is charged
@@ -97,7 +114,24 @@ export function JoinForm({ orgSlug }: { orgSlug: string }) {
         )}
       </div>
 
-      {blocker ? (
+      {step === "national_first" ? (
+        <div className="space-y-3 rounded-md border bg-card p-5">
+          <p>
+            Members of {j.org.name} are also members of {national!.name}, and pay each
+            organization&apos;s dues separately. Join {national!.name} first; then come back here
+            for {j.org.name}&apos;s dues.
+          </p>
+          <Button asChild>
+            <Link
+              to="/join/$orgSlug"
+              params={{ orgSlug: national!.slug }}
+              onClick={() => rememberNextJoin(orgSlug)}
+            >
+              Join {national!.name} first
+            </Link>
+          </Button>
+        </div>
+      ) : blocker ? (
         <div className="space-y-3 rounded-md border bg-card p-5">
           <p>{blocker}</p>
           {j.levels_managed_by_parent && j.parent && (
@@ -139,6 +173,12 @@ export function JoinForm({ orgSlug }: { orgSlug: string }) {
           {!signedIn ? (
             <div className="space-y-3 rounded-md border bg-card p-5">
               <p>Sign in, or create an account with your email, to continue.</p>
+              {national && (
+                <p className="text-sm text-muted-foreground">
+                  Joining {j.org.name} also includes membership of {national.name}: two payments,
+                  one to each.
+                </p>
+              )}
               <Button asChild>
                 <Link to="/auth" search={{ redirect: here }}>
                   Sign in or create an account
@@ -169,6 +209,12 @@ export function JoinForm({ orgSlug }: { orgSlug: string }) {
                     </div>
                   ))}
                 </fieldset>
+              )}
+              {step === "chapter" && req.data?.national_state === "pending" && (
+                <p className="rounded-md bg-muted p-3 text-sm">
+                  Your {national!.name} application is waiting for approval. Your {j.org.name}{" "}
+                  membership starts once both are approved.
+                </p>
               )}
               {j.approval_required && (
                 <p className="rounded-md bg-muted p-3 text-sm">

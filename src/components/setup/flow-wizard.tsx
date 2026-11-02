@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Org } from "@/lib/orgs";
 import {
+  flowVersion,
   pruneAnswers,
   validateStep,
   visibleQuestions,
@@ -75,7 +76,7 @@ export function FlowWizard<P>({
       setErrors(errs);
       if (Object.keys(errs).length) return;
       const custom = flow.validate?.(answers, ctx);
-      if (custom && step.questions.some((q) => q.type === "seats")) return void toast.error(custom);
+      if (custom) return void toast.error(custom);
     }
     try {
       await saveDraft(org.id, flow.id, pruneAnswers(flow as Flow<unknown>, answers, ctx));
@@ -97,7 +98,13 @@ export function FlowWizard<P>({
     if (custom) return void toast.error(custom);
     setBusy(true);
     try {
-      await applyFlow(org.id, flow.id, final, flow.plan(final, ctx), flow.version);
+      await applyFlow(
+        org.id,
+        flow.id,
+        final,
+        flow.plan(final, ctx),
+        flowVersion(flow as Flow<unknown>, ctx),
+      );
       toast.success("Setup applied");
       await qc.invalidateQueries();
       navigate({ to: "/orgs/$orgId", params: { orgId: org.id } });

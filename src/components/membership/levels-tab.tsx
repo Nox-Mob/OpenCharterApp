@@ -13,6 +13,7 @@ import {
   type Tier,
 } from "@/modules/membership/tiers";
 import {
+  chapterDuesRuleQuery,
   childLevelsAllowedQuery,
   saveTier,
   setTierActive,
@@ -39,6 +40,10 @@ export function LevelsTab({
   const qc = useQueryClient();
   const tiers = useQuery(tiersQuery(org.id, org.ancestor_ids));
   const allowed = useQuery(childLevelsAllowedQuery(org.id, org.ancestor_ids));
+  const rule = useQuery({
+    ...chapterDuesRuleQuery(org.id, org.ancestor_ids),
+    enabled: !!org.parent_id,
+  });
   const [editing, setEditing] = useState<{ tier: SavedTier | null; input: Tier } | null>(null);
   const [busy, setBusy] = useState(false);
   if (tiers.isLoading || allowed.isLoading)
@@ -98,6 +103,19 @@ export function LevelsTab({
         </p>
       )}
 
+      {allowed.data !== false && rule.data?.mode === "required" && !own.some((t) => t.active) && (
+        <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">
+          {parentName} requires every chapter to charge its own dues. Add a level so people can join
+          here.
+        </p>
+      )}
+      {allowed.data !== false && (rule.data?.min || rule.data?.max) && (
+        <p className="text-sm text-muted-foreground">
+          {parentName} sets the price range for chapter dues:{" "}
+          {rule.data!.min ? `at least ${formatPrice(rule.data!.min)}` : "no minimum"},{" "}
+          {rule.data!.max ? `at most ${formatPrice(rule.data!.max)}` : "no maximum"}.
+        </p>
+      )}
       {own.length === 0 && inherited.length === 0 && (
         <p className="rounded-md border border-dashed p-8 text-center text-muted-foreground">
           No membership levels yet.

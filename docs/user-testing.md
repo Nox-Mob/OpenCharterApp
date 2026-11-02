@@ -125,6 +125,17 @@ Use a private browser window for a second account at the same time. Test only in
 **Where:** Overview → Your membership.
 1. As **Member**, "Renew online (…)" and pay with "Card accepted". Paid-through moves forward by one term from the old date, not from today.
 
+## 12b. Two-level dues (national and chapter)
+**Where:** Demo National → Membership setup ("Rules for your chapters"), then `/join/demo-austin`. Needs migration 0020; until then these questions don't appear.
+1. As **National**, run Membership setup. Turn on "Must chapter members also be members of your organization?". Set a chapter price range, e.g. lowest $10, highest $30. Apply.
+2. As **Chapter**, Austin → Membership levels: the range is shown. Try a term priced at $50; it's refused with the range.
+3. In a private window, open `/join/demo-austin` signed out. It mentions two payments. Sign in as an account that isn't a national member. Expect "Step 1 of 2: Demo National Association dues" and a "Join … first" button.
+4. Pay the national dues with "Card accepted". The return page offers "Continue to step 2: chapter dues". Follow it: "Step 2 of 2", then pay the chapter's dues.
+5. If the national approves new members, the chapter application waits. As **Chapter**, try to approve it first; it says the national membership isn't active yet. Approve at the national, then at the chapter.
+6. Payments tab at each org: one payment and one receipt each.
+
+**Also try:** "No chapter dues" (turn off "May chapters create their own membership levels?"): Austin's join page sends people to the national.
+
 ## 13. Receipts
 **Where:** Payments tab → Receipt column; Your membership → Your receipts; member History.
 1. Open a receipt: number (`2026-00001` style), legal name, EIN, payer, items, amount, method, tax wording, footer, logo.

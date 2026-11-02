@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import type { Org } from "@/lib/orgs";
 import { useFeatureReady } from "@/lib/db/readiness";
+import { flowVersion } from "@/engines/setup";
 import { hasNewOptions, setupStateQuery } from "@/modules/setup/drafts";
 import { SETUP_FLOWS, type SetupFlowEntry } from "@/modules/setup/flows";
 import { connectionQuery } from "@/modules/payments/queries";
@@ -28,11 +29,12 @@ export function SetupCards({ org, canManagePayments }: { org: Org; canManagePaym
 
 function FlowCard({ org, entry }: { org: Org; entry: SetupFlowEntry }) {
   const ready = useFeatureReady(entry.feature ?? "memberships");
+  const twoLevelDues = useFeatureReady("two_level_dues") === true;
   const { flow } = entry;
   const { data } = useQuery({ ...setupStateQuery(org.id, flow.id), enabled: ready === true });
   // A flow whose migration isn't applied yet doesn't show (readiness guard, D-135).
   if (entry.feature && ready !== true) return null;
-  const fresh = hasNewOptions(data, flow.version);
+  const fresh = hasNewOptions(data, flowVersion(flow, { orgType: org.type, twoLevelDues }));
   return (
     <section className="rule-brass bg-card p-6">
       <div className="flex flex-wrap items-center gap-2">

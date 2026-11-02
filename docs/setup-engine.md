@@ -84,6 +84,7 @@ Each flow lists the kind of questions it asks. Wording is illustrative.
 - Grace period after expiration, and what standing is during grace.
 - Tax treatment of dues (deductible, non-deductible, partially).
 - *National only:* may chapters charge separate dues? None, optional within a min/max, or required. Are tier structures locked, suggested, or free?
+- *Built (Membership setup v4, D-146, once 0020 is applied):* "Must chapter members also be members of your organization?", "Must every chapter charge its own dues?" and the lowest / highest chapter price. "May chapters create their own membership levels?" off means no chapter dues. Locked or suggested level structures come later.
 
 ### 6.4 Payments
 - Connect Stripe and/or PayPal. *National:* use Stripe Connect (automatic fee) or let each org connect directly (fee by invoice)?

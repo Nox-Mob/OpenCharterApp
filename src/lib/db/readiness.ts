@@ -46,6 +46,12 @@ export const FEATURES = {
     rpc: "org_rollup_governance",
     args: { _org: "00000000-0000-0000-0000-000000000000" },
   },
+  two_level_dues: {
+    migration: "0020_two_level_dues",
+    label: "Two-level dues",
+    rpc: "join_requirements",
+    args: { _org: "00000000-0000-0000-0000-000000000000" },
+  },
   exports: {
     migration: "0011_member_exports",
     label: "Member exports and saved views",
