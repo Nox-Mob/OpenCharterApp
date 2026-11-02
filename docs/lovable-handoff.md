@@ -1,10 +1,14 @@
-# Hand-off to Lovable: apply migration 0026
+# Hand-off to Lovable: apply migrations 0026 and 0027
 
 Status on 2026-11-02.
 
 **Done:** migrations `0000`–`0025` are applied, the types are regenerated, and the `GATEWAY_ENCRYPTION_KEY` secret is set. Thank you. A record is at the end.
 
-**Waiting:** `0026_seat_contacts`, on branch `BoardUpdates`, tested against Postgres 16 (`db/tests/9J_seat_contacts.sql`). Until it's applied, the Board page has no "Contact email" button and "Board and who to contact" lists officers' names without emails (readiness guard, D-135). Nothing breaks if you wait.
+**Waiting:** `0026_seat_contacts` and `0027_board_setup_scope_and_demo_rank`, on branch `BoardUpdates`, tested against Postgres 16 (`db/tests/9J_seat_contacts.sql`, `9D_setup_board.sql`). Until they're applied:
+- the Board page has no "Contact email" button and "Board and who to contact" lists officers' names without emails (readiness guard, D-135)
+- Board setup can't change an existing seat's "used by" (it says to use "Edit seat" on the Board page), and Demo National's Rank stays optional
+
+Nothing breaks if you wait.
 
 ## 1. Apply the migration
 It is additive only (D-125, checked in CI by `bun run check:migrations`): a new tenant table with `org_id`, full grants to `authenticated`, RLS with `is_org_member` / `has_permission`, no drops.
@@ -12,11 +16,13 @@ It is additive only (D-125, checked in CI by `bun run check:migrations`): a new 
 | File | What it adds | Check it worked (SQL editor) |
 |---|---|---|
 | `0026_seat_contacts.sql` | `seat_contacts` (a role email per org and seat; none = show the officer's own email), `set_seat_contact` (needs `governance.manage`), `org_board_contacts` (who to contact, for members of the org) (D-156) | `select count(*) from public.seat_contacts;` returns 0, not an error |
+| `0027_board_setup_scope_and_demo_rank.sql` | `apply_setup` (same as 0018) can now change an existing seat's "used by", refused while it would remove a current officer (D-157). Data, demo orgs only: the demo national's Rank member field becomes required | `select required from public.attribute_definitions d join public.organizations o on o.id = d.org_id where o.slug = 'demo-national' and d.key = 'rank';` returns `true` |
 
 Notes:
 - Writes go only through the `security definer` function `set_seat_contact`; the table has no client write policies on purpose.
 - `org_board_contacts` returns the email of each current officer (or the seat's role email instead) to members of that org only. It never returns other members' emails.
-- If it fails, stop and keep the error message. Don't edit the file to make it pass; we'll ship a fix as `0027_…`.
+- `0027` replaces `apply_setup` with `create or replace` and the same signature; the change is marked in a comment.
+- Apply `0026` before `0027`. If one fails, stop and keep the error message. Don't edit the file to make it pass; we'll ship a fix as `0028_…`.
 
 ## 2. After applying
 1. Regenerate the types (`src/integrations/supabase/types.ts`). Don't hand-edit it.
@@ -25,6 +31,9 @@ Notes:
 
 ## 3. Smoke-test addition (optional)
 In `smoke/live.smoke.test.ts`, as the Austin admin: `set_seat_contact(austin, <president seat>, 'president@smoke-<run>.test')`; as the member, `org_board_contacts(austin)` shows that email for President with `email_source = 'role'`; set it back to `null` and the officer's own email returns. `purge_smoke_data` removes the row (it cascades from the seat when the run's seats are removed; otherwise reset it to `null`).
+
+## 3b. Payments: nothing to apply
+Return links after paying now use the app's public address (D-158). Nothing is needed from Lovable. Optionally set the secret `PUBLIC_APP_URL` (e.g. `https://<your domain>`) to pin it. Stripe payments are now also confirmed from the return page when a webhook is late, so a misconfigured webhook no longer leaves members waiting (refunds still need it).
 
 ## 4. Checking by hand
 `docs/user-testing.md` §14 step 10 (Board → Contact email) and §14a (member overview → Board and who to contact).

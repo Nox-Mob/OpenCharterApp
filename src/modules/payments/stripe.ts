@@ -27,6 +27,20 @@ export function formEncode(params: Record<string, unknown>, prefix = ""): string
   return parts.filter(Boolean).join("&");
 }
 
+/**
+ * Idempotency key for creating a checkout: the same request (payment, amount, return links)
+ * gets the same key, so a network retry can't create two sessions; a changed request (e.g. new
+ * return links) gets a new one instead of Stripe's cached session or a parameter-mismatch error.
+ */
+export async function checkoutIdempotencyKey(paymentId: string, body: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(body));
+  const hex = [...new Uint8Array(digest)]
+    .slice(0, 12)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return `checkout-${paymentId}-${hex}`;
+}
+
 export const isLiveKey = (key: string) => /^(sk|rk)_live_/.test(key);
 export const looksLikeStripeKey = (key: string) =>
   /^(sk|rk)_(live|test)_[A-Za-z0-9]{10,}$/.test(key);
@@ -84,31 +98,46 @@ export function createStripeGateway(
       }
     },
     async createCheckout(req: CheckoutRequest): Promise<CheckoutSession> {
-      const s = await call<{ id: string; url: string }>(
-        "POST",
-        "/checkout/sessions",
-        {
-          mode: "payment",
-          client_reference_id: req.paymentId,
-          success_url: req.successUrl,
-          cancel_url: req.cancelUrl,
-          customer_email: req.customerEmail,
-          metadata: { payment_id: req.paymentId, org_id: req.orgId },
-          payment_intent_data: { metadata: { payment_id: req.paymentId, org_id: req.orgId } },
-          line_items: {
-            0: {
-              quantity: 1,
-              price_data: {
-                currency: req.amount.currency.toLowerCase(),
-                unit_amount: req.amount.amount_minor,
-                product_data: { name: req.description },
-              },
+      const params = {
+        mode: "payment",
+        client_reference_id: req.paymentId,
+        success_url: req.successUrl,
+        cancel_url: req.cancelUrl,
+        customer_email: req.customerEmail,
+        metadata: { payment_id: req.paymentId, org_id: req.orgId },
+        payment_intent_data: { metadata: { payment_id: req.paymentId, org_id: req.orgId } },
+        line_items: {
+          0: {
+            quantity: 1,
+            price_data: {
+              currency: req.amount.currency.toLowerCase(),
+              unit_amount: req.amount.amount_minor,
+              product_data: { name: req.description },
             },
           },
         },
-        `checkout-${req.paymentId}`,
+      };
+      const s = await call<{ id: string; url: string }>(
+        "POST",
+        "/checkout/sessions",
+        params,
+        await checkoutIdempotencyKey(req.paymentId, formEncode(params)),
       );
       return { id: s.id, url: s.url };
+    },
+    async checkoutResult(checkoutRef: string): Promise<GatewayEvent> {
+      const s = await call<Record<string, unknown> & { id: string; livemode: boolean }>(
+        "GET",
+        `/checkout/sessions/${encodeURIComponent(checkoutRef)}`,
+      );
+      // Shaped like the webhook event, with an id of its own: payment_succeeded ignores a
+      // payment that's already paid, so this and the real webhook can't apply it twice.
+      return parseStripeEvent({
+        id: `confirm_${s.id}`,
+        type: s["status"] === "expired" ? "checkout.session.expired" : "checkout.session.completed",
+        livemode: s.livemode,
+        data: { object: s },
+      });
     },
     async refund(gatewayRef: string, amount?: Money) {
       const r = await call<{ id: string }>(

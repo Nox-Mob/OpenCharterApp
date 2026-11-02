@@ -42,7 +42,7 @@ To remove someone, delete their row. At launch, remove the demo accounts from th
 
 ## Configuration created during testing
 
-- The national ran Membership setup. It adds the Rank and Join date member fields, requires approval, sets a 45-day grace period, and locks joining rules for chapters.
+- The national ran Membership setup. It adds the Rank and Join date member fields, requires approval, sets a 45-day grace period, and locks joining rules for chapters. Since migration 0027, Rank is required, so join pages at the national and its chapters ask for it.
 - Morgan Member has Rank E-4 and Join date 2024-05-01.
 
 ## Cleanup

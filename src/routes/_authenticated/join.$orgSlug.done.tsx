@@ -9,6 +9,7 @@ import {
   rememberNextJoin,
 } from "@/modules/membership/joining";
 import { formatPrice } from "@/modules/membership/tiers";
+import { confirmCheckout } from "@/modules/payments/payments.functions";
 import { RequiresDatabase } from "@/components/db/requires-database";
 import { Button } from "@/components/ui/button";
 
@@ -26,8 +27,13 @@ export const Route = createFileRoute("/_authenticated/join/$orgSlug/done")({
   ),
 });
 
-/** Polls the payment for up to two minutes: the webhook, not the browser, confirms it. */
+/**
+ * Polls the payment for up to two minutes. The webhook normally confirms it; for Stripe the page
+ * also asks Stripe directly every few seconds (confirmCheckout, D-158), so a payment still
+ * completes when the org's webhook is late or not set up.
+ */
 const POLL_MS = 2000;
+const CONFIRM_MS = 6000;
 const GIVE_UP_MS = 120_000;
 
 function Done() {
@@ -47,6 +53,29 @@ function Done() {
     const t = setInterval(() => setNow(Date.now()), POLL_MS);
     return () => clearInterval(t);
   }, []);
+  const isStripe = progress.data?.gateway === "stripe";
+  const waiting = joinOutcome(progress.data) === "waiting";
+  useEffect(() => {
+    if (!payment || !isStripe || !waiting) return;
+    let stop = false;
+    const check = async () => {
+      if (stop || Date.now() - started > GIVE_UP_MS) return;
+      try {
+        await confirmCheckout({ data: { paymentId: payment } });
+        await progress.refetch();
+      } catch {
+        // The webhook may still confirm it; keep polling the payment.
+      }
+    };
+    void check();
+    const t = setInterval(() => void check(), CONFIRM_MS);
+    return () => {
+      stop = true;
+      clearInterval(t);
+    };
+    // progress.refetch is stable; re-run only when the payment or its state changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payment, isStripe, waiting, started]);
   const outcome = payment
     ? progress.isLoading
       ? "waiting"

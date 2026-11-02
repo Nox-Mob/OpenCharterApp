@@ -86,7 +86,8 @@ Use a private browser window for a second account at the same time. Test only in
 2. Board setup → **Officer seats**: tick President and Treasurer; set President to "Every chapter", required, 2 years; add "Chaplain" for the national itself. A third choice "<national> and every chapter" appears; pick it for Secretary and check both the national's and Austin's Board tab list Secretary.
 3. **Officer rules**: turn off "May chapters add their own seats?".
 4. **Terms from your by-laws**: for Treasurer, tick "set our own term", 3 years, today, "Bylaws Art. II". Review the summary, then "Apply setup".
-5. Board tab: the seats are there with the right terms. Run Board setup again and apply without changes; nothing new appears in each seat's term history.
+5. Board: the seats are there with the right terms. Run Board setup again and apply without changes; nothing new appears in each seat's term history.
+5b. Run Board setup again and change President from "Every chapter" to "Demo National Association and every chapter", then apply (needs migration 0027; before it, the message says to change it on the Board page). President now appears on the national's Board too. Changing it back to "itself" is refused while a chapter has a president.
 6. As **Chapter**, Austin → Board setup: there's no seats step (the national manages seats). Set Austin's own term for President with a by-law reference and apply. Austin's Board tab shows it; Demo Dallas still shows the suggested term.
 
 **Also try:** the browser Back button and a page reload in the middle of a flow (your answers are kept as a draft); a phone-sized window for the seat list.
@@ -120,13 +121,17 @@ Use a private browser window for a second account at the same time. Test only in
 1. As **National**, "Use test payments (demo only)". Expect the "Test mode" badge and a join page link.
 2. Read the Stripe connection instructions and the webhook address. Are they clear enough for a treasurer?
 
-**Can't test here:** a real Stripe connection. It needs an org with its own Stripe test account (`sk_test_…` key and a webhook).
+**Stripe in test mode** (any org, needs a free Stripe account):
+1. In Stripe (test mode): Developers → API keys → create a restricted key with "Checkout Sessions: write" (or use the `sk_test_…` secret key). Developers → Webhooks → add an endpoint at the address shown on the Payments page, with the events listed there; copy its signing secret (`whsec_…`).
+2. Paste both on the Payments page. Expect "Stripe (test mode)".
+3. Join at the org's join page and pay with Stripe's test card 4242 4242 4242 4242 (any future date, any CVC). Stripe returns you to the app's own address (never "localhost"), and the return page confirms the payment.
+4. Try it once with a wrong webhook signing secret: the return page should still confirm the payment, by asking Stripe directly (D-158). Refunds still need the webhook.
 
 ## 11. Joining online
 **Where:** `/join/demo-national`. Also try it at phone width (the browser's device toolbar, about 390 px wide).
-1. Signed out, open the page. Pick a level and term, and sign in as **Member** when asked.
+1. Signed out, open the page. Pick a level and term, and sign in as **Member** when asked. "About you" asks every required field, including **Rank** at the demo national (migration 0027 marks it required); paying without it is refused.
 2. On the test checkout, try each button in turn: Card declined, Insufficient funds, Cancel. Each should return a clear message, and no membership is created.
-3. Then "Card accepted". Expect the return page to wait, then confirm. If approval is required, the application is pending.
+3. Then "Card accepted". You come back to the app's own address (not "localhost"). Expect the return page to wait, then confirm. If approval is required, the application is pending.
 4. As **National**: Members → Applications → Approve. As **Member**, "Your membership" shows Good standing and the receipt.
 5. "Accepted, slow confirmation": the return page should keep waiting politely, then confirm.
 

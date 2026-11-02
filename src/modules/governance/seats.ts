@@ -457,6 +457,11 @@ export function boardErrorMessage(message: string): string {
     ["role is retired", "The seat's role is retired"],
     ["isn't used here", "That seat isn't used here"],
     ["valid email", "Enter a valid email address"],
+    // Board setup before migration 0027 (D-157): it couldn't change an existing seat's "used by".
+    [
+      '"used by" can',
+      'This seat already exists with a different "Used by". Change it on the Board page (Edit seat), then apply setup again',
+    ],
     [
       "no longer be used",
       "End the current terms where this seat would no longer be used, then change who uses it",

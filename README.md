@@ -41,7 +41,10 @@ Working today:
   - members see what they need to do, their profile, their roles and seats, and who to contact
   - admins can preview the page "as a member"
 
-Built and waiting for a database update (migration `0026`): board contact emails, a role email per seat (e.g. president@…) or the officer's own email.
+Built and waiting for a database update:
+
+- `0026`: board contact emails, a role email per seat (e.g. president@…) or the officer's own email
+- `0027`: Board setup can change a seat's "used by"; Rank becomes required at Demo National
 
 Next: the open items in [`roadmap.md`](roadmap.md).
 

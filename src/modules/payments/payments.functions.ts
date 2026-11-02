@@ -7,6 +7,13 @@ import type { FullDatabase } from "@/lib/db/pending-schema";
 import { stripeConnectSchema } from "./connect";
 import { createStripeGateway } from "./stripe";
 import { sealSecret } from "./secret-box";
+import { publicOrigin } from "./origin";
+
+/** The app's public address for links that come back to it (D-158), never the internal URL. */
+const appOrigin = () => {
+  const req = getRequest();
+  return publicOrigin(req.headers, req.url, process.env["PUBLIC_APP_URL"]);
+};
 
 /**
  * Connect an org's own Stripe account (E-12, D-105, D-127). Runs on the server: the key is
@@ -71,7 +78,7 @@ export const startCheckout = createServerFn({ method: "POST" })
       label: string;
       membership_tiers: { name: string } | null;
     } | null;
-    const origin = new URL(getRequest().url).origin;
+    const origin = appOrigin();
     const { loadOrgGateway } = await import("./payments.server");
     const gateway = await loadOrgGateway(pay.org_id, origin);
     if (!gateway) throw new Error("Online payments aren't open for this organization");
@@ -120,7 +127,7 @@ export const declineApplication = createServerFn({ method: "POST" })
     };
     if (r.refund !== "stripe") return { refund: r.refund };
     try {
-      const origin = new URL(getRequest().url).origin;
+      const origin = appOrigin();
       const { loadOrgGateway } = await import("./payments.server");
       const gateway = await loadOrgGateway(r.org_id!, origin);
       if (!gateway) throw new Error("no gateway");
@@ -133,4 +140,37 @@ export const declineApplication = createServerFn({ method: "POST" })
       // Declined already; the refund must then be made in Stripe by hand.
       return { refund: "failed" as const };
     }
+  });
+
+const confirmSchema = z.object({ paymentId: z.string().uuid() });
+
+/**
+ * Confirm the caller's own online payment by asking the gateway (D-158). The return page calls
+ * this while it waits, so a Stripe payment completes even when the org's webhook is late or not
+ * set up yet. The webhook stays the main path; both go through payment_succeeded, which applies
+ * a payment once. Test payments complete on the test checkout page and need nothing here.
+ */
+export const confirmCheckout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => confirmSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const client = context.supabase as unknown as SupabaseClient<FullDatabase>;
+    const { data: pay, error } = await client
+      .from("payments")
+      .select("id,org_id,status,gateway,checkout_ref")
+      .eq("id", data.paymentId)
+      .maybeSingle();
+    if (error) throw new Error("Couldn't load the payment");
+    if (!pay) throw new Error("Payment not found");
+    if (pay.gateway !== "stripe" || !pay.checkout_ref || pay.status !== "pending")
+      return { result: "nothing to do" };
+    const { loadOrgGateway, applyGatewayEvent } = await import("./payments.server");
+    const gateway = await loadOrgGateway(pay.org_id, appOrigin());
+    if (!gateway?.checkoutResult) return { result: "nothing to do" };
+    const event = await gateway.checkoutResult(pay.checkout_ref);
+    if (event.type === "ignored") return { result: event.reason };
+    // Only ever this payment: the session must name it.
+    if ("paymentId" in event && event.paymentId !== pay.id) return { result: "mismatch" };
+    if (event.type === "payment.refunded") return { result: "nothing to do" };
+    return { result: await applyGatewayEvent(event) };
   });

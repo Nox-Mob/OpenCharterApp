@@ -8,9 +8,13 @@ Testing by hand: docs/user-testing.md (updated with every feature). Full plan: d
 | Migration | Enables | Status |
 |---|---|---|
 | `0026_seat_contacts` | Board contact emails: per seat, a role email (e.g. president@…) *or* the officer's own email; `set_seat_contact`, `org_board_contacts` for "Board and who to contact" (D-156) | Waiting |
+| `0027_board_setup_scope_and_demo_rank` | Board setup can change an existing seat's "used by" (D-157); demo data: Demo National's Rank field becomes required | Waiting |
 
 ## Done
 ### November 2026
+- [x] Payments return to the app's own address instead of "localhost"; Stripe Checkout gets fresh return links; the return page confirms a Stripe payment directly when the webhook is late or missing (D-158)
+- [x] Board setup can change an existing seat's "used by" (built, waiting for 0027) and explains the error before then (D-157)
+- [x] Rank is required in new Membership setups and (0027) at Demo National, so the join page asks for it
 - [x] Board contact emails (built, waiting for 0026): on the Board page, "Contact email" per seat sets a role email or shows the officer's own email, never both; members see it in "Board and who to contact", including vacant seats that have a role email (D-156)
 - [x] Members page for admins covers everyone in the org and every org below it (chapter admins: their chapter), with organization and email, regardless of directory choices; admins no longer get the Directory (D-154)
 - [x] "View as member" preview for admins (UI only; the database still applies their real permissions) (D-155)
@@ -58,7 +62,7 @@ Testing by hand: docs/user-testing.md (updated with every feature). Full plan: d
 - [x] CI: lint, formatting, types, unit tests, database rule tests, build
 
 ## Open — Phase 1
-- [ ] Apply `0026_seat_contacts` (Lovable)
+- [ ] Apply `0026_seat_contacts` and `0027_board_setup_scope_and_demo_rank` (Lovable)
 - [ ] Member overview, next items from docs/plans/member-overview.md: all my memberships in one place, membership history, organization info; decide whether officers' own emails need the officer's consent (today the chapter chooses per seat, D-156)
 - [ ] Members page "everyone" view: chosen member fields (e.g. phone) as columns; export across chapters with each chapter's directory rule applied per row
 - [ ] View as a *specific* member (impersonation with an audit trail): needs a decision and server-side support; the D-155 preview covers the common case

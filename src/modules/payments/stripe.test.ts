@@ -52,13 +52,71 @@ describe("createStripeGateway", () => {
     expect(url).toBe("https://api.stripe.com/v1/checkout/sessions");
     const headers = init!.headers as Record<string, string>;
     expect(headers["Authorization"]).toBe("Bearer rk_test_1234567890abc");
-    expect(headers["Idempotency-Key"]).toBe("checkout-pay_123");
+    expect(headers["Idempotency-Key"]).toMatch(/^checkout-pay_123-[0-9a-f]{24}$/);
     const body = new URLSearchParams(String(init!.body));
     expect(body.get("mode")).toBe("payment");
     expect(body.get("line_items[0][price_data][unit_amount]")).toBe("2500");
     expect(body.get("line_items[0][price_data][currency]")).toBe("usd");
     expect(body.get("metadata[payment_id]")).toBe("pay_123");
     expect(body.get("client_reference_id")).toBe("pay_123");
+    expect(body.get("success_url")).toBe("https://app/done");
+  });
+
+  it("uses a new idempotency key when the return links change (D-158)", async () => {
+    const f = stubFetch(200, { id: "cs_1", url: "https://checkout.stripe.com/c/cs_1" });
+    const gw = createStripeGateway("rk_test_1234567890abc", f);
+    await gw.createCheckout(req);
+    await gw.createCheckout(req);
+    await gw.createCheckout({ ...req, successUrl: "https://public.example/done" });
+    const key = (i: number) =>
+      (f.mock.calls[i]![1]!.headers as Record<string, string>)["Idempotency-Key"];
+    // the same request retried keeps its key (no duplicate sessions) ...
+    expect(key(0)).toBe(key(1));
+    // ... but new return links (e.g. after the localhost fix) don't reuse the cached session
+    expect(key(2)).not.toBe(key(0));
+  });
+
+  it("reads how a checkout ended, as its webhook would report it", async () => {
+    const paid = stubFetch(200, {
+      id: "cs_9",
+      livemode: false,
+      status: "complete",
+      payment_status: "paid",
+      payment_intent: "pi_9",
+      amount_total: 2500,
+      currency: "usd",
+      metadata: { payment_id: "pay_123" },
+    });
+    const gw = createStripeGateway("rk_test_1234567890abc", paid);
+    expect(await gw.checkoutResult!("cs_9")).toEqual({
+      type: "payment.succeeded",
+      eventId: "confirm_cs_9",
+      paymentId: "pay_123",
+      gatewayRef: "pi_9",
+      amount: { amount_minor: 2500, currency: "USD" },
+      livemode: false,
+    });
+    expect(String(paid.mock.calls[0]![0])).toBe("https://api.stripe.com/v1/checkout/sessions/cs_9");
+    const open = stubFetch(200, {
+      id: "cs_8",
+      livemode: false,
+      status: "open",
+      payment_status: "unpaid",
+      metadata: { payment_id: "pay_123" },
+    });
+    expect(
+      (await createStripeGateway("rk_test_1234567890abc", open).checkoutResult!("cs_8")).type,
+    ).toBe("ignored");
+    const expired = stubFetch(200, {
+      id: "cs_7",
+      livemode: false,
+      status: "expired",
+      payment_status: "unpaid",
+      metadata: { payment_id: "pay_123" },
+    });
+    expect(
+      await createStripeGateway("rk_test_1234567890abc", expired).checkoutResult!("cs_7"),
+    ).toMatchObject({ type: "payment.failed", reason: "Checkout expired" });
   });
   it("verifies a key and reports test mode", async () => {
     const gw = createStripeGateway("sk_test_1234567890abc", stubFetch(200, { data: [] }));

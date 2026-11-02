@@ -168,6 +168,7 @@ describe("seat input", () => {
     expect(
       boardErrorMessage("end the current terms where this seat would no longer be used"),
     ).toMatch(/^End the current terms/);
+    expect(boardErrorMessage(`a seat's "used by" can't be changed`)).toMatch(/Board page/);
     expect(boardErrorMessage("boom")).toBe("Couldn't save the change");
   });
 });
