@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Org } from "@/lib/orgs";
 import { PERMISSIONS } from "@/lib/policy";
@@ -16,6 +16,16 @@ const profile = (id: string, org_id: string, name: string, email: string) => ({
 });
 const own = [profile("p1", "nat", "Nadia National", "nadia@test.org")];
 const everyone = [...own, profile("p2", "a", "Alex Austin", "alex@test.org")];
+const rankDef = {
+  id: "rank",
+  org_id: "nat",
+  label: "Rank",
+  data_type: "choice",
+  applies_to: "member",
+  active: true,
+  visibility: "members",
+  attribute_options: [{ id: "o1", value: "e5", label: "E-5", sort_order: 1, active: true }],
+};
 
 // The list query for several orgs uses .in("org_id", …); the org's own list uses .eq.
 function builder(table: string) {
@@ -29,7 +39,16 @@ function builder(table: string) {
   b["then"] = (ok: (v: unknown) => unknown) =>
     ok({
       error: null,
-      data: table === "org_member_profiles" ? (tree ? everyone : own) : [],
+      data:
+        table === "org_member_profiles"
+          ? tree
+            ? everyone
+            : own
+          : table === "attribute_definitions"
+            ? [rankDef]
+            : table === "attribute_values"
+              ? [{ entity_id: "p2", definition_id: "rank", value: "e5" }]
+              : [],
     });
   return b;
 }
@@ -100,7 +119,8 @@ describe("MembersTab for a national (D-154)", () => {
       "Everyone in Nat and below (3 organizations)",
     );
     expect(screen.queryByRole("columnheader", { name: "Roles" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Export CSV" })).not.toBeInTheDocument();
+    // exports work across the tree too, following each org's directory rule (A7)
+    expect(screen.getByRole("button", { name: "Export CSV" })).toBeInTheDocument();
   });
 
   it("a chapter admin gets only their chapter (no scope switch)", async () => {
@@ -108,5 +128,17 @@ describe("MembersTab for a national (D-154)", () => {
     expect(await screen.findByText("Nadia National")).toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "Whose members" })).not.toBeInTheDocument();
     expect(screen.queryByRole("columnheader", { name: "Organization" })).not.toBeInTheDocument();
+  });
+
+  it("shows chosen member fields as columns, remembered in the browser (A7)", async () => {
+    localStorage.clear();
+    renderTab(nat, [nat, austin, dallas]);
+    await screen.findByText("Alex Austin");
+    fireEvent.click(screen.getByRole("button", { name: "Columns" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Rank" }));
+    expect(screen.getByRole("columnheader", { name: "Rank" })).toBeInTheDocument();
+    const row = screen.getByText("Alex Austin").closest("tr")!;
+    expect(within(row).getByText("E-5")).toBeInTheDocument();
+    expect(localStorage.getItem("opencharter.member-columns.nat")).toBe('["rank"]');
   });
 });

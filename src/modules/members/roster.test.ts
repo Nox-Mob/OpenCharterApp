@@ -213,3 +213,25 @@ describe("privacy in exports (D-139)", () => {
     expect(ids({ includeOptedOut: true, overrideAllowed: false })).toEqual(["1", "3"]);
   });
 });
+
+describe("exports across a national's tree (A7)", () => {
+  it("each row follows its own org's directory default and export rule", async () => {
+    const { exportableTreeRows } = await import("./roster");
+    const rows = [
+      { id: "1", org_id: "nat", directory_listed: null },
+      { id: "2", org_id: "a", directory_listed: null },
+      { id: "3", org_id: "a", directory_listed: false },
+      { id: "4", org_id: "b", directory_listed: false },
+    ];
+    const rules = (o: string | undefined) =>
+      o === "a"
+        ? { listedByDefault: false, adminOverrideAllowed: true }
+        : o === "b"
+          ? { listedByDefault: true, adminOverrideAllowed: false }
+          : { listedByDefault: true, adminOverrideAllowed: true };
+    expect(exportableTreeRows(rows, rules, false).map((r) => r.id)).toEqual(["1"]);
+    // including opted-out members: allowed for a's members, not b's
+    expect(exportableTreeRows(rows, rules, true).map((r) => r.id)).toEqual(["1", "2", "3"]);
+  });
+});
+

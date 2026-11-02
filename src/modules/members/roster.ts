@@ -159,6 +159,25 @@ export function exportableRows<T extends Pick<MemberRow, "directory_listed">>(
   return rows.filter((r) => isListed(r, opts.orgDefault));
 }
 
+/**
+ * Rows an export across several orgs may contain (A7, D-179): each row follows its own org's
+ * directory default, and opted-out members are included only when the exporter chose to and that
+ * org's parent allows it (privacy.admin_override_allowed, resolved per org).
+ */
+export function exportableTreeRows<T extends Pick<MemberRow, "directory_listed" | "org_id">>(
+  rows: readonly T[],
+  rulesFor: (orgId: string | undefined) => {
+    listedByDefault: boolean;
+    adminOverrideAllowed: boolean;
+  },
+  includeOptedOut: boolean,
+): T[] {
+  return rows.filter((r) => {
+    const rules = rulesFor(r.org_id);
+    return isListed(r, rules.listedByDefault) || (includeOptedOut && rules.adminOverrideAllowed);
+  });
+}
+
 // ----- CSV export -----
 
 export type ExportColumn = { key: string; label: string; value: (r: RosterRow) => string };

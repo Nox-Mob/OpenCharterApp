@@ -225,6 +225,13 @@
       "when": 1793639618976,
       "tag": "0031_confirm_0029_0030_applied",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793643218976,
+      "tag": "0032_levels_standing_pricing_setup",
+      "breakpoints": true
     }
   ]
 }

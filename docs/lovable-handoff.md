@@ -2,7 +2,13 @@
 
 Status on 2026-11-02.
 
-**Nothing waiting.** Migrations `0000`–`0031` are applied (your `0031` confirms `0029`–`0030`), the types are regenerated, and the `GATEWAY_ENCRYPTION_KEY` secret is set. Thank you. A record is at the end. New migrations from the MVP plan (`docs/plans/wave-a-mvp.md`, Sprint 2: A4 suggested levels) will be listed here with their checks.
+**Done:** migrations `0000`–`0031` are applied, the types are regenerated, and the `GATEWAY_ENCRYPTION_KEY` secret is set. Thank you. A record is at the end.
+
+**Waiting** (Sprints 2–3 of the MVP plan), on branch `BoardUpdates`, tested against Postgres 16 (`db/tests/9M_levels_standing_pricing.sql`); applies inside one transaction:
+
+| File | What it adds | Check it worked (SQL editor) |
+|---|---|---|
+| `0032_levels_standing_pricing_setup.sql` | Columns `membership_tiers.suggested`, `source_tier_id`, `link_mode`, `price_rule`, `price_value` and `tier_terms.source_term_id`; functions `chapter_national_standing`, `linked_price`, `sync_linked_level`, `adopt_suggested_level`, `set_linked_level_price`, `make_level_own`; triggers that keep linked levels in step and guard links; a new version of `apply_setup` (same signature) with a `pricing_rules` section, and `apply_setup_sections()` listing it | `select 'pricing_rules' = any(public.apply_setup_sections());` returns `true` |
 
 ## 1. When a migration is waiting
 - Apply them strictly in order. They're additive only (D-125, checked in CI by `bun run check:migrations`).

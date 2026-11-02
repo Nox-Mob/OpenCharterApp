@@ -99,6 +99,24 @@ export const FEATURES = {
     },
     applied: true,
   },
+  national_standing: {
+    migration: "0032_levels_standing_pricing_setup",
+    label: "National standing for chapters",
+    rpc: "chapter_national_standing",
+    args: { _chapter: "00000000-0000-0000-0000-000000000000" },
+  },
+  suggested_levels: {
+    migration: "0032_levels_standing_pricing_setup",
+    label: "Suggested levels",
+    rpc: "make_level_own",
+    args: { _tier: "00000000-0000-0000-0000-000000000000" },
+  },
+  setup_pricing: {
+    migration: "0032_levels_standing_pricing_setup",
+    label: "Pricing step in Membership setup",
+    rpc: "chapter_national_standing",
+    args: { _chapter: "00000000-0000-0000-0000-000000000000" },
+  },
   exports: {
     migration: "0011_member_exports",
     label: "Member exports and saved views",

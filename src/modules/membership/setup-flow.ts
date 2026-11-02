@@ -1,3 +1,4 @@
+import type { Condition } from "@/engines/rules";
 import { forSubject, type AttributeInput, type AttributeSubject } from "@/engines/attributes";
 import { describeTier, formatPrice, type Tier } from "./tiers";
 import type { Answers, Flow, FlowContext } from "@/engines/setup";
@@ -26,11 +27,22 @@ export type TierPlan = {
     currency: string;
   }[];
 };
+/** A pricing rule in Membership setup (A6, D-177), by level and term key; matched by label. */
+export type PricingRuleAnswer = {
+  tier_key: string;
+  term_key: string;
+  label: string;
+  conditions: Condition[];
+  price_minor: number | null;
+  discount_pct: number | null;
+};
+
 export type MembershipPlan = {
   tax: { legal_name: string; ein: string; tax_status: string };
   attributes: (AttributeInput & { applies_to: AttributeSubject })[];
   settings: { key: string; value: unknown; mode: "override" | "locked" }[];
   tiers?: TierPlan[];
+  pricing_rules?: (PricingRuleAnswer & { sort_order: number })[];
 };
 
 export type ChapterAcceptance = "auto" | "review" | "chapter";
@@ -47,6 +59,7 @@ const CHAPTER_ACCEPTANCE_SUMMARY: Record<ChapterAcceptance, string> = {
 
 const isParent = (ctx: FlowContext) => ctx.orgType === "national" || ctx.orgType === "region";
 const ownsLevels = (ctx: FlowContext) => ctx.childLevelsAllowed !== false;
+const pricingStep = (ctx: FlowContext) => ownsLevels(ctx) && ctx.setupPricing === true;
 const twoLevel = (ctx: FlowContext) => isParent(ctx) && ctx.twoLevelDues === true;
 const chaptersCharge = (a: Answers) => a["child_levels_allowed"] !== false;
 /** Dollars typed in setup → cents stored in settings (0 = no limit). */
@@ -120,6 +133,14 @@ export const membershipFlow: Flow<MembershipPlan> = {
         "The levels people can join at, how long each membership lasts, and what it costs. You can change these later.",
       when: (_a, ctx) => ownsLevels(ctx),
       questions: [{ id: "tiers", type: "tiers", label: "Membership levels" }],
+    },
+    {
+      id: "pricing",
+      title: "Prices by member fields",
+      description:
+        "Optional: charge some members a different price, for example by rank or for veterans. The first matching rule sets the price; everyone else pays the term's price.",
+      when: (_a, ctx) => pricingStep(ctx),
+      questions: [{ id: "pricing_rules", type: "pricing_rules", label: "Pricing rules" }],
     },
     {
       id: "joining",
@@ -212,6 +233,7 @@ export const membershipFlow: Flow<MembershipPlan> = {
     attributes: [],
     chapter_attributes: [],
     tiers: [],
+    pricing_rules: [],
     child_levels_allowed: true,
     approval_required: false,
     grace_days: 30,
@@ -249,6 +271,12 @@ export const membershipFlow: Flow<MembershipPlan> = {
     if (ownsLevels(ctx)) {
       const tiers = (a["tiers"] as Tier[] | undefined) ?? [];
       lines.push(...(tiers.length ? tiers.map(describeTier) : ["No membership levels yet"]));
+      if (pricingStep(ctx)) {
+        const n = pricingPlan((a["pricing_rules"] as PricingRuleAnswer[]) ?? [], a).length;
+        lines.push(
+          n ? `${n} pricing rule${n === 1 ? "" : "s"} by member fields` : "No pricing rules",
+        );
+      }
     } else {
       lines.push("Membership levels come from your parent organization");
     }
@@ -373,9 +401,30 @@ export const membershipFlow: Flow<MembershipPlan> = {
       ...(ownsLevels(ctx)
         ? { tiers: ((a["tiers"] as Tier[] | undefined) ?? []).map(toTierPlan) }
         : {}),
+      ...(pricingStep(ctx)
+        ? { pricing_rules: pricingPlan((a["pricing_rules"] as PricingRuleAnswer[]) ?? [], a) }
+        : {}),
     };
   },
 };
+
+/** Rules for terms that are still in the plan, numbered in order within each term. */
+export function pricingPlan(rules: readonly PricingRuleAnswer[], a: Answers) {
+  const terms = new Set(
+    ((a["tiers"] as Tier[] | undefined) ?? []).flatMap((t) =>
+      t.terms.filter((x) => x.active !== false).map((x) => `${t.key}/${x.key}`),
+    ),
+  );
+  const seen = new Map<string, number>();
+  return rules
+    .filter((r) => terms.has(`${r.tier_key}/${r.term_key}`) && r.label.trim())
+    .map((r) => {
+      const k = `${r.tier_key}/${r.term_key}`;
+      const n = (seen.get(k) ?? 0) + 1;
+      seen.set(k, n);
+      return { ...r, label: r.label.trim(), sort_order: n };
+    });
+}
 
 function toTierPlan(t: Tier): TierPlan {
   return {

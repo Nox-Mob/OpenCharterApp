@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,8 @@ import { StandingBadge } from "@/components/membership/standing-badge";
 import { AddMemberDialog } from "@/components/membership/add-member-dialog";
 import { useFeatureReady } from "@/lib/db/readiness";
 import { homeChapterInfoQuery } from "@/modules/membership/home-chapter";
+import { chapterNationalStandingQuery } from "@/modules/membership/national-standing";
+import { joinRequirementsQuery } from "@/modules/membership/joining";
 import { declineApplication } from "@/modules/payments/payments.functions";
 import { MemberDetailsDialog } from "./member-details-dialog";
 import { RosterToolbar } from "@/components/members/roster-toolbar";
@@ -39,6 +41,8 @@ import { privacyRulesQuery } from "@/modules/members/privacy";
 import {
   EMPTY_FILTER,
   exportableRows,
+  exportableTreeRows,
+  fieldText,
   isListed,
   exportColumns,
   filterRoster,
@@ -167,6 +171,19 @@ export function MembersTab({
   const subtreeIds = subtree.map((o) => o.id);
   const hasBelow = subtree.length > 1 && !homeModel;
   const showChapter = homeModel && org.type === "national";
+  // A5 (D-178): a chapter whose national requires its own membership sees each member's national
+  // standing (separate model only; in the home-chapter model standing is already national's).
+  const standingReady = useFeatureReady("national_standing") === true;
+  const req = useQuery({
+    ...joinRequirementsQuery(org.id),
+    enabled: !!org.parent_id && !homeModel,
+  });
+  const showNational =
+    standingReady && !!org.parent_id && !homeModel && !!req.data?.national_required;
+  const nationalStanding = useQuery({
+    ...chapterNationalStandingQuery(org.id),
+    enabled: showNational,
+  });
   const chapterName = new Map((homeInfo.data?.chapters ?? []).map((c) => [c.id, c.name]));
   const [scope, setScope] = useState<"tree" | "org">(hasBelow ? "tree" : "org");
   const isTree = hasBelow && scope === "tree";
@@ -218,15 +235,32 @@ export function MembersTab({
         ]),
     ).values(),
   ];
-  // Exports follow each org's own directory rule (D-139), so they run on one org's list.
-  const canExport = !isTree && exportsReady && hasPermission(grants, "members.export", org);
-  // Members who opted out of the directory stay out of exports unless included (D-139).
+  const canExport = exportsReady && hasPermission(grants, "members.export", org);
+  // Members who opted out of the directory stay out of exports unless included (D-139). Across
+  // the tree each row follows its own org's directory default and export rule (A7, D-179).
   const listedByDefault = privacy.data?.listedByDefault ?? true;
   const overrideAllowed = privacy.data?.adminOverrideAllowed ?? true;
-  const optedOut = directoryReady ? visible.filter((r) => !isListed(r, listedByDefault)).length : 0;
-  const toExport = directoryReady
-    ? exportableRows(visible, { orgDefault: listedByDefault, includeOptedOut, overrideAllowed })
-    : visible;
+  const treePrivacy = useQueries({
+    queries: subtree.map((o) => ({
+      ...privacyRulesQuery(o.id, o.ancestor_ids),
+      enabled: isTree && directoryReady,
+    })),
+  });
+  const rulesFor = (id: string | undefined) => {
+    const i = subtree.findIndex((o) => o.id === (id ?? orgId));
+    return treePrivacy[i]?.data ?? { listedByDefault: true, adminOverrideAllowed: true };
+  };
+  const listedHere = (m: { directory_listed?: boolean | null; org_id?: string }) =>
+    isTree ? isListed(m, rulesFor(m.org_id).listedByDefault) : isListed(m, listedByDefault);
+  const optedOut = directoryReady ? visible.filter((r) => !listedHere(r)).length : 0;
+  const toExport = !directoryReady
+    ? visible
+    : isTree
+      ? exportableTreeRows(visible, rulesFor, includeOptedOut)
+      : exportableRows(visible, { orgDefault: listedByDefault, includeOptedOut, overrideAllowed });
+  // Member fields shown as extra columns (A7), remembered per viewer in this browser.
+  const [extraCols, setExtraCols] = useStoredColumns(orgId);
+  const shownFields = rosterFields.filter((f) => extraCols.includes(f.id));
 
   async function exportCsv() {
     const columns = exportColumns(
@@ -237,13 +271,23 @@ export function MembersTab({
       (c) =>
         ready || !["standing", "level", "term", "member_since", "paid_through"].includes(c.key),
     );
+    if (isTree)
+      columns.splice(2, 0, {
+        key: "organization",
+        label: "Organization",
+        value: (r) => orgName.get(r.org_id ?? orgId) ?? "",
+      });
     try {
       // Audited first (D-138); no log, no file.
       await logExport(
         orgId,
         toExport.length,
         columns.map((c) => c.label),
-        { ...filter, include_opted_out: includeOptedOut && overrideAllowed },
+        {
+          ...filter,
+          include_opted_out: includeOptedOut && (isTree || overrideAllowed),
+          ...(isTree ? { scope: "tree" } : {}),
+        },
       );
     } catch {
       return void toast.error("Couldn't export: you may not have permission to export members");
@@ -440,8 +484,12 @@ export function MembersTab({
           {isTree && (
             <p className="mt-2 text-xs text-muted-foreground">
               Showing every organization below {org.name}. Open a member&apos;s organization to
-              manage them, or switch to &ldquo;Only {org.name}&rdquo; to change roles or export.
+              manage them, or switch to &ldquo;Only {org.name}&rdquo; to change roles. Exports
+              follow each organization&apos;s directory rules.
             </p>
+          )}
+          {rosterFields.length > 0 && (
+            <ColumnPicker fields={rosterFields} chosen={extraCols} onChange={setExtraCols} />
           )}
         </div>
         <Table>
@@ -451,9 +499,13 @@ export function MembersTab({
               <TableHead>Email</TableHead>
               {isTree && <TableHead>Organization</TableHead>}
               {showChapter && <TableHead>Chapter</TableHead>}
+              {shownFields.map((f) => (
+                <TableHead key={f.id}>{f.label}</TableHead>
+              ))}
               {ready && (
                 <>
                   <TableHead>Standing</TableHead>
+                  {showNational && <TableHead>{req.data!.national.name}</TableHead>}
                   <TableHead>Level</TableHead>
                   <TableHead>Expires</TableHead>
                 </>
@@ -473,7 +525,7 @@ export function MembersTab({
                       No login
                     </Badge>
                   )}
-                  {directoryReady && isOwn(m) && !isListed(m, listedByDefault) && (
+                  {directoryReady && !listedHere(m) && (
                     <Badge variant="outline" className="ml-2">
                       Not in directory
                     </Badge>
@@ -488,11 +540,21 @@ export function MembersTab({
                       "—"}
                   </TableCell>
                 )}
+                {shownFields.map((f) => (
+                  <TableCell key={f.id} className="text-sm">
+                    {fieldText(f, m.values[f.id]) || "—"}
+                  </TableCell>
+                ))}
                 {ready && (
                   <>
                     <TableCell>
                       <StandingBadge standing={m.standing} />
                     </TableCell>
+                    {showNational && (
+                      <TableCell>
+                        <StandingBadge standing={nationalStanding.data?.get(m.id) ?? "none"} />
+                      </TableCell>
+                    )}
                     <TableCell className="text-sm">
                       {m.membership
                         ? `${m.membership.tier_name} · ${m.membership.term_label}`
@@ -644,6 +706,64 @@ export function MembersTab({
           setDetailsId(id);
         }}
       />
+    </div>
+  );
+}
+
+/** Extra member-field columns, remembered per viewer and org in this browser (A7). */
+function useStoredColumns(orgId: string): [string[], (v: string[]) => void] {
+  const key = `opencharter.member-columns.${orgId}`;
+  const [cols, setCols] = useState<string[]>(() => {
+    try {
+      const v = JSON.parse(localStorage.getItem(key) ?? "[]") as unknown;
+      return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+    } catch {
+      return [];
+    }
+  });
+  const save = (v: string[]) => {
+    setCols(v);
+    try {
+      localStorage.setItem(key, JSON.stringify(v));
+    } catch {
+      // private mode: the choice lasts until the page closes
+    }
+  };
+  return [cols, save];
+}
+
+function ColumnPicker({
+  fields,
+  chosen,
+  onChange,
+}: {
+  fields: readonly RosterField[];
+  chosen: readonly string[];
+  onChange: (v: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-2">
+      <Button size="sm" variant="outline" onClick={() => setOpen(!open)} aria-expanded={open}>
+        Columns{chosen.length ? ` (${chosen.length})` : ""}
+      </Button>
+      {open && (
+        <fieldset className="mt-2 flex flex-wrap gap-3 rounded-md border p-3 text-sm">
+          <legend className="sr-only">Member fields to show as columns</legend>
+          {fields.map((f) => (
+            <label key={f.id} className="flex items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={chosen.includes(f.id)}
+                onChange={(e) =>
+                  onChange(e.target.checked ? [...chosen, f.id] : chosen.filter((x) => x !== f.id))
+                }
+              />
+              {f.label}
+            </label>
+          ))}
+        </fieldset>
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { firstValueError, saveAttributeValues } from "@/modules/attributes/value
 import { boardContactsQuery, boardQuery, type BoardContact } from "@/modules/governance/seats";
 import { useFeatureReady } from "@/lib/db/readiness";
 import { graceDaysQuery, myMembershipQuery } from "@/modules/membership/memberships";
+import { joinRequirementsQuery } from "@/modules/membership/joining";
 import { today } from "@/modules/membership/standing";
 import {
   contactEmailQuery,
@@ -83,6 +84,9 @@ function ActionsNeeded({ org, profileId }: { org: Org; profileId: string }) {
   const values = useQuery(memberValuesQuery(profileId));
   const board = useQuery(boardQuery(org.id));
   const home = useHomeChapter(org);
+  // A5: a chapter whose national requires its own membership (separate model)
+  const req = useQuery({ ...joinRequirementsQuery(org.id), enabled: !!org.parent_id });
+  const national = req.data?.national_required ? req.data : null;
   if (mine.isLoading || grace.isLoading || defs.isLoading || values.isLoading) return null;
   const memberDefs = (defs.data ?? []).filter((d) => d.applies_to === "member" && d.active);
   const actions = memberActions({
@@ -93,6 +97,7 @@ function ActionsNeeded({ org, profileId }: { org: Org; profileId: string }) {
     missingRequired: missingRequiredFields(memberDefs, values.data ?? {}),
     seats: mySeats(board.data ?? [], profileId),
     noChapter: home.applies && home.mine !== null && home.mine.homeOrgId === null,
+    national: national ? { name: national.national.name, state: national.national_state } : null,
   });
   return (
     <section className={card} aria-labelledby="actions-heading">
@@ -111,6 +116,13 @@ function ActionsNeeded({ org, profileId }: { org: Org; profileId: string }) {
                 <Button asChild size="sm" variant="outline">
                   <Link to="/join/$orgSlug" params={{ orgSlug: org.slug }}>
                     Join
+                  </Link>
+                </Button>
+              )}
+              {a.cta === "join_national" && national && (
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/join/$orgSlug" params={{ orgSlug: national.national.slug }}>
+                    Join or renew {national.national.name}
                   </Link>
                 </Button>
               )}

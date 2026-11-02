@@ -58,6 +58,29 @@ describe("member actions", () => {
     ).toEqual(["lapsed"]);
   });
 
+  it("reminds a chapter member that the national membership is needed (A5)", () => {
+    const current = membership({ paid_through: "2027-06-30" });
+    const missing = memberActions({
+      ...base,
+      membership: current,
+      national: { name: "Nat", state: "none" },
+    });
+    expect(missing[0]).toMatchObject({ key: "national", tone: "urgent", cta: "join_national" });
+    expect(missing[0]!.text).toContain("Nat");
+    expect(
+      keys(
+        memberActions({
+          ...base,
+          membership: current,
+          national: { name: "Nat", state: "pending" },
+        }),
+      ),
+    ).toEqual(["national-pending"]);
+    expect(
+      memberActions({ ...base, membership: current, national: { name: "Nat", state: "current" } }),
+    ).toEqual([]);
+  });
+
   it("reminds a national member without a chapter in the home-chapter model (A8)", () => {
     expect(
       keys(

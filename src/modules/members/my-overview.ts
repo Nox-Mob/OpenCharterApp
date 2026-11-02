@@ -117,7 +117,7 @@ export type MemberAction = {
   tone: ActionTone;
   text: string;
   /** What the button does, if there is one. */
-  cta?: "join" | "renew" | "profile" | "chapter";
+  cta?: "join" | "renew" | "profile" | "chapter" | "join_national";
 };
 
 /** How many days before the end of a term "renew soon" appears. */
@@ -137,6 +137,8 @@ export function memberActions(input: {
   seats: readonly MySeat[];
   /** Home-chapter model (A8): a national member who hasn't picked a chapter yet. */
   noChapter?: boolean;
+  /** Separate model with national dues required (A5): the member's national membership. */
+  national?: { name: string; state: "current" | "pending" | "none" } | null;
 }): MemberAction[] {
   const { membership: m, graceDays, on } = input;
   const out: MemberAction[] = [];
@@ -182,6 +184,19 @@ export function memberActions(input: {
         cta: "renew",
       });
   }
+  if (input.national && input.national.state === "none")
+    out.push({
+      key: "national",
+      tone: "urgent",
+      text: `Membership here also needs a current membership of ${input.national.name}. Yours is missing or has lapsed.`,
+      cta: "join_national",
+    });
+  else if (input.national && input.national.state === "pending")
+    out.push({
+      key: "national-pending",
+      tone: "info",
+      text: `Your ${input.national.name} membership is waiting for approval.`,
+    });
   if (input.noChapter && m && (m.status === "active" || m.status === "pending"))
     out.push({
       key: "chapter",
