@@ -53,6 +53,7 @@ Current coverage:
 | `98_exports` | Exports audited with the exporter, row count and columns, permission and sibling checks, saved views (managers save, viewers read, isolation) |
 | `99_privacy` | Directory shows only current, listed members with directory fields members may see; opting out / in / back to default; org default; outsiders and siblings refused; including opted-out members in exports needs the parent's permission |
 | `9B_board` | Seats a national defines apply to its chapters, chapters add their own only when allowed, each chapter's own term with by-law history (append-only, term in force on the start date, "apply to current officers" logged), seat counts, good standing, the seat's role granted and revoked without touching a role held by hand, no escalation, history can't be changed or deleted, custom titles and the parent's rule, isolation |
+| `9C_smoke_purge` | Only a demo-national admin may purge, and only in the demo orgs; the purge removes what a run created (payments with their receipts, memberships, seats, levels, profiles, roles) and keeps older demo data, other orgs and older audit entries; it records one summary audit event with the counts |
 | `9A_receipts` | Receipt issued for each paid payment and frozen, numbering per org and year with no gaps, can't be changed or deleted, payer and admin access, void / issue again / reissue versions, partial and full refunds |
 | `90_tiers` | Membership levels and terms: isolation, term rules, parent control, retire not delete (deletes remove nothing), identity columns can't change |
 
@@ -62,7 +63,8 @@ Migrations are tested here before Lovable applies them to the live database. Unt
 
 - Types for them go in `src/lib/db/pending-schema.ts`, not the generated `types.ts`. Use the `db` client from there.
 - Screens that need them sit behind the readiness guard (`src/lib/db/readiness.ts`, `<RequiresDatabase>`). Add a feature entry with the migration name and a probe table or function.
-- Add the migration to "Pending migrations for Lovable" in `/roadmap.md`. Once applied, remove its section from `pending-schema.ts` and mark it applied.
+- Add the migration to "Pending migrations for Lovable" in `/roadmap.md`. Once applied (and `types.ts` regenerated), remove its section from `pending-schema.ts`, mark its readiness feature `applied: true` (no more probing), and mark the roadmap row applied.
+- With the generated types, every SQL argument without a default is required. Send `null` explicitly (never leave the argument out): PostgREST matches functions by argument names, so a missing one fails with PGRST202.
 
 ## Adding a test
 

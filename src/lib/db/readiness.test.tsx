@@ -9,7 +9,7 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
-import { featureReadyQuery, isMissingSchemaError } from "./readiness";
+import { featureReadyQuery, isMissingSchemaError, probeReady } from "./readiness";
 import { RequiresDatabase } from "@/components/db/requires-database";
 
 describe("isMissingSchemaError", () => {
@@ -30,8 +30,8 @@ describe("isMissingSchemaError", () => {
   });
 });
 
-describe("featureReadyQuery", () => {
-  const run = () => featureReadyQuery("memberships").queryFn!({} as never);
+describe("probeReady", () => {
+  const run = () => probeReady({ table: "some_new_table" });
   it("is not ready when the probe table is missing", async () => {
     probeError = { code: "PGRST205" };
     expect(await run()).toBe(false);
@@ -41,6 +41,15 @@ describe("featureReadyQuery", () => {
     expect(await run()).toBe(true);
     probeError = { code: "42501" };
     expect(await run()).toBe(true);
+  });
+});
+
+describe("featureReadyQuery", () => {
+  it("skips the probe for applied migrations", async () => {
+    probeError = { code: "PGRST205" };
+    const q = featureReadyQuery("memberships");
+    expect(q.initialData).toBe(true);
+    expect(await q.queryFn!({} as never)).toBe(true);
   });
 });
 

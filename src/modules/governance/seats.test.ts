@@ -1,4 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+const { rpc } = vi.hoisted(() => ({
+  rpc: vi.fn(async (..._args: unknown[]) => ({ data: null, error: null })),
+}));
+vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc } }));
+
 import {
   boardErrorMessage,
   openSeats,
@@ -7,6 +13,8 @@ import {
   seatInputSchema,
   seatKey,
   seatTermLabel,
+  setSeatTerm,
+  updateSeat,
   termSummary,
   vacantRequired,
   type Seat,
@@ -139,5 +147,39 @@ describe("seat input", () => {
       "Officers must be members in good standing",
     );
     expect(boardErrorMessage("boom")).toBe("Couldn't save the change");
+  });
+});
+
+describe("writes send every argument the SQL function has", () => {
+  // update_seat / set_seat_term have no SQL defaults: leaving an argument out makes PostgREST
+  // look for a different function and fail, so "no role" / "no fixed term" are sent as null.
+  it("update_seat with no role and no fixed term", async () => {
+    await updateSeat("t1", {
+      title: "Chaplain",
+      description: "",
+      required: false,
+      seat_count: 1,
+      term: null,
+      role_id: null,
+      scope: "self",
+      sort_order: 0,
+    });
+    expect(rpc).toHaveBeenLastCalledWith(
+      "update_seat",
+      expect.objectContaining({ _term_count: null, _term_unit: null, _role: null }),
+    );
+  });
+
+  it("set_seat_term with no fixed term", async () => {
+    await setSeatTerm("a", "t1", {
+      term: null,
+      effective_from: "2026-01-01",
+      bylaw_reference: "",
+      note: "",
+    });
+    expect(rpc).toHaveBeenLastCalledWith(
+      "set_seat_term",
+      expect.objectContaining({ _count: null, _unit: null, _effective_from: "2026-01-01" }),
+    );
   });
 });

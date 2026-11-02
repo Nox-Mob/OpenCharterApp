@@ -129,6 +129,7 @@ Use a private browser window for a second account at the same time. Test only in
 8. Past officers lists the ended term with the reason.
 
 **Also try:** as **National**, turn off "Chapters may rename the board seats you define" in Settings, then try "Rename here" in Austin.
+Also: edit a seat and set "No role" and a suggested term of "No fixed term"; and "Change term" to "No fixed term". Both should save (fixed 2026-11-02).
 
 ## 15. Audit log
 **Where:** Audit log tab.

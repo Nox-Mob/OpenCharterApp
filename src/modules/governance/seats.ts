@@ -84,8 +84,10 @@ export const boardQuery = (orgId: string) =>
     queryFn: async (): Promise<Seat[]> => {
       const { data, error } = await db.rpc("org_board", { _org: orgId });
       if (error) throw error;
-      return (data ?? []).map(({ term_count, term_unit, holders, ...s }) => ({
+      return (data ?? []).map(({ term_count, term_unit, holders, term_source, scope, ...s }) => ({
         ...s,
+        scope: scope as SeatScope,
+        term_source: term_source === "org" ? "org" : "default",
         term: term(term_count, term_unit),
         holders: (holders ?? []) as unknown as Holder[],
       }));
@@ -223,6 +225,12 @@ export const termInputSchema = z.object({
 });
 export type TermInput = z.infer<typeof termInputSchema>;
 
+/**
+ * SQL null for an argument the generated types mark as required. update_seat and set_seat_term
+ * take no defaults for these, so they must always be sent (an omitted argument makes PostgREST
+ * look for a function with fewer parameters and fail).
+ */
+const sqlNull = <T>(v: T | null): T => v as T;
 const termArgs = (t: SeatTerm) => (t ? { _term_count: t.count, _term_unit: t.unit } : {});
 
 export async function defineSeat(orgId: string, input: SeatInput) {
@@ -251,8 +259,9 @@ export async function updateSeat(templateId: string, input: SeatInput) {
     _description: v.description,
     _required: v.required,
     _seat_count: v.seat_count,
-    ...termArgs(v.term),
-    ...(v.role_id ? { _role: v.role_id } : {}),
+    _term_count: sqlNull(v.term?.count ?? null),
+    _term_unit: sqlNull(v.term?.unit ?? null),
+    _role: sqlNull(v.role_id),
     _sort_order: v.sort_order,
   });
   if (error) throw error;
@@ -277,7 +286,8 @@ export async function setSeatTerm(orgId: string, templateId: string, input: Term
   const { error } = await db.rpc("set_seat_term", {
     _org: orgId,
     _template: templateId,
-    ...(v.term ? { _count: v.term.count, _unit: v.term.unit } : {}),
+    _count: sqlNull(v.term?.count ?? null),
+    _unit: sqlNull(v.term?.unit ?? null),
     _effective_from: v.effective_from,
     _bylaw_reference: v.bylaw_reference,
     _note: v.note,
