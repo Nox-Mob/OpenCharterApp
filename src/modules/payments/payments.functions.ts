@@ -23,7 +23,7 @@ const appOrigin = () => {
  */
 export const connectStripe = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => stripeConnectSchema.parse(input))
+  .validator((input: unknown) => stripeConnectSchema.parse(input))
   .handler(async ({ data, context }) => {
     const key = process.env["GATEWAY_ENCRYPTION_KEY"];
     if (!key)
@@ -59,7 +59,7 @@ const startCheckoutSchema = z.object({ paymentId: z.string().uuid() });
  */
 export const startCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => startCheckoutSchema.parse(input))
+  .validator((input: unknown) => startCheckoutSchema.parse(input))
   .handler(async ({ data, context }) => {
     const client = context.supabase as unknown as SupabaseClient<FullDatabase>;
     const { data: pay, error } = await client
@@ -109,7 +109,7 @@ const declineSchema = z.object({
  */
 export const declineApplication = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => declineSchema.parse(input))
+  .validator((input: unknown) => declineSchema.parse(input))
   .handler(async ({ data, context }) => {
     const client = context.supabase as unknown as SupabaseClient<FullDatabase>;
     const { data: result, error } = await client.rpc("decline_application", {
@@ -152,7 +152,7 @@ const confirmSchema = z.object({ paymentId: z.string().uuid() });
  */
 export const confirmCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => confirmSchema.parse(input))
+  .validator((input: unknown) => confirmSchema.parse(input))
   .handler(async ({ data, context }) => {
     const client = context.supabase as unknown as SupabaseClient<FullDatabase>;
     const { data: pay, error } = await client

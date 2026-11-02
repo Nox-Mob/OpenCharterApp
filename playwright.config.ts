@@ -9,6 +9,9 @@ import { defineConfig, devices } from "@playwright/test";
 const PORT = Number(process.env["E2E_PORT"] ?? 4310);
 const external = process.env["E2E_BASE_URL"] || undefined;
 const proxy = process.env["HTTPS_PROXY"] ?? process.env["https_proxy"];
+// Playwright is pinned to 1.64.1 (D-186). Where its own Chromium can't be installed (some
+// sandboxes ship a different build), point E2E_CHROMIUM_PATH at an existing Chromium binary.
+const chromiumPath = process.env["E2E_CHROMIUM_PATH"] || undefined;
 
 export default defineConfig({
   testDir: "e2e",
@@ -22,9 +25,10 @@ export default defineConfig({
     baseURL: external ?? `http://127.0.0.1:${PORT}`,
     trace: "retain-on-failure",
     // Behind an outbound proxy (some sandboxes), send the backend calls through it.
-    ...(proxy
-      ? { launchOptions: { proxy: { server: proxy, bypass: "127.0.0.1,localhost" } } }
-      : {}),
+    launchOptions: {
+      ...(proxy ? { proxy: { server: proxy, bypass: "127.0.0.1,localhost" } } : {}),
+      ...(chromiumPath ? { executablePath: chromiumPath } : {}),
+    },
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   ...(external
