@@ -3,19 +3,14 @@
 Testing by hand: docs/user-testing.md (updated with every feature). Full plan: docs/ (phase IDs map to docs/epic.md). Decisions: docs/decisions.md.
 
 ## Pending migrations for Lovable
-`0000`–`0025` are applied (the `GATEWAY_ENCRYPTION_KEY` secret is set). Apply the ones below in order (Lovable → apply pending migrations); steps and checks are in docs/lovable-handoff.md. Until a migration is applied, the screens that need it show "needs a database update" or simply leave the feature out (D-135).
-
-| Migration | Enables | Status |
-|---|---|---|
-| `0026_seat_contacts` | Board contact emails: per seat, a role email (e.g. president@…) *or* the officer's own email; `set_seat_contact`, `org_board_contacts` for "Board and who to contact" (D-156) | Waiting |
-| `0027_board_setup_scope_and_demo_rank` | Board setup can change an existing seat's "used by" (D-157); demo data: Demo National's Rank field becomes required | Waiting |
+None. `0000`–`0028` are applied (the `GATEWAY_ENCRYPTION_KEY` secret is set); the last batch was `0026_seat_contacts` and `0027_board_setup_scope_and_demo_rank`, confirmed by Lovable's marker `0028` on 2026-11-02. New migrations are listed here until applied; steps and checks are in docs/lovable-handoff.md. Until a migration is applied, the screens that need it show "needs a database update" or leave the feature out (D-135).
 
 ## Done
 ### November 2026
 - [x] Payments return to the app's own address instead of "localhost"; Stripe Checkout gets fresh return links; the return page confirms a Stripe payment directly when the webhook is late or missing (D-158)
-- [x] Board setup can change an existing seat's "used by" (built, waiting for 0027) and explains the error before then (D-157)
-- [x] Rank is required in new Membership setups and (0027) at Demo National, so the join page asks for it
-- [x] Board contact emails (built, waiting for 0026): on the Board page, "Contact email" per seat sets a role email or shows the officer's own email, never both; members see it in "Board and who to contact", including vacant seats that have a role email (D-156)
+- [x] Board setup can change an existing seat's "used by" (0027 applied 2026-11-02) and explains the error before then (D-157)
+- [x] Rank is required in new Membership setups and (0027 applied) at Demo National, so the join page asks for it
+- [x] Board contact emails (0026 applied 2026-11-02): on the Board page, "Contact email" per seat sets a role email or shows the officer's own email, never both; members see it in "Board and who to contact", including vacant seats that have a role email (D-156)
 - [x] Members page for admins covers everyone in the org and every org below it (chapter admins: their chapter), with organization and email, regardless of directory choices; admins no longer get the Directory (D-154)
 - [x] "View as member" preview for admins (UI only; the database still applies their real permissions) (D-155)
 - [x] Member overview: Actions needed, Your profile (view and edit own fields), Your roles and seats, Board and who to contact (D-153)
@@ -61,14 +56,39 @@ Testing by hand: docs/user-testing.md (updated with every feature). Full plan: d
 - [x] E-10: setup engine (steps, conditions, drafts, review with diff, one-transaction apply) + Membership flow v1
 - [x] CI: lint, formatting, types, unit tests, database rule tests, build
 
-## Open — Phase 1
-- [ ] Apply `0026_seat_contacts` and `0027_board_setup_scope_and_demo_rank` (Lovable)
-- [ ] Member overview, next items from docs/plans/member-overview.md: all my memberships in one place, membership history, organization info; decide whether officers' own emails need the officer's consent (today the chapter chooses per seat, D-156)
-- [ ] Members page "everyone" view: chosen member fields (e.g. phone) as columns; export across chapters with each chapter's directory rule applied per row
-- [ ] View as a *specific* member (impersonation with an audit trail): needs a decision and server-side support; the D-155 preview covers the common case
-- [ ] E-19 remaining: a pricing step in guided setup; eligibility and approver rules (E-24, E-31)
-- [ ] E-18 remaining: national standing next to chapter standing on the chapter's Members page; linked renewals; a national-dues reminder in "Actions needed"
-- [ ] Phase 1 follow-ups: receipt wording reviewed by a CPA (R-07); templates and manual receipts (E-36); elections (E-27) and vacancy alerts (E-25)
+## Open (plan: docs/plans/phases-1-3-review.md)
+Phases 1 and 2 meet their exit criteria; Phase 3 doesn't yet. Remaining work, in waves:
+
+**Wave A: Phase 1–2 gaps, no new infrastructure**
+- [ ] A1 Live Stripe test-mode run on a non-demo test org (connect, join, webhook, refund) (E-12)
+- [ ] A2 Playwright end-to-end tests: join → checkout → approval → renewal, Membership setup, Board setup, chapter wizard
+- [ ] A3 Transaction CSV export for one org and a national's tree, audited (D-047; E-12, E-23)
+- [ ] A4 National-suggested level structures for chapters (D-055; E-18) — needs a decision
+- [ ] A5 National standing on the chapter's Members page; national-dues reminder in "Actions needed" (E-18)
+- [ ] A6 Pricing step in Membership setup (E-19)
+- [ ] A7 Members "everyone" view: chosen fields as columns; cross-chapter export with each chapter's directory rule (E-14)
+- [ ] Member overview next items (docs/plans/member-overview.md); view as a specific member (needs a decision)
+
+**Wave B: infrastructure**
+- [ ] B1 Un-defer E-08: jobs, scheduled routes, email, signed-action links (decide Q-05, Q-07)
+- [ ] B2 Lapse job and renewal reminders (E-13)
+
+**Wave C: money**
+- [ ] C1 E-20 postpaid dues (decide Q-15, R-14)
+- [ ] C2 E-21 Stripe Connect mode and the optional national fee (D-049)
+- [ ] C3 E-21 PayPal adapter
+- E-22 custom domains stay deferred until F-11 and a hosting decision
+
+**Wave D: Phase 3**
+- [ ] D1 E-24 approval engine, with board report review as its first consumer
+- [ ] D2 E-25 board reports (types, schedules, submit, review, overdue)
+- [ ] D3 E-25 vacancy alerts and national oversight dashboard
+- [ ] D4 E-26 document repository
+- [ ] D5 E-27 elections
+- [ ] D6 E-28 automation engine
+
+**Other**
+- [ ] Receipt wording reviewed by a CPA (R-07); templates and manual receipts (E-36)
 
 ## Deferred (user decision 2026-10-30: core first, automations later)
 - [ ] E-07: per-org web addresses (subdomain / `/o/$slug`)

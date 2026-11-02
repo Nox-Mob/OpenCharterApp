@@ -284,10 +284,13 @@ flowchart LR
 /src
   /routes              TanStack Start routes (public, portal, admin, api)
   /modules             domain modules, each with its own public interface
-    /organizations /members /dues /governance /elections
-    /documents /awards /payments /receipts /events ...
-  /engines             attributes, rules, setup, approvals, forms,
-                       automation, notifications, audit, payments-core
+                       built: attributes, branding, chapters, demo, governance,
+                       invitations, members, membership (tiers, dues, joining),
+                       payments, receipts, reports, roles, setup
+                       planned: documents, elections, awards, events, ...
+  /engines             built: attributes, payments, rules, settings, setup
+                       planned: approvals, forms, automation, notifications
+  /components          UI by area (org, members, membership, governance, ...)
   /lib                 shared utilities, policy layer, db readiness
 /drizzle/migrations    SQL migrations (schema, RLS policies, RPCs)
 /db/tests              database rule tests

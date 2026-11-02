@@ -99,7 +99,7 @@ Each flow lists the kind of questions it asks. Wording is illustrative.
 - Board report types and schedules, and who reviews them.
 - Vacancy alert thresholds and who gets notified.
 - *Built (Board setup v1, D-143, `src/modules/governance/setup-flow.ts`):*
-  1. **Officer seats:** presets (President, Vice President, Secretary, Treasurer) or custom seats, each with required, number of seats and a suggested term. A national or region picks "every chapter" or "itself" per seat. Skipped when the parent manages seats. Linked roles are set on the Board tab, never by setup.
+  1. **Officer seats:** presets (President, Vice President, Secretary, Treasurer) or custom seats, each with required, number of seats and a suggested term. A national or region picks, per seat, "itself", "every chapter", or "itself and every chapter" (D-151). Running setup again can change that choice, unless a current officer would lose their seat (D-157). Skipped when the parent manages seats. Linked roles are set on the Board tab, never by setup.
   2. **Officer rules:** good standing for officers (a parent can require it of every chapter), and for parents, whether chapters may rename seats or add their own.
   3. **Terms from your by-laws:** this org's own term per seat used here, with the date it takes effect and a by-law reference (D-142). Applying again adds a rule only when it differs from the one in force on that date.
 - Board reports, vacancy alerts and elections come later (E-25, E-27).

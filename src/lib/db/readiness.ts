@@ -79,6 +79,7 @@ export const FEATURES = {
     migration: "0026_seat_contacts",
     label: "Board contact emails",
     table: "seat_contacts",
+    applied: true,
   },
   exports: {
     migration: "0011_member_exports",

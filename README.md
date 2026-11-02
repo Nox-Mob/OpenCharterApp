@@ -35,16 +35,13 @@ Working today:
 - **Permissions:** roles, including custom roles, with permissions that flow down only; an append-only audit log; settings a national can lock for its chapters
 - **Configuration:** guided setup (membership and board), member and chapter fields, membership levels and terms, pricing rules by member fields, two-level (national + chapter) dues, branding and logos
 - **Members and money:** memberships and standing, joining and renewing online (Stripe, or a test gateway in demo orgs), payments recorded by hand, numbered receipts, member lists with filters, saved views and audited exports, a member directory with each member's privacy choice
-- **Governance:** board seats (for one org, its chapters, or both), each org's own terms from its by-laws, appointments that grant and remove the seat's role
+- **Governance:** board seats (for one org, its chapters, or both), each org's own terms from its by-laws, appointments that grant and remove the seat's role, a role email or the officer's own email per seat
 - **The org page:** a left-hand menu (Overview, Members or Directory, Board, Reports, Chapters, Settings)
   - admins see overview numbers and reports (chapter admins for their chapter only), and every member of the orgs they manage
   - members see what they need to do, their profile, their roles and seats, and who to contact
   - admins can preview the page "as a member"
 
-Built and waiting for a database update:
-
-- `0026`: board contact emails, a role email per seat (e.g. president@…) or the officer's own email
-- `0027`: Board setup can change a seat's "used by"; Rank becomes required at Demo National
+Every migration up to `0028` is applied. Phases 1 and 2 meet their exit criteria; what's left in Phases 1–3 and the plan for it are in [`docs/plans/phases-1-3-review.md`](docs/plans/phases-1-3-review.md).
 
 Next: the open items in [`roadmap.md`](roadmap.md).
 

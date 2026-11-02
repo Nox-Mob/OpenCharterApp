@@ -209,9 +209,10 @@ export const boardContactsQuery = (orgId: string) =>
       return (data ?? []).map((r) => ({
         key: `${r.template_id}:${r.seat_number ?? "role"}`,
         title: r.title,
-        name: r.display_name,
-        email: r.email,
-        source: r.email_source,
+        // the generated types widen these; the function returns null / one of three values
+        name: r.display_name as string | null,
+        email: r.email as string | null,
+        source: r.email_source as BoardContact["source"],
       }));
     },
   });
@@ -227,7 +228,7 @@ export async function setSeatContact(orgId: string, templateId: string, roleEmai
   const { error } = await db.rpc("set_seat_contact", {
     _org: orgId,
     _template: templateId,
-    _role_email: email === "" ? null : email,
+    _role_email: sqlNull(email === "" ? null : email),
   });
   if (error) throw error;
 }
