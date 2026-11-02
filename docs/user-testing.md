@@ -63,6 +63,17 @@ Use a private browser window for a second account at the same time. Test only in
 
 **Also try:** run setup a second time and change one answer. Only that change should be listed.
 
+## 6b. Setup hub and Board setup
+**Where:** Overview (cards), then each card's button. Board setup needs migration 0018; until then its card doesn't show.
+1. As **National**, the overview shows **Membership setup**, **Board setup** and **Connect payments**. "Connect payments" opens the Payments tab and says "Done" once test payments are on.
+2. Board setup → **Officer seats**: tick President and Treasurer; set President to "Every chapter", required, 2 years; add "Chaplain" for the national itself.
+3. **Officer rules**: turn off "May chapters add their own seats?".
+4. **Terms from your by-laws**: for Treasurer, tick "set our own term", 3 years, today, "Bylaws Art. II". Review the summary, then "Apply setup".
+5. Board tab: the seats are there with the right terms. Run Board setup again and apply without changes; nothing new appears in each seat's term history.
+6. As **Chapter**, Austin → Board setup: there's no seats step (the national manages seats). Set Austin's own term for President with a by-law reference and apply. Austin's Board tab shows it; Demo Dallas still shows the suggested term.
+
+**Also try:** the browser Back button and a page reload in the middle of a flow (your answers are kept as a draft); a phone-sized window for the seat list.
+
 ## 7. Members, payments recorded by hand, standing
 **Where:** Members tab, member details.
 1. As **National**, "Add member" without an email. Expect "Contact (no login yet)".

@@ -68,5 +68,6 @@ Apply each in order after the ones above. Each is additive and passes the D-125 
 | # | File | What it adds | Check it worked |
 |---|---|---|---|
 | 8 | `0017_purge_audit_summary.sql` | `purge_smoke_data` also writes one summary audit event; restores the `seat_templates` comment | After a smoke run: `select after from public.audit_events where action = 'purge' order by id desc limit 1;` shows the counts |
+| 9 | `0018_setup_governance.sql` | Board setup: `apply_setup` handles `seats` and `seat_terms`; `apply_setup_sections()` | `select public.apply_setup_sections();` includes `seats` |
 
-After applying, run `bun run test:smoke` as usual and regenerate the types.
+After applying, run `bun run test:smoke` as usual and regenerate the types. Once 0018 is applied, mark the `board_setup` feature in `src/lib/db/readiness.ts` as `applied: true` (we can do that).

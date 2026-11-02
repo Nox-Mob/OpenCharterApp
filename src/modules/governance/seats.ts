@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 import { db } from "@/lib/db/pending-schema";
+import { resolveFromAncestors, type SettingRow } from "@/engines/settings";
 import { termEndDate, type TermUnit } from "@/modules/membership/tiers";
 
 /**
@@ -143,6 +144,25 @@ export const ownSeatsQuery = (orgId: string) =>
         ...t,
         default_term: term(default_term_count, default_term_unit),
       }));
+    },
+  });
+
+/** Whether this org may add its own seats (parent's governance.chapter_extra_seats_allowed). */
+export const extraSeatsAllowedQuery = (orgId: string, lineage: readonly string[]) =>
+  queryOptions({
+    queryKey: ["extra-seats-allowed", orgId],
+    queryFn: async (): Promise<boolean> => {
+      if (lineage.length === 0) return true;
+      const { data, error } = await db.rpc("lineage_settings", { _org: orgId });
+      if (error) throw error;
+      return (
+        resolveFromAncestors(
+          [...lineage, orgId],
+          (data ?? []) as SettingRow[],
+          "governance.chapter_extra_seats_allowed",
+          true,
+        ) !== false
+      );
     },
   });
 

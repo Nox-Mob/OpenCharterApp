@@ -19,6 +19,7 @@ Apply these in order (Lovable → apply pending migrations). Step-by-step instru
 | `0015_confirm_0008_0014_applied` | Added by Lovable to trigger the apply (a table comment only) | Applied 2026-11-01 |
 | `0016_purge_smoke_data` | Added by Lovable: `purge_smoke_data` cleans up after a live smoke run in the demo orgs (D-150) | Applied 2026-11-01 |
 | `0017_purge_audit_summary` | The purge records one summary audit event with what it removed; restores the `seat_templates` comment | Waiting |
+| `0018_setup_governance` | Board setup: `apply_setup` learns the `seats` and `seat_terms` sections; `apply_setup_sections()` for the readiness check | Waiting |
 
 ## Done
 - [x] E-12: Payments tab to connect Stripe (key checked, sealed, stored privately) or the demo test gateway, payments list, webhook route (applied 2026-11-01)
@@ -54,7 +55,8 @@ Apply these in order (Lovable → apply pending migrations). Step-by-step instru
 
 ## Open — Phase 1
 Plan for E-12 / E-13: docs/plans/e12-e13-payments-and-joining.md
-- [ ] Phase 1 follow-ups: a "Connect payments" and a "Board" step in guided setup (needs the setup page to run several flows); receipt wording reviewed by a CPA (R-07); templates and manual receipts (E-36); elections (E-27) and vacancy alerts (E-25)
+- [ ] Setup hub and Board setup (built, waiting for 0018; the Membership and "Connect payments" cards work now): a card per setup flow, `?flow=board`, seats / officer rules / terms from your by-laws (D-143)
+- [ ] Phase 1 follow-ups: receipt wording reviewed by a CPA (R-07); templates and manual receipts (E-36); elections (E-27) and vacancy alerts (E-25)
 
 ## Deferred (user decision 2026-10-30: core first, automations later)
 - [ ] E-07: per-org web addresses (subdomain / `/o/$slug`)

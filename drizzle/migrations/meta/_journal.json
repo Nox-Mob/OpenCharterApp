@@ -127,6 +127,13 @@
       "when": 1793580000001,
       "tag": "0017_purge_audit_summary",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793583600001,
+      "tag": "0018_setup_governance",
+      "breakpoints": true
     }
   ]
 }

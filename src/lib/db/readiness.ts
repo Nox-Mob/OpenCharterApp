@@ -34,6 +34,12 @@ export const FEATURES = {
     table: "seat_templates",
     applied: true,
   },
+  board_setup: {
+    migration: "0018_setup_governance",
+    label: "Board setup",
+    rpc: "apply_setup_sections",
+    args: {},
+  },
   exports: {
     migration: "0011_member_exports",
     label: "Member exports and saved views",

@@ -89,6 +89,7 @@ Each flow lists the kind of questions it asks. Wording is illustrative.
 - Connect Stripe and/or PayPal. *National:* use Stripe Connect (automatic fee) or let each org connect directly (fee by invoice)?
 - Optional: charge chapters a fee? Percentage or fixed, and which transaction types.
 - Receipt template basics (header, signature, footer) and who receives receipt copies.
+- *Built:* the overview's "Connect payments" card shows whether a gateway is connected and opens the Payments tab (`?tab=payments`). Keys are sealed on the server, so connecting can't go through `apply_setup`.
 
 ### 6.5 Governance
 - *National:* define board seat templates. For each: canonical role, default title, required or optional, seat count, term length, linked permissions.
@@ -96,6 +97,14 @@ Each flow lists the kind of questions it asks. Wording is illustrative.
 - Must officers be in good standing? (Default yes.)
 - Board report types and schedules, and who reviews them.
 - Vacancy alert thresholds and who gets notified.
+- *Built (Board setup v1, D-143, `src/modules/governance/setup-flow.ts`):*
+  1. **Officer seats:** presets (President, Vice President, Secretary, Treasurer) or custom seats, each with required, number of seats and a suggested term. A national or region picks "every chapter" or "itself" per seat. Skipped when the parent manages seats. Linked roles are set on the Board tab, never by setup.
+  2. **Officer rules:** good standing for officers (a parent can require it of every chapter), and for parents, whether chapters may rename seats or add their own.
+  3. **Terms from your by-laws:** this org's own term per seat used here, with the date it takes effect and a by-law reference (D-142). Applying again adds a rule only when it differs from the one in force on that date.
+- Board reports, vacancy alerts and elections come later (E-25, E-27).
+
+### Running several flows (setup hub)
+The overview shows a card per flow from `src/modules/setup/flows.ts` (Membership setup, Board setup) and a "Connect payments" card. Each flow opens at `/orgs/<id>/setup?flow=<id>` (no flow = Membership setup, so older links still work). Every flow runs in the same wizard (`src/components/setup/flow-wizard.tsx`), keeps its own draft and status in `setup_states`, and applies through `apply_setup` in one transaction. A flow whose migration isn't applied yet doesn't show (readiness guard, D-135).
 
 ### 6.6 Elections
 - Who is eligible to vote and to run (membership status, minimum membership length, cutoff date logic)?

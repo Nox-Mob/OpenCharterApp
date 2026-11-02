@@ -41,7 +41,11 @@ type QuestionBody =
       /** What the fields describe; defaults to members. */
       subject?: "member" | "chapter";
     }
-  | { id: string; type: "tiers"; label: string; help?: string };
+  | { id: string; type: "tiers"; label: string; help?: string }
+  /** Board seats this org defines (governance flow). */
+  | { id: string; type: "seats"; label: string; help?: string }
+  /** This org's own term per seat, from its by-laws (governance flow, D-142). */
+  | { id: string; type: "seat_terms"; label: string; help?: string };
 
 /** A question; `when` hides it (and drops its answer) based on earlier answers or the org. */
 export type Question = QuestionBody & { when?: (a: Answers, ctx: FlowContext) => boolean };
@@ -53,6 +57,18 @@ export type FlowContext = {
   childLevelsAllowed?: boolean;
   /** Set when a parent org decides how this org's new members are accepted (D-130). */
   parentApproval?: "auto" | "review";
+  /** Board setup: what applies at this org (from org_board and the parent's rules). */
+  board?: {
+    /** False when a parent turned off governance.chapter_extra_seats_allowed. */
+    extraSeatsAllowed: boolean;
+    /** Seats from parent orgs that apply here. */
+    inherited: readonly {
+      owner_org_id: string;
+      key: string;
+      title: string;
+      term: { count: number; unit: "day" | "month" | "year" } | null;
+    }[];
+  };
 };
 
 export type Step = {
@@ -73,6 +89,8 @@ export type Flow<P> = {
   defaults: (ctx: FlowContext) => Answers;
   summarize: (a: Answers, ctx: FlowContext) => string[];
   plan: (a: Answers, ctx: FlowContext) => P;
+  /** Checks answers the generic question rules can't (e.g. a list of seats); null when fine. */
+  validate?: (a: Answers, ctx: FlowContext) => string | null;
 };
 
 export function visibleSteps(flow: Flow<unknown>, a: Answers, ctx: FlowContext): Step[] {
