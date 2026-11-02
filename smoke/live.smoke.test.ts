@@ -893,7 +893,11 @@ describe("11. reports (0019)", () => {
   });
 
   it("revenue and governance reports run for the national", async () => {
-    await rpc(nationalAdmin, "org_rollup_revenue", { _org: NATIONAL });
+    await rpc(nationalAdmin, "org_rollup_revenue", {
+      _org: NATIONAL,
+      _from: "2020-01-01",
+      _to: new Date().toISOString().slice(0, 10),
+    });
     await rpc(nationalAdmin, "org_rollup_governance", { _org: NATIONAL });
   });
 
@@ -1081,7 +1085,7 @@ describe("14. demo organizations (0022)", () => {
       await nationalAdmin.rpc("delete_demo_organization", { _org: demoId, _confirm_name: name });
   });
 
-  it("the demo national admin is a platform operator; the member isn't asked twice", async () => {
+  it("the demo national admin is a platform operator; signed-out visitors are not", async () => {
     expect(await rpc(nationalAdmin, "is_platform_operator")).toBe(true);
     expect(await rpc(anon, "is_platform_operator").catch(() => false)).toBe(false);
   });
