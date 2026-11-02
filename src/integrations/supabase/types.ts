@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliation_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          from_org_id: string | null
+          id: string
+          membership_id: string
+          org_id: string
+          to_org_id: string | null
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          from_org_id?: string | null
+          id?: string
+          membership_id: string
+          org_id: string
+          to_org_id?: string | null
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          from_org_id?: string | null
+          id?: string
+          membership_id?: string
+          org_id?: string
+          to_org_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliation_history_from_org_id_fkey"
+            columns: ["from_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliation_history_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliation_history_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliation_history_to_org_id_fkey"
+            columns: ["to_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           appointed_by: string | null
@@ -543,6 +602,7 @@ export type Database = {
       memberships: {
         Row: {
           created_at: string
+          home_org_id: string | null
           id: string
           joined_on: string | null
           lifetime: boolean
@@ -556,6 +616,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          home_org_id?: string | null
           id?: string
           joined_on?: string | null
           lifetime?: boolean
@@ -569,6 +630,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          home_org_id?: string | null
           id?: string
           joined_on?: string | null
           lifetime?: boolean
@@ -581,6 +643,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "memberships_home_org_id_fkey"
+            columns: ["home_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "memberships_org_id_fkey"
             columns: ["org_id"]
@@ -618,7 +687,9 @@ export type Database = {
           directory_listed: boolean | null
           display_name: string
           email: string
+          home_of: string | null
           id: string
+          left_at: string | null
           org_id: string
           source: string
           user_id: string | null
@@ -629,7 +700,9 @@ export type Database = {
           directory_listed?: boolean | null
           display_name?: string
           email?: string
+          home_of?: string | null
           id?: string
+          left_at?: string | null
           org_id: string
           source?: string
           user_id?: string | null
@@ -640,12 +713,21 @@ export type Database = {
           directory_listed?: boolean | null
           display_name?: string
           email?: string
+          home_of?: string | null
           id?: string
+          left_at?: string | null
           org_id?: string
           source?: string
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "org_member_profiles_home_of_fkey"
+            columns: ["home_of"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "org_member_profiles_org_id_fkey"
             columns: ["org_id"]
@@ -1688,6 +1770,34 @@ export type Database = {
         Args: { _appointment: string; _ended_on?: string; _reason?: string }
         Returns: undefined
       }
+      export_payments: {
+        Args: {
+          _from: string
+          _include_below?: boolean
+          _org: string
+          _to: string
+        }
+        Returns: {
+          amount_minor: number
+          currency: string
+          email: string
+          gateway: string
+          level: string
+          member: string
+          method: string
+          net_minor: number
+          org_name: string
+          purpose: string
+          receipt: string
+          received_on: string
+          reference: string
+          refunded_minor: number
+          status: string
+          tax_treatment: string
+          term: string
+          test_payment: boolean
+        }[]
+      }
       fail_gateway_payment: {
         Args: { _event_id: string; _payment: string; _reason: string }
         Returns: string
@@ -1778,6 +1888,7 @@ export type Database = {
           profile_id: string
         }[]
       }
+      membership_model: { Args: { _org: string }; Returns: string }
       membership_standing: {
         Args: {
           _grace: number
@@ -1787,6 +1898,10 @@ export type Database = {
           _today: string
         }
         Returns: string
+      }
+      move_home_chapter: {
+        Args: { _chapter: string; _membership: string }
+        Returns: undefined
       }
       national_dues_required: { Args: { _org: string }; Returns: boolean }
       national_membership_state: {
@@ -1939,7 +2054,12 @@ export type Database = {
         Args: { _org: string }
         Returns: boolean
       }
+      profile_membership_id: {
+        Args: { _p: Database["public"]["Tables"]["org_member_profiles"]["Row"] }
+        Returns: string
+      }
       profile_values: { Args: { _profile: string }; Returns: Json }
+      public_home_chapter_info: { Args: { _slug: string }; Returns: Json }
       public_join_info: { Args: { _slug: string }; Returns: Json }
       purge_smoke_data: { Args: { _since: string }; Returns: Json }
       quote_price: { Args: { _answers?: Json; _term: string }; Returns: number }
@@ -2051,6 +2171,14 @@ export type Database = {
       }
       set_checkout_ref: {
         Args: { _payment: string; _ref: string }
+        Returns: undefined
+      }
+      set_home_chapter: {
+        Args: { _chapter: string; _national: string }
+        Returns: undefined
+      }
+      set_member_home_chapter: {
+        Args: { _chapter: string; _membership: string }
         Returns: undefined
       }
       set_my_directory_listing: {

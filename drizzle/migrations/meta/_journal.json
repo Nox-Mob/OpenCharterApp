@@ -218,6 +218,13 @@
       "when": 1793633491231,
       "tag": "0030_home_chapter",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793639618976,
+      "tag": "0031_confirm_0029_0030_applied",
+      "breakpoints": true
     }
   ]
 }
