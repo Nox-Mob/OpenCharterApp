@@ -12,7 +12,7 @@ import {
   disconnectGateway,
   paymentsQuery,
 } from "@/modules/payments/queries";
-import { isDemoOrgId } from "@/modules/payments/test-gateway";
+import { isDemoOrg } from "@/lib/orgs";
 import { Link } from "@tanstack/react-router";
 import { useFeatureReady } from "@/lib/db/readiness";
 import { orgReceiptsQuery } from "@/modules/receipts";
@@ -41,7 +41,7 @@ export function PaymentsTab({ org, canManage }: { org: Org; canManage: boolean }
   const [secretKey, setSecretKey] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
   const [busy, setBusy] = useState(false);
-  const isDemo = isDemoOrgId(org.id) || org.ancestor_ids.some(isDemoOrgId);
+  const isDemo = isDemoOrg(org);
   const c = connection.data;
   const connected = c?.status === "verified";
   const hook = typeof window === "undefined" ? "" : webhookUrl(window.location.origin, org.id);

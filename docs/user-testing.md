@@ -42,6 +42,16 @@ Use a private browser window for a second account at the same time. Test only in
 
 **Also try:** a chapter name with accents or an apostrophe, and check the suggested web address (slug); a bad email (it stops before anything is created); the same email for the admin and an officer (one invitation).
 
+## 2b. Demo organizations (for QA)
+**Where:** Dashboard → create an organization; the new org's Settings tab. Needs migration 0022; until then the option doesn't appear.
+1. As **National** (a platform operator), create an organization and tick **This is a demo organization**. It shows a **Demo** badge on its page and in the dashboard list.
+2. Run setup from scratch in it: Membership setup, Board setup, add chapters (they're demo too: the wizard says "Demo, like …"), turn on test payments, join, pay.
+3. In a private window, sign in as an account that isn't an operator: the demo checkbox doesn't appear when creating an org.
+4. As the demo org's admin: Settings tab → **Delete this demo organization**. "Delete for good" stays disabled until you type the exact name. After deleting you land on the dashboard and the org and its chapters are gone; the accounts you used still sign in.
+5. A production org's Settings tab never shows the delete section, and a demo chapter's doesn't either (delete from the top).
+
+**Also try:** creating a chapter under a production national: no demo option there.
+
 ## 3. Settings, locks, tax profile, logo
 **Where:** Settings tab.
 1. As **National**, lock a setting (e.g. grace period). As **Chapter**, open Austin → Settings. Expect it read-only with "Locked by a parent organization".

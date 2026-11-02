@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { auditQuery, myOrgsQuery, myPermissionsQuery, TYPE_LABEL } from "@/lib/orgs";
+import { auditQuery, isDemoOrg, myOrgsQuery, myPermissionsQuery, TYPE_LABEL } from "@/lib/orgs";
 import { hasPermission } from "@/lib/policy";
 import { CreateOrgDialog } from "@/components/create-org-dialog";
 import { MembersTab } from "@/components/org/members-tab";
@@ -17,6 +17,8 @@ import { DirectoryPreference } from "@/components/members/directory-preference";
 import { MyMembershipCard } from "@/components/membership/my-membership-card";
 import { RequiresDatabase } from "@/components/db/requires-database";
 import { SetupCards } from "@/components/setup/setup-card";
+import { DeleteDemoOrg } from "@/components/demo/delete-demo-org";
+import { DemoBadge } from "@/components/demo/demo-badge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -90,6 +92,7 @@ function OrgPage() {
         <div className="mt-1 flex items-center gap-3">
           <h1 className="text-3xl font-semibold">{org.name}</h1>
           <Badge variant="secondary">{TYPE_LABEL[org.type]}</Badge>
+          {isDemoOrg(org) && <DemoBadge />}
         </div>
         <p className="mt-1 text-sm text-muted-foreground">/{org.slug}</p>
       </div>
@@ -185,6 +188,7 @@ function OrgPage() {
         {canManage && (
           <TabsContent value="settings" className="mt-6">
             <SettingsTab key={org.id} org={org} />
+            <DeleteDemoOrg org={org} orgs={orgs} />
           </TabsContent>
         )}
         {canSeeReports && (

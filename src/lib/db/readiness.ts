@@ -57,6 +57,12 @@ export const FEATURES = {
     label: "Pricing rules",
     table: "pricing_rules",
   },
+  demo_orgs: {
+    migration: "0022_demo_orgs",
+    label: "Demo organizations",
+    rpc: "is_platform_operator",
+    args: {},
+  },
   exports: {
     migration: "0011_member_exports",
     label: "Member exports and saved views",

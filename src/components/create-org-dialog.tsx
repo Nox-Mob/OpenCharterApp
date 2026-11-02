@@ -4,7 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createOrgSchema, slugify, type OrgType } from "@/lib/policy";
-import { myOrgsQuery, myPermissionsQuery } from "@/lib/orgs";
+import { isDemoOrg, myOrgsQuery, myPermissionsQuery } from "@/lib/orgs";
+import { createDemoOrganization, demoErrorMessage, isPlatformOperatorQuery } from "@/modules/demo";
 import { useFeatureReady } from "@/lib/db/readiness";
 import { canSetChapterField } from "@/modules/attributes/chapter-fields";
 import { attributeDefsQuery } from "@/modules/attributes/queries";
@@ -77,6 +78,14 @@ export function CreateOrgDialog({
   });
   const grants = useQuery({ ...myPermissionsQuery(), enabled: !!parentId });
   const boardReady = useFeatureReady("board") === true;
+  // Demo orgs (D-148): only platform operators may create one, and only at the top.
+  const demoReady = useFeatureReady("demo_orgs") === true;
+  const operator = useQuery({
+    ...isPlatformOperatorQuery(),
+    enabled: demoReady && !parentId && open,
+  });
+  const [demo, setDemo] = useState(false);
+  const canCreateDemo = !parentId && operator.data === true;
   const seats = useQuery({
     ...requiredChapterSeatsQuery(lineage),
     enabled: !!parent && boardReady && type === "chapter",
@@ -113,6 +122,7 @@ export function CreateOrgDialog({
     setDetails({});
     setInvites(EMPTY_INVITES);
     setCreated(null);
+    setDemo(false);
   }
 
   function checkStep(): string | null {
@@ -143,19 +153,29 @@ export function CreateOrgDialog({
   async function create() {
     const parsed = createOrgSchema.parse({ name, slug: slug || slugify(name), type, parentId });
     setBusy(true);
-    const { data, error } = await supabase.rpc("create_organization", {
-      _name: parsed.name,
-      _slug: parsed.slug,
-      _type: parsed.type,
-      ...(parsed.parentId ? { _parent: parsed.parentId } : {}),
-    });
-    if (error) {
-      setBusy(false);
-      return void toast.error(
-        error.message.includes("duplicate") ? "That web address is taken" : error.message,
-      );
+    let id: string;
+    if (canCreateDemo && demo && (parsed.type === "national" || parsed.type === "standalone")) {
+      try {
+        id = await createDemoOrganization(parsed.name, parsed.slug, parsed.type);
+      } catch (e) {
+        setBusy(false);
+        return void toast.error(demoErrorMessage(String((e as Error).message)));
+      }
+    } else {
+      const { data, error } = await supabase.rpc("create_organization", {
+        _name: parsed.name,
+        _slug: parsed.slug,
+        _type: parsed.type,
+        ...(parsed.parentId ? { _parent: parsed.parentId } : {}),
+      });
+      if (error) {
+        setBusy(false);
+        return void toast.error(
+          error.message.includes("duplicate") ? "That web address is taken" : error.message,
+        );
+      }
+      id = data as string;
     }
-    const id = data as string;
     try {
       await saveAttributeValues(chapterFields, id, details);
     } catch {
@@ -234,6 +254,29 @@ export function CreateOrgDialog({
                   </SelectContent>
                 </Select>
               </div>
+              {canCreateDemo && (
+                <label className="flex items-start gap-2 rounded-md border border-dashed p-3 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={demo}
+                    onChange={(e) => setDemo(e.target.checked)}
+                  />
+                  <span>
+                    <span className="font-medium">This is a demo organization</span>
+                    <span className="block text-muted-foreground">
+                      Test data for QA: it can be deleted with everything in it, it never sends
+                      email, and it can use test payments. Its chapters are demo too. This can't be
+                      changed later.
+                    </span>
+                  </span>
+                </label>
+              )}
+              {parent && isDemoOrg(parent) && (
+                <p className="rounded-md bg-muted p-3 text-sm">
+                  Demo, like {parent.name}: test data that can be deleted and never sends email.
+                </p>
+              )}
             </>
           )}
 

@@ -7,7 +7,7 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When Lovable applies a migration, delete its section here (the generated types take over).
- * Pending: 0017_purge_audit_summary (no types), 0018_setup_governance, 0019_rollups, 0020_two_level_dues, 0021_pricing_rules (see roadmap.md).
+ * Pending: 0017_purge_audit_summary (no types), 0018_setup_governance, 0019_rollups, 0020_two_level_dues, 0021_pricing_rules, 0022_demo_orgs (see roadmap.md).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +41,13 @@ export type PendingTables = {
 export type PendingFunctions = {
   // 0018_setup_governance
   apply_setup_sections: { Args: Record<string, never>; Returns: string[] };
+  // 0022_demo_orgs
+  is_platform_operator: { Args: Record<string, never>; Returns: boolean };
+  create_demo_organization: {
+    Args: { _name: string; _slug: string; _type: Generated["Enums"]["org_type"] };
+    Returns: string;
+  };
+  delete_demo_organization: { Args: { _org: string; _confirm_name: string }; Returns: string[] };
   // 0021_pricing_rules
   quote_price: { Args: { _term: string; _answers?: Json }; Returns: number };
   save_pricing_rule: {
