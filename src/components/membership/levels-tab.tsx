@@ -13,6 +13,7 @@ import {
   type Tier,
 } from "@/modules/membership/tiers";
 import {
+  chapterDuesRuleQuery,
   childLevelsAllowedQuery,
   saveTier,
   setTierActive,
@@ -21,6 +22,10 @@ import {
 } from "@/modules/membership/queries";
 import { EMPTY_TIER } from "@/modules/membership/tiers";
 import { TierDialog } from "./tier-editor";
+import { PricingRulesDialog } from "./pricing-rules-dialog";
+import { useFeatureReady } from "@/lib/db/readiness";
+import { pricingRulesQuery } from "@/modules/membership/pricing";
+import type { Term } from "@/modules/membership/tiers";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -39,7 +44,18 @@ export function LevelsTab({
   const qc = useQueryClient();
   const tiers = useQuery(tiersQuery(org.id, org.ancestor_ids));
   const allowed = useQuery(childLevelsAllowedQuery(org.id, org.ancestor_ids));
+  const rule = useQuery({
+    ...chapterDuesRuleQuery(org.id, org.ancestor_ids),
+    enabled: !!org.parent_id,
+  });
   const [editing, setEditing] = useState<{ tier: SavedTier | null; input: Tier } | null>(null);
+  // Pricing rules per term (E-19); needs migration 0021.
+  const pricingReady = useFeatureReady("pricing_rules") === true;
+  const rules = useQuery({ ...pricingRulesQuery(org.id), enabled: pricingReady });
+  const [pricingFor, setPricingFor] = useState<{
+    term: Term & { id: string };
+    level: string;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
   if (tiers.isLoading || allowed.isLoading)
     return <p className="text-muted-foreground">Loading…</p>;
@@ -98,6 +114,19 @@ export function LevelsTab({
         </p>
       )}
 
+      {allowed.data !== false && rule.data?.mode === "required" && !own.some((t) => t.active) && (
+        <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">
+          {parentName} requires every chapter to charge its own dues. Add a level so people can join
+          here.
+        </p>
+      )}
+      {allowed.data !== false && (rule.data?.min || rule.data?.max) && (
+        <p className="text-sm text-muted-foreground">
+          {parentName} sets the price range for chapter dues:{" "}
+          {rule.data!.min ? `at least ${formatPrice(rule.data!.min)}` : "no minimum"},{" "}
+          {rule.data!.max ? `at most ${formatPrice(rule.data!.max)}` : "no maximum"}.
+        </p>
+      )}
       {own.length === 0 && inherited.length === 0 && (
         <p className="rounded-md border border-dashed p-8 text-center text-muted-foreground">
           No membership levels yet.
@@ -108,6 +137,14 @@ export function LevelsTab({
           <TierCard
             key={t.id}
             tier={t}
+            ruleCount={(id) =>
+              (rules.data ?? []).filter((r) => r.term_id === id && r.active).length
+            }
+            onTerm={
+              canManage && pricingReady && t.active
+                ? (term) => setPricingFor({ term, level: t.name })
+                : undefined
+            }
             actions={
               canManage && (
                 <>
@@ -140,6 +177,19 @@ export function LevelsTab({
         ))}
       </ul>
 
+      {pricingFor && (
+        <PricingRulesDialog
+          org={org}
+          term={pricingFor.term}
+          levelName={pricingFor.level}
+          onClose={() => setPricingFor(null)}
+        />
+      )}
+      {canManage && pricingReady && own.some((t) => t.active) && (
+        <p className="text-xs text-muted-foreground">
+          Click a term to price it by member fields, for example by rank.
+        </p>
+      )}
       <TierDialog
         open={!!editing}
         title={editing?.tier ? `Edit ${editing.tier.name}` : "Add a membership level"}
@@ -161,10 +211,14 @@ function TierCard({
   tier,
   badge,
   actions,
+  onTerm,
+  ruleCount,
 }: {
   tier: SavedTier;
   badge?: string;
   actions?: React.ReactNode;
+  onTerm?: ((term: Term & { id: string }) => void) | undefined;
+  ruleCount?: (termId: string) => number;
 }) {
   const terms = tier.terms.filter((x) => x.active !== false);
   return (
@@ -192,11 +246,30 @@ function TierCard({
         <div className="space-x-1 whitespace-nowrap">{actions}</div>
       </div>
       <ul className="mt-2 flex flex-wrap gap-2 text-sm">
-        {terms.map((x) => (
-          <li key={x.key} className="rounded bg-muted px-2 py-1">
-            {termLabel(lengthOf(x))} · {formatPrice(x.price_minor, x.currency)}
-          </li>
-        ))}
+        {terms.map((x) => {
+          const label = `${termLabel(lengthOf(x))} · ${formatPrice(x.price_minor, x.currency)}`;
+          const n = x.id ? (ruleCount?.(x.id) ?? 0) : 0;
+          const extra = n ? ` · ${n} pricing rule${n === 1 ? "" : "s"}` : "";
+          return (
+            <li key={x.key}>
+              {onTerm && x.id ? (
+                <button
+                  type="button"
+                  className="rounded bg-muted px-2 py-1 hover:bg-accent"
+                  onClick={() => onTerm({ ...x, id: x.id! })}
+                >
+                  {label}
+                  {extra}
+                </button>
+              ) : (
+                <span className="inline-block rounded bg-muted px-2 py-1">
+                  {label}
+                  {extra}
+                </span>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </li>
   );

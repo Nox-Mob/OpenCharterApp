@@ -43,6 +43,45 @@ export const SETTINGS: readonly SettingDef[] = [
     appliesTo: "parents",
   },
   {
+    key: "membership.national_dues_required",
+    label: "Chapter members must also be members of your organization",
+    description:
+      "Joining a chapter then takes two payments: your dues first, then the chapter's. Enforced in the database.",
+    kind: "boolean",
+    default: false,
+    appliesTo: "parents",
+  },
+  {
+    key: "membership.chapter_dues",
+    label: "Chapter dues",
+    description:
+      "None: chapters use your levels. Optional: chapters may charge their own. Required: every chapter should offer its own.",
+    kind: "choice",
+    default: "optional",
+    options: [
+      { value: "none", label: "None (chapters use your levels)" },
+      { value: "optional", label: "Optional" },
+      { value: "required", label: "Required" },
+    ],
+    appliesTo: "parents",
+  },
+  {
+    key: "membership.chapter_dues_min_minor",
+    label: "Lowest chapter dues (in cents)",
+    description: "Chapters can't price a term below this. 0 = no minimum.",
+    kind: "number",
+    default: 0,
+    appliesTo: "parents",
+  },
+  {
+    key: "membership.chapter_dues_max_minor",
+    label: "Highest chapter dues (in cents)",
+    description: "Chapters can't price a term above this. 0 = no maximum.",
+    kind: "number",
+    default: 0,
+    appliesTo: "parents",
+  },
+  {
     key: "membership.child_approval",
     label: "How new members of your chapters are accepted",
     description:

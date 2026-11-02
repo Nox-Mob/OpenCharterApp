@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   diffByKey,
+  flowVersion,
   pruneAnswers,
   validateStep,
   visibleQuestions,
   visibleSteps,
+  type FlowContext,
   type Step,
 } from "./index";
 import { initialAnswers, membershipFlow } from "@/modules/membership/setup-flow";
@@ -267,8 +269,76 @@ describe("membership levels (E-11)", () => {
       membershipFlow.summarize(initialAnswers(null, managedChapter), managedChapter),
     ).toContain("Membership levels come from your parent organization");
   });
-  it("is version 3", () => {
-    expect(membershipFlow.version).toBe(3);
+  it("is version 4 for parents once two-level dues exist, 3 otherwise", () => {
+    expect(membershipFlow.version).toBe(4);
+    expect(flowVersion(membershipFlow, { orgType: "national", twoLevelDues: true })).toBe(4);
+    expect(flowVersion(membershipFlow, { orgType: "national", twoLevelDues: false })).toBe(3);
+    expect(flowVersion(membershipFlow, { orgType: "chapter", twoLevelDues: true })).toBe(3);
+  });
+});
+
+describe("two-level dues (v4, D-146)", () => {
+  const ready = { ...national, twoLevelDues: true };
+  const chapterQs = (a: Record<string, unknown>, ctx: FlowContext) =>
+    visibleQuestions(
+      membershipFlow.steps.find((s) => s.id === "chapters")!,
+      a,
+      ctx,
+    ).map((q) => q.id);
+  it("asks only once migration 0020 is applied", () => {
+    expect(chapterQs(initialAnswers(null, national), national)).not.toContain(
+      "national_dues_required",
+    );
+    expect(chapterQs(initialAnswers(null, ready), ready)).toEqual(
+      expect.arrayContaining([
+        "national_dues_required",
+        "chapter_dues_required",
+        "chapter_dues_min",
+      ]),
+    );
+  });
+  it("hides chapter prices when chapters use the national's levels", () => {
+    const a = { ...initialAnswers(null, ready), child_levels_allowed: false };
+    expect(chapterQs(a, ready)).not.toContain("chapter_dues_min");
+    const plan = membershipFlow.plan(a, ready);
+    expect(plan.settings).toContainEqual({
+      key: "membership.chapter_dues",
+      value: "none",
+      mode: "locked",
+    });
+  });
+  it("plans the rules in cents, locked", () => {
+    const plan = membershipFlow.plan(
+      {
+        ...initialAnswers(null, ready),
+        national_dues_required: true,
+        chapter_dues_required: true,
+        chapter_dues_min: 10,
+        chapter_dues_max: 30.5,
+      },
+      ready,
+    );
+    expect(plan.settings.slice(-4)).toEqual([
+      { key: "membership.national_dues_required", value: true, mode: "locked" },
+      { key: "membership.chapter_dues", value: "required", mode: "locked" },
+      { key: "membership.chapter_dues_min_minor", value: 1000, mode: "locked" },
+      { key: "membership.chapter_dues_max_minor", value: 3050, mode: "locked" },
+    ]);
+    expect(
+      membershipFlow.summarize(
+        { ...initialAnswers(null, ready), chapter_dues_min: 10, chapter_dues_max: null },
+        ready,
+      ),
+    ).toContain("Chapter prices: at least $10.00, no maximum");
+  });
+  it("refuses a minimum above the maximum", () => {
+    expect(
+      membershipFlow.validate!(
+        { ...initialAnswers(null, ready), chapter_dues_min: 50, chapter_dues_max: 20 },
+        ready,
+      ),
+    ).toMatch(/above the highest/);
+    expect(membershipFlow.validate!(initialAnswers(null, ready), ready)).toBeNull();
   });
 });
 

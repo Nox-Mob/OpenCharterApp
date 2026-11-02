@@ -301,7 +301,13 @@ export function BoardTab({
   );
 }
 
-function TermFields({ term, onChange }: { term: SeatTerm; onChange: (t: SeatTerm) => void }) {
+export function TermFields({
+  term,
+  onChange,
+}: {
+  term: SeatTerm;
+  onChange: (t: SeatTerm) => void;
+}) {
   return (
     <div className="flex gap-2">
       <Input

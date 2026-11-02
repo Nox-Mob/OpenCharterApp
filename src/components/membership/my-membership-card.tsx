@@ -5,6 +5,7 @@ import { useFeatureReady } from "@/lib/db/readiness";
 import { beginRenewal, joinErrorMessage, joinInfoQuery } from "@/modules/membership/joining";
 import { formatPrice, lengthOf, termLabel } from "@/modules/membership/tiers";
 import { startCheckout } from "@/modules/payments/payments.functions";
+import { quotePriceQuery } from "@/modules/membership/pricing";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { myReceiptsQuery } from "@/modules/receipts";
@@ -23,6 +24,10 @@ export function MyMembershipCard({ org }: { org: Org }) {
   const join = useQuery({ ...joinInfoQuery(org.slug), enabled: joiningReady });
   const [termId, setTermId] = useState("");
   const [busy, setBusy] = useState(false);
+  // The member's own price when the term has pricing rules (E-19).
+  const pickedId = termId || mine.data?.term_id || "";
+  const picked = join.data?.levels.flatMap((l) => l.terms).find((t) => t.id === pickedId);
+  const quote = useQuery({ ...quotePriceQuery(pickedId), enabled: !!picked?.has_rules });
   if (mine.isLoading || grace.isLoading || !mine.data) return null;
   const m = mine.data;
   const graceDays = grace.data ?? 30;
@@ -106,7 +111,9 @@ export function MyMembershipCard({ org }: { org: Org }) {
               {terms.map((x) => (
                 <option key={x.term.id} value={x.term.id}>
                   {x.level.name}: {termLabel(lengthOf(x.term))} ·{" "}
-                  {formatPrice(x.term.price_minor, x.term.currency)}
+                  {x.term.has_rules
+                    ? "price for you shown below"
+                    : formatPrice(x.term.price_minor, x.term.currency)}
                 </option>
               ))}
             </select>
@@ -114,7 +121,12 @@ export function MyMembershipCard({ org }: { org: Org }) {
           <Button onClick={renew} disabled={busy}>
             {busy
               ? "Opening payment…"
-              : `Renew online (${formatPrice(chosen.term.price_minor, chosen.term.currency)})`}
+              : `Renew online (${formatPrice(
+                  chosen.term.id === pickedId && quote.data !== undefined
+                    ? quote.data
+                    : chosen.term.price_minor,
+                  chosen.term.currency,
+                )})`}
           </Button>
         </div>
       )}

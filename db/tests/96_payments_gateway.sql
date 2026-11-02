@@ -1,8 +1,8 @@
 -- Payment gateway connections (E-12): who can connect, test gateway limits, secrets stay private
 begin;
 select tests.fixture();
--- a demo national (docs/demo-data.md id prefix) run by the national admin
-insert into public.organizations (id, type, name, slug) values ('d1000000-0000-4000-8000-0000000000aa', 'national', 'Demo', 'demo-x');
+-- a demo national (is_demo, D-148) run by the national admin
+insert into public.organizations (id, type, name, slug, is_demo) values ('d1000000-0000-4000-8000-0000000000aa', 'national', 'Demo', 'demo-x', true);
 insert into public.role_assignments (user_id, role_id, org_id)
   select '11111111-0000-4000-8000-000000000001', id, 'd1000000-0000-4000-8000-0000000000aa' from public.roles where key = 'org_admin' and org_id is null;
 

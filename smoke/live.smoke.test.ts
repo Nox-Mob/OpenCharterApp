@@ -755,6 +755,391 @@ describe("8. board seats (0014)", () => {
   });
 });
 
+// ---------- 0018–0022 (docs/lovable-handoff.md §5) ----------
+
+async function membershipAt(org: string) {
+  const { data } = await member
+    .from("memberships")
+    .select("*, org_member_profiles!inner(user_id)")
+    .eq("org_id", org)
+    .eq("org_member_profiles.user_id", memberUserId)
+    .maybeSingle();
+  return data;
+}
+
+/** Ends any current/pending membership the demo member holds at org, using that org's admin. */
+async function resetMembership(org: string, admin: Db) {
+  const m = await membershipAt(org);
+  if (m && ["active", "pending"].includes(m.status)) {
+    await rpc(admin, "cancel_membership", { _membership: m.id, _note: "smoke reset" });
+  }
+}
+
+async function paymentAmount(id: string): Promise<number> {
+  const { data, error } = await member
+    .from("payments")
+    .select("amount_minor")
+    .eq("id", id)
+    .single();
+  if (error) throw new Error(error.message);
+  return data!.amount_minor as number;
+}
+
+describe("10. board setup (0018)", () => {
+  const chapterKey = `smoke_chair_${runId}`;
+  const selfKey = `smoke_pres_${runId}`;
+  const today = new Date().toISOString().slice(0, 10);
+  const plan = {
+    seats: [
+      {
+        key: chapterKey,
+        title: `Smoke chair ${runId}`,
+        scope: "chapters",
+        required: true,
+        seat_count: 1,
+        term_count: 2,
+        term_unit: "year",
+      },
+      {
+        key: selfKey,
+        title: `Smoke president ${runId}`,
+        scope: "self",
+        seat_count: 1,
+        term_count: 2,
+        term_unit: "year",
+      },
+    ],
+    seat_terms: [
+      {
+        owner_org_id: NATIONAL,
+        key: selfKey,
+        length_count: 1,
+        length_unit: "year",
+        effective_from: today,
+        bylaw_reference: `Art. ${runId}`,
+      },
+    ],
+  };
+
+  it("the database understands the board sections", async () => {
+    const secs = await rpc<string[]>(nationalAdmin, "apply_setup_sections");
+    expect(secs).toEqual(expect.arrayContaining(["seats", "seat_terms"]));
+  });
+
+  it("applying board setup twice leaves one of each seat and one term rule", async () => {
+    await rpc(nationalAdmin, "apply_setup", {
+      _org: NATIONAL,
+      _flow: "board",
+      _answers: {},
+      _plan: plan,
+    });
+    await rpc(nationalAdmin, "apply_setup", {
+      _org: NATIONAL,
+      _flow: "board",
+      _answers: {},
+      _plan: plan,
+    });
+    const { data: seats } = await nationalAdmin
+      .from("seat_templates")
+      .select("id, key, scope")
+      .eq("org_id", NATIONAL)
+      .in("key", [chapterKey, selfKey]);
+    expect(seats).toHaveLength(2);
+    const self = seats!.find((s) => s.key === selfKey)!;
+    const { data: terms } = await nationalAdmin
+      .from("seat_terms")
+      .select("id")
+      .eq("template_id", self.id);
+    expect(terms).toHaveLength(1);
+    for (const s of seats!)
+      await rpc(nationalAdmin, "set_seat_active", { _template: s.id, _active: false });
+  });
+
+  it("a chapter admin can't run board setup for the national", async () => {
+    await rpcFails(chapterAdmin, "apply_setup", {
+      _org: NATIONAL,
+      _flow: "board",
+      _answers: {},
+      _plan: plan,
+    });
+  });
+});
+
+describe("11. reports (0019)", () => {
+  type Row = {
+    org_id: string;
+    profiles: number;
+    good: number;
+    grace: number;
+    lapsed: number;
+    pending: number;
+    ended: number;
+    no_membership: number;
+  };
+
+  it("the national's member report lists the national and both chapters", async () => {
+    const rows = await rpc<Row[]>(nationalAdmin, "org_rollup_members", { _org: NATIONAL });
+    const ids = rows.map((r) => r.org_id);
+    expect(ids).toEqual(expect.arrayContaining([NATIONAL, AUSTIN, DALLAS]));
+    const nat = rows.find((r) => r.org_id === NATIONAL)!;
+    const { count } = await nationalAdmin
+      .from("org_member_profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", NATIONAL);
+    expect(nat.profiles).toBe(count);
+    for (const r of rows) {
+      expect(r.good + r.grace + r.lapsed + r.pending + r.ended + r.no_membership).toBe(r.profiles);
+    }
+  });
+
+  it("revenue and governance reports run for the national", async () => {
+    await rpc(nationalAdmin, "org_rollup_revenue", {
+      _org: NATIONAL,
+      _from: "2020-01-01",
+      _to: new Date().toISOString().slice(0, 10),
+    });
+    await rpc(nationalAdmin, "org_rollup_governance", { _org: NATIONAL });
+  });
+
+  it("the chapter admin is refused for the national", async () => {
+    await rpcFails(chapterAdmin, "org_rollup_members", { _org: NATIONAL });
+  });
+});
+
+describe("12. pricing rules (0021)", () => {
+  let ruleId: string;
+
+  it("national admin adds a 20% off rule; the member's quote is 80%", async () => {
+    ruleId = await rpc<string>(nationalAdmin, "save_pricing_rule", {
+      _term: termId,
+      _rule: null,
+      _label: `Smoke ${runId}`,
+      _conditions: [],
+      _price_minor: null,
+      _discount_pct: 20,
+      _sort_order: 0,
+    });
+    expect(await rpc<number>(member, "quote_price", { _term: termId, _answers: {} })).toBe(2000);
+  });
+
+  it("a chapter admin can't add rules to the national's level", async () => {
+    await rpcFails(chapterAdmin, "save_pricing_rule", {
+      _term: termId,
+      _rule: null,
+      _label: "x",
+      _conditions: [],
+      _price_minor: null,
+      _discount_pct: 50,
+      _sort_order: 0,
+    });
+  });
+
+  it("joining and renewing charge the member's price", async () => {
+    await resetMembership(NATIONAL, nationalAdmin);
+    const join = await rpc<string>(member, "begin_join", {
+      _org: NATIONAL,
+      _term: termId,
+      _answers: {},
+    }).catch(async (e: Error) => {
+      // required join questions: reuse whatever the join page asks with simple answers
+      throw e;
+    });
+    expect(await paymentAmount(join)).toBe(2000);
+    await rpc(member, "complete_test_payment", { _payment: join, _outcome: "accepted" });
+    let m = await membershipAt(NATIONAL);
+    if (m!.status === "pending")
+      await rpc(nationalAdmin, "approve_membership", { _membership: m!.id });
+    m = await membershipAt(NATIONAL);
+    const renew = await rpc<string>(member, "begin_renewal", { _membership: m!.id, _term: termId });
+    expect(await paymentAmount(renew)).toBe(2000);
+    await rpc(member, "complete_test_payment", { _payment: renew, _outcome: "declined" });
+  });
+
+  it("retiring the rule restores the full price", async () => {
+    await rpc(nationalAdmin, "set_pricing_rule_active", { _rule: ruleId, _active: false });
+    expect(await rpc<number>(member, "quote_price", { _term: termId, _answers: {} })).toBe(2500);
+  });
+});
+
+describe("13. two-level dues (0020)", () => {
+  const KEYS = [
+    "membership.national_dues_required",
+    "membership.child_levels_allowed",
+    "membership.chapter_dues",
+  ];
+  let saved: Array<{ key: string; value: unknown; mode: string }> = [];
+  let austinTerm: string;
+
+  beforeAll(async () => {
+    const { data } = await nationalAdmin
+      .from("org_settings")
+      .select("key, value, mode")
+      .eq("org_id", NATIONAL)
+      .in("key", KEYS);
+    saved = data ?? [];
+  });
+
+  afterAll(async () => {
+    if (austinTerm) {
+      await chapterAdmin.from("tier_terms").update({ active: false }).eq("id", austinTerm);
+    }
+    for (const key of KEYS) {
+      const old = saved.find((s) => s.key === key);
+      if (old) {
+        await nationalAdmin.from("org_settings").upsert({ org_id: NATIONAL, ...old });
+      } else {
+        await nationalAdmin.from("org_settings").delete().eq("org_id", NATIONAL).eq("key", key);
+      }
+    }
+  });
+
+  it("the national requires national dues (locked) and lets Austin price its own level", async () => {
+    await resetMembership(NATIONAL, nationalAdmin);
+    for (const [key, value, mode] of [
+      ["membership.national_dues_required", true, "locked"],
+      ["membership.child_levels_allowed", true, "override"],
+      ["membership.chapter_dues", "optional", "override"],
+    ] as const) {
+      const res = await nationalAdmin
+        .from("org_settings")
+        .upsert({ org_id: NATIONAL, key, value, mode });
+      expect(res.error).toBeNull();
+    }
+    const info = await rpc<{ national_dues: { required: boolean } }>(anon, "public_join_info", {
+      _slug: "demo-austin",
+    });
+    expect(info.national_dues.required).toBe(true);
+
+    const tier = await chapterAdmin
+      .from("membership_tiers")
+      .insert({ org_id: AUSTIN, key: `smoke_${runId}`, name: `Smoke Austin ${runId}` })
+      .select("id")
+      .single();
+    expect(tier.error).toBeNull();
+    const term = await chapterAdmin
+      .from("tier_terms")
+      .insert({
+        org_id: AUSTIN,
+        tier_id: tier.data!.id,
+        key: "1y",
+        label: "1 year",
+        length_count: 1,
+        length_unit: "year",
+        price_minor: 1000,
+      })
+      .select("id")
+      .single();
+    expect(term.error).toBeNull();
+    austinTerm = term.data!.id;
+    await rpc(chapterAdmin, "connect_test_gateway", { _org: AUSTIN });
+    await resetMembership(AUSTIN, chapterAdmin);
+  });
+
+  it("joining Austin without a national membership is refused", async () => {
+    const msg = await rpcFails(member, "begin_join", {
+      _org: AUSTIN,
+      _term: austinTerm,
+      _answers: {},
+    });
+    expect(msg).toContain("national membership required");
+  });
+
+  it("the member joins the national with the test gateway", async () => {
+    const pay = await rpc<string>(member, "begin_join", {
+      _org: NATIONAL,
+      _term: termId,
+      _answers: {},
+    });
+    await rpc(member, "complete_test_payment", { _payment: pay, _outcome: "accepted" });
+    expect(["pending", "active"]).toContain((await membershipAt(NATIONAL))!.status);
+  });
+
+  it("the Austin join waits for approval until the national membership is approved", async () => {
+    const pay = await rpc<string>(member, "begin_join", {
+      _org: AUSTIN,
+      _term: austinTerm,
+      _answers: {},
+    });
+    await rpc(member, "complete_test_payment", { _payment: pay, _outcome: "accepted" });
+    const austin = await membershipAt(AUSTIN);
+    const national = await membershipAt(NATIONAL);
+    if (national!.status === "pending") {
+      expect(austin!.status).toBe("pending");
+      const msg = await rpcFails(chapterAdmin, "approve_membership", { _membership: austin!.id });
+      expect(msg).toContain("national membership isn't active yet");
+      await rpc(nationalAdmin, "approve_membership", { _membership: national!.id });
+    }
+    const a = await membershipAt(AUSTIN);
+    if (a!.status === "pending")
+      await rpc(chapterAdmin, "approve_membership", { _membership: a!.id });
+    expect((await membershipAt(AUSTIN))!.status).toBe("active");
+  });
+});
+
+describe("14. demo organizations (0022)", () => {
+  const name = `Smoke Demo ${runId}`;
+  let demoId: string;
+
+  afterAll(async () => {
+    if (demoId)
+      await nationalAdmin.rpc("delete_demo_organization", { _org: demoId, _confirm_name: name });
+  });
+
+  it("the demo national admin is a platform operator; signed-out visitors are not", async () => {
+    expect(await rpc(nationalAdmin, "is_platform_operator")).toBe(true);
+    expect(await rpc(anon, "is_platform_operator").catch(() => false)).toBe(false);
+  });
+
+  it("creates a demo organization flagged as a demo", async () => {
+    demoId = await rpc<string>(nationalAdmin, "create_demo_organization", {
+      _name: name,
+      _slug: `smoke-demo-${runId}`,
+      _type: "standalone",
+    });
+    const { data } = await nationalAdmin
+      .from("organizations")
+      .select("is_demo")
+      .eq("id", demoId)
+      .single();
+    expect(data!.is_demo).toBe(true);
+  });
+
+  it("signed-out visitors can't create demo organizations", async () => {
+    await rpcFails(anon, "create_demo_organization", {
+      _name: "x",
+      _slug: `x-${runId}`,
+      _type: "standalone",
+    });
+  });
+
+  it("deleting with the wrong name is refused", async () => {
+    const msg = await rpcFails(nationalAdmin, "delete_demo_organization", {
+      _org: demoId,
+      _confirm_name: "wrong",
+    });
+    expect(msg).toContain("name to confirm");
+  });
+
+  it("Demo Austin can't be deleted on its own because it's a chapter", async () => {
+    const msg = await rpcFails(nationalAdmin, "delete_demo_organization", {
+      _org: AUSTIN,
+      _confirm_name: "Demo Austin",
+    });
+    expect(msg).toMatch(/from its top|not allowed/);
+  });
+
+  it("deleting with the right name removes it", async () => {
+    const ids = await rpc<string[]>(nationalAdmin, "delete_demo_organization", {
+      _org: demoId,
+      _confirm_name: name,
+    });
+    expect(ids).toContain(demoId);
+    const { data } = await nationalAdmin.from("organizations").select("id").eq("id", demoId);
+    expect(data).toHaveLength(0);
+    demoId = "";
+  });
+});
+
 describe("9. cleanup of this run", () => {
   it("retire this run's level", async () => {
     const res = await chapterAdmin

@@ -1,23 +1,38 @@
 # OpenCharterApp roadmap
 
+Testing by hand: docs/user-testing.md (updated with every feature).
+
 Full plan: docs/ and .lovable/plan/. Phase IDs map to docs/epic.md.
 
 ## Pending migrations for Lovable
-Apply these in order (Lovable → apply pending migrations). Step-by-step instructions, checks and the smoke test: docs/lovable-handoff.md. Until a migration is applied, the screens that need it show "needs a database update" instead of failing (D-135).
+Apply these in order (Lovable → apply pending migrations). Step-by-step instructions, checks and the smoke test: docs/lovable-handoff.md. Done so far: `0000`–`0016` applied and the `GATEWAY_ENCRYPTION_KEY` secret set; next are `0017`–`0022`. Until a migration is applied, the screens that need it show "needs a database update" instead of failing (D-135).
 
 | Migration | Enables | Status |
 |---|---|---|
 | `0008_memberships` | E-13a memberships, standing, recorded payments, member records without a login | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-| `0009_payments_gateway` | E-12 per-org Stripe / test gateway connections, encrypted credentials, webhook event log. Also needs the Lovable Cloud secret `GATEWAY_ENCRYPTION_KEY` (`openssl rand -base64 32`) | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
+| `0009_payments_gateway` | E-12 per-org Stripe / test gateway connections, encrypted credentials, webhook event log. Needs the Lovable Cloud secret `GATEWAY_ENCRYPTION_KEY` (set) | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
 | `0010_joining` | E-13b public join page, checkout, payment completion and refunds, online renewal, decline with refund | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
 | `0011_member_exports` | E-14 audited CSV export (`members.export` permission) and saved views of the member list | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
 | `0012_member_privacy` | E-14 member directory, each member's directory choice, export privacy rule from the parent | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
 | `0013_receipts` | E-15 automatic, numbered, immutable receipts; void / reissue; refund handling; receipts for payments recorded earlier | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
 | `0014_board_seats` | E-17 board seats, each org's own seat terms with by-law history, appointments that grant and revoke the seat's role, `governance.manage` / `governance.define` permissions | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-
-Note: Lovable added `0015_confirm_0008_0014_applied` (a table comment only) to trigger the apply. Number the next fix migration `0016` or later.
+| `0015_confirm_0008_0014_applied` | Added by Lovable to trigger the apply (a table comment only) | Applied 2026-11-01 |
+| `0016_purge_smoke_data` | Added by Lovable: `purge_smoke_data` cleans up after a live smoke run in the demo orgs (D-150) | Applied 2026-11-01 |
+| `0017_purge_audit_summary` | The purge records one summary audit event with what it removed; restores the `seat_templates` comment | Waiting |
+| `0018_setup_governance` | Board setup: `apply_setup` learns the `seats` and `seat_terms` sections; `apply_setup_sections()` for the readiness check | Waiting |
+| `0019_rollups` | E-23 Reports tab: member, revenue and board roll-ups across a national's chapters (aggregates only), audited report exports | Waiting |
+| `0020_two_level_dues` | E-18 national dues required for chapter members (two payments, national first), chapter dues none / optional / required, chapter price range | Waiting |
+| `0021_pricing_rules` | E-19 attribute-based pricing: rules per term (conditions on member fields → a price or a discount), charged when joining and renewing online | Waiting |
+| `0022_demo_orgs` | Demo organizations: platform operators (the demo accounts), `is_demo` on organizations (inherited, can't change), create and delete demo orgs, test gateway and "no email" follow the flag | Waiting |
 
 ## Done
+- [x] E-12: Payments tab to connect Stripe (key checked, sealed, stored privately) or the demo test gateway, payments list, webhook route (applied 2026-11-01)
+- [x] E-13b: public join page `/join/<slug>`, Stripe / test checkout, webhook endpoint per org, return page, test checkout outcomes, online renewal, decline with refund (applied 2026-11-01; covered by `bun run test:smoke`)
+- [x] E-14: search, filters, "expiring within 30 / 60 / 90 days", sorting, audited privacy-aware CSV export, saved views, member directory with each member's own listing choice (D-138, D-139)
+- [x] E-15: automatic, numbered, immutable receipts with void / reissue versions, refunds, printable receipt page, receipt links, footer setting (D-140)
+- [x] E-17: Board tab, seats from the org and its parents, custom titles, Vacant badges, appoint / end with good-standing and no-escalation checks, seat roles granted and revoked, each org's own seat terms with by-law history (D-141, D-142)
+- [x] Live smoke test against the real backend (`bun run test:smoke`, added by Lovable) with automatic cleanup (D-150)
+- [x] User testing guide for checking the app by hand (docs/user-testing.md)
 - [x] Step 0: planning docs in /docs, decisions for the Lovable stack recorded (D-100+)
 - [x] Demo organization and accounts for testing (docs/demo-data.md). Delete before launch
 - [x] E-03: email/password + Google sign-in, password reset, R-15 neutral messages
@@ -44,17 +59,19 @@ Note: Lovable added `0015_confirm_0008_0014_applied` (a table comment only) to t
 
 ## Open — Phase 1
 Plan for E-12 / E-13: docs/plans/e12-e13-payments-and-joining.md
-- [ ] E-12 (built, waiting for 0009): Payments tab to connect Stripe (key checked, sealed, stored privately) or the demo test gateway, payments list. Remaining: the webhook route and checkout come with E-13b; a "Connect payments" step in guided setup needs the setup page to run more than one flow
-- [ ] E-13b (built, waiting for 0008–0010): public join page `/join/<slug>`, Stripe / test checkout, webhook endpoint per org, return page that waits for confirmation, test checkout with accepted / declined / insufficient funds / slow / cancel, online renewal, decline with refund, join link on the Payments tab. Remaining: a Playwright end-to-end test once the database has the migrations
-- [ ] E-14 (built; search, filters and the expiring report work now, the rest waits for 0011–0012): search, filters by standing / level / member field ("at least" for ranks), "expiring within 30 / 60 / 90 days", sorting, audited privacy-aware CSV export, saved views, member directory with each member's own listing choice (D-138, D-139)
-- [ ] E-15 (built, waiting for 0008–0013): automatic receipts on payment, numbered per org and year, immutable with void / reissue versions, refunds void or replace, printable receipt page with the issuing org's logo, receipt links for admins and members, footer setting. Remaining: receipt wording reviewed by a CPA (R-07), emailing receipts (E-08 follow-up), templates and manual receipts (E-36)
-- [ ] E-17 (built, waiting for 0008–0014): Board tab with seats from the org and its parents, custom titles where allowed, Vacant badges for required seats, appoint / end term with good-standing and no-escalation checks, the seat's role granted and revoked with the appointment, each org's own term per seat with by-law reference and term history, "apply to current officers", past officers, seat editor (D-141, D-142). Remaining: a governance step in guided setup (needs the setup page to run more than one flow), elections (E-27) and vacancy alerts (E-25)
+- [x] E-16: chapter creation wizard (name and type, chapter fields, first admin invitation, invitations for the required officers, links to copy; seats show Vacant until appointed) (D-144)
+- [ ] Demo organizations (built, waiting for 0022): platform operators can mark a new national or standalone org as demo; chapters inherit it; Demo badge; delete a demo org with everything in it; never emails; test payments allowed (D-148)
+- [ ] E-19 (built, waiting for 0021): rules engine (conditions on member fields, shared by TypeScript and SQL with the same test cases) and pricing rules per term: click a term on the Membership levels tab, add rules like "Rank is at least E-5 → $30" or "Veteran is yes → 20% off"; joining and renewing charge the member's price and show it first (D-147). Remaining: a pricing step in guided setup, eligibility and approver rules (E-24, E-31)
+- [ ] E-18 (built, waiting for 0020): two-level dues: the national can require its own membership for chapter members (join page step 1 of 2 → national, step 2 → chapter; two payments and receipts), chapter dues none / optional / required, a price range for chapter terms, Membership setup v4 for parents (D-146). Remaining: national standing next to chapter standing in the chapter's Members tab, linked renewals
+- [ ] E-23 (built, waiting for 0019): Reports tab for nationals and regions with members by standing (standing bar, new, expiring 30 / 60 / 90), revenue per currency for a date range, board vacancies and terms past their end, audited CSV exports (D-145)
+- [ ] Setup hub and Board setup (built, waiting for 0018; the Membership and "Connect payments" cards work now): a card per setup flow, `?flow=board`, seats / officer rules / terms from your by-laws (D-143)
+- [ ] Phase 1 follow-ups: receipt wording reviewed by a CPA (R-07); templates and manual receipts (E-36); elections (E-27) and vacancy alerts (E-25)
 
 ## Deferred (user decision 2026-10-30: core first, automations later)
 - [ ] E-07: per-org web addresses (subdomain / `/o/$slug`)
 - [ ] E-08: jobs + scheduled worker, automatic emails (incl. invitation emails), signed-action tokens
 - [ ] E-13 automated lapse job and renewal reminders (manual/derived standing for now)
-- [ ] E-08 follow-up: revisit E-12 / E-13 / E-15 for email once email exists:
+- [ ] E-08 follow-up: revisit E-12 / E-13 / E-15 for email once email exists (never send for a demo org: check `public.emails_allowed` / `emailsAllowed`, D-148):
   - join and payment confirmation (with the receipt once E-15 exists)
   - "application received" notice to admins
   - approved and declined notices (a decline mentions the refund)
@@ -66,3 +83,5 @@ Plan for E-12 / E-13: docs/plans/e12-e13-payments-and-joining.md
 
 ## Cleanup before launch
 - [ ] Remove the demo data (steps in docs/demo-data.md)
+- [x] Apply migrations 0017–0022 per docs/lovable-handoff.md (applied 2026-11-02 via marker 0023; next fix must be 0024+)
+- [x] Smoke checks for 0018–0022 (board setup, reports, two-level dues, pricing rules, demo orgs) added to smoke/live.smoke.test.ts — 89 checks passing

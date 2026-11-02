@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { joinOutcome, paymentProgressQuery } from "@/modules/membership/joining";
+import {
+  joinOutcome,
+  nextJoin,
+  paymentProgressQuery,
+  rememberNextJoin,
+} from "@/modules/membership/joining";
 import { formatPrice } from "@/modules/membership/tiers";
 import { RequiresDatabase } from "@/components/db/requires-database";
 import { Button } from "@/components/ui/button";
@@ -49,7 +54,16 @@ function Done() {
     : "missing";
   const p = progress.data;
   const amount = p ? formatPrice(p.amount_minor, p.currency) : "";
-  const back = (
+  // After paying national dues, continue to the chapter's (two-level dues, D-146).
+  const [then] = useState(() => nextJoin());
+  const next = then && then !== orgSlug ? then : null;
+  const back = next ? (
+    <Button asChild>
+      <Link to="/join/$orgSlug" params={{ orgSlug: next }} onClick={() => rememberNextJoin(null)}>
+        Continue to step 2: chapter dues
+      </Link>
+    </Button>
+  ) : (
     <Button asChild variant="outline">
       <Link to="/dashboard">Go to your dashboard</Link>
     </Button>

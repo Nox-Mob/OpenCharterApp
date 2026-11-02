@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { myOrgsQuery, TYPE_LABEL } from "@/lib/orgs";
+import { isDemoOrg, myOrgsQuery, TYPE_LABEL } from "@/lib/orgs";
+import { DemoBadge } from "@/components/demo/demo-badge";
 import { CreateOrgDialog } from "@/components/create-org-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +43,10 @@ function Dashboard() {
                 className="flex items-center justify-between px-5 py-4 hover:bg-muted"
               >
                 <span className="font-medium">{o.name}</span>
-                <Badge variant="secondary">{TYPE_LABEL[o.type]}</Badge>
+                <span className="flex items-center gap-2">
+                  {isDemoOrg(o) && <DemoBadge />}
+                  <Badge variant="secondary">{TYPE_LABEL[o.type]}</Badge>
+                </span>
               </Link>
             </li>
           ))}

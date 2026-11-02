@@ -1,6 +1,6 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { auditQuery, myOrgsQuery, myPermissionsQuery, TYPE_LABEL } from "@/lib/orgs";
+import { auditQuery, isDemoOrg, myOrgsQuery, myPermissionsQuery, TYPE_LABEL } from "@/lib/orgs";
 import { hasPermission } from "@/lib/policy";
 import { CreateOrgDialog } from "@/components/create-org-dialog";
 import { MembersTab } from "@/components/org/members-tab";
@@ -12,10 +12,13 @@ import { LevelsTab } from "@/components/membership/levels-tab";
 import { PaymentsTab } from "@/components/payments/payments-tab";
 import { MembersDirectory } from "@/components/members/members-directory";
 import { BoardTab } from "@/components/governance/board-tab";
+import { ReportsTab } from "@/components/reports/reports-tab";
 import { DirectoryPreference } from "@/components/members/directory-preference";
 import { MyMembershipCard } from "@/components/membership/my-membership-card";
 import { RequiresDatabase } from "@/components/db/requires-database";
-import { SetupCard } from "@/components/setup/setup-card";
+import { SetupCards } from "@/components/setup/setup-card";
+import { DeleteDemoOrg } from "@/components/demo/delete-demo-org";
+import { DemoBadge } from "@/components/demo/demo-badge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,6 +33,9 @@ import {
 
 export const Route = createFileRoute("/_authenticated/orgs/$orgId")({
   head: () => ({ meta: [{ title: "Organization — OpenCharterApp" }] }),
+  // ?tab=payments opens a tab directly (e.g. from the setup cards).
+  validateSearch: (s: Record<string, unknown>): { tab?: string } =>
+    typeof s["tab"] === "string" && s["tab"] !== "overview" ? { tab: s["tab"] } : {},
   loader: async ({ context }) => {
     await Promise.all([
       context.queryClient.ensureQueryData(myOrgsQuery()),
@@ -44,6 +50,8 @@ export const Route = createFileRoute("/_authenticated/orgs/$orgId")({
 
 function OrgPage() {
   const { orgId } = Route.useParams();
+  const { tab = "overview" } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
   const { data: orgs } = useSuspenseQuery(myOrgsQuery());
   const { data: grants } = useSuspenseQuery(myPermissionsQuery());
   const org = orgs.find((o) => o.id === orgId);
@@ -60,6 +68,12 @@ function OrgPage() {
   const canManageRoles = hasPermission(grants, "roles.manage", org);
   const canManageFields = hasPermission(grants, "attributes.manage", org);
   const hasChapters = org.type === "national" || org.type === "region";
+  // Roll-ups (E-23) for parents; each section needs its own permission (D-145).
+  const canSeeReports =
+    hasChapters &&
+    (["members.view", "payments.view", "org.view"] as const).some((p) =>
+      hasPermission(grants, p, org),
+    );
   const canSeePayments =
     hasPermission(grants, "payments.view", org) || hasPermission(grants, "payments.manage", org);
 
@@ -78,11 +92,18 @@ function OrgPage() {
         <div className="mt-1 flex items-center gap-3">
           <h1 className="text-3xl font-semibold">{org.name}</h1>
           <Badge variant="secondary">{TYPE_LABEL[org.type]}</Badge>
+          {isDemoOrg(org) && <DemoBadge />}
         </div>
         <p className="mt-1 text-sm text-muted-foreground">/{org.slug}</p>
       </div>
 
-      <Tabs defaultValue="overview" className="mt-8">
+      <Tabs
+        value={tab}
+        onValueChange={(t) =>
+          navigate({ search: t === "overview" ? {} : { tab: t }, replace: true })
+        }
+        className="mt-8"
+      >
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           {canSeeMembers && <TabsTrigger value="members">Members</TabsTrigger>}
@@ -95,6 +116,7 @@ function OrgPage() {
           {canSeePayments && <TabsTrigger value="payments">Payments</TabsTrigger>}
           {canManage && <TabsTrigger value="settings">Settings</TabsTrigger>}
           {hasChapters && <TabsTrigger value="chapters">Chapters</TabsTrigger>}
+          {canSeeReports && <TabsTrigger value="reports">Reports</TabsTrigger>}
           {canAudit && <TabsTrigger value="audit">Audit log</TabsTrigger>}
         </TabsList>
         <TabsContent value="overview" className="mt-6 space-y-6">
@@ -105,7 +127,10 @@ function OrgPage() {
             <DirectoryPreference org={org} />
           </RequiresDatabase>
           {hasPermission(grants, "setup.run", org) ? (
-            <SetupCard org={org} />
+            <SetupCards
+              org={org}
+              canManagePayments={hasPermission(grants, "payments.manage", org)}
+            />
           ) : (
             <p className="text-muted-foreground">Welcome to {org.name}.</p>
           )}
@@ -163,6 +188,19 @@ function OrgPage() {
         {canManage && (
           <TabsContent value="settings" className="mt-6">
             <SettingsTab key={org.id} org={org} />
+            <DeleteDemoOrg org={org} orgs={orgs} />
+          </TabsContent>
+        )}
+        {canSeeReports && (
+          <TabsContent value="reports" className="mt-6">
+            <RequiresDatabase feature="reports">
+              <ReportsTab
+                org={org}
+                canSeeMembers={canSeeMembers}
+                canSeeRevenue={hasPermission(grants, "payments.view", org)}
+                canSeeBoards={hasPermission(grants, "org.view", org)}
+              />
+            </RequiresDatabase>
           </TabsContent>
         )}
         <TabsContent value="chapters" className="mt-6">

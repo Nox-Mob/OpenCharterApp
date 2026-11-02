@@ -120,6 +120,55 @@
       "when": 1793576311604,
       "tag": "0016_purge_smoke_data",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793580000001,
+      "tag": "0017_purge_audit_summary",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793583600001,
+      "tag": "0018_setup_governance",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793587200001,
+      "tag": "0019_rollups",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793590800001,
+      "tag": "0020_two_level_dues",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793594400001,
+      "tag": "0021_pricing_rules",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793598000001,
+      "tag": "0022_demo_orgs",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793598000002,
+      "tag": "0023_confirm_0017_0022_applied",
+      "breakpoints": true
     }
   ]
 }

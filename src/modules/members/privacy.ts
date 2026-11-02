@@ -63,7 +63,11 @@ export const myDirectoryChoiceQuery = (orgId: string) =>
   });
 
 export async function setMyDirectoryListing(orgId: string, listed: boolean | null) {
-  const { error } = await db.rpc("set_my_directory_listing", { _org: orgId, _listed: listed });
+  const { error } = await db.rpc("set_my_directory_listing", {
+    _org: orgId,
+    // null = back to the organization's default (the SQL takes null)
+    _listed: listed as boolean,
+  });
   if (error) throw error;
 }
 

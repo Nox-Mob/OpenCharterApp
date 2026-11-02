@@ -1,5 +1,5 @@
 import { forSubject, type AttributeInput, type AttributeSubject } from "@/engines/attributes";
-import { describeTier, type Tier } from "./tiers";
+import { describeTier, formatPrice, type Tier } from "./tiers";
 import type { Answers, Flow, FlowContext } from "@/engines/setup";
 
 /**
@@ -8,6 +8,9 @@ import type { Answers, Flow, FlowContext } from "@/engines/setup";
  * v2 (E-11) added membership levels and the "may chapters create their own levels" rule.
  * v3 (E-13b) splits joining rules: chapter acceptance is its own 3-way rule (D-130) and
  * "lock" now covers only the grace period.
+ * v4 (E-18) adds two-level dues for parents (D-146): chapter members also pay national dues,
+ * chapter dues required or not, and a price range for chapter dues. Asked only once migration
+ * 0020 is applied (ctx.twoLevelDues).
  */
 export type TierPlan = {
   key: string;
@@ -44,6 +47,11 @@ const CHAPTER_ACCEPTANCE_SUMMARY: Record<ChapterAcceptance, string> = {
 
 const isParent = (ctx: FlowContext) => ctx.orgType === "national" || ctx.orgType === "region";
 const ownsLevels = (ctx: FlowContext) => ctx.childLevelsAllowed !== false;
+const twoLevel = (ctx: FlowContext) => isParent(ctx) && ctx.twoLevelDues === true;
+const chaptersCharge = (a: Answers) => a["child_levels_allowed"] !== false;
+/** Dollars typed in setup → cents stored in settings (0 = no limit). */
+const toMinor = (v: unknown) =>
+  typeof v === "number" && Number.isFinite(v) && v > 0 ? Math.round(v * 100) : 0;
 
 export const TAX_STATUSES = [
   { value: "501(c)(3)", label: "501(c)(3) charity" },
@@ -54,7 +62,9 @@ export const TAX_STATUSES = [
 
 export const membershipFlow: Flow<MembershipPlan> = {
   id: "membership",
-  version: 3,
+  version: 4,
+  // v4's questions are for nationals and regions, once 0020 is applied; others stay on v3.
+  versionFor: (ctx) => (twoLevel(ctx as FlowContext) ? 4 : 3),
   title: "Membership setup",
   description:
     "Tell us about your organization, what you track about members, and how joining works.",
@@ -161,6 +171,37 @@ export const membershipFlow: Flow<MembershipPlan> = {
           label: "May chapters create their own membership levels?",
           help: "When off, chapters use your levels and can't add their own.",
         },
+        {
+          id: "national_dues_required",
+          type: "boolean",
+          label: "Must chapter members also be members of your organization?",
+          help: "Joining a chapter then takes two payments: your dues first, then the chapter's.",
+          when: (_a, ctx) => twoLevel(ctx),
+        },
+        {
+          id: "chapter_dues_required",
+          type: "boolean",
+          label: "Must every chapter charge its own dues?",
+          when: (a, ctx) => twoLevel(ctx) && chaptersCharge(a),
+        },
+        {
+          id: "chapter_dues_min",
+          type: "number",
+          label: "Lowest price a chapter may charge ($)",
+          help: "Leave empty for no minimum.",
+          min: 0,
+          max: 1000000,
+          when: (a, ctx) => twoLevel(ctx) && chaptersCharge(a),
+        },
+        {
+          id: "chapter_dues_max",
+          type: "number",
+          label: "Highest price a chapter may charge ($)",
+          help: "Leave empty for no maximum.",
+          min: 0,
+          max: 1000000,
+          when: (a, ctx) => twoLevel(ctx) && chaptersCharge(a),
+        },
       ],
     },
   ],
@@ -177,7 +218,17 @@ export const membershipFlow: Flow<MembershipPlan> = {
     lock_joining: false,
     chapter_acceptance: "chapter",
     chapter_logo_allowed: true,
+    national_dues_required: false,
+    chapter_dues_required: false,
+    chapter_dues_min: null,
+    chapter_dues_max: null,
   }),
+  validate: (a, ctx) => {
+    if (!twoLevel(ctx) || !chaptersCharge(a)) return null;
+    const min = toMinor(a["chapter_dues_min"]);
+    const max = toMinor(a["chapter_dues_max"]);
+    return min && max && min > max ? "The lowest chapter price is above the highest" : null;
+  },
   summarize: (a, ctx) => {
     const attrs = (a["attributes"] as AttributeInput[] | undefined) ?? [];
     const lines = [
@@ -226,6 +277,24 @@ export const membershipFlow: Flow<MembershipPlan> = {
           ? "Chapters use your membership levels"
           : "Chapters may create their own membership levels",
       );
+      if (twoLevel(ctx)) {
+        lines.push(
+          a["national_dues_required"]
+            ? "Chapter members also pay your dues (two payments when they join a chapter)"
+            : "Chapter members don't have to be members of your organization",
+        );
+        if (chaptersCharge(a)) {
+          const min = toMinor(a["chapter_dues_min"]);
+          const max = toMinor(a["chapter_dues_max"]);
+          if (a["chapter_dues_required"]) lines.push("Every chapter must charge its own dues");
+          if (min || max)
+            lines.push(
+              `Chapter prices: ${min ? `at least ${formatPrice(min)}` : "no minimum"}, ${
+                max ? `at most ${formatPrice(max)}` : "no maximum"
+              }`,
+            );
+        }
+      }
     }
     return lines;
   },
@@ -257,6 +326,31 @@ export const membershipFlow: Flow<MembershipPlan> = {
         value: a["child_levels_allowed"] !== false,
         mode: "locked",
       });
+      if (twoLevel(ctx)) {
+        const charge = chaptersCharge(a);
+        settings.push(
+          {
+            key: "membership.national_dues_required",
+            value: a["national_dues_required"] === true,
+            mode: "locked",
+          },
+          {
+            key: "membership.chapter_dues",
+            value: !charge ? "none" : a["chapter_dues_required"] ? "required" : "optional",
+            mode: "locked",
+          },
+          {
+            key: "membership.chapter_dues_min_minor",
+            value: charge ? toMinor(a["chapter_dues_min"]) : 0,
+            mode: "locked",
+          },
+          {
+            key: "membership.chapter_dues_max_minor",
+            value: charge ? toMinor(a["chapter_dues_max"]) : 0,
+            mode: "locked",
+          },
+        );
+      }
     }
     return {
       tax: {

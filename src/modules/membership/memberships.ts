@@ -246,6 +246,10 @@ export function membershipErrorMessage(message: string): string {
     ["manages their own", "This member manages their own name and email"],
     ["only pending", "Only pending applications can be approved or declined"],
     ["only active", "Only active memberships can be cancelled"],
+    [
+      "national membership isn't active",
+      "Their national membership isn't active yet. Approve it at the national first.",
+    ],
   ];
   return known.find(([k]) => message.includes(k))?.[1] ?? "Couldn't save the membership";
 }

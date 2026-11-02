@@ -67,6 +67,9 @@ const org: Org = {
 describe("MembersTab before migration 0008", () => {
   it("still lists members, without membership columns or actions", async () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    // 0008 is applied on Lovable's database; simulate an install where it isn't.
+    for (const f of ["memberships", "directory", "exports", "joining"])
+      qc.setQueryData(["db-ready", f], false);
     render(
       <QueryClientProvider client={qc}>
         <MembersTab
