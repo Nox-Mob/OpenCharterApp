@@ -29,7 +29,7 @@ Use a private browser window for a second account at the same time. Test only in
 
 ## 2. Organizations and chapters
 **Where:** dashboard, org page, Chapters tab.
-1. As **National**, open Demo National Association. Expect tabs: Overview, Members, Directory, Board, Membership levels, Member fields, Chapter fields, Roles, Payments, Settings, Chapters, Audit log.
+1. As **National**, open Demo National Association. Expect a menu on the left (a "Section" dropdown on a phone): Overview, Members, Directory, Board, Reports, Chapters, Settings, and under Settings: General, Setup, Membership levels, Member fields, Chapter fields, Roles, Payments, Audit log. As **Chapter** (Austin) expect the same without Chapters, with Reports showing only Austin. As **Member** expect only Overview, Directory and Board.
 2. Chapters tab → "Add chapter". The wizard asks, step by step:
    - **Name and type.** Try a region too: it skips the chapter steps.
    - **Chapter details:** the national's chapter fields, e.g. Charter date. Required ones are checked.
@@ -81,9 +81,9 @@ Use a private browser window for a second account at the same time. Test only in
 **Also try:** run setup a second time and change one answer. Only that change should be listed.
 
 ## 6b. Setup hub and Board setup
-**Where:** Overview (cards), then each card's button. Board setup needs migration 0018; until then its card doesn't show.
-1. As **National**, the overview shows **Membership setup**, **Board setup** and **Connect payments**. "Connect payments" opens the Payments tab and says "Done" once test payments are on.
-2. Board setup → **Officer seats**: tick President and Treasurer; set President to "Every chapter", required, 2 years; add "Chaplain" for the national itself.
+**Where:** Settings → Setup (cards), then each card's button. Board setup needs migration 0018; until then its card doesn't show.
+1. As **National**, Settings → Setup shows **Membership setup**, **Board setup** and **Connect payments**. "Connect payments" opens the Payments tab and says "Done" once test payments are on.
+2. Board setup → **Officer seats**: tick President and Treasurer; set President to "Every chapter", required, 2 years; add "Chaplain" for the national itself. With migration 0024, a third choice "<national> and every chapter" appears; pick it for Secretary and check both the national's and Austin's Board tab list Secretary.
 3. **Officer rules**: turn off "May chapters add their own seats?".
 4. **Terms from your by-laws**: for Treasurer, tick "set our own term", 3 years, today, "Bylaws Art. II". Review the summary, then "Apply setup".
 5. Board tab: the seats are there with the right terms. Run Board setup again and apply without changes; nothing new appears in each seat's term history.
@@ -178,16 +178,24 @@ Use a private browser window for a second account at the same time. Test only in
 7. For a seat with a linked role: after appointing, the person appears with that role in Roles. After "End term", the role is gone (unless they also had it by hand).
 8. Past officers lists the ended term with the reason.
 
+9. **The national and every chapter** (needs migration 0024): as **National**, "Add seat" → Vice President, Used by "Demo National Association and every chapter below it". It appears on the national's Board tab *and* on Austin's, and each fills its own. Edit the seat and change "Used by" to "Every chapter below…": refused with a clear message while the national has someone in it; after "End term" at the national, it saves and the seat leaves the national's Board tab.
+
 **Also try:** as **National**, turn off "Chapters may rename the board seats you define" in Settings, then try "Rename here" in Austin.
 Also: edit a seat and set "No role" and a suggested term of "No fixed term"; and "Change term" to "No fixed term". Both should save (fixed 2026-11-02).
 
-## 14b. Reports (nationals and regions)
+## 14a. Overview
+**Where:** Overview. The numbers need migration 0024; until then admins see only their membership card.
+1. As **National**: "At a glance" shows Current members, Chapters, Average members per chapter, Lifetime members (with "N other current members · X% lifetime" and a bar), New in the last 30 days, Waiting for approval, Renewals due in 30 days, Revenue this year and Vacant required seats. A person in both the national and a chapter counts once. "See each chapter on the Reports page" opens Reports.
+2. As **Chapter**, Austin: the same tiles for Austin only, without Chapters or the average.
+3. As **Member**: only "Your membership" (level, standing, renewal) and the directory choice; no numbers.
+
+## 14b. Reports
 **Where:** Demo National → Reports tab. Needs migration 0019; until then the tab says it needs a database update.
 1. **Members:** one row per organization (chapters indented under the national) and a Total row. Check the counts against each chapter's Members tab. The standing bar shows good / grace / lapsed / pending; hovering a segment shows the count and share.
 2. **Revenue:** defaults to this year so far. Change the dates. Test payments aren't counted; a partly refunded payment shows the refund and the net amount.
 3. **Boards:** required seats with nobody in them are listed per chapter; "Terms past their end" counts officers still serving after their planned end.
 4. "Export CSV" on each section: open the files in Excel or Sheets, then check the Audit log shows each export.
-5. As **Chapter**, open Austin: there's no Reports tab (chapters don't have one). As **Member**, Demo National shows no Reports tab either.
+5. As **Chapter**, open Austin → Reports: one row, Austin only, described as "Austin, as of today." Opening Demo National's Reports as Chapter isn't possible. As **Member**, there's no Reports item.
 
 **Also try:** dark mode (the standing colors should still read clearly); a phone-sized window (the tables scroll sideways).
 

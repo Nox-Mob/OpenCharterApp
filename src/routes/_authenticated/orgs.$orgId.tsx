@@ -13,6 +13,9 @@ import { PaymentsTab } from "@/components/payments/payments-tab";
 import { MembersDirectory } from "@/components/members/members-directory";
 import { BoardTab } from "@/components/governance/board-tab";
 import { ReportsTab } from "@/components/reports/reports-tab";
+import { OrgOverview } from "@/components/reports/org-overview";
+import { OrgNavigation } from "@/components/org/org-nav";
+import { buildOrgNav, resolveSection } from "@/components/org/org-nav-items";
 import { DirectoryPreference } from "@/components/members/directory-preference";
 import { MyMembershipCard } from "@/components/membership/my-membership-card";
 import { RequiresDatabase } from "@/components/db/requires-database";
@@ -21,7 +24,6 @@ import { DeleteDemoOrg } from "@/components/demo/delete-demo-org";
 import { DemoBadge } from "@/components/demo/demo-badge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -33,7 +35,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/orgs/$orgId")({
   head: () => ({ meta: [{ title: "Organization — OpenCharterApp" }] }),
-  // ?tab=payments opens a tab directly (e.g. from the setup cards).
+  // ?tab=payments opens a section directly (e.g. from the setup cards). Sections: org-nav.tsx.
   validateSearch: (s: Record<string, unknown>): { tab?: string } =>
     typeof s["tab"] === "string" && s["tab"] !== "overview" ? { tab: s["tab"] } : {},
   loader: async ({ context }) => {
@@ -61,21 +63,34 @@ function OrgPage() {
   const canAddChild =
     (org.type === "national" || org.type === "region") &&
     hasPermission(grants, "org.create_child", org);
-  const canAudit = hasPermission(grants, "audit.view", org);
   const canManage = hasPermission(grants, "org.manage", org);
   const canInvite = hasPermission(grants, "members.invite", org);
   const canSeeMembers = hasPermission(grants, "members.view", org);
   const canManageRoles = hasPermission(grants, "roles.manage", org);
   const canManageFields = hasPermission(grants, "attributes.manage", org);
+  const canSeeRevenue = hasPermission(grants, "payments.view", org);
+  const canSeeBoards = hasPermission(grants, "org.view", org);
   const hasChapters = org.type === "national" || org.type === "region";
-  // Roll-ups (E-23) for parents; each section needs its own permission (D-145).
-  const canSeeReports =
-    hasChapters &&
-    (["members.view", "payments.view", "org.view"] as const).some((p) =>
-      hasPermission(grants, p, org),
-    );
-  const canSeePayments =
-    hasPermission(grants, "payments.view", org) || hasPermission(grants, "payments.manage", org);
+  // Reports (E-23): a national or region sees its whole tree, a chapter admin only their chapter
+  // (the roll-ups cover the org asked for and what's below it). Each section has its own
+  // permission (D-145).
+  const canSeeReports = canSeeMembers || canSeeRevenue || canSeeBoards;
+  const canSeePayments = canSeeRevenue || hasPermission(grants, "payments.manage", org);
+  const nav = buildOrgNav({
+    canSeeMembers,
+    canSeeReports,
+    hasChapters,
+    isChapter: org.type === "chapter",
+    canManage,
+    canRunSetup: hasPermission(grants, "setup.run", org),
+    canManageLevels: canManage || hasPermission(grants, "tiers.manage", org),
+    canManageFields: canManage || canManageFields,
+    canManageRoles,
+    canSeePayments,
+    canAudit: hasPermission(grants, "audit.view", org),
+  });
+  const section = resolveSection(nav, tab);
+  const go = (t: string) => navigate({ search: t === "overview" ? {} : { tab: t }, replace: true });
 
   return (
     <div>
@@ -97,85 +112,30 @@ function OrgPage() {
         <p className="mt-1 text-sm text-muted-foreground">/{org.slug}</p>
       </div>
 
-      <Tabs
-        value={tab}
-        onValueChange={(t) =>
-          navigate({ search: t === "overview" ? {} : { tab: t }, replace: true })
-        }
-        className="mt-8"
-      >
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          {canSeeMembers && <TabsTrigger value="members">Members</TabsTrigger>}
-          <TabsTrigger value="directory">Directory</TabsTrigger>
-          <TabsTrigger value="board">Board</TabsTrigger>
-          <TabsTrigger value="levels">Membership levels</TabsTrigger>
-          <TabsTrigger value="fields">Member fields</TabsTrigger>
-          {hasChapters && <TabsTrigger value="chapter-fields">Chapter fields</TabsTrigger>}
-          {canManageRoles && <TabsTrigger value="roles">Roles</TabsTrigger>}
-          {canSeePayments && <TabsTrigger value="payments">Payments</TabsTrigger>}
-          {canManage && <TabsTrigger value="settings">Settings</TabsTrigger>}
-          {hasChapters && <TabsTrigger value="chapters">Chapters</TabsTrigger>}
-          {canSeeReports && <TabsTrigger value="reports">Reports</TabsTrigger>}
-          {canAudit && <TabsTrigger value="audit">Audit log</TabsTrigger>}
-        </TabsList>
-        <TabsContent value="overview" className="mt-6 space-y-6">
-          <RequiresDatabase feature="memberships" fallback={null}>
-            <MyMembershipCard org={org} />
-          </RequiresDatabase>
-          <RequiresDatabase feature="directory" fallback={null}>
-            <DirectoryPreference org={org} />
-          </RequiresDatabase>
-          {hasPermission(grants, "setup.run", org) ? (
-            <SetupCards
-              org={org}
-              canManagePayments={hasPermission(grants, "payments.manage", org)}
-            />
-          ) : (
-            <p className="text-muted-foreground">Welcome to {org.name}.</p>
+      <div className="mt-8 grid gap-6 md:grid-cols-[12rem_minmax(0,1fr)]">
+        <OrgNavigation nav={nav} value={section} onChange={go} />
+        <div className="min-w-0 space-y-6">
+          {section === "overview" && (
+            <>
+              {canSeeMembers && (
+                <RequiresDatabase feature="overview" fallback={null}>
+                  <OrgOverview
+                    org={org}
+                    canSeeRevenue={canSeeRevenue}
+                    canSeeBoards={canSeeBoards}
+                  />
+                </RequiresDatabase>
+              )}
+              <RequiresDatabase feature="memberships" fallback={null}>
+                <MyMembershipCard org={org} />
+              </RequiresDatabase>
+              <RequiresDatabase feature="directory" fallback={null}>
+                <DirectoryPreference org={org} />
+              </RequiresDatabase>
+              {!canSeeMembers && <p className="text-muted-foreground">Welcome to {org.name}.</p>}
+            </>
           )}
-          {org.type === "chapter" && <ChapterFieldsCard org={org} orgs={orgs} grants={grants} />}
-        </TabsContent>
-        <TabsContent value="directory" className="mt-6">
-          <RequiresDatabase feature="directory">
-            <MembersDirectory orgId={org.id} />
-          </RequiresDatabase>
-        </TabsContent>
-        <TabsContent value="board" className="mt-6">
-          <RequiresDatabase feature="board">
-            <BoardTab
-              org={org}
-              grants={grants}
-              canManage={hasPermission(grants, "governance.manage", org)}
-              canDefine={hasPermission(grants, "governance.define", org)}
-            />
-          </RequiresDatabase>
-        </TabsContent>
-        <TabsContent value="levels" className="mt-6">
-          <LevelsTab org={org} orgs={orgs} canManage={hasPermission(grants, "tiers.manage", org)} />
-        </TabsContent>
-        <TabsContent value="fields" className="mt-6">
-          <AttributesTab org={org} canManage={canManageFields} />
-        </TabsContent>
-        {hasChapters && (
-          <TabsContent value="chapter-fields" className="mt-6">
-            <AttributesTab org={org} canManage={canManageFields} subject="chapter" />
-          </TabsContent>
-        )}
-        {canSeePayments && (
-          <TabsContent value="payments" className="mt-6">
-            <RequiresDatabase feature="payments">
-              <PaymentsTab org={org} canManage={hasPermission(grants, "payments.manage", org)} />
-            </RequiresDatabase>
-          </TabsContent>
-        )}
-        {canManageRoles && (
-          <TabsContent value="roles" className="mt-6">
-            <RolesTab org={org} orgs={orgs} grants={grants} />
-          </TabsContent>
-        )}
-        {canSeeMembers && (
-          <TabsContent value="members" className="mt-6">
+          {section === "members" && (
             <MembersTab
               org={org}
               canInvite={canInvite}
@@ -183,57 +143,103 @@ function OrgPage() {
               canManageMembers={hasPermission(grants, "members.manage", org)}
               grants={grants}
             />
-          </TabsContent>
-        )}
-        {canManage && (
-          <TabsContent value="settings" className="mt-6">
-            <SettingsTab key={org.id} org={org} />
-            <DeleteDemoOrg org={org} orgs={orgs} />
-          </TabsContent>
-        )}
-        {canSeeReports && (
-          <TabsContent value="reports" className="mt-6">
+          )}
+          {section === "directory" && (
+            <RequiresDatabase feature="directory">
+              <MembersDirectory orgId={org.id} />
+            </RequiresDatabase>
+          )}
+          {section === "board" && (
+            <RequiresDatabase feature="board">
+              <BoardTab
+                org={org}
+                grants={grants}
+                canManage={hasPermission(grants, "governance.manage", org)}
+                canDefine={hasPermission(grants, "governance.define", org)}
+              />
+            </RequiresDatabase>
+          )}
+          {section === "reports" && (
             <RequiresDatabase feature="reports">
               <ReportsTab
                 org={org}
                 canSeeMembers={canSeeMembers}
-                canSeeRevenue={hasPermission(grants, "payments.view", org)}
-                canSeeBoards={hasPermission(grants, "org.view", org)}
+                canSeeRevenue={canSeeRevenue}
+                canSeeBoards={canSeeBoards}
               />
             </RequiresDatabase>
-          </TabsContent>
-        )}
-        <TabsContent value="chapters" className="mt-6">
-          <div className="mb-4 flex justify-end">
-            {canAddChild && (
-              <CreateOrgDialog parentId={org.id} trigger={<Button>Add chapter</Button>} />
-            )}
-          </div>
-          {children.length === 0 ? (
-            <p className="text-muted-foreground">No chapters yet.</p>
-          ) : (
-            <ul className="divide-y rounded-md border bg-card">
-              {children.map((c) => (
-                <li key={c.id}>
-                  <Link
-                    to="/orgs/$orgId"
-                    params={{ orgId: c.id }}
-                    className="flex justify-between px-5 py-3 hover:bg-muted"
-                  >
-                    <span>{c.name}</span>
-                    <Badge variant="outline">{TYPE_LABEL[c.type]}</Badge>
-                  </Link>
-                </li>
-              ))}
-            </ul>
           )}
-        </TabsContent>
-        {canAudit && (
-          <TabsContent value="audit" className="mt-6">
-            <AuditLog orgId={org.id} />
-          </TabsContent>
-        )}
-      </Tabs>
+          {section === "chapters" && (
+            <>
+              <div className="flex justify-end">
+                {canAddChild && (
+                  <CreateOrgDialog parentId={org.id} trigger={<Button>Add chapter</Button>} />
+                )}
+              </div>
+              {children.length === 0 ? (
+                <p className="text-muted-foreground">No chapters yet.</p>
+              ) : (
+                <ul className="divide-y rounded-md border bg-card">
+                  {children.map((c) => (
+                    <li key={c.id}>
+                      <Link
+                        to="/orgs/$orgId"
+                        params={{ orgId: c.id }}
+                        className="flex justify-between px-5 py-3 hover:bg-muted"
+                      >
+                        <span>{c.name}</span>
+                        <Badge variant="outline">{TYPE_LABEL[c.type]}</Badge>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+          {section === "settings" && (
+            <>
+              <SettingsTab key={org.id} org={org} />
+              <DeleteDemoOrg org={org} orgs={orgs} />
+            </>
+          )}
+          {section === "setup" && (
+            <SetupCards
+              org={org}
+              canManagePayments={hasPermission(grants, "payments.manage", org)}
+            />
+          )}
+          {section === "levels" && (
+            <LevelsTab
+              org={org}
+              orgs={orgs}
+              canManage={hasPermission(grants, "tiers.manage", org)}
+            />
+          )}
+          {section === "fields" && <AttributesTab org={org} canManage={canManageFields} />}
+          {section === "chapter-fields" &&
+            (hasChapters ? (
+              <AttributesTab org={org} canManage={canManageFields} subject="chapter" />
+            ) : (
+              <ChapterFieldsCard
+                org={org}
+                orgs={orgs}
+                grants={grants}
+                empty={
+                  <p className="text-muted-foreground">
+                    {parent?.name ?? "Your parent organization"} hasn't defined any chapter fields.
+                  </p>
+                }
+              />
+            ))}
+          {section === "roles" && <RolesTab org={org} orgs={orgs} grants={grants} />}
+          {section === "payments" && (
+            <RequiresDatabase feature="payments">
+              <PaymentsTab org={org} canManage={hasPermission(grants, "payments.manage", org)} />
+            </RequiresDatabase>
+          )}
+          {section === "audit" && <AuditLog orgId={org.id} />}
+        </div>
+      </div>
     </div>
   );
 }

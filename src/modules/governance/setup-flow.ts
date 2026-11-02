@@ -1,5 +1,5 @@
 import type { Answers, Flow, FlowContext } from "@/engines/setup";
-import { seatKey, seatTermLabel, type SeatScope, type SeatTerm } from "./seats";
+import { seatKey, seatTermLabel, usedByOwner, type SeatScope, type SeatTerm } from "./seats";
 
 /**
  * Board setup flow (setup-engine.md §6.5, D-143). Defines this org's officer seats (a national
@@ -101,7 +101,7 @@ export function newSeat(title: string, scope: SeatScope): SeatAnswer {
 /** Seats used at this org: inherited ones plus its own "self" seats from the answers. */
 export function seatsUsedHere(a: Answers, ctx: FlowContext, orgId: string) {
   const own = ((a["seats"] as SeatAnswer[] | undefined) ?? [])
-    .filter((s) => s.scope === "self")
+    .filter((s) => usedByOwner(s.scope))
     .map((s) => ({ owner_org_id: orgId, key: s.key, title: s.title, term: s.term }));
   return [...(ctx.board?.inherited ?? []), ...(definesSeats(ctx) ? own : [])];
 }
@@ -180,7 +180,11 @@ export const boardFlow: Flow<BoardPlan> = {
           ? seats.map(
               (s) =>
                 `${s.title}${s.seat_count > 1 ? ` (${s.seat_count} seats)` : ""}${s.required ? ", required" : ""} · ${
-                  s.scope === "chapters" ? "every chapter" : ctx.orgName
+                  s.scope === "chapters"
+                    ? "every chapter"
+                    : s.scope === "self_and_chapters"
+                      ? `${ctx.orgName} and every chapter`
+                      : ctx.orgName
                 } · suggested term ${seatTermLabel(s.term).toLowerCase()}`,
             )
           : ["No seats of your own"]),

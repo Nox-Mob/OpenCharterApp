@@ -24,6 +24,7 @@ Apply these in order (Lovable → apply pending migrations). Step-by-step instru
 | `0020_two_level_dues` | E-18 national dues required for chapter members (two payments, national first), chapter dues none / optional / required, chapter price range | Waiting |
 | `0021_pricing_rules` | E-19 attribute-based pricing: rules per term (conditions on member fields → a price or a discount), charged when joining and renewing online | Waiting |
 | `0022_demo_orgs` | Demo organizations: platform operators (the demo accounts), `is_demo` on organizations (inherited, can't change), create and delete demo orgs, test gateway and "no email" follow the flag | Waiting |
+| `0024_board_scope_and_overview` | Board seats for an org *and* its chapters (`seat_scope` value `self_and_chapters`), `set_seat_scope` to change who uses a seat, `org_overview_stats` for the Overview page (D-151, D-152). Apply after `0023` | Waiting |
 
 ## Done
 - [x] E-12: Payments tab to connect Stripe (key checked, sealed, stored privately) or the demo test gateway, payments list, webhook route (applied 2026-11-01)
@@ -65,6 +66,10 @@ Plan for E-12 / E-13: docs/plans/e12-e13-payments-and-joining.md
 - [ ] E-18 (built, waiting for 0020): two-level dues: the national can require its own membership for chapter members (join page step 1 of 2 → national, step 2 → chapter; two payments and receipts), chapter dues none / optional / required, a price range for chapter terms, Membership setup v4 for parents (D-146). Remaining: national standing next to chapter standing in the chapter's Members tab, linked renewals
 - [ ] E-23 (built, waiting for 0019): Reports tab for nationals and regions with members by standing (standing bar, new, expiring 30 / 60 / 90), revenue per currency for a date range, board vacancies and terms past their end, audited CSV exports (D-145)
 - [ ] Setup hub and Board setup (built, waiting for 0018; the Membership and "Connect payments" cards work now): a card per setup flow, `?flow=board`, seats / officer rules / terms from your by-laws (D-143)
+- [ ] Board seats for the national *and* every chapter (built, waiting for 0024): "Used by" has a third choice, "<org> and every chapter below it", in the seat editor and Board setup, and an existing seat's "Used by" can be changed in the seat editor (D-151)
+- [x] Org page: left-hand menu (Overview, Members, Directory, Board, Reports, Chapters, Settings) with the admin pages under Settings, Setup moved there from the Overview (D-152)
+- [ ] Overview numbers (built, waiting for 0024): members, chapters, average per chapter, lifetime vs other, new, pending, renewals due, revenue this year, vacant seats; a chapter admin sees their chapter only. Reports for chapter admins (their chapter only) work now (D-152)
+- [ ] Member overview: decide what members see beyond their membership card (proposal in docs/plans/member-overview.md)
 - [ ] Phase 1 follow-ups: receipt wording reviewed by a CPA (R-07); templates and manual receipts (E-36); elections (E-27) and vacancy alerts (E-25)
 
 ## Deferred (user decision 2026-10-30: core first, automations later)

@@ -10,7 +10,13 @@ import { termEndDate, type TermUnit } from "@/modules/membership/tiers";
  * set_seat_active, set_seat_title, set_seat_term, recalculate_planned_ends, appoint_officer,
  * end_appointment), so seat counts, good standing, no escalation and history hold in one place.
  */
-export type SeatScope = "self" | "chapters";
+/**
+ * Who uses a seat: only the org that defines it ("self"), every org below it ("chapters"), or
+ * both ("self_and_chapters", 0024): e.g. a President at the national and in every chapter. Each
+ * org fills its own seats either way.
+ */
+export const SEAT_SCOPES = ["self", "chapters", "self_and_chapters"] as const;
+export type SeatScope = (typeof SEAT_SCOPES)[number];
 export type SeatTerm = { count: number; unit: TermUnit } | null;
 
 export type Holder = {
@@ -209,6 +215,18 @@ export function ruleInForce(rules: readonly TermRule[], templateId: string, on: 
   return rules.find((r) => r.template_id === templateId && r.effective_from <= on) ?? null;
 }
 
+/** Whether a seat with this scope is used at the org that defines it. */
+export const usedByOwner = (scope: SeatScope) => scope !== "chapters";
+/** Whether a seat with this scope is used by the orgs below the one that defines it. */
+export const usedBelow = (scope: SeatScope) => scope !== "self";
+
+/** "Every chapter below Nat", "Nat and every chapter below it", or "Nat". */
+export function scopeLabel(scope: SeatScope, orgName: string): string {
+  if (scope === "chapters") return `Every chapter below ${orgName}`;
+  if (scope === "self_and_chapters") return `${orgName} and every chapter below it`;
+  return `Only ${orgName}`;
+}
+
 export function seatKey(title: string): string {
   const k = title
     .toLowerCase()
@@ -232,7 +250,7 @@ export const seatInputSchema = z.object({
   seat_count: z.number().int().min(1, "At least one seat").max(50),
   term: termShape,
   role_id: z.string().uuid().nullable(),
-  scope: z.enum(["self", "chapters"]),
+  scope: z.enum(SEAT_SCOPES),
   sort_order: z.number().int(),
 });
 export type SeatInput = z.infer<typeof seatInputSchema>;
@@ -289,6 +307,15 @@ export async function updateSeat(templateId: string, input: SeatInput) {
 
 export async function setSeatActive(templateId: string, active: boolean) {
   const { error } = await db.rpc("set_seat_active", { _template: templateId, _active: active });
+  if (error) throw error;
+}
+
+/** Widen or narrow who uses a seat (refused while it would remove a current officer). */
+export async function setSeatScope(templateId: string, scope: SeatScope) {
+  const { error } = await db.rpc("set_seat_scope", {
+    _template: templateId,
+    _scope: z.enum(SEAT_SCOPES).parse(scope),
+  });
   if (error) throw error;
 }
 
@@ -369,6 +396,10 @@ export function boardErrorMessage(message: string): string {
     ["keep at least one admin", "An organization must keep at least one admin"],
     ["role is retired", "The seat's role is retired"],
     ["isn't used here", "That seat isn't used here"],
+    [
+      "no longer be used",
+      "End the current terms where this seat would no longer be used, then change who uses it",
+    ],
   ];
   return known.find(([k]) => message.includes(k))?.[1] ?? "Couldn't save the change";
 }

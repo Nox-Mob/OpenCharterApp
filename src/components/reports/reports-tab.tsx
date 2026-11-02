@@ -51,7 +51,10 @@ function download(name: string, csv: string) {
   URL.revokeObjectURL(url);
 }
 
-/** Reports tab (E-23): members, revenue and board health for this org and every org below it. */
+/**
+ * Reports tab (E-23): members, revenue and board health for this org and every org below it.
+ * A chapter has nothing below it, so a chapter admin sees their own chapter only (D-152).
+ */
 export function ReportsTab({
   org,
   canSeeMembers,
@@ -96,7 +99,9 @@ export function ReportsTab({
             <div>
               <h2 className="text-lg font-semibold">Members</h2>
               <p className="text-sm text-muted-foreground">
-                {org.name} and every organization below it, as of today.
+                {org.type === "chapter"
+                  ? `${org.name}, as of today.`
+                  : `${org.name} and every organization below it, as of today.`}
               </p>
             </div>
             <Button

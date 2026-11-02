@@ -7,7 +7,7 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When Lovable applies a migration, delete its section here (the generated types take over).
- * Pending: 0017_purge_audit_summary (no types), 0018_setup_governance, 0019_rollups, 0020_two_level_dues, 0021_pricing_rules, 0022_demo_orgs (see roadmap.md).
+ * Pending: 0017_purge_audit_summary (no types), 0018_setup_governance, 0019_rollups, 0020_two_level_dues, 0021_pricing_rules, 0022_demo_orgs, 0024_board_scope_and_overview (see roadmap.md).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +16,10 @@ import type { Database, Json } from "@/integrations/supabase/types";
 type Generated = Database["public"];
 
 // Add types for a migration here while Lovable hasn't applied it yet; delete them once applied.
-export type PendingEnums = Record<never, never>;
+export type PendingEnums = {
+  // 0024_board_scope_and_overview adds 'self_and_chapters'
+  seat_scope: "self" | "chapters" | "self_and_chapters";
+};
 export type PendingTables = {
   // 0021_pricing_rules
   pricing_rules: {
@@ -39,6 +42,31 @@ export type PendingTables = {
   };
 };
 export type PendingFunctions = {
+  // 0024_board_scope_and_overview
+  define_seat: {
+    Args: Omit<Generated["Functions"]["define_seat"]["Args"], "_scope"> & {
+      _scope?: PendingEnums["seat_scope"];
+    };
+    Returns: string;
+  };
+  set_seat_scope: {
+    Args: { _template: string; _scope: PendingEnums["seat_scope"] };
+    Returns: undefined;
+  };
+  org_overview_stats: {
+    Args: { _org: string };
+    Returns: {
+      chapters: number;
+      orgs_below: number;
+      roster: number;
+      current_members: number;
+      lifetime_members: number;
+      chapter_memberships: number;
+      pending_members: number;
+      joined_30d: number;
+      expiring_30: number;
+    }[];
+  };
   // 0018_setup_governance
   apply_setup_sections: { Args: Record<string, never>; Returns: string[] };
   // 0022_demo_orgs

@@ -90,13 +90,16 @@ const nat: Org = {
   logo_path: null,
 };
 
-const renderTab = (perms: { members: boolean; revenue: boolean; boards: boolean }) =>
+const renderTab = (
+  perms: { members: boolean; revenue: boolean; boards: boolean },
+  org: Org = nat,
+) =>
   render(
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
       <ReportsTab
-        org={nat}
+        org={org}
         canSeeMembers={perms.members}
         canSeeRevenue={perms.revenue}
         canSeeBoards={perms.boards}
@@ -126,5 +129,16 @@ describe("ReportsTab", () => {
     expect(screen.queryByRole("heading", { name: "Members" })).toBeNull();
     expect(screen.queryByRole("heading", { name: "Revenue" })).toBeNull();
     expect(rpc.mock.calls.map((c) => c[0])).toEqual(["org_rollup_governance"]);
+  });
+
+  it("describes a chapter's report as its own chapter only", async () => {
+    rpc.mockClear();
+    renderTab(
+      { members: true, revenue: false, boards: false },
+      { ...nat, id: "a", name: "Chapter A", type: "chapter", parent_id: "n" },
+    );
+    expect(await screen.findByText("Chapter A, as of today.")).toBeInTheDocument();
+    expect(screen.queryByText(/every organization below it/)).toBeNull();
+    expect(rpc).toHaveBeenCalledWith("org_rollup_members", { _org: "a" });
   });
 });

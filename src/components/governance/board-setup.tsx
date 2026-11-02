@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Org } from "@/lib/orgs";
+import { useFeatureReady } from "@/lib/db/readiness";
 import type { Answers, FlowContext } from "@/engines/setup";
 import { setupStateQuery } from "@/modules/setup/drafts";
 import {
@@ -131,6 +132,8 @@ function SeatsQuestion({
   orgName: string;
 }) {
   const [title, setTitle] = useState("");
+  // "This org and every chapter" needs migration 0024 (D-135).
+  const scopeReady = useFeatureReady("board_scope") === true;
   const defaultScope = canScopeChapters ? "chapters" : "self";
   const keys = new Set(value.map((s) => s.key));
   const update = (i: number, patch: Partial<SeatAnswer>) =>
@@ -183,11 +186,16 @@ function SeatsQuestion({
                     value={s.scope}
                     onValueChange={(v) => update(i, { scope: v as SeatAnswer["scope"] })}
                   >
-                    <SelectTrigger className="w-52" aria-label={`${s.title} used by`}>
+                    <SelectTrigger className="w-64" aria-label={`${s.title} used by`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="chapters">Every chapter</SelectItem>
+                      {(scopeReady || s.scope === "self_and_chapters") && (
+                        <SelectItem value="self_and_chapters">
+                          {orgName} and every chapter
+                        </SelectItem>
+                      )}
                       <SelectItem value="self">{orgName} itself</SelectItem>
                     </SelectContent>
                   </Select>

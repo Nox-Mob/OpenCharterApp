@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Lock } from "lucide-react";
 import { toast } from "sonner";
@@ -16,10 +16,13 @@ export function ChapterFieldsCard({
   org,
   orgs,
   grants,
+  empty = null,
 }: {
   org: Org;
   orgs: readonly Org[];
   grants: readonly Grant[];
+  /** Shown when the parent defined no chapter fields this viewer may see. */
+  empty?: ReactNode;
 }) {
   const qc = useQueryClient();
   const defs = useQuery(attributeDefsQuery(org.id, org.ancestor_ids));
@@ -36,7 +39,8 @@ export function ChapterFieldsCard({
   // Admin-only values are hidden from members by RLS, so don't show an empty box.
   const canManageChapter = hasPermission(grants, "org.manage", org);
   const fields = all.filter((d) => canManageChapter || d.visibility !== "admins");
-  if (defs.isLoading || values.isLoading || fields.length === 0) return null;
+  if (defs.isLoading || values.isLoading) return null;
+  if (fields.length === 0) return <>{empty}</>;
   const missing = editable.filter((d) => d.required && (values.data?.[d.id] ?? null) === null);
   const ownerName = (id: string) => orgs.find((o) => o.id === id)?.name ?? "your national";
 

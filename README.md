@@ -44,6 +44,7 @@ Working today:
 Built and waiting for a database update:
 
 - memberships with standing and recorded payments
+- board seats shared by a national and all its chapters, and the Overview numbers (migration 0024)
 
 Next:
 

@@ -10,11 +10,15 @@ import {
   openSeats,
   plannedEnd,
   ruleInForce,
+  scopeLabel,
   seatInputSchema,
   seatKey,
   seatTermLabel,
+  setSeatScope,
   setSeatTerm,
   updateSeat,
+  usedBelow,
+  usedByOwner,
   termSummary,
   vacantRequired,
   type Seat,
@@ -140,12 +144,29 @@ describe("seat input", () => {
     expect(seatInputSchema.safeParse({ ...ok, title: " " }).success).toBe(false);
     expect(seatInputSchema.safeParse({ ...ok, seat_count: 0 }).success).toBe(false);
     expect(seatInputSchema.safeParse({ ...ok, term: null }).success).toBe(true);
+    expect(seatInputSchema.safeParse({ ...ok, scope: "self_and_chapters" }).success).toBe(true);
+    expect(seatInputSchema.safeParse({ ...ok, scope: "everyone" }).success).toBe(false);
+  });
+
+  it("knows where each scope applies (mirror of seat_applies_at)", () => {
+    expect([usedByOwner("self"), usedBelow("self")]).toEqual([true, false]);
+    expect([usedByOwner("chapters"), usedBelow("chapters")]).toEqual([false, true]);
+    expect([usedByOwner("self_and_chapters"), usedBelow("self_and_chapters")]).toEqual([
+      true,
+      true,
+    ]);
+    expect(scopeLabel("self", "Nat")).toBe("Only Nat");
+    expect(scopeLabel("chapters", "Nat")).toBe("Every chapter below Nat");
+    expect(scopeLabel("self_and_chapters", "Nat")).toBe("Nat and every chapter below it");
   });
 
   it("explains database errors", () => {
     expect(boardErrorMessage("officers must be members in good standing")).toBe(
       "Officers must be members in good standing",
     );
+    expect(
+      boardErrorMessage("end the current terms where this seat would no longer be used"),
+    ).toMatch(/^End the current terms/);
     expect(boardErrorMessage("boom")).toBe("Couldn't save the change");
   });
 });
@@ -181,5 +202,14 @@ describe("writes send every argument the SQL function has", () => {
       "set_seat_term",
       expect.objectContaining({ _count: null, _unit: null, _effective_from: "2026-01-01" }),
     );
+  });
+
+  it("set_seat_scope with a validated scope", async () => {
+    await setSeatScope("t1", "self_and_chapters");
+    expect(rpc).toHaveBeenLastCalledWith("set_seat_scope", {
+      _template: "t1",
+      _scope: "self_and_chapters",
+    });
+    await expect(setSeatScope("t1", "nobody" as never)).rejects.toThrow();
   });
 });

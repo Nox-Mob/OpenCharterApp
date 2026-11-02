@@ -34,6 +34,12 @@ Each depends on the ones before it. They're additive only (D-125, checked in CI 
 | 5 | `0021_pricing_rules.sql` | Pricing by member fields: the `pricing_rules` table, `term_price`, `quote_price`, `save_pricing_rule`, `set_pricing_rule_active`; `begin_join` / `begin_renewal` charge the member's price; `public_join_info` marks terms that have rules | `select count(*) from public.pricing_rules;` returns 0, not an error |
 | 6 | `0022_demo_orgs.sql` | Demo organizations: `private.platform_operators` (seeded with the three demo accounts), `organizations.is_demo` (backfilled for the `d1000000-` orgs), `create_demo_organization`, `delete_demo_organization`, `emails_allowed`; `test_gateway_allowed` now follows the flag | `select slug from public.organizations where is_demo order by slug;` lists `demo-austin`, `demo-dallas`, `demo-national` |
 
+Then, after `0023_confirm_0017_0022_applied.sql`:
+
+| # | File | What it adds | Check it worked (SQL editor) |
+|---|---|---|---|
+| 7 | `0024_board_scope_and_overview.sql` | Board seats used by an org *and* every org below it (`seat_scope` value `self_and_chapters`, `seat_applies_at` / `seat_template_check` updated), `set_seat_scope`, and `org_overview_stats` for the Overview page (D-151, D-152). The new enum value is only compared as text, so the file also applies inside one transaction | `select enum_range(null::public.seat_scope);` returns `{self,chapters,self_and_chapters}` |
+
 If one fails, stop: don't apply the later ones, and keep the error message. Don't edit the file to make it pass. Tell us, and we'll ship the fix as a new migration (`0023_…`).
 
 Notes for the importer:

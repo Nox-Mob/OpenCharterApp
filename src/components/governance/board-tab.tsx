@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Org } from "@/lib/orgs";
 import type { Grant } from "@/lib/policy";
+import { useFeatureReady } from "@/lib/db/readiness";
 import { canGrantRole, rolesForOrg } from "@/modules/roles";
 import { rolesQuery } from "@/modules/roles/queries";
 import { membersQuery } from "@/modules/membership/memberships";
@@ -18,9 +19,12 @@ import {
   openSeats,
   ownSeatsQuery,
   plannedEnd,
+  scopeLabel,
+  SEAT_SCOPES,
   seatInputSchema,
   seatTermLabel,
   setSeatActive,
+  setSeatScope,
   setSeatTerm,
   setSeatTitle,
   termInputSchema,
@@ -30,6 +34,7 @@ import {
   vacantRequired,
   type Seat,
   type SeatInput,
+  type SeatScope,
   type SeatTemplate,
   type SeatTerm,
 } from "@/modules/governance/seats";
@@ -536,9 +541,15 @@ function SeatEditor({
 }) {
   const own = useQuery(ownSeatsQuery(org.id));
   const roles = useQuery(rolesQuery());
-  const [editing, setEditing] = useState<{ id: string | null; input: SeatInput } | null>(null);
+  const [editing, setEditing] = useState<{
+    id: string | null;
+    input: SeatInput;
+    savedScope?: SeatScope;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
   const canScopeChapters = org.type === "national" || org.type === "region";
+  // "This org and every chapter" and changing a seat's scope need migration 0024 (D-135).
+  const scopeReady = useFeatureReady("board_scope") === true;
   const usableRoles = rolesForOrg(roles.data ?? [], org).filter((r) =>
     canGrantRole(r, grants, org),
   );
@@ -547,6 +558,7 @@ function SeatEditor({
   const edit = (t: SeatTemplate) =>
     setEditing({
       id: t.id,
+      savedScope: t.scope,
       input: {
         title: t.title,
         description: t.description,
@@ -566,8 +578,11 @@ function SeatEditor({
       return void toast.error(parsed.error.issues[0]?.message ?? "Check the seat");
     setBusy(true);
     try {
-      if (editing.id) await updateSeat(editing.id, parsed.data);
-      else await defineSeat(org.id, parsed.data);
+      if (editing.id) {
+        await updateSeat(editing.id, parsed.data);
+        if (editing.savedScope && parsed.data.scope !== editing.savedScope)
+          await setSeatScope(editing.id, parsed.data.scope);
+      } else await defineSeat(org.id, parsed.data);
       toast.success("Seat saved");
       setEditing(null);
       onSaved();
@@ -627,7 +642,7 @@ function SeatEditor({
                     </Badge>
                   )}
                 </TableCell>
-                <TableCell>{t.scope === "chapters" ? "Every chapter" : org.name}</TableCell>
+                <TableCell>{scopeLabel(t.scope, org.name)}</TableCell>
                 <TableCell>{seatTermLabel(t.default_term)}</TableCell>
                 <TableCell>{roleName(t.role_id) ?? "—"}</TableCell>
                 <TableCell className="space-x-1 text-right">
@@ -670,7 +685,7 @@ function SeatEditor({
                   onChange={(e) => set({ description: e.target.value })}
                 />
               </div>
-              {canScopeChapters && !editing.id && (
+              {canScopeChapters && (scopeReady || !editing.id) && (
                 <div className="space-y-2">
                   <Label>Used by</Label>
                   <Select
@@ -681,10 +696,19 @@ function SeatEditor({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="self">{org.name} itself</SelectItem>
-                      <SelectItem value="chapters">Every chapter below {org.name}</SelectItem>
+                      {SEAT_SCOPES.filter((sc) => scopeReady || sc !== "self_and_chapters").map(
+                        (sc) => (
+                          <SelectItem key={sc} value={sc}>
+                            {scopeLabel(sc, org.name)}
+                          </SelectItem>
+                        ),
+                      )}
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Each organization fills its own seats. Choose “{org.name} and every chapter
+                    below it” for a seat like President that every level has.
+                  </p>
                 </div>
               )}
               <div className="flex flex-wrap gap-4">
