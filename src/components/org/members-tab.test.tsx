@@ -35,7 +35,7 @@ const results: Record<string, { data?: unknown; error?: unknown }> = {
 const selects: string[] = [];
 function builder(table: string) {
   const b: Record<string, unknown> = {};
-  for (const m of ["eq", "order", "limit", "in", "maybeSingle"]) b[m] = () => b;
+  for (const m of ["eq", "order", "limit", "in", "is", "range", "maybeSingle"]) b[m] = () => b;
   b["select"] = (cols: string) => {
     if (table === "org_member_profiles") selects.push(cols);
     return b;

@@ -12,6 +12,12 @@ Every change must keep all of these green (instructions.md §3). CI runs them on
 | Migration conventions | `bun run check:migrations` | Lovable's import rules for migrations from 0004 on: `org_id`, full grants to `authenticated`, RLS with `has_permission` / `is_org_member` policies, no `DROP TABLE` / `DROP COLUMN` (`scripts/migration-rules.ts`) |
 | Build | `bun run build` | Production build |
 | End to end | `bun run test:e2e` | Playwright in Chromium against the live demo backend (D-170). In CI on pull requests to `main` only |
+| Docs check | `bash scripts/docs-check.sh origin/main` | Code or migrations changed without docs or tests (D-182). In CI on pull requests; label `no-docs-needed` to skip |
+| Performance | `TEST_DATABASE_URL=… bun run test:perf` | Seeds 20 chapters and 5,000 members in a throwaway database and times the heavy reads (budget under 1 second each, D-181); also prints the security catalogue checks (`docs/security-review.md`). Run before a release, not in CI |
+
+## Pre-commit hook
+
+Install once per clone with `bun run hooks:install` (it sets `core.hooksPath` to `.githooks`). Each commit then runs lint, formatting, types, migration rules and the unit tests related to the staged files (`vitest related`), and stops the commit if any fail (D-182). Database, build and end-to-end tests stay in CI. Never bypass it with `--no-verify`; if the hook is wrong, fix the hook.
 
 ## End-to-end tests
 
@@ -23,6 +29,10 @@ Every change must keep all of these green (instructions.md §3). CI runs them on
 | `members` | A national's Members page lists every chapter's members with their organization |
 | `board-setup` | A chapter's board and the contact-email choice (opened, not saved); guided setup under Settings → Setup |
 | `join` | The join page asks every required question (Rank) before payment; joining with the test gateway and returning to the app's own address (D-158) |
+| `lifecycle` | A throwaway demo national created through the screens with the home-chapter model (D-176), a chapter added with the wizard, a second chapter, a level and a member set up through the API; the member picks a chapter and changes it; the national admin sees them in the new chapter only, with the national level, and in the national's list with their chapter. The national is deleted afterwards (leftovers from earlier runs too) |
+| `export` | Settings → Payments → "Export payments" downloads a CSV with the bookkeeping columns (byte-order mark for spreadsheets) (A3) |
+| `levels` | In a throwaway demo national, a chapter starts from a suggested level, sees both choices explained, links it at 20% less with the price previewed, and sees the link and "Make it our own" (A4). Skips until migration 0032 is applied |
+| `a11y` | As each role, on the dashboard and every main screen: every control has an accessible name, one main heading, a page language; sign-in by keyboard with visible focus (R2, D-183) |
 
 Notes:
 - **Starting a checkout needs the service-role secret**, which only the deployed app has. The checkout test therefore runs only with `E2E_BASE_URL` (a deployed preview or the published site) or a local server started with `SUPABASE_SERVICE_ROLE_KEY`; otherwise it's skipped with that reason.
@@ -82,6 +92,8 @@ Current coverage:
 | `9J_seat_contacts` | Officers' own emails by default; a role email replaces them (never both), normalised and validated; a vacant seat with a role email is listed; clearing goes back to the officer's email; an officer without an email; only `governance.manage` at that org (not members, siblings, or seats that don't apply), no client writes, audited; profiles stay private to members; outsiders and anon refused |
 | `9K_payments_export` | Payment export: the org alone or its tree, paid and refunded only, in range, refunds netted, test payments flagged, level / term / method / reference / receipt / tax treatment; emails only for member viewers; audited with the row count; chapter admins only their chapter; members, siblings and anon refused |
 | `9L_home_chapter` | Home-chapter model: separate until chosen, only a national chooses, chosen once (no change or removal), at-large chapter must be its own; join-page info for anyone; the member picks, changes and clears their chapter (record reused, history kept, seats ended); chapter admins read the national membership and count the member in overview, reports and directory, then lose it after a move; officers must be current members of the chapter; national admins move records without a login; people counted once in the national's overview; no client writes to the link; history append-only |
+| `9M_levels_standing_pricing` | National standing for a chapter's members (chapter admins only; members and siblings refused); suggested levels copied (independent) or linked (name, terms, prices and retirement follow the national; same, amount off and percent off, kept within the range); linked levels can't be edited directly; making a level the chapter's own; chapters without their own levels refused; the setup pricing step applied twice gives one rule, updated in place; unknown terms and callers without permission refused |
+| `9N_rollup_performance` | After 0034: each membership still uses its own org's grace days in the members roll-up, overview and directory; the directory default and a member's own choice; permission checks unchanged |
 | `9A_receipts` | Receipt issued for each paid payment and frozen, numbering per org and year with no gaps, can't be changed or deleted, payer and admin access, void / issue again / reissue versions, partial and full refunds |
 | `90_tiers` | Membership levels and terms: isolation, term rules, parent control, retire not delete (deletes remove nothing), identity columns can't change |
 

@@ -239,6 +239,13 @@
       "when": 1793646818976,
       "tag": "0033_home_chapter_delete_fix",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793650418976,
+      "tag": "0034_rollup_performance",
+      "breakpoints": true
     }
   ]
 }

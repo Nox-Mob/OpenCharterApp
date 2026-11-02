@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { db } from "@/lib/db/pending-schema";
+import { readAllPages } from "@/lib/db/pages";
 import { resolveFromAncestors, resolveSetting, type SettingRow } from "@/engines/settings";
 
 /** Member privacy rules for an org (D-139, Q-11): its directory default and the parent's export rule. */
@@ -33,9 +34,15 @@ export const directoryQuery = (orgId: string) =>
   queryOptions({
     queryKey: ["member-directory", orgId],
     queryFn: async (): Promise<DirectoryEntry[]> => {
-      const { data, error } = await db.rpc("member_directory", { _org: orgId });
-      if (error) throw error;
-      return (data ?? []).map((d) => ({
+      // Paged: the API returns at most 1000 rows per request (R6). The function orders by name.
+      const data = await readAllPages(
+        (from, to) =>
+          db.rpc("member_directory", { _org: orgId }).range(from, to) as unknown as PromiseLike<{
+            data: { profile_id: string; display_name: string; fields: unknown }[] | null;
+            error: unknown;
+          }>,
+      );
+      return data.map((d) => ({
         profile_id: d.profile_id,
         display_name: d.display_name,
         fields: (d.fields ?? {}) as Record<string, unknown>,

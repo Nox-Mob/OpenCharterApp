@@ -1,4 +1,5 @@
 import { db } from "@/lib/db/pending-schema";
+import { readAllPages } from "@/lib/db/pages";
 import { tableCsv } from "@/modules/reports/rollups";
 import { formatPrice } from "@/modules/membership/tiers";
 
@@ -97,12 +98,20 @@ export async function exportPayments(
   to: string,
   includeBelow: boolean,
 ): Promise<ExportedPayment[]> {
-  const { data, error } = await db.rpc("export_payments", {
-    _org: orgId,
-    _from: from,
-    _to: to,
-    _include_below: includeBelow,
-  });
-  if (error) throw error;
-  return (data ?? []) as ExportedPayment[];
+  // Paged: the API returns at most 1000 rows per request (R6). The function orders its rows
+  // and audits each call, so a very large export records one export event per 1000 rows.
+  return readAllPages(
+    (start, end) =>
+      db
+        .rpc("export_payments", {
+          _org: orgId,
+          _from: from,
+          _to: to,
+          _include_below: includeBelow,
+        })
+        .range(start, end) as unknown as PromiseLike<{
+        data: ExportedPayment[] | null;
+        error: unknown;
+      }>,
+  );
 }

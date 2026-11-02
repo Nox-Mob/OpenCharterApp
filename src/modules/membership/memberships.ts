@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 import { db as supabase } from "@/lib/db/pending-schema";
 import type { MembershipStatus } from "./standing";
+import { readAllPages } from "@/lib/db/pages";
 
 /**
  * Memberships (E-13a). Reads go through RLS; every write goes through a definer RPC
@@ -81,13 +82,20 @@ export const membersQuery = (
     queryKey: ["members", orgId, withMemberships, withPrivacy, withHome],
     queryFn: async (): Promise<MemberRow[]> => {
       if (!withMemberships) {
-        const { data, error } = await supabase
-          .from("org_member_profiles")
-          .select("id,user_id,display_name,email,created_at")
-          .eq("org_id", orgId)
-          .order("created_at");
-        if (error) throw error;
-        return (data ?? []).map((p) => ({ ...p, source: "signup", membership: null }));
+        const data = await readAllPages(
+          (from, to) =>
+            supabase
+              .from("org_member_profiles")
+              .select("id,user_id,display_name,email,created_at")
+              .eq("org_id", orgId)
+              .order("created_at")
+              .order("id")
+              .range(from, to) as unknown as PromiseLike<{
+              data: Omit<MemberRow, "source" | "membership">[] | null;
+              error: unknown;
+            }>,
+        );
+        return data.map((p) => ({ ...p, source: "signup", membership: null }));
       }
       // directory_listed only exists once migration 0012 is applied (readiness guard).
       // home_of / left_at and the national membership exist once 0030 is applied (A8).
@@ -100,12 +108,17 @@ export const membersQuery = (
       ]
         .filter(Boolean)
         .join(",");
-      let q = supabase.from("org_member_profiles").select(cols).eq("org_id", orgId);
-      // members who moved to another chapter aren't listed here any more
-      if (withHome) q = q.is("left_at", null);
-      const { data, error } = await q.order("created_at");
-      if (error) throw error;
-      return ((data ?? []) as unknown as EmbedRow[]).map(toMemberRow);
+      // Paged: the API returns at most 1000 rows per request (R6, large chapters).
+      const rows = await readAllPages<EmbedRow>((from, to) => {
+        let q = supabase.from("org_member_profiles").select(cols).eq("org_id", orgId);
+        // members who moved to another chapter aren't listed here any more
+        if (withHome) q = q.is("left_at", null);
+        return q.order("created_at").order("id").range(from, to) as unknown as PromiseLike<{
+          data: EmbedRow[] | null;
+          error: unknown;
+        }>;
+      });
+      return rows.map(toMemberRow);
     },
   });
 
@@ -159,19 +172,7 @@ export function isMissingColumnError(e: { code?: string; message?: string }): bo
   );
 }
 
-/** PostgREST returns at most 1000 rows per request; read every page. */
-export async function readAllPages<T>(
-  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
-  size = 1000,
-): Promise<T[]> {
-  const out: T[] = [];
-  for (let from = 0; ; from += size) {
-    const { data, error } = await page(from, from + size - 1);
-    if (error) throw error;
-    out.push(...(data ?? []));
-    if ((data ?? []).length < size) return out;
-  }
-}
+export { readAllPages };
 
 /**
  * Every member record in several orgs at once (D-154): a national or region admin's list of

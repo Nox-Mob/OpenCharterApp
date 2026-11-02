@@ -81,7 +81,13 @@ Use a private browser window for a second account at the same time. Test only in
 2. Membership levels: "Add level" with two terms (1 year, Lifetime). Prices show in dollars.
 3. An org with only one level shows it as "Membership" without needing a name.
 
-**Also try:** run setup a second time and change one answer. Only that change should be listed.
+4. **Prices by member fields** (a setup step, after the levels): add a rule "Senior rate" for the 1-year term, "Rank is one of E-7, E-8, E-9", price $20.00. Review shows it; apply. Settings → Membership levels shows the rule under that term. Run setup again: the rule is filled in; change the price to $18.00 and apply. There's still one rule, now $18.00.
+5. **Suggested levels** (separate-memberships model; Demo National uses it): as **National**, on a level press "Suggest to chapters" (it then says "Stop suggesting").
+6. As **Chapter**, Austin → Membership levels: the national's level shows "Suggested for you" and "Start from this level". The dialog explains **Copy it** (your own level, change it freely, later national changes don't affect it) and **Link to it** (follows the national's name, terms and retirement). Choose Link, "A percentage less", 20: "Your prices" previews each term 20% less, kept within the national's price range. "Link this level".
+7. The chapter's level says "Linked to Demo National Association's …: 20% less than …" and has Price and "Make it our own", but no Edit. As **National**, change that level's 1-year price: Austin's linked price follows. Retire the national level: Austin's linked level is retired too.
+8. As **Chapter**, "Make it our own" (asks to confirm; can't be undone): the level becomes editable and no longer follows the national. Try **Copy** on another suggested level: it is editable at once.
+
+**Also try:** run setup a second time and change one answer. Only that change should be listed. A chapter whose national doesn't allow chapter levels sees no "Start from this level".
 
 ## 6b. Setup hub and Board setup
 **Where:** Settings → Setup (cards), then each card's button.
@@ -106,11 +112,14 @@ Use a private browser window for a second account at the same time. Test only in
 
 ## 8. Finding and exporting members
 **Where:** Members toolbar.
-0. As **National**, the Members page opens on "Everyone in Demo National Association and below": members of Austin and Dallas are listed with an Organization column and their email, including anyone who opted out of the directory. Their rows have "Open" (goes to that chapter's Members page). Switch to "Only Demo National Association" for roles, Details and Export CSV. As **Chapter** (Austin) only Austin's members are listed and there's no switch. Admins have no Directory item.
+0. As **National**, the Members page opens on "Everyone in Demo National Association and below": members of Austin and Dallas are listed with an Organization column and their email, including anyone who opted out of the directory. Their rows have "Open" (goes to that chapter's Members page). "Export CSV" works here too (see step 5). Switch to "Only Demo National Association" for roles and Details. As **Chapter** (Austin) only Austin's members are listed and there's no switch. Admins have no Directory item.
 1. Search by part of a name or email, with and without accents.
 2. Filter by standing, level, a member field, and "Expiring within 30 / 60 / 90 days". Check the "Showing x of y" count.
 3. "Save this view", reload, and click the saved view.
 4. "Export CSV". Open the file in Excel and Google Sheets: accents, dates and empty cells look right, and there are no formulas. The Audit log shows the export.
+5. **Everyone view export** (as **National**, "Everyone in … and below"): the file has an Organization column. Members who opted out of their chapter's directory are left out unless "Include … who opted out" is ticked, and each chapter's own default applies to its rows. The Audit log entry says it covered the organization and the orgs below.
+6. **Columns**: "Columns" lists the member fields; tick Rank and Branch. They appear as columns; reload and they're still there (remembered for you in this browser, per organization). Untick to hide.
+7. **National standing** (separate model, where the national requires its own membership): as **Chapter**, Austin's Members page has a column named after the national, showing each member's national standing next to the chapter one. In the home-chapter model this column doesn't appear (standing is already the national's).
 
 **Also try:** a member who opted out of the directory. The export leaves them out unless "Include … who opted out" is ticked, if your national allows it.
 
@@ -215,6 +224,7 @@ Also: edit a seat and set "No role" and a suggested term of "No fixed term"; and
    - **Your roles and seats**: seats held here with dates, and roles.
    - **Board and who to contact**: the general email from Settings → General (or the national's, marked with its name), then the officers by seat, each with the seat's role email or, if it has none, the officer's own email. Vacant seats appear only if they have a role email.
    - **Your chapter** (home-chapter model, at the national): see §13b.
+   - **National membership** (separate model, at a chapter whose national requires its own membership): if the member's national membership is missing or lapsed, "Actions needed" says so with "Join or renew Demo National Association"; if it's waiting for approval, it says that instead.
    - "Your membership" and the directory choice as before.
 4. **View as member**: as **National**, click "View as member" next to the org name. The menu shrinks to Overview, Directory, Board (and Chapters), a banner explains it's a preview, and the Overview shows your own member cards. Switch sections; the preview stays on until "Exit member view".
 
@@ -235,10 +245,17 @@ Also: edit a seat and set "No role" and a suggested term of "No fixed term"; and
 
 ---
 
+## 16. Accessibility, phones and large rosters
+The end-to-end suite already checks control names, headings, page language and keyboard sign-in (`e2e/a11y.spec.ts`). By hand, before a release:
+1. **Keyboard only** (no mouse): sign in, join from a join page through to the payment step, run Membership setup, filter and export on Members, appoint an officer on Board. Focus is always visible, nothing is skipped or trapped, dialogs close with Escape and return focus to the button that opened them.
+2. **Contrast**: in light and dark themes, text, badges (standing, "Demo", "Linked to …"), muted helper text and disabled buttons are readable. Use the browser's contrast checker on anything that looks faint.
+3. **Zoom and phones**: at 200% zoom and a phone-sized window, every page works without sideways scrolling except wide tables, which scroll inside their card.
+4. **Screen reader** (VoiceOver or NVDA): the join page and checkout read in order, form errors are announced, and toasts are read out.
+5. **Large rosters**: a national with thousands of members is checked by `bun run test:perf` (docs/testing.md). By hand, the Members page of a chapter with more than 1,000 members (none in the demo data yet) should list all of them.
+
 ## Not testable yet
 - Every email: invitations, confirmations, receipts and reminders (E-08, the first update after the MVP). Admins copy links for now.
 - Local dues for chapters in the home-chapter model, postpaid dues and invoices (E-20).
-- Suggested levels for chapters, copy or linked (A4, Sprint 2).
 - Per-org web addresses (E-07), custom domains (E-22) and PayPal (E-21).
 - Real money: Stripe works in test mode with an org's own Stripe account (§10); live mode is the same path with live keys.
 

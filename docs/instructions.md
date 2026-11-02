@@ -185,12 +185,12 @@ Every diagram is followed by a "Diagram description" block explaining in plain p
 
 Rules that depend on memory will be forgotten, so automate them where possible. This is part of E-01.
 
-**Status (2026-11-02):** the CI pipeline runs install, migration rules, lint, formatting, types, unit tests, the database rule tests (including tenant isolation), the build, and end-to-end tests on pull requests to `main` (D-175). **Not yet in place:** the pre-commit hook, the coverage gate and the docs check below (planned as R3 in `docs/plans/wave-a-mvp.md`), and branch protection, which the repository owner sets on GitHub. Until then, run the checks in §3 yourself before pushing.
+**Status (2026-11-02):** the CI pipeline runs install, migration rules, lint, formatting, types, unit tests, the database rule tests (including tenant isolation), the build, end-to-end tests on pull requests to `main` (D-175), and the docs check on pull requests. The pre-commit hook is in `.githooks/pre-commit` (install with `bun run hooks:install`; D-182). **Not yet in place:** the coverage gate (it needs a coverage dependency, so a decision first) and branch protection, which the repository owner sets on GitHub.
 
-- **Pre-commit hook** (for example Husky with lint-staged): runs lint, typecheck, and the tests related to changed files. Block the commit on failure.
+- **Pre-commit hook** (`.githooks/pre-commit`, a plain script rather than Husky and lint-staged, so no dependency): runs lint, formatting, typecheck, migration rules and the tests related to staged files. Blocks the commit on failure.
 - **CI pipeline** on every push to any branch and on pull requests: install with `bun install --frozen-lockfile`, migration-rule check, lint, typecheck, full unit and integration tests, tenant-isolation suite, and e2e on the main branch or before merge.
 - **Coverage gate:** fail CI if coverage on changed code drops below the threshold set in E-01.
-- **Docs check in CI** (lightweight): fail the build if source under `src/` changed but no documentation or test file changed in the same pull request, with an explicit override label for genuine exceptions such as pure refactors. This is a prompt for reviewers, not a substitute for them.
+- **Docs check in CI** (lightweight, `scripts/docs-check.sh`): fail the build if source under `src/` (or migrations, smoke tests, scripts) changed but no documentation or test file changed in the same pull request, with an explicit override label for genuine exceptions such as pure refactors. This is a prompt for reviewers, not a substitute for them.
 - **Branch protection:** no direct pushes to the main branch, required passing checks, at least one review.
 - **Never bypass hooks** (`--no-verify`) to get a commit through. If a hook is wrong, fix the hook.
 
