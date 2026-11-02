@@ -81,6 +81,16 @@ export const FEATURES = {
     table: "seat_contacts",
     applied: true,
   },
+  payments_export: {
+    migration: "0029_payments_export",
+    label: "Payment exports",
+    rpc: "export_payments",
+    args: {
+      _org: "00000000-0000-0000-0000-000000000000",
+      _from: "2000-01-01",
+      _to: "2000-01-01",
+    },
+  },
   exports: {
     migration: "0011_member_exports",
     label: "Member exports and saved views",

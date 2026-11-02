@@ -3,7 +3,11 @@
 Testing by hand: docs/user-testing.md (updated with every feature). Full plan: docs/ (phase IDs map to docs/epic.md). Decisions: docs/decisions.md.
 
 ## Pending migrations for Lovable
-None. `0000`–`0028` are applied (the `GATEWAY_ENCRYPTION_KEY` secret is set); the last batch was `0026_seat_contacts` and `0027_board_setup_scope_and_demo_rank`, confirmed by Lovable's marker `0028` on 2026-11-02. New migrations are listed here until applied; steps and checks are in docs/lovable-handoff.md. Until a migration is applied, the screens that need it show "needs a database update" or leave the feature out (D-135).
+`0000`–`0028` are applied. Apply the ones below in order (Lovable → apply pending migrations); steps and checks are in docs/lovable-handoff.md. Until a migration is applied, the screens that need it show "needs a database update" or leave the feature out (D-135).
+
+| Migration | Enables | Status |
+|---|---|---|
+| `0029_payments_export` | A3: "Export payments" CSV on Settings → Payments, for the org or its tree, audited (D-173) | Waiting |
 
 ## Done
 ### November 2026
@@ -62,7 +66,7 @@ Phases 1 and 2 meet their exit criteria; Phase 3 doesn't yet. Remaining work, in
 **Wave A: Phase 1–2 gaps, then the MVP release v0.1.0** (plan: docs/plans/wave-a-mvp.md; MVP decisions D-169..D-172: no email in the MVP, Playwright, demo data kept for now, v0.1.0)
 - [ ] A1 Live Stripe test-mode run on a non-demo test org (connect, join, webhook, refund) (E-12)
 - [ ] A2 Playwright end-to-end tests: join → checkout → approval → renewal, Membership setup, Board setup, chapter wizard
-- [ ] A3 Transaction CSV export for one org and a national's tree, audited (D-047; E-12, E-23)
+- [x] A3 Transaction CSV export for one org and a national's tree, audited (D-173; built, waiting for 0029)
 - [ ] A4 Suggested levels: a chapter starts from the national's level and chooses Copy or Linked (same price or a set reduction), with an explanation (D-165; E-18)
 - [ ] A8 Membership model "national membership with a home chapter" (D-166): one national membership; the member picks one chapter or none (or the national's at-large chapter, e.g. an online chapter) and changes it freely; chapters may bill local dues themselves; the national's choice of model is permanent
 - [ ] A5 National standing on the chapter's Members page; national-dues reminder in "Actions needed" (E-18)

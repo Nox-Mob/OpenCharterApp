@@ -2,7 +2,13 @@
 
 Status on 2026-11-02.
 
-**Nothing waiting.** Migrations `0000`–`0028` are applied, the types are regenerated, and the `GATEWAY_ENCRYPTION_KEY` secret is set. Thank you. A record is at the end. The next migrations will come with the work in `docs/plans/phases-1-3-review.md`; this file will list them with their checks.
+**Done:** migrations `0000`–`0028` are applied, the types are regenerated, and the `GATEWAY_ENCRYPTION_KEY` secret is set. Thank you. A record is at the end.
+
+**Waiting** (Sprint 1 of the MVP plan, `docs/plans/wave-a-mvp.md`), on branch `BoardUpdates`, tested against Postgres 16:
+
+| File | What it adds | Check it worked (SQL editor) |
+|---|---|---|
+| `0029_payments_export.sql` | `export_payments` (D-173): paid and refunded payments for an org or its tree, audited before returning; no tables | `select count(*) from pg_proc where proname = 'export_payments';` returns 1 |
 
 ## 1. When a migration is waiting
 - Apply them strictly in order. They're additive only (D-125, checked in CI by `bun run check:migrations`).

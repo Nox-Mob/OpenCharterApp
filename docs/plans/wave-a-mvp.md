@@ -135,11 +135,11 @@ Playwright approved (D-170).
 
 | Sprint | Work |
 |---|---|
-| 1 | A2 spike and harness; A8 part 1 (setting, data, RPCs, join, change chapter); A3 |
-| 2 | A8 part 2 (Members, Board, directory, overview, reports in the home-chapter model); A4; A5; end-to-end tests for both |
+| 1 | A2 end-to-end harness and first flows; A8 in full (setting, data, join, change chapter, and the chapter Members page, Board, directory, overview and reports in the home-chapter model); A3 |
+| 2 | A4; A5; end-to-end tests for them |
 | 3 | A6; A7; A1 live Stripe check; R1–R7; release checklist and v0.1.0 |
 
 **Risks to the plan:**
-- **A8 is the largest item:** if it slips, the MVP can ship with only the separate model and A8 follows in 0.2. Decide at the end of Sprint 2.
-- **End-to-end tests against Lovable Cloud auth may be awkward:** the A2 spike decides early.
+- **A8 is the largest item and is all in Sprint 1:** if it slips, it continues into Sprint 2 ahead of A4 / A5; if it still isn't done by the end of Sprint 2, the MVP ships with only the separate model and A8 follows in 0.2.
+- **End-to-end tests run against the live demo backend** (like `bun run test:smoke`): a feature whose migration Lovable hasn't applied yet can only be tested end to end after it is applied.
 - **R1 may turn up fixes:** keep Sprint 3 light for that.

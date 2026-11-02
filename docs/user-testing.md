@@ -121,6 +121,8 @@ Use a private browser window for a second account at the same time. Test only in
 1. As **National**, "Use test payments (demo only)". Expect the "Test mode" badge and a join page link.
 2. Read the Stripe connection instructions and the webhook address. Are they clear enough for a treasurer?
 
+3. **Export payments** (needs migration 0029): pick a date range and "Export CSV". Open it in Excel or Sheets: one row per paid or refunded payment, amounts as numbers, refunds and net, receipt numbers. As **National**, tick "Include every organization below" and check chapters' payments appear. The Audit log shows the export.
+
 **Stripe in test mode** (any org, needs a free Stripe account):
 1. In Stripe (test mode): Developers → API keys → create a restricted key with "Checkout Sessions: write" (or use the `sk_test_…` secret key). Developers → Webhooks → add an endpoint at the address shown on the Payments page, with the events listed there; copy its signing secret (`whsec_…`).
 2. Paste both on the Payments page. Expect "Stripe (test mode)".

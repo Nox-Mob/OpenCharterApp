@@ -13,6 +13,7 @@ import {
   paymentsQuery,
 } from "@/modules/payments/queries";
 import { isDemoOrg } from "@/lib/orgs";
+import { PaymentsExport } from "./payments-export";
 import { Link } from "@tanstack/react-router";
 import { useFeatureReady } from "@/lib/db/readiness";
 import { orgReceiptsQuery } from "@/modules/receipts";
@@ -210,6 +211,8 @@ export function PaymentsTab({ org, canManage }: { org: Org; canManage: boolean }
           </Button>
         )}
       </section>
+
+      <PaymentsExport org={org} />
 
       <section>
         <h2 className="mb-2 text-lg font-semibold">Payments received</h2>
