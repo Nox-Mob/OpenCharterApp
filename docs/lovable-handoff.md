@@ -70,4 +70,6 @@ Apply each in order after the ones above. Each is additive and passes the D-125 
 | 8 | `0017_purge_audit_summary.sql` | `purge_smoke_data` also writes one summary audit event; restores the `seat_templates` comment | After a smoke run: `select after from public.audit_events where action = 'purge' order by id desc limit 1;` shows the counts |
 | 9 | `0018_setup_governance.sql` | Board setup: `apply_setup` handles `seats` and `seat_terms`; `apply_setup_sections()` | `select public.apply_setup_sections();` includes `seats` |
 
-After applying, run `bun run test:smoke` as usual and regenerate the types. Once 0018 is applied, mark the `board_setup` feature in `src/lib/db/readiness.ts` as `applied: true` (we can do that).
+| 10 | `0019_rollups.sql` | Reports: `org_rollup_members`, `org_rollup_revenue`, `org_rollup_governance`, `log_report_export` | As the demo national admin: `select * from public.org_rollup_members('d1000000-0000-4000-8000-000000000001');` lists the national and its chapters |
+
+After applying, run `bun run test:smoke` as usual and regenerate the types. Once 0018 and 0019 are applied, mark the `board_setup` and `reports` features in `src/lib/db/readiness.ts` as `applied: true` (we can do that).

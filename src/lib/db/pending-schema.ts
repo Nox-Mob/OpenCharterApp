@@ -7,7 +7,7 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When Lovable applies a migration, delete its section here (the generated types take over).
- * Pending: none (0008–0016 are applied; see roadmap.md).
+ * Pending: 0017_purge_audit_summary (no types), 0018_setup_governance, 0019_rollups (see roadmap.md).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +18,61 @@ type Generated = Database["public"];
 // Add types for a migration here while Lovable hasn't applied it yet; delete them once applied.
 export type PendingEnums = Record<never, never>;
 export type PendingTables = Record<never, never>;
-export type PendingFunctions = Record<never, never>;
+export type PendingFunctions = {
+  // 0018_setup_governance
+  apply_setup_sections: { Args: Record<string, never>; Returns: string[] };
+  // 0019_rollups
+  org_rollup_members: {
+    Args: { _org: string };
+    Returns: {
+      org_id: string;
+      name: string;
+      type: Generated["Enums"]["org_type"];
+      parent_id: string | null;
+      depth: number;
+      profiles: number;
+      good: number;
+      grace: number;
+      lapsed: number;
+      pending: number;
+      ended: number;
+      no_membership: number;
+      joined_30d: number;
+      expiring_30: number;
+      expiring_60: number;
+      expiring_90: number;
+    }[];
+  };
+  org_rollup_revenue: {
+    Args: { _org: string; _from: string; _to: string };
+    Returns: {
+      org_id: string;
+      name: string;
+      depth: number;
+      currency: string;
+      payments: number;
+      gross_minor: number;
+      refunded_minor: number;
+      net_minor: number;
+    }[];
+  };
+  org_rollup_governance: {
+    Args: { _org: string };
+    Returns: {
+      org_id: string;
+      name: string;
+      depth: number;
+      required_seats: number;
+      vacant_required: number;
+      vacant_titles: string[];
+      terms_past_end: number;
+    }[];
+  };
+  log_report_export: {
+    Args: { _org: string; _report: string; _row_count: number; _filter?: Json };
+    Returns: undefined;
+  };
+};
 
 export type FullDatabase = Omit<Database, "public"> & {
   public: {

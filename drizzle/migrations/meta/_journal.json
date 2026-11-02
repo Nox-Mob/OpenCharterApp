@@ -134,6 +134,13 @@
       "when": 1793583600001,
       "tag": "0018_setup_governance",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793587200001,
+      "tag": "0019_rollups",
+      "breakpoints": true
     }
   ]
 }

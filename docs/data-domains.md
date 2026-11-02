@@ -82,7 +82,7 @@ Conventions to assume at schema time: every tenant-owned table carries `org_id`;
 | Vacancy tracking | Derived or recorded vacancy start for alerting |
 | Report type | Defined by national, schedule, form |
 | Board report | Chapter submission, status (draft, submitted, acknowledged, changes requested), due date |
-| Oversight view data | Likely derived views over seats, reports, documents |
+| Oversight view data | Likely derived views over seats, reports, documents. *Built (E-23):* `org_rollup_members`, `org_rollup_revenue`, `org_rollup_governance` (aggregates over the org's subtree, D-145) |
 
 ## 7. Approval workflow (second pass, shared)
 

@@ -40,6 +40,12 @@ export const FEATURES = {
     rpc: "apply_setup_sections",
     args: {},
   },
+  reports: {
+    migration: "0019_rollups",
+    label: "Reports",
+    rpc: "org_rollup_governance",
+    args: { _org: "00000000-0000-0000-0000-000000000000" },
+  },
   exports: {
     migration: "0011_member_exports",
     label: "Member exports and saved views",

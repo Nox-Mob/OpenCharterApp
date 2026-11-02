@@ -12,6 +12,7 @@ import { LevelsTab } from "@/components/membership/levels-tab";
 import { PaymentsTab } from "@/components/payments/payments-tab";
 import { MembersDirectory } from "@/components/members/members-directory";
 import { BoardTab } from "@/components/governance/board-tab";
+import { ReportsTab } from "@/components/reports/reports-tab";
 import { DirectoryPreference } from "@/components/members/directory-preference";
 import { MyMembershipCard } from "@/components/membership/my-membership-card";
 import { RequiresDatabase } from "@/components/db/requires-database";
@@ -65,6 +66,12 @@ function OrgPage() {
   const canManageRoles = hasPermission(grants, "roles.manage", org);
   const canManageFields = hasPermission(grants, "attributes.manage", org);
   const hasChapters = org.type === "national" || org.type === "region";
+  // Roll-ups (E-23) for parents; each section needs its own permission (D-145).
+  const canSeeReports =
+    hasChapters &&
+    (["members.view", "payments.view", "org.view"] as const).some((p) =>
+      hasPermission(grants, p, org),
+    );
   const canSeePayments =
     hasPermission(grants, "payments.view", org) || hasPermission(grants, "payments.manage", org);
 
@@ -106,6 +113,7 @@ function OrgPage() {
           {canSeePayments && <TabsTrigger value="payments">Payments</TabsTrigger>}
           {canManage && <TabsTrigger value="settings">Settings</TabsTrigger>}
           {hasChapters && <TabsTrigger value="chapters">Chapters</TabsTrigger>}
+          {canSeeReports && <TabsTrigger value="reports">Reports</TabsTrigger>}
           {canAudit && <TabsTrigger value="audit">Audit log</TabsTrigger>}
         </TabsList>
         <TabsContent value="overview" className="mt-6 space-y-6">
@@ -177,6 +185,18 @@ function OrgPage() {
         {canManage && (
           <TabsContent value="settings" className="mt-6">
             <SettingsTab key={org.id} org={org} />
+          </TabsContent>
+        )}
+        {canSeeReports && (
+          <TabsContent value="reports" className="mt-6">
+            <RequiresDatabase feature="reports">
+              <ReportsTab
+                org={org}
+                canSeeMembers={canSeeMembers}
+                canSeeRevenue={hasPermission(grants, "payments.view", org)}
+                canSeeBoards={hasPermission(grants, "org.view", org)}
+              />
+            </RequiresDatabase>
           </TabsContent>
         )}
         <TabsContent value="chapters" className="mt-6">

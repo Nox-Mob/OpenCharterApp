@@ -149,6 +149,16 @@ Use a private browser window for a second account at the same time. Test only in
 **Also try:** as **National**, turn off "Chapters may rename the board seats you define" in Settings, then try "Rename here" in Austin.
 Also: edit a seat and set "No role" and a suggested term of "No fixed term"; and "Change term" to "No fixed term". Both should save (fixed 2026-11-02).
 
+## 14b. Reports (nationals and regions)
+**Where:** Demo National → Reports tab. Needs migration 0019; until then the tab says it needs a database update.
+1. **Members:** one row per organization (chapters indented under the national) and a Total row. Check the counts against each chapter's Members tab. The standing bar shows good / grace / lapsed / pending; hovering a segment shows the count and share.
+2. **Revenue:** defaults to this year so far. Change the dates. Test payments aren't counted; a partly refunded payment shows the refund and the net amount.
+3. **Boards:** required seats with nobody in them are listed per chapter; "Terms past their end" counts officers still serving after their planned end.
+4. "Export CSV" on each section: open the files in Excel or Sheets, then check the Audit log shows each export.
+5. As **Chapter**, open Austin: there's no Reports tab (chapters don't have one). As **Member**, Demo National shows no Reports tab either.
+
+**Also try:** dark mode (the standing colors should still read clearly); a phone-sized window (the tables scroll sideways).
+
 ## 15. Audit log
 **Where:** Audit log tab.
 1. After the steps above, the log shows who did what (role changes, payments, receipts voided, exports, appointments).
