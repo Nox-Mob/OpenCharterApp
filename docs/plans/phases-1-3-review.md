@@ -74,7 +74,7 @@ Work in waves. Each item follows the commit rules (tests, docs, migration conven
 | A5 | National standing on the chapter's Members page; national-dues reminder in "Actions needed" | E-18 | Read-only; aggregate through a definer function so chapters don't read the national's roster |
 | A6 | Pricing step in Membership setup | E-19, E-10 | Writes `pricing_rules` through `apply_setup` |
 | A7 | Members "everyone" view: chosen fields as columns; export across chapters applying each chapter's directory rule per row | E-14 | D-154 follow-up |
-| A8 | **Membership model: national membership with a home chapter**, as an alternative to separate memberships | E-13, E-18 | D-166. Larger than the other A items (data model, join, Members, Board, reports); settle the open questions in §5 first. Do it before E-20 and E-27, which depend on who counts as a chapter's member |
+| A8 | **Membership model: national membership with a home chapter**, as an alternative to separate memberships | E-13, E-18 | D-166 (rules settled). Larger than the other A items (data model, join, Members, Board, reports). Do it before E-20 and E-27, which depend on who counts as a chapter's member |
 
 ### Wave B: infrastructure that unblocks the rest (≈ 2 sprints)
 
@@ -117,15 +117,14 @@ Settled on 2026-11-02:
 | D5 | Voting method: each org chooses first past the post or ranked choice to match its by-laws (D-167) |
 | F-11 | Packaging direction: lightweight standalone install with Docker Compose (D-160) |
 | A4 | Suggested levels: the chapter chooses Copy or Linked (same price or a set reduction), with an explanation on screen (D-165) |
-| A8 | A national can choose "national membership with a home chapter" instead of separate memberships (D-166, direction) |
+| A8 | A national chooses, permanently, "separate memberships" or "national membership with a home chapter"; members may have no chapter or an at-large chapter, change chapter freely, hold one at most; chapters may bill local dues themselves (D-166) |
+| D5 | Admins see individual ballots during and after voting; every view is audited (D-163) |
 
 Still open:
 
 | For | Question |
 |---|---|
-| A8 | The questions for the home-chapter model, listed in §5 |
-| D5 | Confirm that admins may see individual ballots (D-163 assumes yes, read-only and audited) |
-| F-11 | Hosted Supabase project vs. self-hosted subset as the default install (D-160) |
+| F-11 | Default install: recommended the app container with a hosted Supabase project, with the self-hosted profile documented (D-160). Confirm when F-11 starts |
 
 ## 4. Documentation updates
 
@@ -188,10 +187,10 @@ To do as each wave lands (owner: whoever ships the item):
   - Membership levels and chapter dues are hidden (there are none)
 - **What changes for members:** the Overview shows "Your chapter: Austin" with "Change chapter". Changing ends the old affiliation and starts the new one; seats held in the old chapter end with the reason "changed chapter".
 - **Privacy (D-036, D-037):** choosing a chapter is the member sharing their record with it. The chapter sees the fields marked visible to members or to chapter admins, not admin-only national fields.
-- **Questions to settle before building:**
-  1. Can someone be a member with no chapter ("member at large")?
-  2. Can members change chapter themselves at any time, or does the new chapter (or the national) approve it?
-  3. Can a person belong to more than one chapter (e.g. a home chapter plus a second one)?
-  4. In this model, may chapters still charge optional local dues, or never?
-  5. Can a national switch models later? Switching with existing chapter memberships needs a one-time conversion, so the recommendation is to choose during setup and lock it once members exist.
+- **Settled rules (D-166, 2026-11-02):**
+  1. **No chapter is allowed** (member at large). The national may also name an **at-large chapter** (e.g. the Signal Corps Regimental Association's "online chapter"); when it does, the join page offers it as the choice for people without a local chapter. Setting: `membership.at_large_chapter` (optional).
+  2. **Members change chapter themselves, any time**, no approval. Each change is written to `affiliation_history`; seats held in the old chapter end with the reason "changed chapter".
+  3. **One chapter at most** per member (unique on the national membership).
+  4. **Local dues:** a chapter may charge its own dues and collects them itself, normally postpaid through E-20 invoices with the chapter's settings (D-161). Unpaid local dues affect only chapter matters (e.g. that chapter's officer eligibility, if its by-laws say so), never national standing (keeps R-14 manageable).
+  5. **Permanent choice:** once a national selects a model it can't change it (enforced by a trigger on the setting). Membership setup asks it first, with an explanation of both models.
 

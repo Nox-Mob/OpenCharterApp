@@ -64,7 +64,7 @@ Phases 1 and 2 meet their exit criteria; Phase 3 doesn't yet. Remaining work, in
 - [ ] A2 Playwright end-to-end tests: join → checkout → approval → renewal, Membership setup, Board setup, chapter wizard
 - [ ] A3 Transaction CSV export for one org and a national's tree, audited (D-047; E-12, E-23)
 - [ ] A4 Suggested levels: a chapter starts from the national's level and chooses Copy or Linked (same price or a set reduction), with an explanation (D-165; E-18)
-- [ ] A8 Membership model "national membership with a home chapter": one national membership, the chapter is a selection the member can change (D-166, direction; open questions in the plan §5)
+- [ ] A8 Membership model "national membership with a home chapter" (D-166): one national membership; the member picks one chapter or none (or the national's at-large chapter, e.g. an online chapter) and changes it freely; chapters may bill local dues themselves; the national's choice of model is permanent
 - [ ] A5 National standing on the chapter's Members page; national-dues reminder in "Actions needed" (E-18)
 - [ ] A6 Pricing step in Membership setup (E-19)
 - [ ] A7 Members "everyone" view: chosen fields as columns; cross-chapter export with each chapter's directory rule (E-14)

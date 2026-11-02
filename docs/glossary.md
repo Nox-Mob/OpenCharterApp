@@ -76,3 +76,5 @@
 | **Membership model** | How a national's tree handles membership: *separate memberships* (national and chapter each have their own) or *national membership with a home chapter* (D-166) |
 | **Home chapter (affiliation)** | In the home-chapter model, the chapter a national member has chosen to belong to. A selection, not a second membership; it can change, with history kept (D-166) |
 | **First past the post / Ranked choice** | The two voting methods an org can choose for its elections (D-167). First past the post: one choice per seat, most votes wins. Ranked choice: voters rank candidates, counted by instant runoff (single transferable vote for several seats) |
+| **At-large chapter** | In the home-chapter model, a chapter the national names for members without a local chapter (e.g. an "online chapter"); optional (D-166) |
+| **Local dues** | In the home-chapter model, dues a chapter charges its own members and collects itself, usually postpaid; they never affect national standing (D-166) |
