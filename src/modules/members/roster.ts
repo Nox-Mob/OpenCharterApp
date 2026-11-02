@@ -49,16 +49,17 @@ export const EXPIRING_WINDOWS = [30, 60, 90] as const;
 
 export type RosterSort = "name" | "paid_through" | "standing";
 
+/** graceDays is one org's grace period, or one per row when the list spans several orgs. */
 export function toRosterRows(
   members: readonly MemberRow[],
   values: Record<string, Record<string, unknown>>,
-  graceDays: number,
+  graceDays: number | ((m: MemberRow) => number),
   on: string,
 ): RosterRow[] {
   return members.map((m) => ({
     ...m,
     values: values[m.id] ?? {},
-    standing: standing(m.membership, graceDays, on),
+    standing: standing(m.membership, typeof graceDays === "number" ? graceDays : graceDays(m), on),
     days_left: daysToExpiration(m.membership, on),
   }));
 }

@@ -1,5 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
-import { db, type PendingFunctions } from "@/lib/db/pending-schema";
+import { db } from "@/lib/db/pending-schema";
+import type { Database } from "@/integrations/supabase/types";
+
+type Fn = Database["public"]["Functions"];
 import { csvCell } from "@/modules/members/roster";
 
 /**
@@ -7,9 +10,9 @@ import { csvCell } from "@/modules/members/roster";
  * returns aggregates only (org_rollup_members / _revenue / _governance), so a roll-up never
  * shows another chapter's members. Exporting a report is audited (log_report_export).
  */
-export type MemberRollup = PendingFunctions["org_rollup_members"]["Returns"][number];
-export type RevenueRollup = PendingFunctions["org_rollup_revenue"]["Returns"][number];
-export type GovernanceRollup = PendingFunctions["org_rollup_governance"]["Returns"][number];
+export type MemberRollup = Fn["org_rollup_members"]["Returns"][number];
+export type RevenueRollup = Fn["org_rollup_revenue"]["Returns"][number];
+export type GovernanceRollup = Fn["org_rollup_governance"]["Returns"][number];
 
 export const memberRollupQuery = (orgId: string) =>
   queryOptions({

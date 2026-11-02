@@ -1,6 +1,6 @@
 # Member overview: what a member sees
 
-Status: **proposal, needs a decision** (roadmap: "Member overview"). Related: D-152 (Overview), D-139 (privacy), D-140 (receipts), D-141 (board).
+Status: items 2–5 **built** (D-153, 2026-11-02): Actions needed, My profile, My roles and seats, Board / who to contact. The rest is still a proposal. Related: D-152 (Overview), D-139 (privacy), D-140 (receipts), D-141 (board).
 
 Today a member who opens their organization sees the "Your membership" card (level, standing, paid-through date, renewal button, receipts) and their directory choice. Admins see "At a glance" numbers; members don't, because those numbers need `members.view`.
 
@@ -27,9 +27,12 @@ Today a member who opens their organization sees the "Your membership" card (lev
 | 11 | Awards and recognitions | Awards received | Not built (awards epic) | Yes | With the awards epic |
 | 12 | Elections | Open ballots they may vote in | Not built (E-27) | Yes | With E-27 |
 
+What was built differs from the table in two places: "who to contact" shows the officers' names and the org's public contact email (`contact.email`, its own or the nearest parent's), not officers' own emails; and the national-dues reminder for two-level dues isn't in "Actions needed" yet (the join page already handles it).
+
 ## Questions to decide
 
-1. Which of items 2–5 and 7 should ship first? (Recommendation: 2, 4, 5, 7 — no new database rules.)
+1. ~~Which of items 2–5 and 7 should ship first?~~ 2–5 shipped; 7 (all my memberships) is next.
+5. Should officers' email addresses be shown to members in "who to contact"? Today only the org's public contact email is shown.
 2. Should members of a chapter see the national's officers too (item 5)? They can already read the national's board only if they're a member of the national.
 3. Should "years of membership" count continuous membership only, or all years including gaps?
 4. Should members see any aggregate about their org (for example "142 members")? This would need a new, deliberately narrow function, since members don't have `members.view`.

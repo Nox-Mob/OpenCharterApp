@@ -12,7 +12,7 @@ const row = (over: Partial<MemberRollup>): MemberRollup => ({
   org_id: "x",
   name: "X",
   type: "chapter",
-  parent_id: null,
+  parent_id: "n",
   depth: 1,
   profiles: 0,
   good: 0,

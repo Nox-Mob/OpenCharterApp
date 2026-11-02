@@ -1,12 +1,15 @@
 import { queryOptions } from "@tanstack/react-query";
-import { db, type PendingFunctions } from "@/lib/db/pending-schema";
+import { db } from "@/lib/db/pending-schema";
+import type { Database } from "@/integrations/supabase/types";
+
+type Fn = Database["public"]["Functions"];
 
 /**
  * The numbers on an organization's Overview page (D-152): for the org and everything below it,
  * from public.org_overview_stats (aggregates only, needs members.view, which inherits downward,
  * so a chapter admin only ever sees their chapter). People are counted once across the tree.
  */
-export type OverviewStats = PendingFunctions["org_overview_stats"]["Returns"][number];
+export type OverviewStats = Fn["org_overview_stats"]["Returns"][number];
 
 export const EMPTY_STATS: OverviewStats = {
   chapters: 0,

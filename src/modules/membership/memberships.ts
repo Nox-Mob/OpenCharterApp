@@ -20,6 +20,8 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 
 export type MemberRow = {
   id: string;
+  /** The org the record belongs to; set by treeMembersQuery (several orgs in one list). */
+  org_id?: string;
   user_id: string | null;
   display_name: string;
   email: string;
@@ -79,26 +81,86 @@ export const membersQuery = (orgId: string, withMemberships = true, withPrivacy 
         .eq("org_id", orgId)
         .order("created_at");
       if (error) throw error;
-      type Row = Omit<MemberRow, "membership"> & { memberships: unknown };
-      return ((data ?? []) as unknown as Row[]).map(({ memberships, ...p }) => {
-        const m = ((memberships ?? []) as unknown as MembershipEmbed[])[0];
-        return {
-          ...p,
-          membership: m
-            ? {
-                id: m.id,
-                status: m.status,
-                paid_through: m.paid_through,
-                lifetime: m.lifetime,
-                joined_on: m.joined_on,
-                tier_id: m.tier_id,
-                term_id: m.term_id,
-                tier_name: m.membership_tiers?.name ?? "",
-                term_label: m.tier_terms?.label ?? "",
-              }
-            : null,
-        };
-      });
+      return ((data ?? []) as unknown as EmbedRow[]).map(toMemberRow);
+    },
+  });
+
+type EmbedRow = Omit<MemberRow, "membership"> & { memberships: unknown };
+
+function toMemberRow({ memberships, ...p }: EmbedRow): MemberRow {
+  const m = ((memberships ?? []) as unknown as MembershipEmbed[])[0];
+  return {
+    ...p,
+    membership: m
+      ? {
+          id: m.id,
+          status: m.status,
+          paid_through: m.paid_through,
+          lifetime: m.lifetime,
+          joined_on: m.joined_on,
+          tier_id: m.tier_id,
+          term_id: m.term_id,
+          tier_name: m.membership_tiers?.name ?? "",
+          term_label: m.tier_terms?.label ?? "",
+        }
+      : null,
+  };
+}
+
+/** PostgREST returns at most 1000 rows per request; read every page. */
+export async function readAllPages<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
+  size = 1000,
+): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; ; from += size) {
+    const { data, error } = await page(from, from + size - 1);
+    if (error) throw error;
+    out.push(...(data ?? []));
+    if ((data ?? []).length < size) return out;
+  }
+}
+
+/**
+ * Every member record in several orgs at once (D-154): a national or region admin's list of
+ * everyone in their org and the orgs below it. members.view inherits downward (D-032), so RLS
+ * already lets them read these rows; a chapter admin asking for a sibling gets nothing back.
+ */
+export const treeMembersQuery = (orgIds: readonly string[]) =>
+  queryOptions({
+    queryKey: ["members-tree", ...orgIds],
+    enabled: orgIds.length > 0,
+    queryFn: async (): Promise<MemberRow[]> => {
+      const rows = await readAllPages<EmbedRow>(
+        (from, to) =>
+          supabase
+            .from("org_member_profiles")
+            .select(
+              "id,org_id,user_id,display_name,email,source,created_at,directory_listed,memberships(id,status,paid_through,lifetime,joined_on,tier_id,term_id,membership_tiers(name),tier_terms(label))",
+            )
+            .in("org_id", [...orgIds])
+            .order("created_at")
+            .order("id")
+            .range(from, to) as unknown as PromiseLike<{ data: EmbedRow[] | null; error: unknown }>,
+      );
+      return rows.map(toMemberRow);
+    },
+  });
+
+/** Grace days for each org in a list (standing differs by org). */
+export const graceDaysByOrgQuery = (orgIds: readonly string[]) =>
+  queryOptions({
+    queryKey: ["grace-days-by-org", ...orgIds],
+    enabled: orgIds.length > 0,
+    queryFn: async (): Promise<Record<string, number>> => {
+      const entries = await Promise.all(
+        orgIds.map(async (id) => {
+          const { data, error } = await supabase.rpc("grace_days", { _org: id });
+          if (error) throw error;
+          return [id, typeof data === "number" ? data : 30] as const;
+        }),
+      );
+      return Object.fromEntries(entries);
     },
   });
 

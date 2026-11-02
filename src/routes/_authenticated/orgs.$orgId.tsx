@@ -1,7 +1,8 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { auditQuery, isDemoOrg, myOrgsQuery, myPermissionsQuery, TYPE_LABEL } from "@/lib/orgs";
-import { hasPermission } from "@/lib/policy";
+import { grantsForView, hasAdminAccess, hasPermission, type Grant } from "@/lib/policy";
+import { MemberOverview } from "@/components/members/member-overview";
 import { CreateOrgDialog } from "@/components/create-org-dialog";
 import { MembersTab } from "@/components/org/members-tab";
 import { SettingsTab } from "@/components/org/settings-tab";
@@ -36,8 +37,11 @@ import {
 export const Route = createFileRoute("/_authenticated/orgs/$orgId")({
   head: () => ({ meta: [{ title: "Organization — OpenCharterApp" }] }),
   // ?tab=payments opens a section directly (e.g. from the setup cards). Sections: org-nav.tsx.
-  validateSearch: (s: Record<string, unknown>): { tab?: string } =>
-    typeof s["tab"] === "string" && s["tab"] !== "overview" ? { tab: s["tab"] } : {},
+  // ?as=member previews the page as a plain member sees it (D-155).
+  validateSearch: (s: Record<string, unknown>): { tab?: string; as?: "member" } => ({
+    ...(typeof s["tab"] === "string" && s["tab"] !== "overview" ? { tab: s["tab"] } : {}),
+    ...(s["as"] === "member" ? { as: "member" as const } : {}),
+  }),
   loader: async ({ context }) => {
     await Promise.all([
       context.queryClient.ensureQueryData(myOrgsQuery()),
@@ -52,12 +56,15 @@ export const Route = createFileRoute("/_authenticated/orgs/$orgId")({
 
 function OrgPage() {
   const { orgId } = Route.useParams();
-  const { tab = "overview" } = Route.useSearch();
+  const { tab = "overview", as } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const { data: orgs } = useSuspenseQuery(myOrgsQuery());
-  const { data: grants } = useSuspenseQuery(myPermissionsQuery());
+  const { data: realGrants } = useSuspenseQuery(myPermissionsQuery());
   const org = orgs.find((o) => o.id === orgId);
   if (!org) throw notFound();
+  const canPreview = hasAdminAccess(realGrants, org);
+  const asMember = canPreview && as === "member";
+  const grants = grantsForView(realGrants, asMember) as Grant[];
   const children = orgs.filter((o) => o.parent_id === org.id);
   const parent = orgs.find((o) => o.id === org.parent_id);
   const canAddChild =
@@ -90,7 +97,19 @@ function OrgPage() {
     canAudit: hasPermission(grants, "audit.view", org),
   });
   const section = resolveSection(nav, tab);
-  const go = (t: string) => navigate({ search: t === "overview" ? {} : { tab: t }, replace: true });
+  const go = (t: string) =>
+    navigate({
+      search: { ...(t === "overview" ? {} : { tab: t }), ...(asMember ? { as: "member" } : {}) },
+      replace: true,
+    });
+  const setPreview = (on: boolean) =>
+    navigate({
+      search: {
+        ...(section === "overview" ? {} : { tab: section }),
+        ...(on ? { as: "member" } : {}),
+      },
+      replace: true,
+    });
 
   return (
     <div>
@@ -108,8 +127,32 @@ function OrgPage() {
           <h1 className="text-3xl font-semibold">{org.name}</h1>
           <Badge variant="secondary">{TYPE_LABEL[org.type]}</Badge>
           {isDemoOrg(org) && <DemoBadge />}
+          {canPreview && !asMember && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto"
+              onClick={() => setPreview(true)}
+            >
+              View as member
+            </Button>
+          )}
         </div>
         <p className="mt-1 text-sm text-muted-foreground">/{org.slug}</p>
+        {asMember && (
+          <div
+            role="status"
+            className="mt-4 flex flex-wrap items-center gap-3 rounded-md border border-primary/40 bg-primary/5 px-4 py-3 text-sm"
+          >
+            <span className="flex-1">
+              You&apos;re viewing {org.name} as a member would. Admin pages and actions are hidden;
+              your own membership and profile are shown as yours.
+            </span>
+            <Button size="sm" onClick={() => setPreview(false)}>
+              Exit member view
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="mt-8 grid gap-6 md:grid-cols-[12rem_minmax(0,1fr)]">
@@ -126,6 +169,7 @@ function OrgPage() {
                   />
                 </RequiresDatabase>
               )}
+              <MemberOverview org={org} orgs={orgs} />
               <RequiresDatabase feature="memberships" fallback={null}>
                 <MyMembershipCard org={org} />
               </RequiresDatabase>
@@ -137,7 +181,9 @@ function OrgPage() {
           )}
           {section === "members" && (
             <MembersTab
+              key={org.id}
               org={org}
+              orgs={orgs}
               canInvite={canInvite}
               canAssignAdmin={canManageRoles}
               canManageMembers={hasPermission(grants, "members.manage", org)}

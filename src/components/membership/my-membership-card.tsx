@@ -52,7 +52,7 @@ export function MyMembershipCard({ org }: { org: Org }) {
     }
   }
   return (
-    <section className="max-w-xl rounded-md border bg-card p-5">
+    <section id="my-membership" className="max-w-xl rounded-md border bg-card p-5">
       <div className="flex items-center gap-2">
         <h2 className="text-lg font-semibold">Your membership</h2>
         <StandingBadge standing={s} />

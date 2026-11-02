@@ -29,7 +29,7 @@ Use a private browser window for a second account at the same time. Test only in
 
 ## 2. Organizations and chapters
 **Where:** dashboard, org page, Chapters tab.
-1. As **National**, open Demo National Association. Expect a menu on the left (a "Section" dropdown on a phone): Overview, Members, Directory, Board, Reports, Chapters, Settings, and under Settings: General, Setup, Membership levels, Member fields, Chapter fields, Roles, Payments, Audit log. As **Chapter** (Austin) expect the same without Chapters, with Reports showing only Austin. As **Member** expect only Overview, Directory and Board.
+1. As **National**, open Demo National Association. Expect a menu on the left (a "Section" dropdown on a phone): Overview, Members, Board, Reports, Chapters, Settings (no Directory: admins have Members), and under Settings: General, Setup, Membership levels, Member fields, Chapter fields, Roles, Payments, Audit log. As **Chapter** (Austin) expect the same without Chapters, with Reports showing only Austin. As **Member** expect only Overview, Directory and Board (and Chapters at a national).
 2. Chapters tab → "Add chapter". The wizard asks, step by step:
    - **Name and type.** Try a region too: it skips the chapter steps.
    - **Chapter details:** the national's chapter fields, e.g. Charter date. Required ones are checked.
@@ -102,6 +102,7 @@ Use a private browser window for a second account at the same time. Test only in
 
 ## 8. Finding and exporting members
 **Where:** Members tab toolbar.
+0. As **National**, the Members page opens on "Everyone in Demo National Association and below": members of Austin and Dallas are listed with an Organization column and their email, including anyone who opted out of the directory. Their rows have "Open" (goes to that chapter's Members page). Switch to "Only Demo National Association" for roles, Details and Export CSV. As **Chapter** (Austin) only Austin's members are listed and there's no switch. Admins have no Directory item.
 1. Search by part of a name or email, with and without accents.
 2. Filter by standing, level, a member field, and "Expiring within 30 / 60 / 90 days". Check the "Showing x of y" count.
 3. "Save this view", reload, and click the saved view.
@@ -110,8 +111,8 @@ Use a private browser window for a second account at the same time. Test only in
 **Also try:** a member who opted out of the directory. The export leaves them out unless "Include … who opted out" is ticked, if your national allows it.
 
 ## 9. Directory and privacy
-**Where:** Directory tab; Overview → "Show me in the member directory".
-1. As **Member**, turn the switch off. As **Chapter**, the Directory no longer lists them, and the Members tab shows "Not in directory".
+**Where:** Directory (members only; admins have the Members page instead); Overview → "Show me in the member directory".
+1. As **Member**, turn the switch off. Use "View as member" as **Chapter**: the Directory no longer lists them. Out of the preview, the Members page still lists them with "Not in directory".
 2. The Directory never shows email addresses, only fields marked "show in directory".
 
 ## 10. Payments tab and test payments
@@ -187,7 +188,13 @@ Also: edit a seat and set "No role" and a suggested term of "No fixed term"; and
 **Where:** Overview. The numbers need migration 0024; until then admins see only their membership card.
 1. As **National**: "At a glance" shows Current members, Chapters, Average members per chapter, Lifetime members (with "N other current members · X% lifetime" and a bar), New in the last 30 days, Waiting for approval, Renewals due in 30 days, Revenue this year and Vacant required seats. A person in both the national and a chapter counts once. "See each chapter on the Reports page" opens Reports.
 2. As **Chapter**, Austin: the same tiles for Austin only, without Chapters or the average.
-3. As **Member**: only "Your membership" (level, standing, renewal) and the directory choice; no numbers.
+3. As **Member**: no numbers. Instead:
+   - **Actions needed**: e.g. "Your membership ends on … (in N days)" with Renew, "Complete your profile: …" if a required field the member may edit is empty, "Your term as … ends on …" for a seat ending within 30 days, or "You're all set".
+   - **Your profile**: name, email and member fields (no admin-only fields). "Edit" shows only the fields members may change; save and reload.
+   - **Your roles and seats**: seats held here with dates, and roles.
+   - **Board and who to contact**: the officers by seat (vacant seats left out) and the contact email from Settings → General (or the national's, marked with its name).
+   - "Your membership" and the directory choice as before.
+4. **View as member**: as **National**, click "View as member" next to the org name. The menu shrinks to Overview, Directory, Board (and Chapters), a banner explains it's a preview, and the Overview shows your own member cards. Switch sections; the preview stays on until "Exit member view".
 
 ## 14b. Reports
 **Where:** Demo National → Reports tab. Needs migration 0019; until then the tab says it needs a database update.

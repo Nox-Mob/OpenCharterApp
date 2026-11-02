@@ -36,7 +36,8 @@ export function buildOrgNav(f: OrgNavFlags): OrgNav {
   const main: NavItem[] = [
     { value: "overview", label: "Overview" },
     f.canSeeMembers && { value: "members", label: "Members" },
-    { value: "directory", label: "Directory" },
+    // Admins have the Members page (everyone, with contact details), so no Directory (D-154).
+    !f.canSeeMembers && { value: "directory", label: "Directory" },
     { value: "board", label: "Board" },
     f.canSeeReports && { value: "reports", label: "Reports" },
     f.hasChapters && { value: "chapters", label: "Chapters" },

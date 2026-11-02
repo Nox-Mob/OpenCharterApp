@@ -40,18 +40,16 @@ Working today:
 - member and chapter fields
 - guided setup
 - membership levels and terms
-
-Built and waiting for a database update:
-
-- memberships with standing and recorded payments
-- board seats shared by a national and all its chapters, and the Overview numbers (migration 0024)
-
-Next:
-
-- Stripe payments per organization
-- online joining and renewal
-- member lists and exports
+- memberships with standing, recorded payments, online joining and renewal (Stripe or the demo test gateway)
+- member lists, audited exports and the member directory
 - receipts
+- board seats and terms, including seats shared by a national and all its chapters
+- reports and an Overview with numbers for admins and a personal view for members
+- "View as member" preview for admins
+
+Every migration up to `0024` is applied.
+
+Next: see the open items in the roadmap.
 
 Progress lives in [`roadmap.md`](roadmap.md).
 

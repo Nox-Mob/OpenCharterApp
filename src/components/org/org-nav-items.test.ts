@@ -31,10 +31,10 @@ const labels = (items: { label: string }[]) => items.map((i) => i.label);
 describe("organization navigation", () => {
   it("puts the main sections first and everything else under Settings", () => {
     const nav = buildOrgNav({ ...admin, hasChapters: true });
+    // admins get Members (everyone, with contact details) instead of Directory
     expect(labels(nav.main)).toEqual([
       "Overview",
       "Members",
-      "Directory",
       "Board",
       "Reports",
       "Chapters",
@@ -56,14 +56,7 @@ describe("organization navigation", () => {
 
   it("gives a chapter admin Reports but no Chapters section", () => {
     const nav = buildOrgNav({ ...admin, isChapter: true });
-    expect(labels(nav.main)).toEqual([
-      "Overview",
-      "Members",
-      "Directory",
-      "Board",
-      "Reports",
-      "Settings",
-    ]);
+    expect(labels(nav.main)).toEqual(["Overview", "Members", "Board", "Reports", "Settings"]);
     expect(labels(nav.settings)).toContain("Chapter fields");
   });
 
@@ -84,6 +77,7 @@ describe("organization navigation", () => {
     const nav = buildOrgNav(none);
     expect(resolveSection(nav, "audit")).toBe("overview");
     expect(resolveSection(nav, "board")).toBe("board");
+    expect(resolveSection(buildOrgNav(admin), "directory")).toBe("overview");
     expect(resolveSection(buildOrgNav(admin), "setup")).toBe("setup");
   });
 });

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { inviteSchema, inviteStatus, inviteUrl } from "@/modules/invitations";
@@ -15,8 +16,10 @@ import type { Org } from "@/lib/orgs";
 import { hasPermission, type Grant } from "@/lib/policy";
 import {
   decideMembership,
+  graceDaysByOrgQuery,
   graceDaysQuery,
   membersQuery,
+  treeMembersQuery,
   membershipErrorMessage,
 } from "@/modules/membership/memberships";
 import { expirationLabel, STANDING_LABELS, standing, today } from "@/modules/membership/standing";
@@ -26,7 +29,11 @@ import { useFeatureReady } from "@/lib/db/readiness";
 import { declineApplication } from "@/modules/payments/payments.functions";
 import { MemberDetailsDialog } from "./member-details-dialog";
 import { RosterToolbar } from "@/components/members/roster-toolbar";
-import { attributeDefsQuery, orgMemberValuesQuery } from "@/modules/attributes/queries";
+import {
+  attributeDefsQuery,
+  orgMemberValuesQuery,
+  treeMemberValuesQuery,
+} from "@/modules/attributes/queries";
 import { privacyRulesQuery } from "@/modules/members/privacy";
 import {
   EMPTY_FILTER,
@@ -62,14 +69,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+/**
+ * The Members page. A national or region admin sees everyone in their org and every org below it
+ * by default (D-154: members.view inherits downward, so a chapter admin only ever gets their
+ * chapter); "only <org>" narrows it to the org's own records, where roles, details and exports
+ * work. Admins see every member regardless of directory choices (D-139); that only affects the
+ * directory and exports.
+ */
 export function MembersTab({
   org,
+  orgs = [],
   canInvite,
   canAssignAdmin,
   canManageMembers,
   grants,
 }: {
   org: Org;
+  /** Orgs the viewer can see; the ones below `org` join the "everyone" list. */
+  orgs?: readonly Org[];
   canInvite: boolean;
   canAssignAdmin: boolean;
   canManageMembers: boolean;
@@ -140,6 +157,15 @@ export function MembersTab({
   const ready = useFeatureReady("memberships") === true;
   const directoryReady = useFeatureReady("directory") === true;
   const members = useQuery(membersQuery(orgId, ready, directoryReady));
+  const subtree = [org, ...orgs.filter((o) => o.id !== org.id && o.ancestor_ids.includes(org.id))];
+  const subtreeIds = subtree.map((o) => o.id);
+  const hasBelow = subtree.length > 1;
+  const [scope, setScope] = useState<"tree" | "org">(hasBelow ? "tree" : "org");
+  const isTree = hasBelow && scope === "tree";
+  const tree = useQuery({ ...treeMembersQuery(subtreeIds), enabled: isTree && ready });
+  const treeValues = useQuery({ ...treeMemberValuesQuery(subtreeIds), enabled: isTree });
+  const treeGrace = useQuery({ ...graceDaysByOrgQuery(subtreeIds), enabled: isTree && ready });
+  const orgName = new Map(subtree.map((o) => [o.id, o.name]));
   const privacy = useQuery({
     ...privacyRulesQuery(orgId, org.ancestor_ids),
     enabled: directoryReady,
@@ -152,7 +178,9 @@ export function MembersTab({
   // Member list tools (E-14): search, filters, sort, saved views and audited export.
   const exportsReady = useFeatureReady("exports") === true;
   const defs = useQuery(attributeDefsQuery(org.id, org.ancestor_ids));
-  const values = useQuery(orgMemberValuesQuery(orgId));
+  const ownValues = useQuery(orgMemberValuesQuery(orgId));
+  const listData = isTree ? (tree.data ?? []) : (members.data ?? []);
+  const valueData = isTree ? (treeValues.data ?? {}) : (ownValues.data ?? {});
   const [filter, setFilter] = useState<RosterFilter>(EMPTY_FILTER);
   const [sort, setSort] = useState<RosterSort>("name");
   const rosterFields: RosterField[] = (defs.data ?? [])
@@ -164,7 +192,13 @@ export function MembersTab({
       visibility: d.visibility,
       options: d.options,
     }));
-  const rows = toRosterRows(members.data ?? [], values.data ?? {}, graceDays, on);
+  const rows = toRosterRows(
+    listData,
+    valueData,
+    isTree ? (m) => treeGrace.data?.[m.org_id ?? orgId] ?? graceDays : graceDays,
+    on,
+  );
+  const isOwn = (m: { org_id?: string }) => !m.org_id || m.org_id === orgId;
   const visible = sortRoster(filterRoster(rows, filter, rosterFields), sort);
   const levels = [
     ...new Map(
@@ -176,7 +210,8 @@ export function MembersTab({
         ]),
     ).values(),
   ];
-  const canExport = exportsReady && hasPermission(grants, "members.export", org);
+  // Exports follow each org's own directory rule (D-139), so they run on one org's list.
+  const canExport = !isTree && exportsReady && hasPermission(grants, "members.export", org);
   // Members who opted out of the directory stay out of exports unless included (D-139).
   const listedByDefault = privacy.data?.listedByDefault ?? true;
   const overrideAllowed = privacy.data?.adminOverrideAllowed ?? true;
@@ -354,8 +389,23 @@ export function MembersTab({
       )}
 
       <section>
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Members</h2>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-lg font-semibold">Members</h2>
+            {hasBelow && (
+              <Select value={scope} onValueChange={(v) => setScope(v as "tree" | "org")}>
+                <SelectTrigger className="w-72" aria-label="Whose members">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tree">
+                    Everyone in {org.name} and below ({subtree.length} organizations)
+                  </SelectItem>
+                  <SelectItem value="org">Only {org.name}</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
           {ready && canManageMembers && <Button onClick={() => setAdding(true)}>Add member</Button>}
         </div>
         <div className="mb-3">
@@ -379,12 +429,19 @@ export function MembersTab({
             shown={visible.length}
             total={rows.length}
           />
+          {isTree && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Showing every organization below {org.name}. Open a member&apos;s organization to
+              manage them, or switch to &ldquo;Only {org.name}&rdquo; to change roles or export.
+            </p>
+          )}
         </div>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
+              {isTree && <TableHead>Organization</TableHead>}
               {ready && (
                 <>
                   <TableHead>Standing</TableHead>
@@ -392,7 +449,7 @@ export function MembersTab({
                   <TableHead>Expires</TableHead>
                 </>
               )}
-              {canAssignAdmin && <TableHead>Roles</TableHead>}
+              {canAssignAdmin && !isTree && <TableHead>Roles</TableHead>}
               <TableHead />
             </TableRow>
           </TableHeader>
@@ -407,16 +464,19 @@ export function MembersTab({
                       No login
                     </Badge>
                   )}
-                  {directoryReady && !isListed(m, listedByDefault) && (
+                  {directoryReady && isOwn(m) && !isListed(m, listedByDefault) && (
                     <Badge variant="outline" className="ml-2">
                       Not in directory
                     </Badge>
                   )}
                 </TableCell>
+                {isTree && (
+                  <TableCell className="text-sm">{orgName.get(m.org_id ?? orgId) ?? "—"}</TableCell>
+                )}
                 {ready && (
                   <>
                     <TableCell>
-                      <StandingBadge standing={standing(m.membership, graceDays, on)} />
+                      <StandingBadge standing={m.standing} />
                     </TableCell>
                     <TableCell className="text-sm">
                       {m.membership
@@ -433,7 +493,7 @@ export function MembersTab({
                     </TableCell>
                   </>
                 )}
-                {canAssignAdmin && (
+                {canAssignAdmin && !isTree && (
                   <TableCell>
                     {m.user_id === null ? (
                       <span className="text-sm text-muted-foreground">—</span>
@@ -487,9 +547,21 @@ export function MembersTab({
                   </TableCell>
                 )}
                 <TableCell className="text-right">
-                  <Button size="sm" variant="ghost" onClick={() => setDetailsId(m.id)}>
-                    Details
-                  </Button>
+                  {isOwn(m) ? (
+                    <Button size="sm" variant="ghost" onClick={() => setDetailsId(m.id)}>
+                      Details
+                    </Button>
+                  ) : (
+                    <Button asChild size="sm" variant="ghost">
+                      <Link
+                        to="/orgs/$orgId"
+                        params={{ orgId: m.org_id! }}
+                        search={{ tab: "members" }}
+                      >
+                        Open
+                      </Link>
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
