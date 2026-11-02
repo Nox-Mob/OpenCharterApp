@@ -40,14 +40,14 @@ Linked levels (A4, D-177) can only be changed while the database session flag `a
 - Viewing an individual ballot (Wave E, not in the MVP) will be audited (D-163).
 
 ### 1.6 Dependencies
-`bun audit` on 2026-11-02 reported 29 advisories (1 critical, 14 high, 13 moderate, 1 low):
+`bun audit` on 2026-11-02 reported 29 advisories (1 critical, 14 high, 13 moderate, 1 low). **After the dependency refresh the same day (D-187), 2 moderate remain**, both transitive in development tooling: `esbuild` (through drizzle-kit and the router plugin; affects only a running dev server) and `minimatch` (through ESLint). They clear when those packages update. The table records the original findings:
 
 | Where | Packages | Risk to us | Action |
 |---|---|---|---|
-| Lint, format, build and dev-server tooling only | `shell-quote` (critical), `brace-expansion`, `js-yaml`, `minimatch`, `launch-editor`, `nanoid`, `source-map-js`, `esbuild`, `vite` 8.1.5 | None in production: none of these ship in the built site. The dev-server ones matter only when running `bun run dev` on an untrusted network | Accepted for 0.1.0 (D-180). Refresh with `bun update` as part of F2 |
+| Lint, format, build and dev-server tooling only | `shell-quote` (critical), `brace-expansion`, `js-yaml`, `minimatch`, `launch-editor`, `nanoid`, `source-map-js`, `esbuild`, `vite` 8.1.5 | None in production: none of these ship in the built site. The dev-server ones matter only when running `bun run dev` on an untrusted network | Fixed by the refresh (D-187), except `esbuild` and `minimatch` above |
 | Runtime: server-side rendering | `seroval` 1.6.8 (through `@tanstack/react-start` 1.168.60) | Moderate. The advisories need attacker-made RegExps or typed arrays in data the server serialises; we serialise query results (strings, numbers, dates) | **F2 done (2026-11-02):** TanStack Start 1.169.4 brings `seroval` 1.7.6 |
 | Test browser | Playwright 1.64.1 bundles Chromium 156.0.8078.4, behind Chrome stable's late-October security fixes; Playwright's sandbox is off by default | Low for us: tests visit only our own app and backend | Pinned at 1.64.1 by the owner and hardened (D-186): sandbox on, CI on Google Chrome stable, an origin guard that blocks every other host |
-| Runtime: form validation | `zod` 3.25.76 (fixed only in 4.6.6) | Low. The advisory is about memory use when validating oversized constrained collections; our schemas cap lists (for example, at most 10 conditions per pricing rule), and the database rechecks everything | **F3:** move to zod 4 after 0.1.0. It's a major version, which touches every schema and `@hookform/resolvers` |
+| Runtime: form validation | `zod` 3.25.76 (fixed only in 4.6.6) | Low. The advisory is about memory use when validating oversized constrained collections; our schemas cap lists (for example, at most 10 conditions per pricing rule), and the database rechecks everything | **F3 done (2026-11-02):** zod 4.6.7 with `@hookform/resolvers` 7 (D-187) |
 
 ## 2. Accessibility (R2)
 - **Automated** in `e2e/a11y.spec.ts`, as National, Chapter and Member, on the dashboard and every main screen (Overview, Members or Directory, Board, Reports, Chapters, Settings, Levels, Payments):

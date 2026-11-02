@@ -82,6 +82,6 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 - **R-24 License file:** AGPL-3.0 is decided (D-020), but the repository has no `LICENSE` file yet. Add the official AGPL-3.0 text before the first public release.
 
 ## Added 2026-11-02
-- **R-25 Dependency advisories:** `bun audit` lists advisories in development tooling (accepted) and two in runtime code, `seroval` through TanStack Start and `zod` 3, that need a framework or major-version bump (`docs/security-review.md` §1.6, D-180). Mitigation: neither is reachable from our inputs today; upgrade in the first release after 0.1.0 and re-run `bun audit` before each release.
+- **R-25 Dependency advisories** (*mostly resolved 2026-11-02, D-187: 2 moderate dev-tooling advisories remain*): `bun audit` lists advisories in development tooling (accepted) and two in runtime code, `seroval` through TanStack Start and `zod` 3, that need a framework or major-version bump (`docs/security-review.md` §1.6, D-180). Mitigation: neither is reachable from our inputs today; upgrade in the first release after 0.1.0 and re-run `bun audit` before each release.
 - **R-26 Large organizations:** the API returns at most 1,000 rows per request and per-row setting lookups slowed roll-ups. Mitigation (D-181): paged reads, settings resolved once per org (0034), and `bun run test:perf` before releases.
 - R-24 (license file) is still open and is on the release checklist (`docs/plans/wave-a-mvp.md` §6).

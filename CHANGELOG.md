@@ -48,6 +48,7 @@ The first version a national (with chapters) or a standalone association can run
 - Database rule tests, unit and component tests, and end-to-end tests in Chromium (including accessibility checks).
 - A pre-commit hook and a docs check on pull requests.
 - Large rosters (5,000 members) stay fast; lists beyond 1,000 rows are read in full.
+- Dependencies up to date (TanStack Start 1.169, Vite 8.3, zod 4, ESLint 10, Vitest 5, TypeScript 6.0) with a 24-hour release-age guard; `bun audit` shows only 2 moderate advisories in development tooling. Playwright is pinned at 1.64.1 and its test browser hardened (sandbox on, Chrome stable in CI, other sites blocked).
 
 ### Known limits
 
@@ -58,5 +59,4 @@ The first version a national (with chapters) or a standalone association can run
   - packaging for self-hosting
 - **Receipt tax wording is a placeholder** until a CPA has reviewed it (R-07). Check it with your accountant before relying on it.
 - **Follow-ups planned after release** (`docs/security-review.md` §1.6):
-  - upgrade TanStack Start (`seroval`) and `zod` 4
   - stop `has_permission` and `is_org_member` being callable without signing in

@@ -57,7 +57,7 @@ Every migration up to `0035` is applied to the live database; `0036` (chapters i
 - [Bun](https://bun.sh) 1.x. The project uses Bun as its package manager (decision D-104), so don't use npm, Yarn or pnpm.
 - Git.
 - PostgreSQL 16 or newer, only for running the database rule tests locally.
-- For the end-to-end tests: Chromium for Playwright (`bunx playwright install chromium`) and network access to the Lovable Cloud backend.
+- For the end-to-end tests: Playwright 1.64.1 (pinned) with Chromium (`bunx playwright install chromium`) or Google Chrome (`E2E_BROWSER_CHANNEL=chrome`), and network access to the Lovable Cloud backend. The test browser runs with its sandbox on and may only reach the app and its backend (`docs/testing.md`).
 
 ### Set up
 
