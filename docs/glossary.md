@@ -60,6 +60,7 @@
 | **501(c)(3)** | US tax status for charitable organizations |
 | **Receipt (manual)** | A receipt created by an admin for cash, check, or in-kind gifts |
 | **Two-level dues** | When a national requires its own membership for chapter members: joining a chapter takes two payments, the national's dues first, then the chapter's, each with its own receipt |
+| **Pricing rule** | A rule on a membership term: when a member's fields match (e.g. Rank is at least E-5), they pay a different price or get a discount. The first matching rule, from the top, applies |
 | **Receipt version** | A receipt that replaces an earlier one (after a correction or a partial refund). The earlier one is kept, marked replaced |
 | **Void and reissue** | Correcting a receipt by invalidating it and issuing a new version, with audit trail |
 | **RLS** | PostgreSQL row-level security, used as a tenant-isolation safety net |

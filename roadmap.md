@@ -22,6 +22,7 @@ Apply these in order (Lovable → apply pending migrations). Step-by-step instru
 | `0018_setup_governance` | Board setup: `apply_setup` learns the `seats` and `seat_terms` sections; `apply_setup_sections()` for the readiness check | Waiting |
 | `0019_rollups` | E-23 Reports tab: member, revenue and board roll-ups across a national's chapters (aggregates only), audited report exports | Waiting |
 | `0020_two_level_dues` | E-18 national dues required for chapter members (two payments, national first), chapter dues none / optional / required, chapter price range | Waiting |
+| `0021_pricing_rules` | E-19 attribute-based pricing: rules per term (conditions on member fields → a price or a discount), charged when joining and renewing online | Waiting |
 
 ## Done
 - [x] E-12: Payments tab to connect Stripe (key checked, sealed, stored privately) or the demo test gateway, payments list, webhook route (applied 2026-11-01)
@@ -58,6 +59,7 @@ Apply these in order (Lovable → apply pending migrations). Step-by-step instru
 ## Open — Phase 1
 Plan for E-12 / E-13: docs/plans/e12-e13-payments-and-joining.md
 - [x] E-16: chapter creation wizard (name and type, chapter fields, first admin invitation, invitations for the required officers, links to copy; seats show Vacant until appointed) (D-144)
+- [ ] E-19 (built, waiting for 0021): rules engine (conditions on member fields, shared by TypeScript and SQL with the same test cases) and pricing rules per term: click a term on the Membership levels tab, add rules like "Rank is at least E-5 → $30" or "Veteran is yes → 20% off"; joining and renewing charge the member's price and show it first (D-147). Remaining: a pricing step in guided setup, eligibility and approver rules (E-24, E-31)
 - [ ] E-18 (built, waiting for 0020): two-level dues: the national can require its own membership for chapter members (join page step 1 of 2 → national, step 2 → chapter; two payments and receipts), chapter dues none / optional / required, a price range for chapter terms, Membership setup v4 for parents (D-146). Remaining: national standing next to chapter standing in the chapter's Members tab, linked renewals
 - [ ] E-23 (built, waiting for 0019): Reports tab for nationals and regions with members by standing (standing bar, new, expiring 30 / 60 / 90), revenue per currency for a date range, board vacancies and terms past their end, audited CSV exports (D-145)
 - [ ] Setup hub and Board setup (built, waiting for 0018; the Membership and "Connect payments" cards work now): a card per setup flow, `?flow=board`, seats / officer rules / terms from your by-laws (D-143)

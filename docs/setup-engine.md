@@ -136,6 +136,7 @@ Several questions need a rule rather than a single value. The setup engine embed
 - Choose an attribute, an operator (is, is one of, is at least, is before, and so on), and values. Combine with and/or.
 - Choose an effect (set price, reduce by amount or percent, allow, deny, require approval, route to role).
 - Show a **test panel**: pick a sample member and see the outcome.
+- *Built (E-19, D-147):* the pricing rules editor on the Membership levels tab (click a term). Conditions are combined with **and** (one rule per alternative, first match wins, which covers "or"); effects are a set price or a percentage off. The engine is `src/engines/rules`, mirrored in SQL by `public.term_price`. The test panel and a pricing step in guided setup come later.
 
 ## 8. Design constraints
 

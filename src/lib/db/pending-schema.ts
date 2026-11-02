@@ -7,7 +7,7 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When Lovable applies a migration, delete its section here (the generated types take over).
- * Pending: 0017_purge_audit_summary (no types), 0018_setup_governance, 0019_rollups, 0020_two_level_dues (see roadmap.md).
+ * Pending: 0017_purge_audit_summary (no types), 0018_setup_governance, 0019_rollups, 0020_two_level_dues, 0021_pricing_rules (see roadmap.md).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,10 +17,45 @@ type Generated = Database["public"];
 
 // Add types for a migration here while Lovable hasn't applied it yet; delete them once applied.
 export type PendingEnums = Record<never, never>;
-export type PendingTables = Record<never, never>;
+export type PendingTables = {
+  // 0021_pricing_rules
+  pricing_rules: {
+    Row: {
+      active: boolean;
+      conditions: Json;
+      created_at: string;
+      created_by: string | null;
+      discount_pct: number | null;
+      id: string;
+      label: string;
+      org_id: string;
+      price_minor: number | null;
+      sort_order: number;
+      term_id: string;
+    };
+    Insert: never;
+    Update: never;
+    Relationships: [];
+  };
+};
 export type PendingFunctions = {
   // 0018_setup_governance
   apply_setup_sections: { Args: Record<string, never>; Returns: string[] };
+  // 0021_pricing_rules
+  quote_price: { Args: { _term: string; _answers?: Json }; Returns: number };
+  save_pricing_rule: {
+    Args: {
+      _term: string;
+      _rule: string;
+      _label: string;
+      _conditions: Json;
+      _price_minor: number;
+      _discount_pct: number;
+      _sort_order: number;
+    };
+    Returns: string;
+  };
+  set_pricing_rule_active: { Args: { _rule: string; _active: boolean }; Returns: undefined };
   // 0020_two_level_dues
   join_requirements: { Args: { _org: string }; Returns: Json };
   // 0019_rollups

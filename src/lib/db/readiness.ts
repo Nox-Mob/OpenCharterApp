@@ -52,6 +52,11 @@ export const FEATURES = {
     rpc: "join_requirements",
     args: { _org: "00000000-0000-0000-0000-000000000000" },
   },
+  pricing_rules: {
+    migration: "0021_pricing_rules",
+    label: "Pricing rules",
+    table: "pricing_rules",
+  },
   exports: {
     migration: "0011_member_exports",
     label: "Member exports and saved views",

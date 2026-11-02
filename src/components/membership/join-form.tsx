@@ -18,6 +18,7 @@ import {
 } from "@/modules/membership/joining";
 import { formatPrice, lengthOf, termLabel } from "@/modules/membership/tiers";
 import { startCheckout } from "@/modules/payments/payments.functions";
+import { quotePriceQuery } from "@/modules/membership/pricing";
 import { AttributeValueInput } from "@/components/attributes/attribute-value-input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,25 @@ export function JoinForm({ orgSlug }: { orgSlug: string }) {
   const req = useQuery({
     ...joinRequirementsQuery(info.data?.org.id ?? ""),
     enabled: !!info.data?.national_dues?.required && signedIn === true,
+  });
+  // Pricing rules (E-19): the signed-in person's price from their answers so far.
+  const allTerms = (info.data?.levels ?? []).flatMap((l) => l.terms);
+  const picked =
+    allTerms.find((t) => t.id === termId) ?? (allTerms.length === 1 ? allTerms[0] : undefined);
+  const quoteAnswers = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(joinAnswers(info.data?.fields ?? [], draft)).map(([id, v]) => [
+          id,
+          coerceInput(defs.find((d) => d.id === id)?.data_type ?? "text", v),
+        ]),
+      ),
+    [info.data, draft, defs],
+  );
+  const quote = useQuery({
+    ...quotePriceQuery(picked?.id ?? "", quoteAnswers),
+    enabled: signedIn === true && !!picked?.has_rules,
+    placeholderData: (prev) => prev,
   });
 
   if (info.isLoading || signedIn === null) return <p className="text-muted-foreground">Loading…</p>;
@@ -162,6 +182,12 @@ export function JoinForm({ orgSlug }: { orgSlug: string }) {
                       />
                       <span>
                         {termLabel(lengthOf(t))} · {formatPrice(t.price_minor, t.currency)}
+                        {t.has_rules && (
+                          <span className="text-muted-foreground">
+                            {" "}
+                            (your price can depend on your answers)
+                          </span>
+                        )}
                       </span>
                     </label>
                   ))}
@@ -226,7 +252,12 @@ export function JoinForm({ orgSlug }: { orgSlug: string }) {
                 {busy
                   ? "Opening payment…"
                   : chosen
-                    ? `Continue to payment (${formatPrice(chosen.term.price_minor, chosen.term.currency)})`
+                    ? `Continue to payment (${formatPrice(
+                        chosen.term.has_rules && quote.data !== undefined
+                          ? quote.data
+                          : chosen.term.price_minor,
+                        chosen.term.currency,
+                      )})`
                     : "Choose a membership"}
               </Button>
               <p className="text-xs text-muted-foreground">

@@ -47,6 +47,7 @@ Conventions to assume at schema time: every tenant-owned table carries `org_id`;
 |---|---|
 | Membership program / tier | Owned by an org (national or chapter), name, status, tax treatment, billing timing (prepaid or postpaid), approval required. *Built (E-11):* `membership_tiers` (key, name, description, tax_treatment, active). Billing timing comes with E-20 and approval stays an org setting (D-124). Sub-orgs may only create levels when their parent allows it (D-123) |
 | Term option | Per tier: label, duration (or lifetime), price. Fully org-defined. *Built (E-11):* `tier_terms` (length_count + length_unit day/month/year, or both null for lifetime; price_minor; currency), D-122 |
+| Pricing rule | *Built (E-19):* `pricing_rules` per term: conditions on member fields (jsonb), a price or a percentage off, order, active (D-147) |
 | Pricing rule | Rule record linked to a tier (attribute-based pricing or reductions), evaluated by the rules engine |
 | Membership | (person, org, tier, term, status, start, paid-through, source). *Built (E-13a):* `memberships`, one current row per member profile and org: tier, term, status (pending / active / cancelled / declined), joined_on, paid_through, lifetime (D-131) |
 | Membership event history | Joined, renewed, lapsed, upgraded, cancelled. *Built:* append-only `membership_events` (joined / renewed / approved / declined / cancelled) with the period covered and the payment |

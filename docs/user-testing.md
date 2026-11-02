@@ -125,6 +125,17 @@ Use a private browser window for a second account at the same time. Test only in
 **Where:** Overview → Your membership.
 1. As **Member**, "Renew online (…)" and pay with "Card accepted". Paid-through moves forward by one term from the old date, not from today.
 
+## 12c. Pricing rules (price by member fields)
+**Where:** Membership levels tab → click a term (e.g. "1 year · $50.00"). Needs migration 0021; until then terms aren't clickable.
+1. As the admin of the org that owns the level, add a rule: condition "Rank is at least E-5", "they pay" $30. Add another: "Veteran is yes", a 20% discount. Reorder with "Order" if needed. The list reads in plain words, and the term shows "· 2 pricing rules".
+2. Open the join page signed out: the term says the price can depend on your answers.
+3. Sign in and answer Rank E-5: the pay button shows $30.00. Change to E-2 with Veteran yes: $40.00. With neither: the usual price.
+4. Pay with the test card. The payment and the receipt show the rule's price.
+5. As a member whose Rank is stored, "Your membership" → "Renew online" shows your price.
+6. Retire a rule: it greys out and stops applying.
+
+**Also try:** a chapter rule priced outside the national's range (refused); a rule with no conditions (applies to everyone).
+
 ## 12b. Two-level dues (national and chapter)
 **Where:** Demo National → Membership setup ("Rules for your chapters"), then `/join/demo-austin`. Needs migration 0020; until then these questions don't appear.
 1. As **National**, run Membership setup. Turn on "Must chapter members also be members of your organization?". Set a chapter price range, e.g. lowest $10, highest $30. Apply.

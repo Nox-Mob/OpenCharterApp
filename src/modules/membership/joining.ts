@@ -15,6 +15,8 @@ export type JoinTerm = {
   length_unit: TermUnit | null;
   price_minor: number;
   currency: string;
+  /** The price can depend on the member's fields (pricing rules, 0021). */
+  has_rules?: boolean;
 };
 export type JoinLevel = { id: string; name: string; description: string; terms: JoinTerm[] };
 export type JoinField = {

@@ -22,6 +22,10 @@ import {
 } from "@/modules/membership/queries";
 import { EMPTY_TIER } from "@/modules/membership/tiers";
 import { TierDialog } from "./tier-editor";
+import { PricingRulesDialog } from "./pricing-rules-dialog";
+import { useFeatureReady } from "@/lib/db/readiness";
+import { pricingRulesQuery } from "@/modules/membership/pricing";
+import type { Term } from "@/modules/membership/tiers";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -45,6 +49,13 @@ export function LevelsTab({
     enabled: !!org.parent_id,
   });
   const [editing, setEditing] = useState<{ tier: SavedTier | null; input: Tier } | null>(null);
+  // Pricing rules per term (E-19); needs migration 0021.
+  const pricingReady = useFeatureReady("pricing_rules") === true;
+  const rules = useQuery({ ...pricingRulesQuery(org.id), enabled: pricingReady });
+  const [pricingFor, setPricingFor] = useState<{
+    term: Term & { id: string };
+    level: string;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
   if (tiers.isLoading || allowed.isLoading)
     return <p className="text-muted-foreground">Loading…</p>;
@@ -126,6 +137,14 @@ export function LevelsTab({
           <TierCard
             key={t.id}
             tier={t}
+            ruleCount={(id) =>
+              (rules.data ?? []).filter((r) => r.term_id === id && r.active).length
+            }
+            onTerm={
+              canManage && pricingReady && t.active
+                ? (term) => setPricingFor({ term, level: t.name })
+                : undefined
+            }
             actions={
               canManage && (
                 <>
@@ -158,6 +177,19 @@ export function LevelsTab({
         ))}
       </ul>
 
+      {pricingFor && (
+        <PricingRulesDialog
+          org={org}
+          term={pricingFor.term}
+          levelName={pricingFor.level}
+          onClose={() => setPricingFor(null)}
+        />
+      )}
+      {canManage && pricingReady && own.some((t) => t.active) && (
+        <p className="text-xs text-muted-foreground">
+          Click a term to price it by member fields, for example by rank.
+        </p>
+      )}
       <TierDialog
         open={!!editing}
         title={editing?.tier ? `Edit ${editing.tier.name}` : "Add a membership level"}
@@ -179,10 +211,14 @@ function TierCard({
   tier,
   badge,
   actions,
+  onTerm,
+  ruleCount,
 }: {
   tier: SavedTier;
   badge?: string;
   actions?: React.ReactNode;
+  onTerm?: ((term: Term & { id: string }) => void) | undefined;
+  ruleCount?: (termId: string) => number;
 }) {
   const terms = tier.terms.filter((x) => x.active !== false);
   return (
@@ -210,11 +246,30 @@ function TierCard({
         <div className="space-x-1 whitespace-nowrap">{actions}</div>
       </div>
       <ul className="mt-2 flex flex-wrap gap-2 text-sm">
-        {terms.map((x) => (
-          <li key={x.key} className="rounded bg-muted px-2 py-1">
-            {termLabel(lengthOf(x))} · {formatPrice(x.price_minor, x.currency)}
-          </li>
-        ))}
+        {terms.map((x) => {
+          const label = `${termLabel(lengthOf(x))} · ${formatPrice(x.price_minor, x.currency)}`;
+          const n = x.id ? (ruleCount?.(x.id) ?? 0) : 0;
+          const extra = n ? ` · ${n} pricing rule${n === 1 ? "" : "s"}` : "";
+          return (
+            <li key={x.key}>
+              {onTerm && x.id ? (
+                <button
+                  type="button"
+                  className="rounded bg-muted px-2 py-1 hover:bg-accent"
+                  onClick={() => onTerm({ ...x, id: x.id! })}
+                >
+                  {label}
+                  {extra}
+                </button>
+              ) : (
+                <span className="inline-block rounded bg-muted px-2 py-1">
+                  {label}
+                  {extra}
+                </span>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </li>
   );

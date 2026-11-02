@@ -74,10 +74,13 @@ Apply each in order after the ones above. Each is additive and passes the D-125 
 
 | 11 | `0020_two_level_dues.sql` | Two-level dues: `join_requirements`, national dues check in `begin_join` / `payment_succeeded` / `approve_membership`, chapter price range trigger, "no chapter dues" in `tier_parent_check` and `public_join_info` | `select public.public_join_info('demo-austin') -> 'national_dues';` returns `{"required": false, ...}` until the national turns it on |
 
-After applying, run `bun run test:smoke` as usual and regenerate the types. Once 0018–0020 are applied, mark the `board_setup`, `reports` and `two_level_dues` features in `src/lib/db/readiness.ts` as `applied: true` (we can do that).
+| 12 | `0021_pricing_rules.sql` | Pricing rules: `pricing_rules` table, `term_price`, `quote_price`, `save_pricing_rule`, `set_pricing_rule_active`; `begin_join` / `begin_renewal` charge the member's price; `public_join_info` marks terms with rules | `select count(*) from public.pricing_rules;` returns 0 |
 
-### Smoke-test additions for 0018–0020
+After applying, run `bun run test:smoke` as usual and regenerate the types. Once 0018–0021 are applied, mark the `board_setup`, `reports`, `two_level_dues` and `pricing_rules` features in `src/lib/db/readiness.ts` as `applied: true` (we can do that).
+
+### Smoke-test additions for 0018–0021
 Please add these to `smoke/live.smoke.test.ts` (they clean up through `purge_smoke_data` like the rest):
 - **Board setup (0018):** as the national admin, `apply_setup(national, 'board', …)` with one chapter seat and a term for the national's own seat; applying it twice leaves one seat and one term rule.
 - **Reports (0019):** `org_rollup_members(national)` lists the national and both chapters with totals matching the members recorded in the run; the chapter admin is refused for the national.
 - **Two-level dues (0020):** set `membership.national_dues_required = true` (locked) at the national for the run, then as the member: `begin_join(austin, …)` is refused with "national membership required"; join the national with the test gateway; then the Austin join waits for approval until the national membership is approved. Reset the setting afterwards.
+- **Pricing rules (0021):** as the national admin, add a rule on the run's term (no conditions, 20% off); the member's `quote_price` is 80% of the price, and `begin_join` / `begin_renewal` create a payment for that amount. Retire the rule afterwards.
