@@ -562,9 +562,14 @@ export type Database = {
           description: string
           id: string
           key: string
+          link_mode: string | null
           name: string
           org_id: string
+          price_rule: string | null
+          price_value: number | null
           sort_order: number
+          source_tier_id: string | null
+          suggested: boolean
           tax_treatment: Database["public"]["Enums"]["tax_treatment"]
         }
         Insert: {
@@ -573,9 +578,14 @@ export type Database = {
           description?: string
           id?: string
           key: string
+          link_mode?: string | null
           name: string
           org_id: string
+          price_rule?: string | null
+          price_value?: number | null
           sort_order?: number
+          source_tier_id?: string | null
+          suggested?: boolean
           tax_treatment?: Database["public"]["Enums"]["tax_treatment"]
         }
         Update: {
@@ -584,9 +594,14 @@ export type Database = {
           description?: string
           id?: string
           key?: string
+          link_mode?: string | null
           name?: string
           org_id?: string
+          price_rule?: string | null
+          price_value?: number | null
           sort_order?: number
+          source_tier_id?: string | null
+          suggested?: boolean
           tax_treatment?: Database["public"]["Enums"]["tax_treatment"]
         }
         Relationships: [
@@ -595,6 +610,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_tiers_source_tier_id_fkey"
+            columns: ["source_tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
             referencedColumns: ["id"]
           },
         ]
@@ -1509,6 +1531,7 @@ export type Database = {
           org_id: string
           price_minor: number
           sort_order: number
+          source_term_id: string | null
           tier_id: string
         }
         Insert: {
@@ -1523,6 +1546,7 @@ export type Database = {
           org_id: string
           price_minor: number
           sort_order?: number
+          source_term_id?: string | null
           tier_id: string
         }
         Update: {
@@ -1537,6 +1561,7 @@ export type Database = {
           org_id?: string
           price_minor?: number
           sort_order?: number
+          source_term_id?: string | null
           tier_id?: string
         }
         Relationships: [
@@ -1545,6 +1570,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tier_terms_source_term_id_fkey"
+            columns: ["source_term_id"]
+            isOneToOne: false
+            referencedRelation: "tier_terms"
             referencedColumns: ["id"]
           },
           {
@@ -1611,6 +1643,16 @@ export type Database = {
         Args: { _display_name: string; _email?: string; _org: string }
         Returns: string
       }
+      adopt_suggested_level: {
+        Args: {
+          _mode: string
+          _org: string
+          _rule?: string
+          _source: string
+          _value?: number
+        }
+        Returns: string
+      }
       ancestor_setting: { Args: { _key: string; _org: string }; Returns: Json }
       apply_setup: {
         Args: { _answers: Json; _flow: string; _org: string; _plan: Json }
@@ -1672,6 +1714,13 @@ export type Database = {
       cancel_membership: {
         Args: { _membership: string; _note?: string }
         Returns: undefined
+      }
+      chapter_national_standing: {
+        Args: { _chapter: string }
+        Returns: {
+          national_standing: string
+          profile_id: string
+        }[]
       }
       check_role_permissions: {
         Args: { _org: string; _perms: string[]; _uid: string }
@@ -1847,6 +1896,10 @@ export type Database = {
           value: Json
         }[]
       }
+      linked_price: {
+        Args: { _org: string; _price: number; _rule: string; _value: number }
+        Returns: number
+      }
       listed_in_directory: {
         Args: {
           _profile: Database["public"]["Tables"]["org_member_profiles"]["Row"]
@@ -1871,6 +1924,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      make_level_own: { Args: { _tier: string }; Returns: undefined }
       mark_payment_refunded: {
         Args: {
           _amount_minor: number
@@ -2177,6 +2231,10 @@ export type Database = {
         Args: { _chapter: string; _national: string }
         Returns: undefined
       }
+      set_linked_level_price: {
+        Args: { _rule: string; _tier: string; _value?: number }
+        Returns: undefined
+      }
       set_member_home_chapter: {
         Args: { _chapter: string; _membership: string }
         Returns: undefined
@@ -2224,6 +2282,7 @@ export type Database = {
         Args: { _org: string; _template: string; _title: string }
         Returns: undefined
       }
+      sync_linked_level: { Args: { _tier: string }; Returns: undefined }
       term_end: {
         Args: {
           _count: number
