@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { readFileSync, existsSync } from "node:fs";
 
 /** Reads VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY from the environment or .env. */
-function env(name: string): string {
+export function env(name: string): string {
   if (process.env[name]) return process.env[name] as string;
   if (existsSync(".env")) {
     const line = readFileSync(".env", "utf8")

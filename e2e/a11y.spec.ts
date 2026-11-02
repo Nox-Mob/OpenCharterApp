@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures";
 import { openOrg, signIn, type Role } from "./helpers";
 
 // Accessibility pass (R2, WCAG 2.1 AA, Q-16), checked without extra dependencies:

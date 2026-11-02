@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures";
 import { rpc, signIn as apiSignIn } from "../smoke/client";
 import { DEMO, signIn } from "./helpers";
 

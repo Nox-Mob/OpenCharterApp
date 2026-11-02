@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { openOrg, orgMenu, signIn } from "./helpers";
 
 // D-152, D-154, D-155: the left-hand menu by role, and "View as member".

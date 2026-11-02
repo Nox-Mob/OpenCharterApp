@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { rpc, signIn as apiSignIn, type Db } from "../smoke/client";
 import { DEMO, signIn } from "./helpers";
 

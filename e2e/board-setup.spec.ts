@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { openOrg, signIn } from "./helpers";
 
 // E-17, D-156, D-185: the Board page shows the board and links to Settings → Board, where the

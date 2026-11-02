@@ -32,6 +32,7 @@ Install once per clone with `bun run hooks:install` (it sets `core.hooksPath` to
 | `lifecycle` | A throwaway demo national created through the screens with the home-chapter model (D-176), a chapter added with the wizard, a second chapter, a level and a member set up through the API; the member picks a chapter and changes it; the national admin sees them in the new chapter only, with the national level, and in the national's list with their chapter. The national is deleted afterwards (leftovers from earlier runs too) |
 | `export` | Settings → Payments → "Export payments" downloads a CSV with the bookkeeping columns (byte-order mark for spreadsheets) (A3) |
 | `levels` | In a throwaway demo national, a chapter starts from a suggested level, sees both choices explained, links it at 20% less with the price previewed, and sees the link and "Make it our own" (A4) |
+| `origin-guard` | A request to a site other than the app and its backend is blocked, while the app keeps working (D-186) |
 | `a11y` | As each role, on the dashboard and every main screen: every control has an accessible name, one main heading, a page language; sign-in by keyboard with visible focus (R2, D-183) |
 
 Notes:
@@ -39,7 +40,12 @@ Notes:
 - **Clean-up:** tests that write (joining) remove what they created in the demo orgs afterwards with `purge_smoke_data` (D-150). Don't edit the demo orgs while they run.
 - **Features waiting for a migration** can only be tested end to end once Lovable has applied it. Add the spec in the same change; it skips (or is marked `test.fixme`) until then.
 - **Behind an outbound proxy** (some sandboxes), the browser uses `HTTPS_PROXY` for the backend and bypasses it for the local server.
-- In CI the job installs Chromium, uses the repository variable `E2E_BASE_URL` when set, and uploads traces when a test fails.
+- **Playwright is pinned to 1.64.1 and hardened (D-186):**
+  - Import `test` and `expect` from `e2e/fixtures.ts`, never from `@playwright/test`. Its origin guard blocks every request to a host other than the app, the Supabase backend and the web fonts. Add a host for one run with `E2E_ALLOWED_HOSTS=host1,host2`. For a second page, use `guardedPage(browser, baseURL)`, not `browser.newPage()`.
+  - Chromium's sandbox is on. It can't run as root: in a root-only sandbox, set `E2E_NO_SANDBOX=1`.
+  - `E2E_BROWSER_CHANNEL=chrome` uses the installed Google Chrome instead of Playwright's bundled Chromium; CI does this.
+  - Where Playwright's own Chromium build can't be installed, set `E2E_CHROMIUM_PATH` to an existing Chromium. In the Claude cloud sandbox: `E2E_NO_SANDBOX=1 E2E_CHROMIUM_PATH=/opt/pw-browsers/chromium bun run test:e2e`.
+- In CI the job installs Google Chrome stable (`playwright install --with-deps chrome`) and runs as a non-root user with the sandbox on. It uses the repository variable `E2E_BASE_URL` when set, and uploads traces when a test fails.
 
 ## Live smoke test
 

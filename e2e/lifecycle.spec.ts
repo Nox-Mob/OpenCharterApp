@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, guardedPage, test, type Page } from "./fixtures";
 import { rpc, signIn as apiSignIn, type Db } from "../smoke/client";
 import { DEMO, orgMenu, signIn } from "./helpers";
 
@@ -92,6 +92,7 @@ test("add a chapter with the wizard", async ({ page }) => {
 test("a member picks a home chapter, changes it, and the chapter lists them", async ({
   page,
   browser,
+  baseURL,
 }) => {
   test.skip(!chapterA, "needs the chapter from the previous test");
   // Setup through the API: a level, a second chapter, Demo Member invited and given a membership.
@@ -154,7 +155,7 @@ test("a member picks a home chapter, changes it, and the chapter lists them", as
   await expect(card).toContainText(`You belong to ${CHAPTER_B}`);
 
   // The national admin sees the member in Online (not Austin), with the national level.
-  const adminPage = await browser.newPage();
+  const adminPage = await guardedPage(browser, baseURL);
   await signIn(adminPage, "national");
   await openSection(adminPage, chapterB, "members");
   await expect(adminPage.getByRole("cell", { name: new RegExp(DEMO.member) })).toBeVisible();
@@ -167,5 +168,5 @@ test("a member picks a home chapter, changes it, and the chapter lists them", as
   await expect(
     orgMenu(adminPage).getByRole("button", { name: "Members", exact: true }),
   ).toBeVisible();
-  await adminPage.close();
+  await adminPage.context().close();
 });

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { openOrg, signIn } from "./helpers";
 
 // D-154: a national admin's Members page lists everyone below it, with organization and email.

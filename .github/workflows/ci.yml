@@ -73,10 +73,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
-      - run: bunx playwright install --with-deps chromium
+      # Google Chrome stable rather than Playwright's bundled Chromium, which lags Chrome's
+      # security fixes; the runner is not root, so Chrome's sandbox stays on (D-186).
+      - run: bunx playwright install --with-deps chrome
       - name: Run end-to-end tests
         run: bun run test:e2e
         env:
+          E2E_BROWSER_CHANNEL: chrome
           E2E_BASE_URL: ${{ vars.E2E_BASE_URL }}
           SMOKE_DEMO_PASSWORD: ${{ secrets.SMOKE_DEMO_PASSWORD }}
       - uses: actions/upload-artifact@v4
