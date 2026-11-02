@@ -162,6 +162,13 @@
       "when": 1793598000001,
       "tag": "0022_demo_orgs",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793598000002,
+      "tag": "0023_confirm_0017_0022_applied",
+      "breakpoints": true
     }
   ]
 }

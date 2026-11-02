@@ -693,6 +693,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          is_demo: boolean
           logo_path: string | null
           name: string
           parent_id: string | null
@@ -707,6 +708,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_demo?: boolean
           logo_path?: string | null
           name: string
           parent_id?: string | null
@@ -721,6 +723,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          is_demo?: boolean
           logo_path?: string | null
           name?: string
           parent_id?: string | null
@@ -858,6 +861,63 @@ export type Database = {
           key?: string
         }
         Relationships: []
+      }
+      pricing_rules: {
+        Row: {
+          active: boolean
+          conditions: Json
+          created_at: string
+          created_by: string | null
+          discount_pct: number | null
+          id: string
+          label: string
+          org_id: string
+          price_minor: number | null
+          sort_order: number
+          term_id: string
+        }
+        Insert: {
+          active?: boolean
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          discount_pct?: number | null
+          id?: string
+          label?: string
+          org_id: string
+          price_minor?: number | null
+          sort_order?: number
+          term_id: string
+        }
+        Update: {
+          active?: boolean
+          conditions?: Json
+          created_at?: string
+          created_by?: string | null
+          discount_pct?: number | null
+          id?: string
+          label?: string
+          org_id?: string
+          price_minor?: number | null
+          sort_order?: number
+          term_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_rules_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_rules_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "tier_terms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       receipt_counters: {
         Row: {
@@ -1432,6 +1492,7 @@ export type Database = {
         Args: { _answers: Json; _flow: string; _org: string; _plan: Json }
         Returns: undefined
       }
+      apply_setup_sections: { Args: never; Returns: string[] }
       appoint_officer: {
         Args: {
           _org: string
@@ -1518,6 +1579,14 @@ export type Database = {
         Returns: string
       }
       connect_test_gateway: { Args: { _org: string }; Returns: undefined }
+      create_demo_organization: {
+        Args: {
+          _name: string
+          _slug: string
+          _type: Database["public"]["Enums"]["org_type"]
+        }
+        Returns: string
+      }
       create_invitation: {
         Args: { _email: string; _org: string; _role_key?: string }
         Returns: string
@@ -1565,9 +1634,14 @@ export type Database = {
         }
         Returns: string
       }
+      delete_demo_organization: {
+        Args: { _confirm_name: string; _org: string }
+        Returns: string[]
+      }
       disconnect_gateway: { Args: { _org: string }; Returns: undefined }
       effective_approval_required: { Args: { _org: string }; Returns: boolean }
       effective_setting: { Args: { _key: string; _org: string }; Returns: Json }
+      emails_allowed: { Args: { _org: string }; Returns: boolean }
       end_appointment: {
         Args: { _appointment: string; _ended_on?: string; _reason?: string }
         Returns: undefined
@@ -1605,11 +1679,13 @@ export type Database = {
         Returns: boolean
       }
       is_org_member: { Args: { _org: string; _user: string }; Returns: boolean }
+      is_platform_operator: { Args: never; Returns: boolean }
       issue_receipt: { Args: { _payment: string }; Returns: string }
       issue_receipt_internal: {
         Args: { _payment: string; _supersedes?: string }
         Returns: string
       }
+      join_requirements: { Args: { _org: string }; Returns: Json }
       lineage_settings: {
         Args: { _org: string }
         Returns: {
@@ -1630,6 +1706,15 @@ export type Database = {
           _columns: string[]
           _filter?: Json
           _org: string
+          _row_count: number
+        }
+        Returns: undefined
+      }
+      log_report_export: {
+        Args: {
+          _filter?: Json
+          _org: string
+          _report: string
           _row_count: number
         }
         Returns: undefined
@@ -1661,6 +1746,12 @@ export type Database = {
         }
         Returns: string
       }
+      national_dues_required: { Args: { _org: string }; Returns: boolean }
+      national_membership_state: {
+        Args: { _org: string; _user: string }
+        Returns: string
+      }
+      national_org: { Args: { _org: string }; Returns: string }
       org_board: {
         Args: { _org: string }
         Returns: {
@@ -1692,6 +1783,62 @@ export type Database = {
           type: Database["public"]["Enums"]["org_type"]
         }[]
       }
+      org_rollup_governance: {
+        Args: { _org: string }
+        Returns: {
+          depth: number
+          name: string
+          org_id: string
+          required_seats: number
+          terms_past_end: number
+          vacant_required: number
+          vacant_titles: string[]
+        }[]
+      }
+      org_rollup_members: {
+        Args: { _org: string }
+        Returns: {
+          depth: number
+          ended: number
+          expiring_30: number
+          expiring_60: number
+          expiring_90: number
+          good: number
+          grace: number
+          joined_30d: number
+          lapsed: number
+          name: string
+          no_membership: number
+          org_id: string
+          parent_id: string
+          pending: number
+          profiles: number
+          type: Database["public"]["Enums"]["org_type"]
+        }[]
+      }
+      org_rollup_revenue: {
+        Args: { _from: string; _org: string; _to: string }
+        Returns: {
+          currency: string
+          depth: number
+          gross_minor: number
+          name: string
+          net_minor: number
+          org_id: string
+          payments: number
+          refunded_minor: number
+        }[]
+      }
+      org_subtree: {
+        Args: { _org: string }
+        Returns: {
+          depth: number
+          name: string
+          org_id: string
+          parent_id: string
+          type: Database["public"]["Enums"]["org_type"]
+        }[]
+      }
       payment_failed: {
         Args: { _event_id: string; _payment: string; _reason: string }
         Returns: string
@@ -1716,12 +1863,18 @@ export type Database = {
         }
         Returns: string
       }
+      pricing_condition_matches: {
+        Args: { _c: Json; _values: Json }
+        Returns: boolean
+      }
       privacy_admin_override_allowed: {
         Args: { _org: string }
         Returns: boolean
       }
+      profile_values: { Args: { _profile: string }; Returns: Json }
       public_join_info: { Args: { _slug: string }; Returns: Json }
       purge_smoke_data: { Args: { _since: string }; Returns: Json }
+      quote_price: { Args: { _answers?: Json; _term: string }; Returns: number }
       recalculate_planned_ends: {
         Args: { _org: string; _template: string }
         Returns: number
@@ -1767,6 +1920,18 @@ export type Database = {
           _role: Database["public"]["Tables"]["roles"]["Row"]
         }
         Returns: boolean
+      }
+      save_pricing_rule: {
+        Args: {
+          _conditions: Json
+          _discount_pct: number
+          _label: string
+          _price_minor: number
+          _rule: string
+          _sort_order: number
+          _term: string
+        }
+        Returns: string
       }
       save_stripe_connection: {
         Args: {
@@ -1824,6 +1989,10 @@ export type Database = {
         Args: { _listed: boolean; _org: string }
         Returns: undefined
       }
+      set_pricing_rule_active: {
+        Args: { _active: boolean; _rule: string }
+        Returns: undefined
+      }
       set_role_active: {
         Args: { _active: boolean; _role: string }
         Returns: undefined
@@ -1856,6 +2025,7 @@ export type Database = {
         }
         Returns: string
       }
+      term_price: { Args: { _term: string; _values: Json }; Returns: number }
       test_gateway_allowed: { Args: { _org: string }; Returns: boolean }
       update_member_record: {
         Args: { _display_name: string; _email: string; _profile: string }
@@ -1893,6 +2063,10 @@ export type Database = {
       }
       validate_join_answers: {
         Args: { _answers: Json; _org: string }
+        Returns: undefined
+      }
+      validate_pricing_conditions: {
+        Args: { _conditions: Json; _org: string }
         Returns: undefined
       }
       void_receipt: {
