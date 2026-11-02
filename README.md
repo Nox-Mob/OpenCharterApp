@@ -29,7 +29,7 @@ The full vision, scope and feature map are in [`docs/README.md`](docs/README.md)
 
 ### Where it stands
 
-**Next milestone: the MVP release (v0.1.0)**, the first version a real national or standalone association can run on, hosted on Lovable Cloud. Sprint 1 of 3 is done; the plan is [`docs/plans/wave-a-mvp.md`](docs/plans/wave-a-mvp.md). Phases 1 and 2 of the [epic map](docs/epic.md) meet their exit criteria; what's left in Phases 1–3 is in [`docs/plans/phases-1-3-review.md`](docs/plans/phases-1-3-review.md).
+**Next milestone: the MVP release (v0.1.0)**, the first version a real national or standalone association can run on, hosted on Lovable Cloud. All three sprints are built; what's left is Lovable applying migrations `0032`–`0034`, two owner actions (a live Stripe test-mode run and a CPA look at receipt wording) and the release checklist in [`docs/plans/wave-a-mvp.md`](docs/plans/wave-a-mvp.md). What's in it: [`CHANGELOG.md`](CHANGELOG.md). Phases 1 and 2 of the [epic map](docs/epic.md) meet their exit criteria; what's left in Phases 1–3 is in [`docs/plans/phases-1-3-review.md`](docs/plans/phases-1-3-review.md).
 
 Working today:
 
@@ -38,8 +38,8 @@ Working today:
   - **separate memberships:** the national and each chapter have their own members, levels and dues, with optional two-level dues
   - **national membership with a home chapter:** one membership at the national, and each member picks their chapter (or an at-large chapter such as an online chapter) and can change it any time
 - **Permissions:** roles, including custom roles, with permissions that flow down only; an append-only audit log; settings a national can lock for its chapters
-- **Configuration:** guided setup (membership and board), member and chapter fields, membership levels and terms, pricing rules by member fields, branding and logos
-- **Members and money:** memberships and standing, joining and renewing online (Stripe, or a test gateway in demo orgs) with the member returned to the app, payments recorded by hand, numbered receipts, an audited payments export for bookkeeping, member lists with filters, saved views and audited exports, a member directory with each member's privacy choice
+- **Configuration:** guided setup (membership, including prices by member fields, and board), member and chapter fields, membership levels and terms, pricing rules by member fields, levels a national suggests to its chapters (copied, or linked with a price rule), branding and logos
+- **Members and money:** memberships and standing, joining and renewing online (Stripe, or a test gateway in demo orgs) with the member returned to the app, payments recorded by hand, numbered receipts, an audited payments export for bookkeeping, member lists with filters, saved views, chosen columns and audited exports (also across a national's chapters), national standing for chapter admins, a member directory with each member's privacy choice
 - **Governance:** board seats (for one org, its chapters, or both), each org's own terms from its by-laws, appointments that grant and remove the seat's role, a role email or the officer's own email per seat
 - **The org page:** a left-hand menu (Overview, Members or Directory, Board, Reports, Chapters, Settings)
   - admins see overview numbers and reports (chapter admins for their chapter only), and every member of the orgs they manage
@@ -48,7 +48,7 @@ Working today:
 
 Not in the MVP: automatic email (the first update after it), postpaid dues and invoices, PayPal, custom domains, approvals, board reports, documents, elections. Progress and what's next: [`roadmap.md`](roadmap.md).
 
-Every migration up to `0031` is applied to the live database.
+Every migration up to `0031` is applied to the live database; `0032`–`0034` are waiting (see [`roadmap.md`](roadmap.md)). Until then their screens stay hidden. The security, accessibility and performance review is in [`docs/security-review.md`](docs/security-review.md), and a map of every table is in [`docs/tables.md`](docs/tables.md).
 
 ## Install and run
 
@@ -89,6 +89,8 @@ TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres bun run t
 bun run build
 bun run test:e2e             # end-to-end, in Chromium (needs network; see docs/testing.md)
 ```
+
+Install the pre-commit hook once per clone with `bun run hooks:install`; it runs the fast checks on every commit. Before a release, `bun run test:perf` (with `TEST_DATABASE_URL`) times the heavy reads with 5,000 members.
 
 `test:db` creates and drops its own throwaway database (`oc_rules_test`), applies every migration and runs `db/tests/*.sql`. **Never point it at the real project database.** Details are in [`docs/testing.md`](docs/testing.md). For checking the app by hand, follow [`docs/user-testing.md`](docs/user-testing.md).
 

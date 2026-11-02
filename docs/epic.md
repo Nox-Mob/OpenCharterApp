@@ -32,7 +32,7 @@ Status for Phases 0–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly 
 
 | ID | Epic | Outcome | Status (2026-11-02) |
 |---|---|---|---|
-| E-01 | Project scaffolding and CI/CD | Repo, lint, types, tests, CI pipeline, environments, npm scripts, local development setup (local Postgres, env vars, `.env.example`) | 🟡 CI, checks and end-to-end tests run; the pre-commit hook and coverage gate in `instructions.md` §9 are not set up yet |
+| E-01 | Project scaffolding and CI/CD | Repo, lint, types, tests, CI pipeline, environments, npm scripts, local development setup (local Postgres, env vars, `.env.example`) | 🟡 CI, checks, end-to-end tests, the pre-commit hook and the docs check run (D-182); the coverage gate in `instructions.md` §9 needs a dependency decision |
 | ~~E-02~~ | ~~Deployment packaging~~ | **Moved to the future backlog as F-11** (D-012). ID retired, not reused | — |
 | E-03 | Identity and authentication | Global person and account, sign-in, sessions, email verification, password reset, invitations, **joining a new org with an existing account, org switcher** | ✅ Cleared |
 | E-04 | Organization hierarchy and platform tier | Org tree (platform, national, region, chapter, standalone), org settings, tax profile, **branding with logo upload and chapter override** | ✅ Cleared |
@@ -48,9 +48,9 @@ Status for Phases 0–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly 
 | ID | Epic | Outcome | Status (2026-11-02) |
 |---|---|---|---|
 | E-09 | Custom attribute system | Org-defined member attributes (types, validation, visibility), attribute values on members, admin UI | ✅ Cleared |
-| E-10 | Setup engine framework + Membership setup flow | Reusable guided-setup framework, first flow covering members, attributes, tiers, and dues questions (see `setup-engine.md`) | 🟡 Cleared, follow-ups (see the review) |
+| E-10 | Setup engine framework + Membership setup flow | Reusable guided-setup framework, first flow covering members, attributes, tiers, and dues questions (see `setup-engine.md`) | ✅ Cleared; setup now also covers prices by member fields (D-177) |
 | E-11 | Membership tiers and terms | Org-defined tiers, term options, prices, tax treatment, prepaid model | ✅ Cleared |
-| E-12 | Payment gateway abstraction and Stripe | Gateway interface, Stripe adapter, transactions, webhooks, refunds | 🟡 Cleared; transaction export done (D-173); live Stripe test-mode check open (A1) |
+| E-12 | Payment gateway abstraction and Stripe | Gateway interface, Stripe adapter, transactions, webhooks, refunds | 🟡 Cleared; transaction export done (D-173); live Stripe test-mode check open (A1, owner action) |
 | E-13 | Member signup and renewals | Public join form, application and approval (optional), renewals, lapses, grace periods, standing; national membership with a home chapter (D-166, D-174, D-176) | 🟡 Cleared; automatic lapse notices and reminders wait for E-08 |
 | E-14 | Member directory, lists, and exports | Member list with standing and time-to-expiration, filters, saved segments, privacy-aware CSV exports | ✅ Cleared |
 | E-15 | Basic automatic receipts | Receipt on payment, default template, receipt history | ✅ Cleared |
@@ -63,7 +63,7 @@ Status for Phases 0–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly 
 |---|---|---|---|
 | E-16 | Chapter creation wizard and chapter attributes | National-led chapter creation, national-defined chapter attributes (e.g., charter date), prompts for required officers | ✅ Cleared |
 | E-17 | Board role templates and appointments | National-defined seats (required, count, term, permissions), custom titles, appointments with history, access grant and revoke | ✅ Cleared |
-| E-18 | Two-level dues and national controls | National and chapter tiers, none/optional-range/required chapter dues, locked or suggested structures (chapter chooses copy or linked, D-165), two-payment checkout UX; alternative model: national membership with a home chapter (D-166) | 🟡 Cleared, follow-ups (see the review) |
+| E-18 | Two-level dues and national controls | National and chapter tiers, none/optional-range/required chapter dues, locked or suggested structures (chapter chooses copy or linked, D-165), two-payment checkout UX; alternative model: national membership with a home chapter (D-166) | ✅ Cleared: suggested levels, national standing and the home-chapter model built (D-174, D-177, D-178) |
 | E-19 | Rules engine and attribute-based pricing | Declarative rules UI, pricing by attribute (e.g., rank bands), reused later for eligibility and approvals | ✅ Cleared |
 | E-20 | Postpaid dues | Balances, invoices, due dates, delinquency, admin-defined enforcement as inheritable settings (D-161), manual payment recording, **parent orgs invoicing subordinate orgs** (national fee, D-162) | ⬜ Not started |
 | E-21 | Per-org gateways and PayPal | Each org connects Stripe or PayPal, **Direct mode only** (Connect dropped, D-162), PayPal adapter. The national fee is invoiced through E-20 | 🟠 Partly built (Stripe done; PayPal open) |

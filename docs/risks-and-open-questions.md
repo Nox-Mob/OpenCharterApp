@@ -27,7 +27,7 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 | Q-13 | P3 | **Name and branding** for the project | TBD |
 | Q-14 | P3 | **Hosted tiers and thresholds** (chapters > 5, members < 100, and so on) | Remains configuration. Decide before E-42 |
 | ~~Q-15~~ | ~~P3~~ | **Postpaid reminders cadence** defaults | **Resolved by D-161:** postpaid options are inheritable settings (parent sets, subordinates where allowed) |
-| Q-16 | P3 | **Accessibility target** (WCAG 2.1 AA) | Adopt as the target |
+| Q-16 | P3 | **Accessibility target** (WCAG 2.1 AA) | Adopted; automated checks in `e2e/a11y.spec.ts`, manual checks in `user-testing.md` §16 (D-183) |
 | Q-17 | P3 | **Data retention periods** for governance records, receipts, and audit logs | Retain indefinitely by default, org-configurable for non-financial data. Confirm legal requirements |
 
 ## 2. Risks
@@ -63,7 +63,7 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 
 - CPA or attorney: receipt wording and tax treatment defaults for 501(c)(19) and 501(c)(3), dues vs. donations treatment, quid pro quo disclosures.
 - Attorney: AGPL implications for the hosted service, contributor terms, trademark for the project name.
-- Security review before first production release: tenant isolation, signed links, credential storage.
+- Security review before first production release: tenant isolation, signed links, credential storage. *Done for 0.1.0 (2026-11-02):* `docs/security-review.md`, no blocking findings, follow-ups F1–F3 after release (D-180). Signed links arrive with email (Wave B) and get their own review then.
 
 ## 5. Suggested first spikes (before or during Phase 0/1)
 
@@ -80,3 +80,8 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 ## Added 2026-11-01
 - **R-23 Migrations blocked by hosting limits:** Lovable applies migrations to the live database and can be unavailable (for example a credit cap), while merged code already expects the new schema. Mitigation (D-135): migrations are prepared and tested locally, types for them live outside the generated file, and a readiness guard shows "needs a database update" instead of failing. The pending list in `roadmap.md` says what to apply, in order.
 - **R-24 License file:** AGPL-3.0 is decided (D-020), but the repository has no `LICENSE` file yet. Add the official AGPL-3.0 text before the first public release.
+
+## Added 2026-11-02
+- **R-25 Dependency advisories:** `bun audit` lists advisories in development tooling (accepted) and two in runtime code, `seroval` through TanStack Start and `zod` 3, that need a framework or major-version bump (`docs/security-review.md` §1.6, D-180). Mitigation: neither is reachable from our inputs today; upgrade in the first release after 0.1.0 and re-run `bun audit` before each release.
+- **R-26 Large organizations:** the API returns at most 1,000 rows per request and per-row setting lookups slowed roll-ups. Mitigation (D-181): paged reads, settings resolved once per org (0034), and `bun run test:perf` before releases.
+- R-24 (license file) is still open and is on the release checklist (`docs/plans/wave-a-mvp.md` §6).

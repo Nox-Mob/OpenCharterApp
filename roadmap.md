@@ -32,7 +32,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 - [ ] **Owner:** A1 live Stripe test-mode run on a non-demo test org (connect, join, webhook, refund; `user-testing.md` §10)
 - [ ] **Owner:** R4 receipt wording reviewed by a CPA (R-07), or ship with the placeholder and say so (it's in the changelog)
 - [ ] Still to add as end-to-end specs: renewal, Membership and Board setup applied, appointing an officer
-- [ ] Release checklist (`wave-a-mvp.md` §6): Lovable applies 0032–0034, full `user-testing.md` pass, pull request to `main`, `v0.1.0` tag
+- [ ] Release checklist (`wave-a-mvp.md` §6): Lovable applies 0032–0034, full `user-testing.md` pass, add the AGPL-3.0 `LICENSE` file (R-24), pull request to `main`, `v0.1.0` tag
 - After 0.1.0 (`security-review.md` §1.6): F1 revoke `has_permission` / `is_org_member` from anonymous callers; F2 upgrade TanStack Start (`seroval`); F3 move to zod 4
 
 ## After the MVP (`docs/plans/phases-1-3-review.md` §3)

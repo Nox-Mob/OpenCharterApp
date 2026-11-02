@@ -1,6 +1,6 @@
 # Phases 1–3: epic clearance review and plan
 
-Status on 2026-11-02 (refreshed after Sprint 1 of the MVP plan), with migrations `0000`–`0031` applied. Sources: `docs/epic.md` (scope and exit criteria), `roadmap.md`, `docs/decisions.md`, the code under `src/` and `drizzle/migrations/`, and the tests under `db/tests/` and `src/**/*.test.ts*`.
+Status on 2026-11-02 (refreshed after Sprints 1–3 of the MVP plan), with migrations `0000`–`0031` applied and `0032`–`0034` waiting for Lovable. Sources: `docs/epic.md` (scope and exit criteria), `roadmap.md`, `docs/decisions.md`, the code under `src/` and `drizzle/migrations/`, and the tests under `db/tests/` and `src/**/*.test.ts*`.
 
 **Legend:** ✅ cleared (the outcome in `epic.md` is built and tested) · 🟡 cleared with follow-ups (usable, named gaps) · 🟠 partly built · ⬜ not started.
 
@@ -23,11 +23,11 @@ End-to-end tests now exist (Playwright, D-170, D-175) and grow with each feature
 | Epic | Status | Evidence | Remaining |
 |---|---|---|---|
 | E-09 Custom attributes | ✅ | 7 types incl. ordered lists, visibility, self-edit, inheritance, chapter fields, locked chapter fields, retire-not-delete (D-060, D-061, D-112, D-121); `60_attributes.sql` | — |
-| E-10 Setup engine + Membership flow | 🟡 | Engine, drafts, review with diff, one-transaction `apply_setup`; Membership setup v4; setup hub (D-113, D-143) | Pricing-rules step (E-19 follow-up); setup flows for documents / elections arrive with their epics |
+| E-10 Setup engine + Membership flow | ✅ | Engine, drafts, review with diff, one-transaction `apply_setup`; Membership setup v4 with a pricing step (A6, D-177); setup hub (D-113, D-143) | Setup flows for documents / elections arrive with their epics |
 | E-11 Tiers and terms | ✅ | Levels, org-defined terms, lifetime, prices in minor units, tax treatment, parent control (D-126); `90_tiers.sql` | — |
-| E-12 Gateway + Stripe | 🟡 | Gateway interface, Stripe adapter (no SDK), sealed per-org keys, webhooks, refunds, test gateway (D-127, D-129); return links to the public address and direct confirmation (D-158); transaction CSV export (D-173) | **Verify a real Stripe test-mode account end to end** (A1; only the test gateway has been run live) |
+| E-12 Gateway + Stripe | 🟡 | Gateway interface, Stripe adapter (no SDK), sealed per-org keys, webhooks, refunds, test gateway (D-127, D-129); return links to the public address and direct confirmation (D-158); transaction CSV export (D-173) | **Verify a real Stripe test-mode account end to end** (A1, owner action; only the test gateway has been run live) |
 | E-13 Signup and renewals | 🟡 | Join page, approval, decline with refund, renewal with stacking, grace, derived standing (D-130..D-134); national membership with a home chapter (D-166, D-174, D-176); `95`, `97`, `9L` | **Automatic lapse handling and renewal reminders** need E-08 (standing is derived on read, so a lapse already shows correctly; nothing notifies the member) |
-| E-14 Lists and exports | ✅ | Filters, expiring 30/60/90, saved views, audited privacy-aware exports, directory with privacy choice, admin view across the tree (D-138, D-139, D-154) | Nice-to-have: chosen fields as columns and cross-chapter export in the "everyone" view |
+| E-14 Lists and exports | ✅ | Filters, expiring 30/60/90, saved views, audited privacy-aware exports, directory with privacy choice, admin view across the tree with chosen columns and export (D-138, D-139, D-154, D-179) | — (chosen fields as columns and cross-chapter export built in A7, D-179) |
 | E-15 Basic receipts | ✅ | Automatic, numbered, immutable, void / reissue, refunds, print, footer (D-140) | Templates and manual receipts are E-36 (Phase 5); CPA review of wording (R-07) |
 
 **Exit check:** a standalone org can complete setup ✅, sell memberships through Stripe 🟡 (built; live Stripe test-mode run outstanding), renew ✅, see its roster ✅ and export a mailing list ✅.
@@ -38,8 +38,8 @@ End-to-end tests now exist (Playwright, D-170, D-175) and grow with each feature
 |---|---|---|---|
 | E-16 Chapter wizard + chapter attributes | ✅ | Wizard with chapter fields, first admin, required-officer invitations (D-144) | — |
 | E-17 Board seats and appointments | ✅ | Seats for an org, its chapters or both; custom titles; each org's own terms with by-law history; appointments grant / revoke the seat's role; contact emails; Board setup (D-141..D-143, D-151, D-156, D-157); `9B`, `9D`, `9I`, `9J` | — |
-| E-18 Two-level dues + national controls | 🟡 | National-first two payments, chapter dues none / optional / required, price range, "chapters use our levels" (D-146) | **Suggested levels, copy or linked** (A4, D-165); national standing next to chapter standing on the chapter's Members page and a national-dues reminder in "Actions needed" (A5); linked renewals. The home-chapter model (A8) is built |
-| E-19 Rules + attribute-based pricing | ✅ | Declarative conditions shared by SQL and TypeScript, pricing per term, quotes (D-147); `9G` | Pricing step in setup; reuse for eligibility and approvers comes with E-24 / E-27 / E-31 |
+| E-18 Two-level dues + national controls | ✅ | National-first two payments, chapter dues none / optional / required, price range, "chapters use our levels" (D-146); suggested levels, copy or linked (A4, D-177); national standing on the chapter's Members page and a national-dues reminder (A5, D-178); the home-chapter model (A8, D-174); `9F`, `9L`, `9M` | Linked renewals (pay national and chapter in one checkout) stay a later improvement. Needs 0032 applied |
+| E-19 Rules + attribute-based pricing | ✅ | Declarative conditions shared by SQL and TypeScript, pricing per term, quotes (D-147); pricing step in Membership setup (A6, D-177); `9G`, `9M` | Reuse for eligibility and approvers comes with E-24 / E-27 / E-31 |
 | E-20 Postpaid dues | ⬜ | Nothing built (no balances, invoices or due dates) | Whole epic (D-053, D-054, Q-15, R-14) |
 | E-21 Per-org gateways and PayPal | 🟠 | Each org connects its own Stripe (Direct mode) | **PayPal adapter** (D-043, R-02). Connect mode is dropped and the national fee is invoiced through E-20 (D-162) |
 | E-22 Custom domains | ⬜ | Nothing built; needs a reverse proxy, so F-11 first; per-org addresses (E-07) are deferred too | Whole epic; recommend keeping it deferred until hosting is decided (R-08, Q-14) |
@@ -67,13 +67,13 @@ Work in waves. Each item follows the commit rules (tests, docs, migration conven
 
 | # | Item | Epic | Notes |
 |---|---|---|---|
-| A1 | Live Stripe test-mode run on a non-demo test org: connect, join, webhook, refund, decline with refund | E-12 | Sprint 3. Steps in `user-testing.md` §10 |
+| A1 | **Owner action.** Live Stripe test-mode run on a non-demo test org: connect, join, webhook, refund, decline with refund | E-12 | Needs the owner's Stripe test account. Steps in `user-testing.md` §10 |
 | A2 | ✅ Playwright end-to-end harness and first specs (Sprint 1, D-175); more specs as features land | cross-cutting | `docs/testing.md` "End-to-end tests" |
 | A3 | ✅ Transaction CSV export, audited, for one org or a national's tree (Sprint 1, D-173, migration 0029) | E-12, E-23 | — |
-| A4 | Sprint 2. Suggested levels: the national marks levels as suggested; a chapter starts from one and chooses **Copy** or **Linked** (same price, or a set reduction), with an explanation of each | E-18 | D-165; design notes in §5 |
-| A5 | Sprint 2. National standing on the chapter's Members page; national-dues reminder in "Actions needed" | E-18 | Read-only; aggregate through a definer function so chapters don't read the national's roster |
-| A6 | Sprint 3. Pricing step in Membership setup | E-19, E-10 | Writes `pricing_rules` through `apply_setup` |
-| A7 | Sprint 3. Members "everyone" view: chosen fields as columns; export across chapters applying each chapter's directory rule per row | E-14 | D-154 follow-up |
+| A4 | ✅ Suggested levels, Copy or Linked (Sprint 2, D-177, migration 0032) | E-18 | — |
+| A5 | ✅ National standing on the chapter's Members page; national-dues reminder (Sprint 2, D-178, migration 0032) | E-18 | — |
+| A6 | ✅ Pricing step in Membership setup (Sprint 3, D-177, migration 0032) | E-19, E-10 | — |
+| A7 | ✅ Members "everyone" view: chosen columns; export across chapters with each org's directory rule (Sprint 3, D-179) | E-14 | — |
 | A8 | ✅ National membership with a home chapter, chosen once (on creating a national or on Settings → General) (Sprint 1, D-166, D-174, D-176, migration 0030) | E-13, E-18 | — |
 
 ### Wave B: infrastructure that unblocks the rest (≈ 2 sprints)
@@ -125,7 +125,7 @@ Still open: nothing. The F-11 default install is the app with a hosted Supabase 
 
 ## 4. Documentation
 
-Each item updates its docs in the same change (`instructions.md` §6). The documentation round of 2026-11-02 brought the README, the planning docs, the roadmap, testing and user-testing guides and the demo data up to date after Sprint 1.
+Each item updates its docs in the same change (`instructions.md` §6). The documentation rounds of 2026-11-02 brought the README, the planning docs, the roadmap, testing and user-testing guides and the demo data up to date after Sprint 1 and again after Sprints 2–3, adding `docs/security-review.md` and `docs/tables.md` (every table and how they connect).
 
 ## 5. Design notes from the 2026-11-02 decisions
 
@@ -150,27 +150,19 @@ Each item updates its docs in the same change (`instructions.md` §6). The docum
   - scheduled routes need a cron runner in Compose
   - storage signed URLs work against the self-hosted Storage API
 
-### A4 suggested levels (D-165)
-- **National side:** a "Suggest to chapters" switch on a level (Settings → Membership levels). Only shown when chapters may have their own levels.
-- **Chapter side:** a "Start from a suggested level" button opens a dialog with the two choices side by side:
-  - **Copy:** "Your own level. You can rename it and set your own price. If {national} changes theirs later, yours stays as it is."
-  - **Linked:** "Stays the same as {national}'s level: same name and terms, and it changes when theirs does. You choose your price: the same as theirs, or a set amount or percentage less."
-- **Data:** the chapter's level records where it came from and how: `source_tier_id`, `link_mode` (`copy` or `linked`) and, for linked levels, a price rule (`same`, `minus_amount`, `minus_percent`). The database computes a linked price from the national's price (minor units, rounded to the cent) and keeps it within the national's chapter price range (D-146).
-- **When the national changes or retires a level:** linked chapter levels update in the same transaction, and a retired one is retired at the chapter with a notice on the chapter's Membership levels page. Existing memberships keep the term they paid for.
-- **Switching:** "Make it our own" turns a linked level into a copy (one way only).
-- **Tests:** price rules (same, amount, percent, range clamp, rounding), the national's change flowing to linked but not to copied levels, retirement, permissions and tenant isolation.
+### A4 suggested levels (built)
+Built in Sprint 2 as designed, with one difference: when the national retires a level, linked chapter levels are retired in the same transaction, without a separate notice. How it works is recorded in D-165 (the choice) and D-177 (as built); user steps in `user-testing.md` §6.
 
 ### A8 national membership with a home chapter (built)
 Built in Sprint 1. How it works is recorded in D-166 (the rules), D-174 (data, standing, moving chapter) and D-176 (choosing it when a national is created). User steps: `user-testing.md` §13b.
 
 ## 6. Member overview backlog
 
-Built (D-153): Actions needed, Your profile, Your roles and seats, Board and who to contact (with role or officer emails, D-156), Your chapter (home-chapter model, D-174). Still to come:
+Built (D-153): Actions needed (including the national-dues reminder, D-178), Your profile, Your roles and seats, Board and who to contact (with role or officer emails, D-156), Your chapter (home-chapter model, D-174). Still to come:
 
 | Item | Shows | Needs | When |
 |---|---|---|---|
 | All my memberships | One line per org the member belongs to, with standing and a link | Existing data | Next (useful with two-level dues) |
-| National-dues reminder | "Your national membership is missing or lapsed" for chapter members (separate model) | A5 | Sprint 2 |
 | Membership history | Joined date, years of membership, past renewals and payments | A small helper for years of membership | Later |
 | Organization info | Logo, contact details, chapter fields visible to members (meeting place, charter date) | Existing data | Later |
 | Announcements, events, documents, awards, elections | From their modules | Their epics | With those epics |

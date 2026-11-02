@@ -91,6 +91,7 @@ Laptop-class Postgres 16; the hosted database will differ, but the ratios hold. 
 - **Failed payments** show as "Failed" on Settings → Payments.
 - **Webhook rejections** (a wrong signing secret) aren't stored, because we can't trust the request. They show in the Stripe dashboard under the webhook endpoint's deliveries. Owner: after connecting Stripe, send a test event and check for "Succeeded" (`user-testing.md` §10). An admin-visible "last webhook received" line is a candidate for Wave B.
 - **A1, live Stripe test-mode check (owner action):** needs a Stripe test account. On a non-demo test org, connect a test key and webhook, then join, return, refund, and decline with refund, following `user-testing.md` §10.
+- **License file (maintainer action):** the repository has no `LICENSE` yet (R-24). Add the official AGPL-3.0 text before the release; it's on the release checklist.
 - **R4, receipt wording (owner action):** a CPA should review the wording (R-07). If this isn't done by release, 0.1.0 ships the current placeholder wording and the release notes say so.
 
 ## 6. Re-running this review

@@ -89,7 +89,7 @@ flowchart TD
    - Bare national domain → national.
    - Admin and portal routes use the same host, scoped by the signed-in user's permissions.
 2. **Org context** is set per request and is carried into the database session so **Row-Level Security** policies enforce isolation as a second line of defense behind application checks.
-3. **Scope path.** Org hierarchy is stored so "this org and all descendants" queries are cheap (closure table or path column, decided at schema design).
+3. **Scope path.** Org hierarchy is stored so "this org and all descendants" queries are cheap: `organizations.ancestor_ids`, kept by trigger, and `org_subtree`. Every table and how they connect: `docs/tables.md`.
 4. **Custom domains:** DNS verification, then certificate issuance by the reverse proxy (on-demand TLS gated by an "is this a verified domain" check).
 
 ## 5. Authorization model
@@ -276,8 +276,9 @@ flowchart LR
 | Privacy | Consent tracking, data export and deletion tools, member privacy preferences honored in directories and exports, audited exports |
 | Auditability | Append-only audit log, immutable receipts and certified election results |
 | Observability | Structured logs, error tracking, job queue dashboards, health checks |
-| Accessibility | WCAG 2.1 AA target for public and member-facing UI |
+| Accessibility | WCAG 2.1 AA target for public and member-facing UI; automated name, heading and keyboard checks in the end-to-end suite (D-183) |
 | Internationalization | English and USD first. Keep strings and currency out of hard-coded paths so it can be added |
+| Performance | Lists past 1,000 rows are read in pages (the API's limit); roll-ups resolve inherited settings once per org; `bun run test:perf` with 5,000 members, budget under 1 second per read (D-181) |
 | Testing | Unit and component tests with Vitest, database rule tests against a throwaway Postgres (`db/tests/`), end-to-end flows with Playwright against the live demo backend (D-175), a live smoke suite, with tenant-isolation tests as a first-class category (`docs/testing.md`) |
 | Backups | Documented backup and restore for self-hosters, automated for hosted |
 

@@ -17,8 +17,10 @@ These documents are the shared reference for the whole build. At any point in de
 | [`epic.md`](epic.md) | Phased roadmap, epic map, dependencies, and scrum guidance |
 | [`setup-engine.md`](setup-engine.md) | The guided setup/configuration engine design |
 | [`data-domains.md`](data-domains.md) | Entity inventory by domain, the input to database design |
+| [`tables.md`](tables.md) | Every database table in use: a mind map, diagrams by area, and a reference of what each table holds, links to and how it's written |
 | [`glossary.md`](glossary.md) | Shared vocabulary |
 | [`risks-and-open-questions.md`](risks-and-open-questions.md) | What is still unresolved, and what could hurt us |
+| [`security-review.md`](security-review.md) | The release security, accessibility and performance review: findings, follow-ups and how to re-run it |
 | [`testing.md`](testing.md) | How to run checks locally, how CI works, and how database rule tests are built |
 | [`user-testing.md`](user-testing.md) | What to test by hand in the live app, step by step, with the demo accounts |
 | [`demo-data.md`](demo-data.md) | Demo accounts and organizations, how the demo national is set up, and how to remove them |
@@ -69,4 +71,4 @@ Every diagram (Mermaid or image) is followed by a **"Diagram description"** bloc
 
 ## Current status
 
-Phases 1 and 2 meet their exit criteria, and the next milestone is the MVP release (v0.1.0): see [`plans/wave-a-mvp.md`](plans/wave-a-mvp.md) and the root [`README.md`](../README.md) "Where it stands". Day-to-day progress is in [`/roadmap.md`](../roadmap.md); epic status is in [`epic.md`](epic.md).
+Phases 1 and 2 meet their exit criteria, and the MVP release (v0.1.0) is built and waiting for Lovable to apply migrations 0032–0034, the owner actions (live Stripe check, CPA review) and the release checklist: see [`plans/wave-a-mvp.md`](plans/wave-a-mvp.md) and the root [`README.md`](../README.md) "Where it stands". Day-to-day progress is in [`/roadmap.md`](../roadmap.md); epic status is in [`epic.md`](epic.md).
