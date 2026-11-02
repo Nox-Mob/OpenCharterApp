@@ -83,3 +83,4 @@ Plan for E-12 / E-13: docs/plans/e12-e13-payments-and-joining.md
 
 ## Cleanup before launch
 - [ ] Remove the demo data (steps in docs/demo-data.md)
+- [ ] Apply migrations 0017–0022 per docs/lovable-handoff.md, regenerate types, smoke test
