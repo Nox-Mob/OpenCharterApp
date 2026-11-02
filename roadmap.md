@@ -5,12 +5,12 @@ Testing by hand: docs/user-testing.md (updated with every feature).
 Full plan: docs/ and .lovable/plan/. Phase IDs map to docs/epic.md.
 
 ## Pending migrations for Lovable
-Apply these in order (Lovable → apply pending migrations). Step-by-step instructions, checks and the smoke test: docs/lovable-handoff.md. Until a migration is applied, the screens that need it show "needs a database update" instead of failing (D-135).
+Apply these in order (Lovable → apply pending migrations). Step-by-step instructions, checks and the smoke test: docs/lovable-handoff.md. Done so far: `0000`–`0016` applied and the `GATEWAY_ENCRYPTION_KEY` secret set; next are `0017`–`0022`. Until a migration is applied, the screens that need it show "needs a database update" instead of failing (D-135).
 
 | Migration | Enables | Status |
 |---|---|---|
 | `0008_memberships` | E-13a memberships, standing, recorded payments, member records without a login | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-| `0009_payments_gateway` | E-12 per-org Stripe / test gateway connections, encrypted credentials, webhook event log. Also needs the Lovable Cloud secret `GATEWAY_ENCRYPTION_KEY` (`openssl rand -base64 32`) | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
+| `0009_payments_gateway` | E-12 per-org Stripe / test gateway connections, encrypted credentials, webhook event log. Needs the Lovable Cloud secret `GATEWAY_ENCRYPTION_KEY` (set) | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
 | `0010_joining` | E-13b public join page, checkout, payment completion and refunds, online renewal, decline with refund | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
 | `0011_member_exports` | E-14 audited CSV export (`members.export` permission) and saved views of the member list | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
 | `0012_member_privacy` | E-14 member directory, each member's directory choice, export privacy rule from the parent | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
