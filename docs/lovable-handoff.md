@@ -15,13 +15,8 @@ Thank you. A record of what those migrations enabled is at the end.
 
 Nothing breaks if you wait. The steps below turn the new features on.
 
-## 1. Bring the code into `main`
-- Merge `claude/lucid-volta-bn4tjb` into `main` with a normal merge commit or a fast-forward. It's 9 commits ahead and nothing behind.
-  - the user testing guide
-  - a fix for saving board seats with "No role" / "No fixed term"
-  - the work behind 0017–0022
-- **Don't** squash, rebase or force-push. That rewrites history Lovable already synced.
-- CI is green on the branch: lint, formatting, types, unit tests, the migration-rules check (D-125), database tests against Postgres 16, and the build.
+## 1. DO NOT bring the code into `main`
+- Keep working in the current branch.
 
 ## 2. Apply the migrations, strictly in order
 Each depends on the ones before it. They're additive only (D-125, checked in CI by `bun run check:migrations`):
