@@ -3,11 +3,12 @@
 Where things stand and what's next. Plans: `docs/plans/` (MVP: `wave-a-mvp.md`; Phases 1–3 and later waves: `phases-1-3-review.md`). Epics: `docs/epic.md`. Decisions: `docs/decisions.md`. Testing by hand: `docs/user-testing.md`.
 
 ## Pending migrations for Lovable
-`0000`–`0031` are applied. Apply the one below (steps and checks in `docs/lovable-handoff.md`). Until it is applied, the screens that need it leave the feature out (D-135).
+`0000`–`0031` are applied. Apply the ones below in order (steps and checks in `docs/lovable-handoff.md`). Until it is applied, the screens that need it leave the feature out (D-135).
 
 | Migration | Enables | Status |
 |---|---|---|
 | `0032_levels_standing_pricing_setup` | A4 suggested levels (copy or linked), A5 national standing for chapters, A6 pricing step in Membership setup (D-177, D-178) | Waiting |
+| `0033_home_chapter_delete_fix` | Fix: a demo national that used the home-chapter model can be deleted (the 0030 guards now let the organization's own cascade through). Found by the end-to-end lifecycle test | Waiting |
 
 ## Now: the MVP release, v0.1.0 (`docs/plans/wave-a-mvp.md`)
 Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D-170, D-175), demo data kept until a second real national joins (D-171), version 0.1.0 with a changelog and tag (D-172).

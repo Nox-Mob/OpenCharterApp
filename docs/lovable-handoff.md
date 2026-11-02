@@ -4,11 +4,12 @@ Status on 2026-11-02.
 
 **Done:** migrations `0000`–`0031` are applied, the types are regenerated, and the `GATEWAY_ENCRYPTION_KEY` secret is set. Thank you. A record is at the end.
 
-**Waiting** (Sprints 2–3 of the MVP plan), on branch `BoardUpdates`, tested against Postgres 16 (`db/tests/9M_levels_standing_pricing.sql`); applies inside one transaction:
+**Waiting** (Sprints 2–3 of the MVP plan), on branch `BoardUpdates`, tested against Postgres 16 (`db/tests/9M_levels_standing_pricing.sql`, `9L_home_chapter.sql`); each applies inside one transaction. Apply `0032`, then `0033`:
 
 | File | What it adds | Check it worked (SQL editor) |
 |---|---|---|
 | `0032_levels_standing_pricing_setup.sql` | Columns `membership_tiers.suggested`, `source_tier_id`, `link_mode`, `price_rule`, `price_value` and `tier_terms.source_term_id`; functions `chapter_national_standing`, `linked_price`, `sync_linked_level`, `adopt_suggested_level`, `set_linked_level_price`, `make_level_own`; triggers that keep linked levels in step and guard links; a new version of `apply_setup` (same signature) with a `pricing_rules` section, and `apply_setup_sections()` listing it | `select 'pricing_rules' = any(public.apply_setup_sections());` returns `true` |
+| `0033_home_chapter_delete_fix.sql` | New versions of `affiliation_history_append_only` and `membership_model_guard` (same signatures) that let cascades from deleting an organization through. Until it's applied, a demo national that used the home-chapter model can't be deleted; the end-to-end test left three such nationals ("E2E National …"), which its next run deletes | After applying: `select count(*) from public.organizations where name like 'E2E National %';` drops to 0 after the next `bun run test:e2e` |
 
 ## 1. When a migration is waiting
 - Apply them strictly in order. They're additive only (D-125, checked in CI by `bun run check:migrations`).

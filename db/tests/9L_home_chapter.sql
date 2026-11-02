@@ -123,6 +123,30 @@ select tests.as_user('11111111-0000-4000-8000-000000000001');
 select tests.eq((select roster from public.org_overview_stats('22222222-0000-4000-8000-000000000001')), 5, 'Walt counted once too');
 select tests.reset_role();
 
+-- ----- deleting a whole demo national that used the model works (0033) -----
+insert into private.platform_operators (user_id) values ('11111111-0000-4000-8000-000000000001') on conflict do nothing;
+insert into public.organizations (id, type, name, slug, is_demo) values
+  ('22222222-0000-4000-8000-0000000000e1', 'national', 'Demo HC', 'demo-hc', true);
+insert into public.organizations (id, parent_id, type, name, slug) values
+  ('22222222-0000-4000-8000-0000000000e2', '22222222-0000-4000-8000-0000000000e1', 'chapter', 'Demo HC A', 'demo-hc-a');
+insert into public.org_settings (org_id, key, value, mode) values ('22222222-0000-4000-8000-0000000000e1', 'membership.model', '"home_chapter"', 'locked');
+insert into public.org_member_profiles (id, org_id, user_id, display_name, email, source) values
+  ('33333333-0000-4000-8000-0000000000e1', '22222222-0000-4000-8000-0000000000e1', '11111111-0000-4000-8000-0000000000c1', 'Yara', 'y@test.org', 'signup');
+insert into public.membership_tiers (id, org_id, key, name) values ('55555555-0000-4000-8000-0000000000e1', '22222222-0000-4000-8000-0000000000e1', 'reg', 'Regular');
+insert into public.tier_terms (id, tier_id, org_id, key, label, length_count, length_unit, price_minor) values
+  ('66666666-0000-4000-8000-0000000000e1', '55555555-0000-4000-8000-0000000000e1', '22222222-0000-4000-8000-0000000000e1', '1y', '1 year', 1, 'year', 100);
+insert into public.memberships (id, org_id, profile_id, tier_id, term_id, status, joined_on, paid_through) values
+  ('77777777-0000-4000-8000-0000000000e1', '22222222-0000-4000-8000-0000000000e1', '33333333-0000-4000-8000-0000000000e1',
+   '55555555-0000-4000-8000-0000000000e1', '66666666-0000-4000-8000-0000000000e1', 'active', '2024-01-01', current_date + 30);
+select tests.as_user('11111111-0000-4000-8000-0000000000c1');
+select public.set_home_chapter('22222222-0000-4000-8000-0000000000e1', '22222222-0000-4000-8000-0000000000e2');
+select tests.reset_role();
+select tests.as_user('11111111-0000-4000-8000-000000000001');
+select tests.eq(array_length(public.delete_demo_organization('22222222-0000-4000-8000-0000000000e1', 'Demo HC'), 1), 2,
+  'a home-chapter demo national is deleted with its chapter');
+select tests.reset_role();
+select tests.eq((select count(*) from public.affiliation_history where org_id = '22222222-0000-4000-8000-0000000000e1'), 0::bigint, 'its history goes too');
+
 -- history is append-only; internal function not callable
 select tests.throws($$update public.affiliation_history set to_org_id = null$$, 'can''t be changed');
 select tests.as_user('11111111-0000-4000-8000-0000000000c1');
