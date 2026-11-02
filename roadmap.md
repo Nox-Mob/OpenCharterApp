@@ -3,13 +3,11 @@
 Where things stand and what's next. Plans: `docs/plans/` (MVP: `wave-a-mvp.md`; Phases 1–3 and later waves: `phases-1-3-review.md`). Epics: `docs/epic.md`. Decisions: `docs/decisions.md`. Testing by hand: `docs/user-testing.md`.
 
 ## Pending migrations for Lovable
-`0000`–`0031` are applied. Apply the ones below in order (steps and checks in `docs/lovable-handoff.md`). Until it is applied, the screens that need it leave the feature out (D-135).
+`0000`–`0035` are applied (0032–0034 on 2026-11-02, with Lovable's confirm migration 0035). Apply the one below (steps and checks in `docs/lovable-handoff.md`).
 
 | Migration | Enables | Status |
 |---|---|---|
-| `0032_levels_standing_pricing_setup` | A4 suggested levels (copy or linked), A5 national standing for chapters, A6 pricing step in Membership setup (D-177, D-178) | Waiting |
-| `0033_home_chapter_delete_fix` | Fix: a demo national that used the home-chapter model can be deleted (the 0030 guards now let the organization's own cascade through). Found by the end-to-end lifecycle test | Waiting |
-| `0034_rollup_performance` | R6: overview numbers, members roll-up and directory resolve inherited settings once per organization (D-181); same results, 7–15× faster at 5,000 members | Waiting |
+| `0036_home_chapter_no_chapter_levels` | D-184: below a home-chapter national, chapters can't add or restore membership levels (the screens already hide them; this makes the database refuse it too) | Waiting |
 
 ## Now: the MVP release, v0.1.0 (`docs/plans/wave-a-mvp.md`)
 Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D-170, D-175), demo data kept until a second real national joins (D-171), version 0.1.0 with a changelog and tag (D-172).
@@ -19,12 +17,12 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 - [x] A3 Payments export: Settings → Payments → "Export payments", for the org or its tree, audited, emails only for member viewers (D-173; 0029)
 - [x] A2 End-to-end tests: Playwright harness, CI on pull requests to `main`, first specs (menu by role, view as member, members across chapters, board contact email, Settings → Setup, join-page required questions, test-gateway checkout against a deployed site) (D-175)
 
-**Sprint 2, done** (needs 0032 applied to show on the live site)
+**Sprint 2, done** (live: 0032 applied)
 - [x] A4 Suggested levels: the national marks levels "Suggest to chapters"; a chapter starts from one and chooses Copy (its own, editable) or Link (follows the national; same price, an amount less or a percentage less, kept within the range), with both explained (D-165, D-177; 0032)
 - [x] A5 National standing on the chapter's Members page (separate model, when the national requires its membership); "Actions needed" reminds the member to join or renew the national (D-178; 0032)
 - [x] End-to-end specs: a throwaway national created through the screens with the home-chapter model, the chapter wizard, a member picking and changing chapter (`lifecycle.spec.ts`); payments and member export downloads (`export.spec.ts`); suggested levels (`levels.spec.ts`, runs once 0032 is applied). The lifecycle run found a bug deleting home-chapter demo nationals, fixed in 0033
 
-**Sprint 3, done except owner actions** (needs 0032–0034 applied)
+**Sprint 3, done except owner actions** (live: 0032–0034 applied)
 - [x] A6 Pricing step in Membership setup: "Prices by member fields", applied by `apply_setup` and matched by rule name, so re-applying updates instead of duplicating (D-177; 0032)
 - [x] A7 Members "everyone" view: a "Columns" picker for member fields (remembered per viewer); export across chapters with each org's directory rule and an Organization column (D-179)
 - [x] More end-to-end specs: accessibility on every main screen by role (`a11y.spec.ts`)
@@ -32,7 +30,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 - [ ] **Owner:** A1 live Stripe test-mode run on a non-demo test org (connect, join, webhook, refund; `user-testing.md` §10)
 - [ ] **Owner:** R4 receipt wording reviewed by a CPA (R-07), or ship with the placeholder and say so (it's in the changelog)
 - [ ] Still to add as end-to-end specs: renewal, Membership and Board setup applied, appointing an officer
-- [ ] Release checklist (`wave-a-mvp.md` §6): Lovable applies 0032–0034, full `user-testing.md` pass, add the AGPL-3.0 `LICENSE` file (R-24), pull request to `main`, `v0.1.0` tag
+- [ ] Release checklist (`wave-a-mvp.md` §6): Lovable applies 0036, full `user-testing.md` pass, add the AGPL-3.0 `LICENSE` file (R-24), pull request to `main`, `v0.1.0` tag
 - After 0.1.0 (`security-review.md` §1.6): F1 revoke `has_permission` / `is_org_member` from anonymous callers; F2 upgrade TanStack Start (`seroval`); F3 move to zod 4
 
 ## After the MVP (`docs/plans/phases-1-3-review.md` §3)
@@ -61,6 +59,9 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 
 ## Done
 ### 2026-11-02
+- [x] Home-chapter model shows only what applies: no chapter acceptance, chapter levels, "must also join" or chapter dues settings and setup questions; chapters have no levels (D-184; 0036 waiting); dues settings reworded for the separate model; no real organization named as an example
+- [x] Configuration only in Settings (D-185): Settings → Board settings holds seat terms, contact emails, seat titles, the seats an org defines and the board rules; the Board page shows the board and appoints officers
+- [x] Migrations 0032–0034 applied by Lovable; their hand-written types and readiness checks retired
 - [x] Sprints 2 and 3 of the MVP: A4, A5, A6, A7, release hardening R1–R3, R5–R7 (above); fixes 0033, 0034
 - [x] Choosing the membership model when a national is created, with both models compared (D-176)
 - [x] Sprint 1 of the MVP: A8, A3, A2 (above)

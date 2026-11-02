@@ -32,7 +32,7 @@ All three are platform operators (they can create and delete demo organizations)
 - **Board:** six required seats for every chapter: President, Vice-President, Secretary, Treasurer, VP of Awards, VP of Membership.
 - **Payments:** the test gateway is connected at the national (no real money).
 
-Smoke and end-to-end runs add and then remove their own records (D-150), so counts can change briefly while they run. Some end-to-end specs (`lifecycle`, `levels`) create their own throwaway demo nationals named "E2E National …" or "E2E Levels …" and delete them afterwards; the lifecycle spec also deletes "E2E National …" orgs left over from earlier runs. Until migration 0033 is applied, home-chapter demo nationals can't be deleted, so a few "E2E National …" orgs may be listed for platform operators.
+Smoke and end-to-end runs add and then remove their own records (D-150), so counts can change briefly while they run. Some end-to-end specs (`lifecycle`, `levels`) create their own throwaway demo nationals named "E2E National …" or "E2E Levels …" and delete them afterwards; the lifecycle spec also deletes "E2E National …" orgs left over from earlier runs.
 
 ## Creating your own demo organizations (D-148)
 

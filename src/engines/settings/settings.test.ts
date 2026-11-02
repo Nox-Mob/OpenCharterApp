@@ -84,6 +84,44 @@ describe("settingsFor", () => {
     expect(keys("chapter")).not.toContain("membership.child_levels_allowed");
     expect(keys("standalone")).not.toContain("membership.child_levels_allowed");
   });
+
+  it("leaves out rules that don't apply in the home-chapter model (D-184)", () => {
+    const keys = (t: string) => settingsFor(t, { model: "home_chapter" }).map((s) => s.key);
+    for (const k of [
+      "membership.child_levels_allowed",
+      "membership.national_dues_required",
+      "membership.chapter_dues",
+      "membership.chapter_dues_min_minor",
+      "membership.chapter_dues_max_minor",
+      "membership.child_approval",
+    ])
+      expect(keys("national")).not.toContain(k);
+    // the national still accepts members and sets the grace period; its chapters don't
+    expect(keys("national")).toEqual(
+      expect.arrayContaining(["membership.approval_required", "membership.grace_days"]),
+    );
+    expect(keys("chapter")).not.toContain("membership.approval_required");
+    expect(keys("chapter")).not.toContain("membership.grace_days");
+    expect(keys("chapter")).toContain("directory.listed_by_default");
+    // the separate model keeps them all
+    expect(settingsFor("national", { model: "separate" }).map((s) => s.key)).toContain(
+      "membership.chapter_dues",
+    );
+  });
+
+  it("puts board rules on the Board settings page (D-185)", () => {
+    const general = settingsFor("national").map((s) => s.key);
+    const board = settingsFor("national", { page: "board" }).map((s) => s.key);
+    expect(general.some((k) => k.startsWith("governance."))).toBe(false);
+    expect(board).toEqual([
+      "governance.custom_titles_allowed",
+      "governance.chapter_extra_seats_allowed",
+      "governance.officers_good_standing",
+    ]);
+    expect(settingsFor("chapter", { page: "board" }).map((s) => s.key)).toEqual([
+      "governance.officers_good_standing",
+    ]);
+  });
 });
 
 describe("effectiveApprovalRequired (D-130)", () => {

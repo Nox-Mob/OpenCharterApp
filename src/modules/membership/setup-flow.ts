@@ -58,9 +58,13 @@ const CHAPTER_ACCEPTANCE_SUMMARY: Record<ChapterAcceptance, string> = {
 };
 
 const isParent = (ctx: FlowContext) => ctx.orgType === "national" || ctx.orgType === "region";
-const ownsLevels = (ctx: FlowContext) => ctx.childLevelsAllowed !== false;
+/** Home-chapter model (D-166, D-184): members belong to the national, not to chapters. */
+const home = (ctx: FlowContext) => ctx.homeChapter === true;
+/** A chapter (or region) under a home-chapter national: no members of its own to accept. */
+const homeSub = (ctx: FlowContext) => home(ctx) && ctx.orgType !== "national";
+const ownsLevels = (ctx: FlowContext) => ctx.childLevelsAllowed !== false && !homeSub(ctx);
 const pricingStep = (ctx: FlowContext) => ownsLevels(ctx) && ctx.setupPricing === true;
-const twoLevel = (ctx: FlowContext) => isParent(ctx) && ctx.twoLevelDues === true;
+const twoLevel = (ctx: FlowContext) => isParent(ctx) && ctx.twoLevelDues === true && !home(ctx);
 const chaptersCharge = (a: Answers) => a["child_levels_allowed"] !== false;
 /** Dollars typed in setup → cents stored in settings (0 = no limit). */
 const toMinor = (v: unknown) =>
@@ -145,6 +149,8 @@ export const membershipFlow: Flow<MembershipPlan> = {
     {
       id: "joining",
       title: "Joining and renewals",
+      // In the home-chapter model a chapter's members join the national (D-184).
+      when: (_a, ctx) => !homeSub(ctx),
       questions: [
         {
           id: "approval_required",
@@ -175,11 +181,13 @@ export const membershipFlow: Flow<MembershipPlan> = {
           label: "How are new members of your chapters accepted?",
           required: true,
           options: CHAPTER_ACCEPTANCE,
+          when: (_a, ctx) => !home(ctx),
         },
         {
           id: "lock_joining",
           type: "boolean",
           label: "Require every chapter to use this grace period?",
+          when: (_a, ctx) => !home(ctx),
         },
         {
           id: "chapter_logo_allowed",
@@ -191,18 +199,19 @@ export const membershipFlow: Flow<MembershipPlan> = {
           type: "boolean",
           label: "May chapters create their own membership levels?",
           help: "When off, chapters use your levels and can't add their own.",
+          when: (_a, ctx) => !home(ctx),
         },
         {
           id: "national_dues_required",
           type: "boolean",
-          label: "Must chapter members also be members of your organization?",
-          help: "Joining a chapter then takes two payments: your dues first, then the chapter's.",
+          label: "Do chapter members also need a membership with your organization?",
+          help: "If yes, joining a chapter takes two payments: your dues first, then the chapter's.",
           when: (_a, ctx) => twoLevel(ctx),
         },
         {
           id: "chapter_dues_required",
           type: "boolean",
-          label: "Must every chapter charge its own dues?",
+          label: "Must every chapter sell its own memberships, on top of yours?",
           when: (a, ctx) => twoLevel(ctx) && chaptersCharge(a),
         },
         {
@@ -259,14 +268,16 @@ export const membershipFlow: Flow<MembershipPlan> = {
       attrs.length
         ? `Track ${attrs.length} member field${attrs.length === 1 ? "" : "s"}: ${attrs.map((x) => x.label).join(", ")}`
         : "No custom member fields yet",
-      ctx.parentApproval
-        ? ctx.parentApproval === "auto"
-          ? "New members are accepted automatically (set by your parent organization)"
-          : "New members are reviewed by an admin (set by your parent organization)"
-        : a["approval_required"]
-          ? "New members need admin approval"
-          : "New members join without approval",
-      `Grace period: ${Number(a["grace_days"] ?? 0)} days`,
+      homeSub(ctx)
+        ? "Members join your national organization, which handles approval and renewals"
+        : ctx.parentApproval
+          ? ctx.parentApproval === "auto"
+            ? "New members are accepted automatically (set by your parent organization)"
+            : "New members are reviewed by an admin (set by your parent organization)"
+          : a["approval_required"]
+            ? "New members need admin approval"
+            : "New members join without approval",
+      ...(homeSub(ctx) ? [] : [`Grace period: ${Number(a["grace_days"] ?? 0)} days`]),
     ];
     if (ownsLevels(ctx)) {
       const tiers = (a["tiers"] as Tier[] | undefined) ?? [];
@@ -278,7 +289,11 @@ export const membershipFlow: Flow<MembershipPlan> = {
         );
       }
     } else {
-      lines.push("Membership levels come from your parent organization");
+      lines.push(
+        homeSub(ctx)
+          ? "Membership levels are your national organization's"
+          : "Membership levels come from your parent organization",
+      );
     }
     if (isParent(ctx)) {
       const chapterAttrs = (a["chapter_attributes"] as AttributeInput[] | undefined) ?? [];
@@ -287,29 +302,32 @@ export const membershipFlow: Flow<MembershipPlan> = {
           ? `Track ${chapterAttrs.length} chapter field${chapterAttrs.length === 1 ? "" : "s"}: ${chapterAttrs.map((x) => x.label).join(", ")}`
           : "No chapter fields yet",
       );
-      lines.push(
-        CHAPTER_ACCEPTANCE_SUMMARY[(a["chapter_acceptance"] as ChapterAcceptance) ?? "chapter"],
-      );
-      lines.push(
-        a["lock_joining"]
-          ? "Chapters must use your grace period"
-          : "Chapters may set their own grace period",
-      );
+      if (!home(ctx)) {
+        lines.push(
+          CHAPTER_ACCEPTANCE_SUMMARY[(a["chapter_acceptance"] as ChapterAcceptance) ?? "chapter"],
+        );
+        lines.push(
+          a["lock_joining"]
+            ? "Chapters must use your grace period"
+            : "Chapters may set their own grace period",
+        );
+      }
       lines.push(
         a["chapter_logo_allowed"] === false
           ? "Chapters use your logo"
           : "Chapters may upload their own logo",
       );
-      lines.push(
-        a["child_levels_allowed"] === false
-          ? "Chapters use your membership levels"
-          : "Chapters may create their own membership levels",
-      );
+      if (!home(ctx))
+        lines.push(
+          a["child_levels_allowed"] === false
+            ? "Chapters use your membership levels"
+            : "Chapters may create their own membership levels",
+        );
       if (twoLevel(ctx)) {
         lines.push(
           a["national_dues_required"]
             ? "Chapter members also pay your dues (two payments when they join a chapter)"
-            : "Chapter members don't have to be members of your organization",
+            : "Chapter members don't need a membership with your organization",
         );
         if (chaptersCharge(a)) {
           const min = toMinor(a["chapter_dues_min"]);
@@ -327,33 +345,36 @@ export const membershipFlow: Flow<MembershipPlan> = {
     return lines;
   },
   plan: (a, ctx) => {
-    const graceMode = isParent(ctx) && a["lock_joining"] ? "locked" : "override";
-    const settings: MembershipPlan["settings"] = [
-      { key: "membership.grace_days", value: Number(a["grace_days"] ?? 0), mode: graceMode },
-    ];
+    const graceMode = isParent(ctx) && !home(ctx) && a["lock_joining"] ? "locked" : "override";
+    // A chapter under a home-chapter national has no joining rules of its own (D-184).
+    const settings: MembershipPlan["settings"] = homeSub(ctx)
+      ? []
+      : [{ key: "membership.grace_days", value: Number(a["grace_days"] ?? 0), mode: graceMode }];
     // The org's own approval choice; a parent's acceptance rule overrides it when set (D-130).
-    if (!ctx.parentApproval)
+    if (!ctx.parentApproval && !homeSub(ctx))
       settings.unshift({
         key: "membership.approval_required",
         value: Boolean(a["approval_required"]),
         mode: "override",
       });
     if (isParent(ctx)) {
-      settings.push({
-        key: "membership.child_approval",
-        value: ((a["chapter_acceptance"] as ChapterAcceptance) ?? "chapter") as string,
-        mode: "locked",
-      });
+      if (!home(ctx))
+        settings.push({
+          key: "membership.child_approval",
+          value: ((a["chapter_acceptance"] as ChapterAcceptance) ?? "chapter") as string,
+          mode: "locked",
+        });
       settings.push({
         key: "branding.chapter_logo_allowed",
         value: a["chapter_logo_allowed"] !== false,
         mode: "locked",
       });
-      settings.push({
-        key: "membership.child_levels_allowed",
-        value: a["child_levels_allowed"] !== false,
-        mode: "locked",
-      });
+      if (!home(ctx))
+        settings.push({
+          key: "membership.child_levels_allowed",
+          value: a["child_levels_allowed"] !== false,
+          mode: "locked",
+        });
       if (twoLevel(ctx)) {
         const charge = chaptersCharge(a);
         settings.push(

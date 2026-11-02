@@ -11,6 +11,7 @@ const none: OrgNavFlags = {
   canManageLevels: false,
   canManageFields: false,
   canManageRoles: false,
+  canConfigureBoard: false,
   canSeePayments: false,
   canAudit: false,
 };
@@ -23,6 +24,7 @@ const admin: OrgNavFlags = {
   canManageLevels: true,
   canManageFields: true,
   canManageRoles: true,
+  canConfigureBoard: true,
   canSeePayments: true,
   canAudit: true,
 };
@@ -46,6 +48,7 @@ describe("organization navigation", () => {
       "Membership levels",
       "Member fields",
       "Chapter fields",
+      "Board settings",
       "Roles",
       "Payments",
       "Audit log",

@@ -13,10 +13,12 @@ import { LevelsTab } from "@/components/membership/levels-tab";
 import { PaymentsTab } from "@/components/payments/payments-tab";
 import { MembersDirectory } from "@/components/members/members-directory";
 import { BoardTab } from "@/components/governance/board-tab";
+import { BoardSettingsTab } from "@/components/governance/board-settings-tab";
+import { membershipModelQuery } from "@/modules/membership/home-chapter";
 import { ReportsTab } from "@/components/reports/reports-tab";
 import { OrgOverview } from "@/components/reports/org-overview";
 import { OrgNavigation } from "@/components/org/org-nav";
-import { buildOrgNav, resolveSection } from "@/components/org/org-nav-items";
+import { buildOrgNav, isSettingsSection, resolveSection } from "@/components/org/org-nav-items";
 import { DirectoryPreference } from "@/components/members/directory-preference";
 import { MyMembershipCard } from "@/components/membership/my-membership-card";
 import { RequiresDatabase } from "@/components/db/requires-database";
@@ -83,6 +85,11 @@ function OrgPage() {
   // permission (D-145).
   const canSeeReports = canSeeMembers || canSeeRevenue || canSeeBoards;
   const canSeePayments = canSeeRevenue || hasPermission(grants, "payments.manage", org);
+  const canManageBoard = hasPermission(grants, "governance.manage", org);
+  const canDefineSeats = hasPermission(grants, "governance.define", org);
+  // Home-chapter model (D-184): a chapter's members belong to the national, so it has no levels
+  const model = useQuery({ ...membershipModelQuery(org.id), enabled: org.type === "chapter" });
+  const homeChapter = org.type === "chapter" && model.data === "home_chapter";
   const nav = buildOrgNav({
     canSeeMembers,
     canSeeReports,
@@ -90,9 +97,10 @@ function OrgPage() {
     isChapter: org.type === "chapter",
     canManage,
     canRunSetup: hasPermission(grants, "setup.run", org),
-    canManageLevels: canManage || hasPermission(grants, "tiers.manage", org),
+    canManageLevels: (canManage || hasPermission(grants, "tiers.manage", org)) && !homeChapter,
     canManageFields: canManage || canManageFields,
     canManageRoles,
+    canConfigureBoard: canManageBoard || canDefineSeats || canManage,
     canSeePayments,
     canAudit: hasPermission(grants, "audit.view", org),
   });
@@ -199,9 +207,21 @@ function OrgPage() {
             <RequiresDatabase feature="board">
               <BoardTab
                 org={org}
+                canManage={canManageBoard}
+                {...(isSettingsSection(nav, "board-settings")
+                  ? { onOpenSettings: () => go("board-settings") }
+                  : {})}
+              />
+            </RequiresDatabase>
+          )}
+          {section === "board-settings" && (
+            <RequiresDatabase feature="board">
+              <BoardSettingsTab
+                org={org}
                 grants={grants}
-                canManage={hasPermission(grants, "governance.manage", org)}
-                canDefine={hasPermission(grants, "governance.define", org)}
+                canManage={canManageBoard}
+                canDefine={canDefineSeats}
+                canManageRules={canManage}
               />
             </RequiresDatabase>
           )}

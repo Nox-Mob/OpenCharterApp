@@ -14,10 +14,10 @@ test("a national admin gets the admin menu and can preview the member view", asy
   await page.getByRole("button", { name: "View as member" }).click();
   await expect(page.getByRole("status").filter({ hasText: "as a member would" })).toBeVisible();
   await expect(menu.getByRole("button", { name: "Directory" })).toBeVisible();
-  await expect(menu.getByRole("button", { name: "Settings" })).toHaveCount(0);
+  await expect(menu.getByRole("button", { name: "Settings", exact: true })).toHaveCount(0);
   await expect(page).toHaveURL(/as=member/);
   await page.getByRole("button", { name: "Exit member view" }).click();
-  await expect(menu.getByRole("button", { name: "Settings" })).toBeVisible();
+  await expect(menu.getByRole("button", { name: "Settings", exact: true })).toBeVisible();
 });
 
 test("the member view shows Overview, Directory and Board, with the member's own cards", async ({
@@ -32,7 +32,7 @@ test("the member view shows Overview, Directory and Board, with the member's own
   const menu = orgMenu(page);
   await expect(menu.getByRole("button", { name: "Directory" })).toBeVisible();
   await expect(menu.getByRole("button", { name: "Members" })).toHaveCount(0);
-  await expect(menu.getByRole("button", { name: "Settings" })).toHaveCount(0);
+  await expect(menu.getByRole("button", { name: "Settings", exact: true })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Your profile" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Board and who to contact" })).toBeVisible();
 });

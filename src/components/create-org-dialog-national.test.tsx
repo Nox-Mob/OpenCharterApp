@@ -48,7 +48,7 @@ describe("creating a national: how membership works (A8, D-166)", () => {
     await startNational();
     expect(await screen.findByText(/Step 2 of 2: How membership works/)).toBeInTheDocument();
     expect(screen.getAllByText("A good fit if:")).toHaveLength(2);
-    expect(screen.getByText(/Signal Corps Regimental Association/)).toBeInTheDocument();
+    expect(screen.getByText(/or an online chapter if there.s none nearby/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
     expect(toast.error).toHaveBeenCalledWith("Choose how membership works, or decide later");
     expect(rpc).not.toHaveBeenCalledWith("create_organization", expect.anything());

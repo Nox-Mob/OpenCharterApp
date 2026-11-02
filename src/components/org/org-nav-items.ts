@@ -1,7 +1,7 @@
 /**
  * Left-hand navigation of an organization page (D-152). The main sections are Overview, Members,
- * Directory, Board, Reports, Chapters and Settings; everything an admin configures sits under
- * Settings. Each item is shown only when the viewer may use it (the flags come from the policy
+ * Directory, Board, Reports, Chapters and Settings. Everything an admin configures sits under
+ * Settings; the other pages only show information or let people do something (D-185). Each item is shown only when the viewer may use it (the flags come from the policy
  * layer in the route), and a section the viewer can't see falls back to Overview.
  */
 export type OrgNavFlags = {
@@ -14,6 +14,8 @@ export type OrgNavFlags = {
   canManageLevels: boolean;
   canManageFields: boolean;
   canManageRoles: boolean;
+  /** May set up the board: seat terms, contact emails, titles, seats, board rules (D-185). */
+  canConfigureBoard: boolean;
   canSeePayments: boolean;
   canAudit: boolean;
 };
@@ -29,6 +31,7 @@ export function buildOrgNav(f: OrgNavFlags): OrgNav {
     f.canManageFields && { value: "fields", label: "Member fields" },
     (f.hasChapters || f.isChapter) &&
       (f.canManageFields || f.canManage) && { value: "chapter-fields", label: "Chapter fields" },
+    f.canConfigureBoard && { value: "board-settings", label: "Board settings" },
     f.canManageRoles && { value: "roles", label: "Roles" },
     f.canSeePayments && { value: "payments", label: "Payments" },
     f.canAudit && { value: "audit", label: "Audit log" },

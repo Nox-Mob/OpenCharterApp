@@ -61,7 +61,7 @@ export const MODEL_CHOICES: readonly ModelGuide[] = [
       "Members move around (for example military or professional associations) and should keep their membership",
     ],
     example:
-      "The Signal Corps Regimental Association: members belong to the national and choose a local chapter, or the online chapter.",
+      "A national association whose members join once and pick a local chapter near them, or an online chapter if there's none nearby.",
   },
 ];
 
@@ -90,6 +90,18 @@ export const homeChapterInfoQuery = (slug: string) =>
         ? (v as HomeChapterInfo)
         : null;
     },
+  });
+
+/** The membership model that applies to an org: its national's choice (D-166). */
+export const membershipModelQuery = (orgId: string) =>
+  queryOptions({
+    queryKey: ["membership-model", orgId],
+    queryFn: async (): Promise<MembershipModel> => {
+      const { data, error } = await db.rpc("membership_model", { _org: orgId });
+      if (error) throw error;
+      return data === "home_chapter" ? "home_chapter" : "separate";
+    },
+    staleTime: 5 * 60_000,
   });
 
 /** The signed-in member's national membership and its home chapter (null = none). */

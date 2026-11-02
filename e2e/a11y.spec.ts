@@ -64,9 +64,23 @@ const SCREENS: { role: Role; org: "national" | "austin"; tabs: string[] }[] = [
   {
     role: "national",
     org: "national",
-    tabs: ["overview", "members", "board", "reports", "chapters", "settings", "levels", "payments"],
+    tabs: [
+      "overview",
+      "members",
+      "board",
+      "reports",
+      "chapters",
+      "settings",
+      "board-settings",
+      "levels",
+      "payments",
+    ],
   },
-  { role: "chapter", org: "austin", tabs: ["overview", "members", "board", "reports"] },
+  {
+    role: "chapter",
+    org: "austin",
+    tabs: ["overview", "members", "board", "reports", "board-settings"],
+  },
   { role: "member", org: "austin", tabs: ["overview", "directory", "board"] },
 ];
 

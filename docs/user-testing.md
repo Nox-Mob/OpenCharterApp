@@ -2,7 +2,7 @@
 
 What to check by hand in the live app. The automated checks already cover the database rules (`db/tests/`), the screens in isolation (`bun run test`), the backend flows with the demo accounts (`bun run test:smoke`) and the main screens in a real browser (`bun run test:e2e`, docs/testing.md). This guide covers what only a person can judge: whether screens make sense, look right, work on a phone, print well, and say the right thing.
 
-The org page has a menu on the left (a "Section" dropdown on a phone): Overview, Members or Directory, Board, Reports, Chapters, and Settings with its pages (General, Setup, Membership levels, Member fields, Chapter fields, Roles, Payments, Audit log). "Where" lines below use those names.
+The org page has a menu on the left (a "Section" dropdown on a phone): Overview, Members or Directory, Board, Reports, Chapters, and Settings with its pages (General, Setup, Membership levels, Member fields, Chapter fields, Board settings, Roles, Payments, Audit log). Everything that configures the organization is under Settings; the other pages show information or let you do something (D-185). "Where" lines below use those names.
 
 **Accounts.** Use the demo accounts in [demo-data.md](demo-data.md) (shared password there):
 
@@ -60,6 +60,8 @@ Use a private browser window for a second account at the same time. Test only in
 1. As **National**, lock a setting (e.g. grace period). As **Chapter**, open Austin → Settings. Expect it read-only with "Locked by a parent organization".
 2. Tax profile: enter a legal name and EIN (`12-3456789`) → "Save tax profile". A wrong format should show "EIN must look like 12-3456789".
 3. Logo: upload a PNG at the national. Austin shows the national logo unless it uploads its own (and the national allows it).
+
+4. **Wording in the separate model** (Demo National): the dues rules read "Do chapters sell their own memberships?" (No: chapters use your levels and dues / Each chapter may choose / Yes: every chapter sells its own) and "Chapter members also need a membership with you". Board rules (renaming seats, extra seats, officers in good standing) are no longer here; they're on Settings → Board settings.
 
 **Also try:** a large image; an SVG.
 
@@ -194,24 +196,28 @@ Use a *new* demo national for this (§2 step 5, then add two chapters, levels an
 2. Open a chapter's join page: it sends you to the national's page with that chapter preselected. The national's join page shows "Your chapter" (at-large chapter first, "None for now" last).
 3. Join as a member with a chapter. After paying, the national's Overview shows "Your chapter: …" and the chapter's Members page lists you with your national level and standing ("This is the member's national membership" in Details).
 4. Change chapter from the Overview. The old chapter no longer lists you; the new one does. If you held a seat in the old chapter, it ended with "changed chapter".
-5. The chapter's Membership levels page explains that members join the national.
+5. Chapters have no **Membership levels** page in this model (members belong to the national), and adding one through the API is refused.
+6. **Settings that don't apply are gone** (D-184). At the national, Settings → General has no "How new members of your chapters are accepted", "Chapters may create their own membership levels", "Chapter members also need a membership with you" or chapter dues rules; it still has approval and the grace period for the national's own members. At a chapter, Settings → General has no approval or grace period.
+7. **Setup**: at the national, Membership setup's "Rules for your chapters" asks only about chapter logos; at a chapter, Membership setup has no levels or "Joining and renewals" step, and the review says members join the national.
+8. The comparison when creating a national names no real organization as an example.
 
 ## 14. Board
-**Where:** Board.
-1. As **National**: "Add seat" → President, "Every chapter below…", required, suggested term 2 years. Add a national-only seat too (e.g. Treasurer, linked to a role).
+**Where:** Board (who holds each seat, appointing and ending terms) and Settings → Board settings (seat terms, contact emails, titles, the seats an org defines and the board rules). Nothing on the Board page changes how the board is set up (D-185).
+0. As **National** or **Chapter**, the Board page has "Change board settings" (admins only), which opens Settings → Board settings. As **Member**, there's no such button and no Board settings in the menu.
+1. As **National**, Settings → Board settings: "Add seat" → President, "Every chapter below…", required, suggested term 2 years. Add a national-only seat too (e.g. Treasurer, linked to a role).
 2. As **Chapter**, Austin → Board: President shows **Vacant**, and the warning lists it.
-3. "Change term": 1 year, today's date, by-law reference "Bylaws Art. IV §2". Expect "Term: 1 year (Bylaws Art. IV §2, since …)" and an entry in "Term history".
+3. Settings → Board settings → President → "Change term": 1 year, today's date, by-law reference "Bylaws Art. IV §2". Expect "Term: 1 year (Bylaws Art. IV §2, since …)" and an entry in "Term history".
 4. "Appoint" a member in good standing. The dialog shows when the term ends. Try a lapsed member too; it should be refused with a clear message.
 5. Change the term again (2 years). Answer "Apply to current officers?" with OK. The holder's end date moves.
-6. "Rename here": call President "Commander" in Austin. The national's own view still says President.
+6. Austin → Settings → Board settings → "Rename here": call President "Commander" in Austin. The national's own view still says President.
 7. For a seat with a linked role: after appointing, the person appears with that role in Roles. After "End term", the role is gone (unless they also had it by hand).
 8. Past officers lists the ended term with the reason.
 
-9. **The national and every chapter**: as **National**, "Add seat" → Vice President, Used by "Demo National Association and every chapter below it". It appears on the national's Board *and* on Austin's, and each fills its own. Edit the seat and change "Used by" to "Every chapter below…": refused with a clear message while the national has someone in it; after "End term" at the national, it saves and the seat leaves the national's Board.
+9. **The national and every chapter**: as **National**, Settings → Board settings → "Add seat" → Vice President, Used by "Demo National Association and every chapter below it". It appears on the national's Board *and* on Austin's, and each fills its own. Edit the seat and change "Used by" to "Every chapter below…": refused with a clear message while the national has someone in it; after "End term" at the national, it saves and the seat leaves the national's Board.
 
-10. **Contact email**: as **Chapter**, Austin → Board → President → "Contact email". Choose "A role email for this seat", enter `President@DemoAustin.xyz` and save: the seat shows "Contact: president@demoaustin.xyz (role email)". Try `not-an-email` (refused). Switch back to "The officer's own email". As **Member**, Austin's Overview → "Board and who to contact" shows the role email for President instead of the president's own email, and the officer's own email for seats without one. Give a vacant seat a role email: it's listed as "Vacant" with that email.
+10. **Contact email**: as **Chapter**, Austin → Settings → Board settings → President → "Contact email". Choose "A role email for this seat", enter `President@DemoAustin.xyz` and save: the seat shows the address there, and the Board page shows "Contact: president@demoaustin.xyz (role email)". Try `not-an-email` (refused). Switch back to "The officer's own email". As **Member**, Austin's Overview → "Board and who to contact" shows the role email for President instead of the president's own email, and the officer's own email for seats without one. Give a vacant seat a role email: it's listed as "Vacant" with that email.
 
-**Also try:** as **National**, turn off "Chapters may rename the board seats you define" in Settings, then try "Rename here" in Austin.
+**Also try:** as **National**, turn off "Chapters may rename the board seats you define" under Settings → Board settings → Board rules, then try "Rename here" in Austin.
 Also: edit a seat and set "No role" and a suggested term of "No fixed term"; and "Change term" to "No fixed term". Both should save (fixed 2026-11-02).
 
 ## 14a. Overview

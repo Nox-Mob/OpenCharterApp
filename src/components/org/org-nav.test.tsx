@@ -12,6 +12,7 @@ const nav = buildOrgNav({
   canManageLevels: true,
   canManageFields: true,
   canManageRoles: true,
+  canConfigureBoard: true,
   canSeePayments: true,
   canAudit: true,
 });

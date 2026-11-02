@@ -29,7 +29,7 @@ The full vision, scope and feature map are in [`docs/README.md`](docs/README.md)
 
 ### Where it stands
 
-**Next milestone: the MVP release (v0.1.0)**, the first version a real national or standalone association can run on, hosted on Lovable Cloud. All three sprints are built; what's left is Lovable applying migrations `0032`–`0034`, two owner actions (a live Stripe test-mode run and a CPA look at receipt wording) and the release checklist in [`docs/plans/wave-a-mvp.md`](docs/plans/wave-a-mvp.md). What's in it: [`CHANGELOG.md`](CHANGELOG.md). Phases 1 and 2 of the [epic map](docs/epic.md) meet their exit criteria; what's left in Phases 1–3 is in [`docs/plans/phases-1-3-review.md`](docs/plans/phases-1-3-review.md).
+**Next milestone: the MVP release (v0.1.0)**, the first version a real national or standalone association can run on, hosted on Lovable Cloud. All three sprints are built; what's left is Lovable applying migration `0036`, two owner actions (a live Stripe test-mode run and a CPA look at receipt wording) and the release checklist in [`docs/plans/wave-a-mvp.md`](docs/plans/wave-a-mvp.md). What's in it: [`CHANGELOG.md`](CHANGELOG.md). Phases 1 and 2 of the [epic map](docs/epic.md) meet their exit criteria; what's left in Phases 1–3 is in [`docs/plans/phases-1-3-review.md`](docs/plans/phases-1-3-review.md).
 
 Working today:
 
@@ -41,14 +41,14 @@ Working today:
 - **Configuration:** guided setup (membership, including prices by member fields, and board), member and chapter fields, membership levels and terms, pricing rules by member fields, levels a national suggests to its chapters (copied, or linked with a price rule), branding and logos
 - **Members and money:** memberships and standing, joining and renewing online (Stripe, or a test gateway in demo orgs) with the member returned to the app, payments recorded by hand, numbered receipts, an audited payments export for bookkeeping, member lists with filters, saved views, chosen columns and audited exports (also across a national's chapters), national standing for chapter admins, a member directory with each member's privacy choice
 - **Governance:** board seats (for one org, its chapters, or both), each org's own terms from its by-laws, appointments that grant and remove the seat's role, a role email or the officer's own email per seat
-- **The org page:** a left-hand menu (Overview, Members or Directory, Board, Reports, Chapters, Settings)
+- **The org page:** a left-hand menu (Overview, Members or Directory, Board, Reports, Chapters, Settings); everything that configures the organization, including the board's seats, terms and contact emails, is under Settings, and the other pages show information or let you act
   - admins see overview numbers and reports (chapter admins for their chapter only), and every member of the orgs they manage
   - members see what they need to do, their profile, their chapter, their roles and seats, and who to contact
   - admins can preview the page "as a member"
 
 Not in the MVP: automatic email (the first update after it), postpaid dues and invoices, PayPal, custom domains, approvals, board reports, documents, elections. Progress and what's next: [`roadmap.md`](roadmap.md).
 
-Every migration up to `0031` is applied to the live database; `0032`–`0034` are waiting (see [`roadmap.md`](roadmap.md)). Until then their screens stay hidden. The security, accessibility and performance review is in [`docs/security-review.md`](docs/security-review.md), and a map of every table is in [`docs/tables.md`](docs/tables.md).
+Every migration up to `0035` is applied to the live database; `0036` (chapters in the home-chapter model can't add levels) is waiting (see [`roadmap.md`](roadmap.md)). The security, accessibility and performance review is in [`docs/security-review.md`](docs/security-review.md), and a map of every table is in [`docs/tables.md`](docs/tables.md).
 
 ## Install and run
 

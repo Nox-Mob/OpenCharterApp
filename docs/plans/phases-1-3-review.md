@@ -1,6 +1,6 @@
 # Phases 1–3: epic clearance review and plan
 
-Status on 2026-11-02 (refreshed after Sprints 1–3 of the MVP plan), with migrations `0000`–`0031` applied and `0032`–`0034` waiting for Lovable. Sources: `docs/epic.md` (scope and exit criteria), `roadmap.md`, `docs/decisions.md`, the code under `src/` and `drizzle/migrations/`, and the tests under `db/tests/` and `src/**/*.test.ts*`.
+Status on 2026-11-02 (refreshed after Sprints 1–3 of the MVP plan), with migrations `0000`–`0035` applied. Sources: `docs/epic.md` (scope and exit criteria), `roadmap.md`, `docs/decisions.md`, the code under `src/` and `drizzle/migrations/`, and the tests under `db/tests/` and `src/**/*.test.ts*`.
 
 **Legend:** ✅ cleared (the outcome in `epic.md` is built and tested) · 🟡 cleared with follow-ups (usable, named gaps) · 🟠 partly built · ⬜ not started.
 
@@ -38,7 +38,7 @@ End-to-end tests now exist (Playwright, D-170, D-175) and grow with each feature
 |---|---|---|---|
 | E-16 Chapter wizard + chapter attributes | ✅ | Wizard with chapter fields, first admin, required-officer invitations (D-144) | — |
 | E-17 Board seats and appointments | ✅ | Seats for an org, its chapters or both; custom titles; each org's own terms with by-law history; appointments grant / revoke the seat's role; contact emails; Board setup (D-141..D-143, D-151, D-156, D-157); `9B`, `9D`, `9I`, `9J` | — |
-| E-18 Two-level dues + national controls | ✅ | National-first two payments, chapter dues none / optional / required, price range, "chapters use our levels" (D-146); suggested levels, copy or linked (A4, D-177); national standing on the chapter's Members page and a national-dues reminder (A5, D-178); the home-chapter model (A8, D-174); `9F`, `9L`, `9M` | Linked renewals (pay national and chapter in one checkout) stay a later improvement. Needs 0032 applied |
+| E-18 Two-level dues + national controls | ✅ | National-first two payments, chapter dues none / optional / required, price range, "chapters use our levels" (D-146); suggested levels, copy or linked (A4, D-177); national standing on the chapter's Members page and a national-dues reminder (A5, D-178); the home-chapter model (A8, D-174); `9F`, `9L`, `9M` | Linked renewals (pay national and chapter in one checkout) stay a later improvement. Live since 0032 |
 | E-19 Rules + attribute-based pricing | ✅ | Declarative conditions shared by SQL and TypeScript, pricing per term, quotes (D-147); pricing step in Membership setup (A6, D-177); `9G`, `9M` | Reuse for eligibility and approvers comes with E-24 / E-27 / E-31 |
 | E-20 Postpaid dues | ⬜ | Nothing built (no balances, invoices or due dates) | Whole epic (D-053, D-054, Q-15, R-14) |
 | E-21 Per-org gateways and PayPal | 🟠 | Each org connects its own Stripe (Direct mode) | **PayPal adapter** (D-043, R-02). Connect mode is dropped and the national fee is invoiced through E-20 (D-162) |

@@ -101,7 +101,7 @@ function renderTab(canManage: boolean, contactsReady = false) {
   qc.setQueryData(["db-ready", "seat_contacts"], contactsReady);
   return render(
     <QueryClientProvider client={qc}>
-      <BoardTab org={chapterA} grants={[]} canManage={canManage} canDefine={false} />
+      <BoardTab org={chapterA} canManage={canManage} />
     </QueryClientProvider>,
   );
 }
@@ -119,7 +119,9 @@ describe("BoardTab", () => {
     expect(screen.getByText("Morgan")).toBeInTheDocument();
     expect(screen.getByText("1 of 2 filled")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Appoint" })).toHaveLength(2);
-    expect(screen.getByRole("button", { name: "Rename here" })).toBeInTheDocument();
+    // configuring the board is in Settings → Board (D-185)
+    expect(screen.queryByRole("button", { name: "Rename here" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Change term" })).toBeNull();
     expect(await screen.findByText("Pat")).toBeInTheDocument();
   });
 
@@ -131,23 +133,24 @@ describe("BoardTab", () => {
     expect(screen.queryByRole("button", { name: "Change term" })).toBeNull();
   });
 
-  it("shows each seat's contact and switches a seat back to the officer's own email", async () => {
+  it("shows each seat's contact, without the controls to change it", async () => {
     renderTab(true, true);
     expect(await screen.findByText("president@a.org")).toBeInTheDocument();
     expect(screen.getByText("(role email)")).toBeInTheDocument();
     expect(screen.getByText("the officer's own email")).toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole("button", { name: "Contact email" })[0]!);
-    expect(await screen.findByLabelText("Role email")).toHaveValue("president@a.org");
-    fireEvent.click(screen.getByRole("radio", { name: "The officer's own email" }));
-    expect(screen.queryByLabelText("Role email")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    await vi.waitFor(() =>
-      expect(supabase.rpc).toHaveBeenCalledWith("set_seat_contact", {
-        _org: "a",
-        _template: "t1",
-        _role_email: null,
-      }),
+    expect(screen.queryByRole("button", { name: "Contact email" })).toBeNull();
+  });
+
+  it("links to Settings → Board for those who may configure it", async () => {
+    const open = vi.fn();
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <BoardTab org={chapterA} canManage onOpenSettings={open} />
+      </QueryClientProvider>,
     );
+    fireEvent.click(await screen.findByRole("button", { name: "Change board settings" }));
+    expect(open).toHaveBeenCalled();
   });
 
   it("hides contact controls before migration 0026", async () => {

@@ -7,7 +7,7 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When Lovable applies a migration, delete its section here (the generated types take over).
- * Pending: 0032_levels_standing_pricing_setup (see roadmap.md).
+ * Pending: none (see roadmap.md).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,43 +17,8 @@ type Generated = Database["public"];
 
 // Add types for a migration here while Lovable hasn't applied it yet; delete them once applied.
 export type PendingEnums = Record<never, never>;
-type Tables = Generated["Tables"];
-/** A generated table with columns a pending migration adds. */
-type WithColumns<T extends keyof Tables, C> = Omit<Tables[T], "Row" | "Update"> & {
-  Row: Tables[T]["Row"] & C;
-  Update: Tables[T]["Update"] & Partial<C>;
-};
-
-export type PendingTables = {
-  // 0032_levels_standing_pricing_setup (A4)
-  membership_tiers: WithColumns<
-    "membership_tiers",
-    {
-      suggested: boolean;
-      source_tier_id: string | null;
-      link_mode: "copy" | "linked" | null;
-      price_rule: "same" | "minus_amount" | "minus_percent" | null;
-      price_value: number | null;
-    }
-  >;
-  tier_terms: WithColumns<"tier_terms", { source_term_id: string | null }>;
-};
-export type PendingFunctions = {
-  // 0032_levels_standing_pricing_setup (A4, A5)
-  chapter_national_standing: {
-    Args: { _chapter: string };
-    Returns: { profile_id: string; national_standing: string }[];
-  };
-  adopt_suggested_level: {
-    Args: { _org: string; _source: string; _mode: string; _rule?: string; _value?: number };
-    Returns: string;
-  };
-  set_linked_level_price: {
-    Args: { _tier: string; _rule: string; _value?: number };
-    Returns: undefined;
-  };
-  make_level_own: { Args: { _tier: string }; Returns: undefined };
-};
+export type PendingTables = Record<never, never>;
+export type PendingFunctions = Record<never, never>;
 
 export type FullDatabase = Omit<Database, "public"> & {
   public: {

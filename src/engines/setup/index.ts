@@ -63,6 +63,11 @@ export type FlowContext = {
   twoLevelDues?: boolean;
   /** Migration 0032 is applied: Membership setup has the pricing step (A6, D-177). */
   setupPricing?: boolean;
+  /**
+   * The national chose "national membership with a home chapter" (D-166): members belong to the
+   * national, so chapters have no levels, acceptance or grace period of their own (D-184).
+   */
+  homeChapter?: boolean;
   /** Board setup: what applies at this org (from org_board and the parent's rules). */
   board?: {
     /** False when a parent turned off governance.chapter_extra_seats_allowed. */

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { membershipModelQuery } from "@/modules/membership/home-chapter";
 import { toast } from "sonner";
 import { myOrgsQuery, myPermissionsQuery, type Org } from "@/lib/orgs";
 import { hasPermission } from "@/lib/policy";
@@ -104,6 +105,8 @@ function MembershipSetup({ org }: { org: Org }) {
   // A6: the pricing step needs migration 0032; existing rules pre-fill it on a re-run
   const setupPricing = useFeatureReady("setup_pricing") === true;
   const rules = useQuery({ ...pricingRulesQuery(org.id), enabled: setupPricing });
+  // Home-chapter model (D-184): chapters have no levels or joining rules of their own
+  const model = useQuery(membershipModelQuery(org.id));
   const ctx: FlowContext = useMemo(
     () => ({
       orgType: org.type,
@@ -111,9 +114,10 @@ function MembershipSetup({ org }: { org: Org }) {
       childLevelsAllowed: levelsAllowed.data !== false,
       twoLevelDues: twoLevelDues === true,
       setupPricing,
+      homeChapter: model.data === "home_chapter",
       ...(parentApproval.data ? { parentApproval: parentApproval.data } : {}),
     }),
-    [org, levelsAllowed.data, parentApproval.data, twoLevelDues, setupPricing],
+    [org, levelsAllowed.data, parentApproval.data, twoLevelDues, setupPricing, model.data],
   );
 
   const existingOwn = useMemo(() => ownFields(defs.data, org.id, "member"), [defs.data, org.id]);
@@ -135,6 +139,7 @@ function MembershipSetup({ org }: { org: Org }) {
     tiers.isLoading ||
     levelsAllowed.isLoading ||
     parentApproval.isLoading ||
+    model.isLoading ||
     twoLevelDues === undefined ||
     (setupPricing && rules.isLoading);
   // Computed once when loading finishes, so later refetches don't reset the wizard.

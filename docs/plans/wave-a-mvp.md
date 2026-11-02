@@ -1,6 +1,6 @@
 # Wave A and the MVP release
 
-Status, 2026-11-02: **Sprints 1–3 done** except the owner actions (A1 live Stripe check, R4 CPA review). Migrations 0029–0031 are applied; 0032–0034 are waiting for Lovable. Then the release checklist (§6). Builds on `docs/plans/phases-1-3-review.md` (Wave A items A1–A8); decisions D-169..D-176.
+Status, 2026-11-02: **Sprints 1–3 done** except the owner actions (A1 live Stripe check, R4 CPA review). Migrations 0029–0035 are applied; 0036 (a follow-up, D-184) is waiting for Lovable. Then the release checklist (§6). Builds on `docs/plans/phases-1-3-review.md` (Wave A items A1–A8); decisions D-169..D-176.
 
 ## 1. Goal
 

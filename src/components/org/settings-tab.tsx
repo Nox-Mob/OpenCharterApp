@@ -60,7 +60,6 @@ export function SettingsTab({
   if (!lineage.data) return <p className="text-muted-foreground">Loading…</p>;
   const { chain, settings } = lineage.data;
   const ids = chain.map((c) => c.id);
-  const nameOf = (id: string | null) => chain.find((c) => c.id === id)?.name ?? "default";
 
   return (
     <div className="grid gap-8 lg:grid-cols-2">
@@ -75,24 +74,87 @@ export function SettingsTab({
       />
       <TaxCard orgId={org.id} />
       <MembershipModelCard org={org} settings={settings} />
-      <section className="rounded-md border bg-card p-5">
-        <h2 className="text-lg font-semibold">Rules for this organization</h2>
-        <div className="mt-4 space-y-6">
-          {settingsFor(org.type).map((def) => (
-            <SettingRowEditor
-              key={def.key}
-              orgId={org.id}
-              hasChildren={org.type === "national" || org.type === "region"}
-              def={def}
-              own={settings.find((s) => s.org_id === org.id && s.key === def.key)}
-              resolved={resolveDef(ids, settings, def)}
-              nameOf={nameOf}
-              onSaved={refresh}
-            />
-          ))}
-        </div>
-      </section>
+      <RulesCard
+        org={org}
+        page="general"
+        title="Rules for this organization"
+        lineage={lineage.data}
+        onSaved={refresh}
+      />
     </div>
+  );
+}
+
+/** The membership model that applies here: the national's locked choice (D-166). */
+function modelOf(ids: readonly string[], settings: readonly SettingRow[]) {
+  return resolveSetting(ids, settings, "membership.model", "separate").value === "home_chapter"
+    ? "home_chapter"
+    : "separate";
+}
+
+/**
+ * The org's rules from the settings registry for one Settings page (General or Board, D-185),
+ * leaving out those that don't apply in the home-chapter model (D-184).
+ */
+export function SettingRules({
+  org,
+  page,
+  title,
+}: {
+  org: Org;
+  page: "general" | "board";
+  title: string;
+}) {
+  const qc = useQueryClient();
+  const lineage = useLineage(org);
+  if (!lineage.data) return <p className="text-muted-foreground">Loading…</p>;
+  return (
+    <RulesCard
+      org={org}
+      page={page}
+      title={title}
+      lineage={lineage.data}
+      onSaved={() => qc.invalidateQueries()}
+    />
+  );
+}
+
+function RulesCard({
+  org,
+  page,
+  title,
+  lineage,
+  onSaved,
+}: {
+  org: Org;
+  page: "general" | "board";
+  title: string;
+  lineage: { chain: { id: string; name: string }[]; settings: SettingRow[] };
+  onSaved: () => void;
+}) {
+  const { chain, settings } = lineage;
+  const ids = chain.map((c) => c.id);
+  const nameOf = (id: string | null) => chain.find((c) => c.id === id)?.name ?? "default";
+  const defs = settingsFor(org.type, { model: modelOf(ids, settings), page });
+  if (defs.length === 0) return null;
+  return (
+    <section className="rounded-md border bg-card p-5">
+      <h2 className="text-lg font-semibold">{title}</h2>
+      <div className="mt-4 space-y-6">
+        {defs.map((def) => (
+          <SettingRowEditor
+            key={def.key}
+            orgId={org.id}
+            hasChildren={org.type === "national" || org.type === "region"}
+            def={def}
+            own={settings.find((s) => s.org_id === org.id && s.key === def.key)}
+            resolved={resolveDef(ids, settings, def)}
+            nameOf={nameOf}
+            onSaved={onSaved}
+          />
+        ))}
+      </div>
+    </section>
   );
 }
 

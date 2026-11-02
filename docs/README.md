@@ -71,4 +71,4 @@ Every diagram (Mermaid or image) is followed by a **"Diagram description"** bloc
 
 ## Current status
 
-Phases 1 and 2 meet their exit criteria, and the MVP release (v0.1.0) is built and waiting for Lovable to apply migrations 0032–0034, the owner actions (live Stripe check, CPA review) and the release checklist: see [`plans/wave-a-mvp.md`](plans/wave-a-mvp.md) and the root [`README.md`](../README.md) "Where it stands". Day-to-day progress is in [`/roadmap.md`](../roadmap.md); epic status is in [`epic.md`](epic.md).
+Phases 1 and 2 meet their exit criteria, and the MVP release (v0.1.0) is built and live (migrations 0032–0035 applied; 0036 waiting), with the owner actions (live Stripe check, CPA review) and the release checklist: see [`plans/wave-a-mvp.md`](plans/wave-a-mvp.md) and the root [`README.md`](../README.md) "Where it stands". Day-to-day progress is in [`/roadmap.md`](../roadmap.md); epic status is in [`epic.md`](epic.md).

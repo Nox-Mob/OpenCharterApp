@@ -18,7 +18,7 @@ The first version a national (with chapters) or a standalone association can run
 
 - Each national chooses once, when it's created or later in Settings, with both options explained side by side:
   - **separate memberships**, optionally with two-level dues
-  - **national membership with a home chapter**, where members pick or change their chapter, or an at-large chapter
+  - **national membership with a home chapter**, where members pick or change their chapter, or an at-large chapter; settings and setup questions about chapter acceptance, chapter levels and chapter dues are left out, since they don't apply
 - Membership levels and terms, with pricing rules by member fields.
 - Nationals can suggest levels to chapters, which **copy** them or **link** to them, with a linked price rule.
 - Guided setup for membership (now including prices by member fields) and for the board.
@@ -39,7 +39,7 @@ The first version a national (with chapters) or a standalone association can run
 ### Governance and the org page
 
 - Board seats for an org, its chapters, or both; each org's own terms; appointments that grant and remove the seat's role; a role email or the officer's own email per seat.
-- A left-hand menu: Overview, Members or Directory, Board, Reports, Chapters, Settings.
+- A left-hand menu: Overview, Members or Directory, Board, Reports, Chapters, Settings. Everything that configures the organization is under Settings (including Settings → Board settings for seats, terms, contact emails and titles); the other pages show information or let you act.
 - Admins see overview numbers and reports (chapter admins see their chapter only). Members see what they need to do, their profile, chapter, roles and who to contact. Admins can preview the page "as a member".
 
 ### Quality and safety

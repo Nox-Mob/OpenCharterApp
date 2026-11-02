@@ -1,11 +1,16 @@
 import { expect, test } from "@playwright/test";
 import { openOrg, signIn } from "./helpers";
 
-// E-17, D-156: a chapter's board, with the contact-email choice (opened, not saved).
-test("a chapter admin sees the board and the contact-email choice for a seat", async ({ page }) => {
+// E-17, D-156, D-185: the Board page shows the board and links to Settings → Board, where the
+// contact-email choice for a seat lives (opened, not saved).
+test("a chapter admin sets a seat's contact email in Settings → Board", async ({ page }) => {
   await signIn(page, "chapter");
   await openOrg(page, "austin", "board");
   await expect(page.getByRole("heading", { name: "Board and officers" })).toBeVisible();
+  // no configuration on the Board page itself
+  await expect(page.getByRole("button", { name: "Contact email" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Change board settings" }).click();
+  await expect(page).toHaveURL(/tab=board-settings/);
   const contact = page.getByRole("button", { name: "Contact email" }).first();
   const hasSeats = await contact
     .waitFor({ timeout: 15_000 })

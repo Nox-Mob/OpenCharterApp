@@ -27,11 +27,11 @@ Install once per clone with `bun run hooks:install` (it sets `core.hooksPath` to
 |---|---|
 | `navigation` | The left-hand menu for a national admin (no Directory), "View as member" and back, the member view (Overview, Directory, Board, own cards), a chapter admin's Reports for their chapter only |
 | `members` | A national's Members page lists every chapter's members with their organization |
-| `board-setup` | A chapter's board and the contact-email choice (opened, not saved); guided setup under Settings → Setup |
+| `board-setup` | A chapter's Board page has no configuration controls and links to Settings → Board settings, where the contact-email choice opens (not saved) (D-185); guided setup under Settings → Setup |
 | `join` | The join page asks every required question (Rank) before payment; joining with the test gateway and returning to the app's own address (D-158) |
 | `lifecycle` | A throwaway demo national created through the screens with the home-chapter model (D-176), a chapter added with the wizard, a second chapter, a level and a member set up through the API; the member picks a chapter and changes it; the national admin sees them in the new chapter only, with the national level, and in the national's list with their chapter. The national is deleted afterwards (leftovers from earlier runs too) |
 | `export` | Settings → Payments → "Export payments" downloads a CSV with the bookkeeping columns (byte-order mark for spreadsheets) (A3) |
-| `levels` | In a throwaway demo national, a chapter starts from a suggested level, sees both choices explained, links it at 20% less with the price previewed, and sees the link and "Make it our own" (A4). Skips until migration 0032 is applied |
+| `levels` | In a throwaway demo national, a chapter starts from a suggested level, sees both choices explained, links it at 20% less with the price previewed, and sees the link and "Make it our own" (A4) |
 | `a11y` | As each role, on the dashboard and every main screen: every control has an accessible name, one main heading, a page language; sign-in by keyboard with visible focus (R2, D-183) |
 
 Notes:
@@ -94,6 +94,7 @@ Current coverage:
 | `9L_home_chapter` | Home-chapter model: separate until chosen, only a national chooses, chosen once (no change or removal), at-large chapter must be its own; join-page info for anyone; the member picks, changes and clears their chapter (record reused, history kept, seats ended); chapter admins read the national membership and count the member in overview, reports and directory, then lose it after a move; officers must be current members of the chapter; national admins move records without a login; people counted once in the national's overview; no client writes to the link; history append-only |
 | `9M_levels_standing_pricing` | National standing for a chapter's members (chapter admins only; members and siblings refused); suggested levels copied (independent) or linked (name, terms, prices and retirement follow the national; same, amount off and percent off, kept within the range); linked levels can't be edited directly; making a level the chapter's own; chapters without their own levels refused; the setup pricing step applied twice gives one rule, updated in place; unknown terms and callers without permission refused |
 | `9N_rollup_performance` | After 0034: each membership still uses its own org's grace days in the members roll-up, overview and directory; the directory default and a member's own choice; permission checks unchanged |
+| `9O_home_chapter_settings` | 0036 (D-184): below a home-chapter national a chapter can't add or restore membership levels, even if the old setting allows it; the national still can; other edits to an existing level still work |
 | `9A_receipts` | Receipt issued for each paid payment and frozen, numbering per org and year with no gaps, can't be changed or deleted, payer and admin access, void / issue again / reissue versions, partial and full refunds |
 | `90_tiers` | Membership levels and terms: isolation, term rules, parent control, retire not delete (deletes remove nothing), identity columns can't change |
 
@@ -101,7 +102,7 @@ Current coverage:
 
 Migrations are tested here before Lovable applies them to the live database. Until then:
 
-- Types for them go in `src/lib/db/pending-schema.ts`, not the generated `types.ts`. Use the `db` client from there.
+- Types for them go in `src/lib/db/pending-schema.ts`, not the generated `types.ts`. Use the `db` client from there. A migration that only adds columns to an existing table can extend the generated table type there (see git history of that file for the `WithColumns` helper used for 0032).
 - Screens that need them sit behind the readiness guard (`src/lib/db/readiness.ts`, `<RequiresDatabase>`). Add a feature entry with the migration name and a probe table or function.
 - Add the migration to "Pending migrations for Lovable" in `/roadmap.md` and to `docs/lovable-handoff.md`. Once applied (and `types.ts` regenerated; Lovable adds a small confirm migration), remove its section from `pending-schema.ts`, mark its readiness feature `applied: true` (no more probing), and mark the roadmap row applied. The regenerated types sometimes type a nullable argument as a plain string; send `null` through a small cast helper (`sqlNull`) in that case.
 - With the generated types, every SQL argument without a default is required. Send `null` explicitly (never leave the argument out): PostgREST matches functions by argument names, so a missing one fails with PGRST202.
