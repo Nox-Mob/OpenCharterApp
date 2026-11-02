@@ -13,7 +13,7 @@ test("export payments from Settings → Payments", async ({ page }) => {
   const download = page.waitForEvent("download");
   await card.getByRole("button", { name: "Export CSV" }).click();
   const file = await (await download).path();
-  const csv = (await readFile(file!, "utf8")).replace(/^﻿/, "");
+  const csv = (await readFile(file!, "utf8")).replace(/^\uFEFF/, "");
   expect(csv.split("\r\n")[0]).toBe(
     "Organization,Date,Member,Email,Purpose,Level,Term,Amount,Refunded,Net,Currency,Status,Method,Gateway,Test payment,Reference,Receipt,Tax treatment",
   );
