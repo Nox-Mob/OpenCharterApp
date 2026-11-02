@@ -12,7 +12,7 @@ import { inviteUrl } from "@/modules/invitations";
  * Everything goes through the existing RPCs (create_organization, set_attribute_value,
  * create_invitation).
  */
-export type WizardStep = "basics" | "details" | "admin" | "officers" | "done";
+export type WizardStep = "basics" | "model" | "details" | "admin" | "officers" | "done";
 
 export function wizardSteps(opts: {
   isChild: boolean;
@@ -20,7 +20,9 @@ export function wizardSteps(opts: {
   hasFields: boolean;
   requiredSeats: number;
 }): WizardStep[] {
-  if (!opts.isChild) return ["basics", "done"];
+  // A new national chooses how membership works (A8, D-166); a standalone org has no chapters.
+  if (!opts.isChild)
+    return opts.type === "national" ? ["basics", "model", "done"] : ["basics", "done"];
   const steps: WizardStep[] = ["basics"];
   if (opts.type === "chapter" && opts.hasFields) steps.push("details");
   steps.push("admin");
@@ -31,6 +33,7 @@ export function wizardSteps(opts: {
 
 export const STEP_TITLES: Record<WizardStep, string> = {
   basics: "Name and type",
+  model: "How membership works",
   details: "Chapter details",
   admin: "Chapter admin",
   officers: "Required officers",

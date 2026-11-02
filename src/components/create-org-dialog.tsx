@@ -5,6 +5,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createOrgSchema, slugify, type OrgType } from "@/lib/policy";
 import { isDemoOrg, myOrgsQuery, myPermissionsQuery } from "@/lib/orgs";
+import { cn } from "@/lib/utils";
+import { ModelComparison } from "@/components/membership/model-comparison";
+import { chooseMembershipModel, type ModelChoice } from "@/modules/membership/home-chapter";
 import { createDemoOrganization, demoErrorMessage, isPlatformOperatorQuery } from "@/modules/demo";
 import { useFeatureReady } from "@/lib/db/readiness";
 import { canSetChapterField } from "@/modules/attributes/chapter-fields";
@@ -59,6 +62,8 @@ export function CreateOrgDialog({
   const types: OrgType[] = parentId ? ["chapter", "region"] : ["standalone", "national"];
   const [open, setOpen] = useState(false);
   const [stepIdx, setStepIdx] = useState(0);
+  // A new national's membership model (A8, D-166); null until picked
+  const [model, setModel] = useState<ModelChoice | null>(null);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [type, setType] = useState<OrgType>(types[0]!);
@@ -123,6 +128,7 @@ export function CreateOrgDialog({
     setInvites(EMPTY_INVITES);
     setCreated(null);
     setDemo(false);
+    setModel(null);
   }
 
   function checkStep(): string | null {
@@ -135,6 +141,7 @@ export function CreateOrgDialog({
       });
       return parsed.success ? null : (parsed.error.issues[0]?.message ?? "Invalid input");
     }
+    if (step === "model" && !model) return "Choose how membership works, or decide later";
     if (step === "details") return firstValueError(chapterFields, details);
     if (step === "admin" || step === "officers") {
       const parsed = wizardInvitesSchema.safeParse(invites);
@@ -176,6 +183,13 @@ export function CreateOrgDialog({
       }
       id = data as string;
     }
+    if (!parentId && parsed.type === "national" && model && model !== "later") {
+      try {
+        await chooseMembershipModel(id, model);
+      } catch {
+        toast.warning("The membership model wasn't saved. Choose it on Settings → General.");
+      }
+    }
     try {
       await saveAttributeValues(chapterFields, id, details);
     } catch {
@@ -209,7 +223,9 @@ export function CreateOrgDialog({
       }}
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className={cn("max-h-[90vh] overflow-y-auto", step === "model" && "max-w-3xl")}
+      >
         <DialogHeader>
           <DialogTitle>
             {parentId ? "Add a chapter or region" : "Create an organization"}
@@ -280,6 +296,16 @@ export function CreateOrgDialog({
             </>
           )}
 
+          {step === "model" && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                How do people belong to {name || "your organization"} and its chapters? Pick the
+                model that matches your by-laws. It applies to every chapter and can&apos;t be
+                changed once chosen.
+              </p>
+              <ModelComparison value={model} onChange={setModel} allowLater />
+            </div>
+          )}
           {step === "details" &&
             chapterFields.map((d) => (
               <div key={d.id} className="space-y-1">

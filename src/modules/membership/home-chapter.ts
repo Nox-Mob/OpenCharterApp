@@ -12,24 +12,61 @@ import { db } from "@/lib/db/pending-schema";
  */
 export type MembershipModel = "separate" | "home_chapter";
 
-export const MODEL_CHOICES: readonly {
+/** Plain-language comparison shown wherever the model is chosen (org creation, Settings). */
+export type ModelGuide = {
   value: MembershipModel;
   label: string;
   explanation: string;
-}[] = [
+  /** Short rows for the side-by-side comparison. */
+  facts: { joining: string; dues: string; chapters: string; moving: string };
+  goodFit: readonly string[];
+  example: string;
+};
+
+export const MODEL_CHOICES: readonly ModelGuide[] = [
   {
     value: "separate",
     label: "Separate memberships",
     explanation:
       "Your national organization and each chapter have their own memberships. A person can be a member of both, each with its own level, dues and standing, and chapters can charge their own dues.",
+    facts: {
+      joining: "People join the national, a chapter, or both, on each one's own join page.",
+      dues: "Each organization sets and collects its own dues; a member of both pays twice, one receipt each. You can require national membership for chapter members.",
+      chapters: "Each chapter has its own members, levels, prices and standing.",
+      moving: "Changing chapter means leaving one chapter's membership and joining another's.",
+    },
+    goodFit: [
+      "Chapters are separate legal or tax entities that run their own finances",
+      "Some people belong to a chapter without joining the national, or the other way round",
+      "Chapters want their own membership levels and prices",
+    ],
+    example: "A federation of local clubs that each collect their own dues.",
   },
   {
     value: "home_chapter",
     label: "National membership with a home chapter",
     explanation:
       "People join the national organization only, with one membership and one payment. Each member picks the chapter they belong to (or none) and can change it whenever they like. Chapters see and serve the members who chose them, but don't sell memberships.",
+    facts: {
+      joining:
+        "People join the national and pick their chapter on the same page (or none for now).",
+      dues: "One membership and one payment, to the national. Chapters may bill optional local dues themselves (coming with invoicing).",
+      chapters:
+        "A chapter's members are the national members who chose it; their standing comes from the national membership.",
+      moving: "Members switch chapter themselves, any time; the history is kept.",
+    },
+    goodFit: [
+      "Membership is really in the national, and chapters are where members meet locally",
+      "You want one price, one renewal date and one standing for everyone",
+      "Members move around (for example military or professional associations) and should keep their membership",
+    ],
+    example:
+      "The Signal Corps Regimental Association: members belong to the national and choose a local chapter, or the online chapter.",
   },
 ];
+
+/** The choice when creating an organization: a model, or decide later (separate until then). */
+export type ModelChoice = MembershipModel | "later";
 
 export type ChapterOption = { id: string; name: string; slug: string };
 
@@ -109,7 +146,7 @@ export async function setAtLargeChapter(orgId: string, chapterId: string | null)
 export async function setHomeChapter(nationalId: string, chapterId: string | null) {
   const { error } = await db.rpc("set_home_chapter", {
     _national: nationalId,
-    _chapter: chapterId,
+    _chapter: sqlNull(chapterId),
   });
   if (error) throw error;
 }
@@ -117,9 +154,14 @@ export async function setHomeChapter(nationalId: string, chapterId: string | nul
 export async function setMemberHomeChapter(membershipId: string, chapterId: string | null) {
   const { error } = await db.rpc("set_member_home_chapter", {
     _membership: membershipId,
-    _chapter: chapterId,
+    _chapter: sqlNull(chapterId),
   });
   if (error) throw error;
+}
+
+/** SQL null for an argument the generated types mark as a plain string ("no chapter"). */
+function sqlNull<T>(v: T | null): T {
+  return v as T;
 }
 
 // The chapter picked on the join page, applied once the payment has created the membership.

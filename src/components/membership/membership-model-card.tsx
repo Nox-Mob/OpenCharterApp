@@ -14,7 +14,7 @@ import {
 } from "@/modules/membership/home-chapter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ModelComparison } from "./model-comparison";
 import {
   Select,
   SelectContent,
@@ -116,21 +116,7 @@ export function MembershipModelCard({
             Choose once for {org.name} and every chapter. This can&apos;t be changed later, so check
             your by-laws first. Until you choose, memberships are separate.
           </p>
-          <RadioGroup
-            value={pick}
-            onValueChange={(v) => setPick(v as MembershipModel)}
-            className="space-y-3"
-          >
-            {MODEL_CHOICES.map((c) => (
-              <label key={c.value} className="flex items-start gap-2 text-sm">
-                <RadioGroupItem value={c.value} aria-label={c.label} />
-                <span>
-                  <span className="font-medium">{c.label}</span>
-                  <span className="block text-muted-foreground">{c.explanation}</span>
-                </span>
-              </label>
-            ))}
-          </RadioGroup>
+          <ModelComparison value={pick} onChange={(v) => setPick(v as MembershipModel)} />
           <Button
             disabled={busy}
             onClick={() => {

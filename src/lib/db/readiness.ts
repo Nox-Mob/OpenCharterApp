@@ -86,6 +86,7 @@ export const FEATURES = {
     label: "Choosing a home chapter",
     rpc: "public_home_chapter_info",
     args: { _slug: "" },
+    applied: true,
   },
   payments_export: {
     migration: "0029_payments_export",
@@ -96,6 +97,7 @@ export const FEATURES = {
       _from: "2000-01-01",
       _to: "2000-01-01",
     },
+    applied: true,
   },
   exports: {
     migration: "0011_member_exports",

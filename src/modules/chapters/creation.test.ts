@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import { plannedInvites, wizardInvitesSchema, wizardSteps } from "./creation";
 
 describe("wizardSteps", () => {
-  it("top-level orgs are one step", () => {
+  it("a new national also chooses how membership works; a standalone org is one step", () => {
     expect(
       wizardSteps({ isChild: false, type: "national", hasFields: true, requiredSeats: 3 }),
+    ).toEqual(["basics", "model", "done"]);
+    expect(
+      wizardSteps({ isChild: false, type: "standalone", hasFields: false, requiredSeats: 0 }),
     ).toEqual(["basics", "done"]);
   });
   it("chapters get details and officers only when there are any", () => {
