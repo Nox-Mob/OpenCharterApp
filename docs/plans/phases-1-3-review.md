@@ -189,5 +189,5 @@ To do as each wave lands (owner: whoever ships the item):
   2. **Members change chapter themselves, any time**, no approval. Each change is written to `affiliation_history`; seats held in the old chapter end with the reason "changed chapter".
   3. **One chapter at most** per member (unique on the national membership).
   4. **Local dues:** a chapter may charge its own dues and collects them itself, normally postpaid through E-20 invoices with the chapter's settings (D-161). Unpaid local dues affect only chapter matters (e.g. that chapter's officer eligibility, if its by-laws say so), never national standing (keeps R-14 manageable).
-  5. **Permanent choice:** once a national selects a model it can't change it (enforced by a trigger on the setting). Membership setup asks it first, with an explanation of both models.
+  5. **Permanent choice:** once a national selects a model it can't change it (enforced by a trigger on the setting). It is chosen on Settings → General, with both models explained (D-174).
 

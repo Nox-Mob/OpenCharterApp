@@ -81,6 +81,12 @@ export const FEATURES = {
     table: "seat_contacts",
     applied: true,
   },
+  home_chapter: {
+    migration: "0030_home_chapter",
+    label: "Choosing a home chapter",
+    rpc: "public_home_chapter_info",
+    args: { _slug: "" },
+  },
   payments_export: {
     migration: "0029_payments_export",
     label: "Payment exports",

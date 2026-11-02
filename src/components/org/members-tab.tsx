@@ -26,6 +26,7 @@ import { expirationLabel, STANDING_LABELS, standing, today } from "@/modules/mem
 import { StandingBadge } from "@/components/membership/standing-badge";
 import { AddMemberDialog } from "@/components/membership/add-member-dialog";
 import { useFeatureReady } from "@/lib/db/readiness";
+import { homeChapterInfoQuery } from "@/modules/membership/home-chapter";
 import { declineApplication } from "@/modules/payments/payments.functions";
 import { MemberDetailsDialog } from "./member-details-dialog";
 import { RosterToolbar } from "@/components/members/roster-toolbar";
@@ -156,10 +157,17 @@ export function MembersTab({
   // Membership features wait for migration 0008 (readiness guard, D-135).
   const ready = useFeatureReady("memberships") === true;
   const directoryReady = useFeatureReady("directory") === true;
-  const members = useQuery(membersQuery(orgId, ready, directoryReady));
+  // Home-chapter model (A8, D-166): chapters list the members who chose them; the national's own
+  // list already holds everyone, with each member's chapter.
+  const homeReady = useFeatureReady("home_chapter") === true;
+  const homeInfo = useQuery({ ...homeChapterInfoQuery(org.slug), enabled: homeReady });
+  const homeModel = homeInfo.data?.model === "home_chapter";
+  const members = useQuery(membersQuery(orgId, ready, directoryReady, homeReady));
   const subtree = [org, ...orgs.filter((o) => o.id !== org.id && o.ancestor_ids.includes(org.id))];
   const subtreeIds = subtree.map((o) => o.id);
-  const hasBelow = subtree.length > 1;
+  const hasBelow = subtree.length > 1 && !homeModel;
+  const showChapter = homeModel && org.type === "national";
+  const chapterName = new Map((homeInfo.data?.chapters ?? []).map((c) => [c.id, c.name]));
   const [scope, setScope] = useState<"tree" | "org">(hasBelow ? "tree" : "org");
   const isTree = hasBelow && scope === "tree";
   const tree = useQuery({ ...treeMembersQuery(subtreeIds), enabled: isTree && ready });
@@ -442,6 +450,7 @@ export function MembersTab({
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               {isTree && <TableHead>Organization</TableHead>}
+              {showChapter && <TableHead>Chapter</TableHead>}
               {ready && (
                 <>
                   <TableHead>Standing</TableHead>
@@ -472,6 +481,12 @@ export function MembersTab({
                 </TableCell>
                 {isTree && (
                   <TableCell className="text-sm">{orgName.get(m.org_id ?? orgId) ?? "—"}</TableCell>
+                )}
+                {showChapter && (
+                  <TableCell className="text-sm">
+                    {(m.membership?.home_org_id && chapterName.get(m.membership.home_org_id)) ||
+                      "—"}
+                  </TableCell>
                 )}
                 {ready && (
                   <>

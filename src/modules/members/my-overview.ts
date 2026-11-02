@@ -117,7 +117,7 @@ export type MemberAction = {
   tone: ActionTone;
   text: string;
   /** What the button does, if there is one. */
-  cta?: "join" | "renew" | "profile";
+  cta?: "join" | "renew" | "profile" | "chapter";
 };
 
 /** How many days before the end of a term "renew soon" appears. */
@@ -135,6 +135,8 @@ export function memberActions(input: {
   on: string;
   missingRequired: readonly string[];
   seats: readonly MySeat[];
+  /** Home-chapter model (A8): a national member who hasn't picked a chapter yet. */
+  noChapter?: boolean;
 }): MemberAction[] {
   const { membership: m, graceDays, on } = input;
   const out: MemberAction[] = [];
@@ -180,6 +182,13 @@ export function memberActions(input: {
         cta: "renew",
       });
   }
+  if (input.noChapter && m && (m.status === "active" || m.status === "pending"))
+    out.push({
+      key: "chapter",
+      tone: "info",
+      text: "You haven't picked a chapter. Choose the one you belong to, or stay a member at large.",
+      cta: "chapter",
+    });
   if (input.missingRequired.length)
     out.push({
       key: "profile",

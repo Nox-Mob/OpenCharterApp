@@ -58,6 +58,21 @@ describe("member actions", () => {
     ).toEqual(["lapsed"]);
   });
 
+  it("reminds a national member without a chapter in the home-chapter model (A8)", () => {
+    expect(
+      keys(
+        memberActions({
+          ...base,
+          membership: membership({ paid_through: "2027-06-30" }),
+          noChapter: true,
+        }),
+      ),
+    ).toEqual(["chapter"]);
+    expect(memberActions({ ...base, membership: null, noChapter: true }).map((a) => a.key)).toEqual(
+      ["join"],
+    );
+  });
+
   it("no membership, pending and ended", () => {
     expect(memberActions({ ...base, membership: null })[0]).toMatchObject({
       key: "join",

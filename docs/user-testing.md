@@ -193,6 +193,15 @@ Use a private browser window for a second account at the same time. Test only in
 **Also try:** as **National**, turn off "Chapters may rename the board seats you define" in Settings, then try "Rename here" in Austin.
 Also: edit a seat and set "No role" and a suggested term of "No fixed term"; and "Change term" to "No fixed term". Both should save (fixed 2026-11-02).
 
+## 13b. National membership with a home chapter (needs migration 0030)
+**Where:** Settings → General ("How membership works"), the join pages, the Overview, a chapter's Members page.
+Use a *new* national for this (Dashboard → create a demo national with two chapters): the choice can't be undone, so don't try it on Demo National.
+1. As its admin: Settings → General shows both models with explanations. Pick "National membership with a home chapter" and confirm. The card now says it can't be changed; pick one chapter as the at-large chapter.
+2. Open a chapter's join page: it sends you to the national's page with that chapter preselected. The national's join page shows "Your chapter" (at-large chapter first, "None for now" last).
+3. Join as a member with a chapter. After paying, the national's Overview shows "Your chapter: …" and the chapter's Members page lists you with your national level and standing ("This is the member's national membership" in Details).
+4. Change chapter from the Overview. The old chapter no longer lists you; the new one does. If you held a seat in the old chapter, it ended with "changed chapter".
+5. The chapter's Membership levels page explains that members join the national.
+
 ## 14a. Overview
 **Where:** Overview.
 1. As **National**: "At a glance" shows Current members, Chapters, Average members per chapter, Lifetime members (with "N other current members · X% lifetime" and a bar), New in the last 30 days, Waiting for approval, Renewals due in 30 days, Revenue this year and Vacant required seats. A person in both the national and a chapter counts once. "See each chapter on the Reports page" opens Reports.

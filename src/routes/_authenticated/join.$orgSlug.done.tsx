@@ -10,6 +10,12 @@ import {
 } from "@/modules/membership/joining";
 import { formatPrice } from "@/modules/membership/tiers";
 import { confirmCheckout } from "@/modules/payments/payments.functions";
+import { useFeatureReady } from "@/lib/db/readiness";
+import {
+  homeChapterInfoQuery,
+  setHomeChapter,
+  takeRememberedHomeChapter,
+} from "@/modules/membership/home-chapter";
 import { RequiresDatabase } from "@/components/db/requires-database";
 import { Button } from "@/components/ui/button";
 
@@ -81,6 +87,18 @@ function Done() {
       ? "waiting"
       : joinOutcome(progress.data)
     : "missing";
+  // Home-chapter model (A8): apply the chapter picked on the join page once the membership exists.
+  const homeReady = useFeatureReady("home_chapter") === true;
+  const home = useQuery({ ...homeChapterInfoQuery(orgSlug), enabled: homeReady });
+  const joined = outcome === "welcome" || outcome === "awaiting_approval";
+  useEffect(() => {
+    if (!joined || home.data?.model !== "home_chapter" || home.data.org.type !== "national") return;
+    const picked = takeRememberedHomeChapter(orgSlug);
+    if (picked)
+      void setHomeChapter(home.data.national.id, picked.chapterId).catch(() => {
+        // the member can still pick it on their overview ("Your chapter")
+      });
+  }, [joined, home.data, orgSlug]);
   const p = progress.data;
   const amount = p ? formatPrice(p.amount_minor, p.currency) : "";
   // After paying national dues, continue to the chapter's (two-level dues, D-146).

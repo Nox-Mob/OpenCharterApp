@@ -9,6 +9,7 @@ Status on 2026-11-02.
 | File | What it adds | Check it worked (SQL editor) |
 |---|---|---|
 | `0029_payments_export.sql` | `export_payments` (D-173): paid and refunded payments for an org or its tree, audited before returning; no tables | `select count(*) from pg_proc where proname = 'export_payments';` returns 1 |
+| `0030_home_chapter.sql` | National membership with a home chapter (D-166, D-174): columns `memberships.home_org_id`, `org_member_profiles.home_of` / `left_at`, table `affiliation_history` (full grants, RLS, append-only), a guard on `org_settings` for `membership.model`, `set_home_chapter`, `set_member_home_chapter`, `public_home_chapter_info` (anon), and new versions of `appoint_officer`, `member_directory`, `org_rollup_members`, `org_overview_stats` (same signatures). Applies inside one transaction | `select public.membership_model(id) from public.organizations where slug = 'demo-national';` returns `separate` |
 
 ## 1. When a migration is waiting
 - Apply them strictly in order. They're additive only (D-125, checked in CI by `bun run check:migrations`).

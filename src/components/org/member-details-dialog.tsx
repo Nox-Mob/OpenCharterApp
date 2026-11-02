@@ -78,9 +78,16 @@ export function MemberDetailsDialog({
                 org={org}
                 member={member}
                 graceDays={graceDays}
-                canManage={canEdit}
-                canRecordPayments={canRecordPayments}
+                // A chapter record standing for a national membership (A8) is managed by the national
+                canManage={canEdit && !member.membership?.via_national}
+                canRecordPayments={canRecordPayments && !member.membership?.via_national}
               />
+              {member.membership?.via_national && (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  This is the member&apos;s national membership; the national organization manages
+                  it.
+                </p>
+              )}
             </RequiresDatabase>
             {member.user_id === null && (
               <RecordContact member={member} canEdit={canEdit} canInvite={canInvite} org={org} />

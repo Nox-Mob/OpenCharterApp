@@ -24,6 +24,7 @@ import { EMPTY_TIER } from "@/modules/membership/tiers";
 import { TierDialog } from "./tier-editor";
 import { PricingRulesDialog } from "./pricing-rules-dialog";
 import { useFeatureReady } from "@/lib/db/readiness";
+import { homeChapterInfoQuery } from "@/modules/membership/home-chapter";
 import { pricingRulesQuery } from "@/modules/membership/pricing";
 import type { Term } from "@/modules/membership/tiers";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,12 @@ export function LevelsTab({
     level: string;
   } | null>(null);
   const [busy, setBusy] = useState(false);
+  // Home-chapter model (A8, D-166): members join the national; chapters sell no memberships.
+  const homeReady = useFeatureReady("home_chapter") === true;
+  const home = useQuery({
+    ...homeChapterInfoQuery(org.slug),
+    enabled: homeReady && org.type !== "national",
+  });
   if (tiers.isLoading || allowed.isLoading)
     return <p className="text-muted-foreground">Loading…</p>;
 
@@ -97,6 +104,16 @@ export function LevelsTab({
       toast.error(tierErrorMessage(String((e as Error).message)));
     }
   }
+
+  if (home.data?.model === "home_chapter")
+    return (
+      <p className="rounded-md border bg-card p-5 text-sm">
+        Members join {home.data.national.name} and choose {org.name} as their chapter, so {org.name}{" "}
+        doesn&apos;t sell memberships of its own. Their levels and standing come from{" "}
+        {home.data.national.name}. Local dues, billed by the chapter itself, will come with
+        invoicing.
+      </p>
+    );
 
   return (
     <div className="space-y-6">

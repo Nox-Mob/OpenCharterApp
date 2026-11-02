@@ -51,7 +51,7 @@ Conventions to assume at schema time: every tenant-owned table carries `org_id`;
 | Pricing rule | Rule record linked to a tier (attribute-based pricing or reductions), evaluated by the rules engine |
 | Membership | (person, org, tier, term, status, start, paid-through, source). *Built (E-13a):* `memberships`, one current row per member profile and org: tier, term, status (pending / active / cancelled / declined), joined_on, paid_through, lifetime (D-131) |
 | Membership event history | Joined, renewed, lapsed, upgraded, cancelled. *Built:* append-only `membership_events` (joined / renewed / approved / declined / cancelled) with the period covered and the payment |
-| Chapter affiliation | *Planned (D-166):* in the home-chapter model, `home_org_id` on the national membership and an append-only `affiliation_history`, both owned by the national |
+| Chapter affiliation | *Built (0030, D-166, D-174):* `memberships.home_org_id` (the national membership's chapter), `org_member_profiles.home_of` / `left_at` (the chapter's record standing for it), append-only `affiliation_history`; setting `membership.model` chosen once by the national |
 | Level link | *Planned (D-165):* `source_tier_id`, `link_mode` (copy / linked) and a price rule (same / minus amount / minus percent) on a chapter's level |
 | Standing | Derived state (good standing, grace, lapsed, delinquent). Possibly materialized for query speed. *Built:* derived on read from paid_through and the grace period (`membership_standing`, `src/modules/membership/standing.ts`), not stored (D-111) |
 | Directory listing | *Built (E-14):* `org_member_profiles.directory_listed` (null = the org default), read through `member_directory` (D-139) |

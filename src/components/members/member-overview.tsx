@@ -24,6 +24,22 @@ import { AttributeValueInput } from "@/components/attributes/attribute-value-inp
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  chapterChoices,
+  homeChapterErrorMessage,
+  homeChapterInfoQuery,
+  myHomeChapterQuery,
+  setHomeChapter,
+} from "@/modules/membership/home-chapter";
+
+const NO_CHAPTER = "__none";
 
 const card = "rounded-md border bg-card p-5";
 
@@ -40,6 +56,7 @@ export function MemberOverview({ org, orgs }: { org: Org; orgs: readonly Org[] }
     <div className="space-y-6">
       {me && <ActionsNeeded org={org} profileId={me.id} />}
       <div className="grid gap-6 lg:grid-cols-2">
+        {me && <YourChapterCard org={org} />}
         {me && (
           <MyProfileCard org={org} profileId={me.id} name={me.display_name} email={me.email} />
         )}
@@ -65,6 +82,7 @@ function ActionsNeeded({ org, profileId }: { org: Org; profileId: string }) {
   const defs = useQuery(attributeDefsQuery(org.id, org.ancestor_ids));
   const values = useQuery(memberValuesQuery(profileId));
   const board = useQuery(boardQuery(org.id));
+  const home = useHomeChapter(org);
   if (mine.isLoading || grace.isLoading || defs.isLoading || values.isLoading) return null;
   const memberDefs = (defs.data ?? []).filter((d) => d.applies_to === "member" && d.active);
   const actions = memberActions({
@@ -74,6 +92,7 @@ function ActionsNeeded({ org, profileId }: { org: Org; profileId: string }) {
     on: today(),
     missingRequired: missingRequiredFields(memberDefs, values.data ?? {}),
     seats: mySeats(board.data ?? [], profileId),
+    noChapter: home.applies && home.mine !== null && home.mine.homeOrgId === null,
   });
   return (
     <section className={card} aria-labelledby="actions-heading">
@@ -98,6 +117,11 @@ function ActionsNeeded({ org, profileId }: { org: Org; profileId: string }) {
               {a.cta === "renew" && (
                 <Button asChild size="sm" variant="outline">
                   <a href="#my-membership">Renew</a>
+                </Button>
+              )}
+              {a.cta === "chapter" && (
+                <Button asChild size="sm" variant="outline">
+                  <a href="#my-chapter">Choose a chapter</a>
                 </Button>
               )}
               {a.cta === "profile" && (
@@ -325,6 +349,82 @@ function WhoToContact({ org, orgs }: { org: Org; orgs: readonly Org[] }) {
           ))}
         </dl>
       )}
+    </section>
+  );
+}
+
+/** Home-chapter model state for a national's overview (A8): does it apply, and my choice. */
+function useHomeChapter(org: Org) {
+  const ready = useFeatureReady("home_chapter") === true;
+  const topNational = org.type === "national" && !org.parent_id;
+  const info = useQuery({ ...homeChapterInfoQuery(org.slug), enabled: ready && topNational });
+  const applies = topNational && info.data?.model === "home_chapter";
+  const mine = useQuery({ ...myHomeChapterQuery(org.id), enabled: applies });
+  return { applies, info: info.data ?? null, mine: mine.data ?? null, loading: mine.isLoading };
+}
+
+/** "Your chapter" with "Change chapter" (A8, D-166): members change it whenever they like. */
+function YourChapterCard({ org }: { org: Org }) {
+  const qc = useQueryClient();
+  const home = useHomeChapter(org);
+  const [pick, setPick] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  if (!home.applies || !home.info || !home.mine) return null;
+  const choices = chapterChoices(home.info);
+  const current = home.mine.homeOrgId ?? NO_CHAPTER;
+  const value = pick ?? current;
+  const currentName = choices.find((c) => c.id === home.mine!.homeOrgId)?.name;
+
+  async function save() {
+    setBusy(true);
+    try {
+      await setHomeChapter(org.id, value === NO_CHAPTER ? null : value);
+      toast.success("Chapter saved");
+      setPick(null);
+      await qc.invalidateQueries();
+    } catch (e) {
+      toast.error(homeChapterErrorMessage(String((e as Error).message)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section id="my-chapter" className={card} aria-labelledby="chapter-heading">
+      <h2 id="chapter-heading" className="text-lg font-semibold">
+        Your chapter
+      </h2>
+      <p className="mt-2 text-sm">
+        {currentName ? (
+          <>
+            You belong to <span className="font-medium">{currentName}</span>.
+          </>
+        ) : (
+          "You haven't picked a chapter; you're a member at large."
+        )}
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Your membership is with {org.name}. You can change your chapter whenever you like; any
+        officer seat you hold in your current chapter ends when you move.
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Select value={value} onValueChange={setPick}>
+          <SelectTrigger className="w-72" aria-label="Change chapter">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {choices.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
+            <SelectItem value={NO_CHAPTER}>No chapter (member at large)</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button size="sm" onClick={save} disabled={busy || value === current}>
+          {busy ? "Saving…" : "Change chapter"}
+        </Button>
+      </div>
     </section>
   );
 }

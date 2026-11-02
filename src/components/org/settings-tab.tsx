@@ -1,3 +1,4 @@
+import { MembershipModelCard } from "@/components/membership/membership-model-card";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -73,6 +74,7 @@ export function SettingsTab({
         onSaved={refresh}
       />
       <TaxCard orgId={org.id} />
+      <MembershipModelCard org={org} settings={settings} />
       <section className="rounded-md border bg-card p-5">
         <h2 className="text-lg font-semibold">Rules for this organization</h2>
         <div className="mt-4 space-y-6">

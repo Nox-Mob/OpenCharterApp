@@ -372,7 +372,7 @@ describe("5. joining online (0010)", () => {
   async function memberMembership() {
     const { data } = await member
       .from("memberships")
-      .select("*, org_member_profiles!inner(user_id)")
+      .select("*, org_member_profiles!memberships_profile_id_fkey!inner(user_id)")
       .eq("org_id", ORG)
       .eq("org_member_profiles.user_id", memberUserId)
       .maybeSingle();
@@ -762,7 +762,7 @@ describe("8. board seats (0014)", () => {
 async function membershipAt(org: string) {
   const { data } = await member
     .from("memberships")
-    .select("*, org_member_profiles!inner(user_id)")
+    .select("*, org_member_profiles!memberships_profile_id_fkey!inner(user_id)")
     .eq("org_id", org)
     .eq("org_member_profiles.user_id", memberUserId)
     .maybeSingle();

@@ -21,7 +21,7 @@ const everyone = [...own, profile("p2", "a", "Alex Austin", "alex@test.org")];
 function builder(table: string) {
   const b: Record<string, unknown> = {};
   let tree = false;
-  for (const m of ["select", "eq", "order", "limit", "range", "maybeSingle"]) b[m] = () => b;
+  for (const m of ["select", "eq", "is", "order", "limit", "range", "maybeSingle"]) b[m] = () => b;
   b["in"] = () => {
     tree = true;
     return b;

@@ -7,18 +7,53 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When Lovable applies a migration, delete its section here (the generated types take over).
- * Pending: 0029_payments_export (see roadmap.md).
+ * Pending: 0029_payments_export, 0030_home_chapter (see roadmap.md).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 type Generated = Database["public"];
 
 // Add types for a migration here while Lovable hasn't applied it yet; delete them once applied.
 export type PendingEnums = Record<never, never>;
-export type PendingTables = Record<never, never>;
+type Tables = Generated["Tables"];
+/** A generated table with columns a pending migration adds. */
+type WithColumns<T extends keyof Tables, C> = Omit<Tables[T], "Row"> & {
+  Row: Tables[T]["Row"] & C;
+};
+
+export type PendingTables = {
+  // 0030_home_chapter
+  memberships: WithColumns<"memberships", { home_org_id: string | null }>;
+  org_member_profiles: WithColumns<
+    "org_member_profiles",
+    { home_of: string | null; left_at: string | null }
+  >;
+  affiliation_history: {
+    Row: {
+      id: string;
+      org_id: string;
+      membership_id: string;
+      from_org_id: string | null;
+      to_org_id: string | null;
+      changed_by: string | null;
+      created_at: string;
+    };
+    Insert: never;
+    Update: never;
+    Relationships: [];
+  };
+};
 export type PendingFunctions = {
+  // 0030_home_chapter
+  membership_model: { Args: { _org: string }; Returns: string };
+  set_home_chapter: { Args: { _national: string; _chapter: string | null }; Returns: undefined };
+  set_member_home_chapter: {
+    Args: { _membership: string; _chapter: string | null };
+    Returns: undefined;
+  };
+  public_home_chapter_info: { Args: { _slug: string }; Returns: Json };
   // 0029_payments_export
   export_payments: {
     Args: { _org: string; _from: string; _to: string; _include_below?: boolean };

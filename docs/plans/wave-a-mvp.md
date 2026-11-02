@@ -43,7 +43,7 @@ Sizes: S ≈ 1–2 days, M ≈ 3–5 days, L ≈ 1–2 weeks. Every item follows
 
 ### A8 Membership model: national membership with a home chapter (L, do first)
 *Why first:* it changes who counts as a chapter's member, which the Members page, Board, directory, overview and reports all read.
-- **Setting:** `membership.model` (`separate` | `home_chapter`) at the national, ancestor-only and locked for the tree. A trigger allows it to be set once (D-166 rule 5). It's the first question in Membership setup, with both models explained. Also `membership.at_large_chapter` (optional chapter id).
+- **Setting:** `membership.model` (`separate` | `home_chapter`) at the national, ancestor-only and locked for the tree. A trigger allows it to be set once (D-166 rule 5). It's chosen on Settings → General with both models explained (built, D-174); a Membership setup question can follow. Also `membership.at_large_chapter` (optional chapter id).
 - **Data (migration):** `home_org_id` on the national's membership (one chapter at most, rule 3) and append-only `affiliation_history`, both with `org_id` = the national.
 - **RPCs:**
   - `set_home_chapter` (the member themselves, any time, rule 2; ends their seats in the old chapter with the reason "changed chapter")

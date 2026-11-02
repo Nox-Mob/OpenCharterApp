@@ -39,11 +39,24 @@ export type MemberRow = {
     term_id: string;
     tier_name: string;
     term_label: string;
+    /** Home-chapter model (A8): the chapter this national membership belongs to. */
+    home_org_id?: string | null;
+    /** True on a chapter record whose membership is the member's national one (A8). */
+    via_national?: boolean;
   } | null;
 };
 
+const MEMBERSHIP_FIELDS =
+  "id,status,paid_through,lifetime,joined_on,tier_id,term_id,membership_tiers(name),tier_terms(label)";
+/** The record's own membership, and (0030) the national membership it stands for. */
+const OWN_EMBED = `memberships!memberships_profile_id_fkey(${MEMBERSHIP_FIELDS})`;
+/** With 0030: the record's own membership including its home chapter. */
+const OWN_EMBED_HOME = `memberships!memberships_profile_id_fkey(${MEMBERSHIP_FIELDS},home_org_id)`;
+const HOME_EMBED = `home_of,left_at,home:memberships!org_member_profiles_home_of_fkey(${MEMBERSHIP_FIELDS},home_org_id)`;
+
 type MembershipEmbed = {
   id: string;
+  home_org_id?: string | null;
   status: MembershipStatus;
   paid_through: string | null;
   lifetime: boolean;
@@ -58,9 +71,14 @@ type MembershipEmbed = {
  * The member list. Without migration 0008 (see src/lib/db/readiness.ts) it reads only the
  * columns that exist today, and every member shows as having no membership.
  */
-export const membersQuery = (orgId: string, withMemberships = true, withPrivacy = false) =>
+export const membersQuery = (
+  orgId: string,
+  withMemberships = true,
+  withPrivacy = false,
+  withHome = false,
+) =>
   queryOptions({
-    queryKey: ["members", orgId, withMemberships, withPrivacy],
+    queryKey: ["members", orgId, withMemberships, withPrivacy, withHome],
     queryFn: async (): Promise<MemberRow[]> => {
       if (!withMemberships) {
         const { data, error } = await supabase
@@ -72,39 +90,73 @@ export const membersQuery = (orgId: string, withMemberships = true, withPrivacy 
         return (data ?? []).map((p) => ({ ...p, source: "signup", membership: null }));
       }
       // directory_listed only exists once migration 0012 is applied (readiness guard).
+      // home_of / left_at and the national membership exist once 0030 is applied (A8).
       const base = "id,user_id,display_name,email,source,created_at";
-      const embed =
-        "memberships(id,status,paid_through,lifetime,joined_on,tier_id,term_id,membership_tiers(name),tier_terms(label))";
-      const { data, error } = await supabase
-        .from("org_member_profiles")
-        .select(withPrivacy ? `${base},directory_listed,${embed}` : `${base},${embed}`)
-        .eq("org_id", orgId)
-        .order("created_at");
+      const cols = [
+        base,
+        withPrivacy && "directory_listed",
+        withHome ? OWN_EMBED_HOME : OWN_EMBED,
+        withHome && HOME_EMBED,
+      ]
+        .filter(Boolean)
+        .join(",");
+      let q = supabase.from("org_member_profiles").select(cols).eq("org_id", orgId);
+      // members who moved to another chapter aren't listed here any more
+      if (withHome) q = q.is("left_at", null);
+      const { data, error } = await q.order("created_at");
       if (error) throw error;
       return ((data ?? []) as unknown as EmbedRow[]).map(toMemberRow);
     },
   });
 
-type EmbedRow = Omit<MemberRow, "membership"> & { memberships: unknown };
+type EmbedRow = Omit<MemberRow, "membership"> & {
+  memberships: unknown;
+  home?: unknown;
+  home_of?: string | null;
+  left_at?: string | null;
+};
 
-function toMemberRow({ memberships, ...p }: EmbedRow): MemberRow {
-  const m = ((memberships ?? []) as unknown as MembershipEmbed[])[0];
+function toMembership(
+  m: MembershipEmbed,
+  viaNational: boolean,
+): NonNullable<MemberRow["membership"]> {
+  return {
+    id: m.id,
+    status: m.status,
+    paid_through: m.paid_through,
+    lifetime: m.lifetime,
+    joined_on: m.joined_on,
+    tier_id: m.tier_id,
+    term_id: m.term_id,
+    tier_name: m.membership_tiers?.name ?? "",
+    term_label: m.tier_terms?.label ?? "",
+    ...(m.home_org_id !== undefined ? { home_org_id: m.home_org_id } : {}),
+    ...(viaNational ? { via_national: true } : {}),
+  };
+}
+
+/** The record's own membership, else (home-chapter model) the national one it stands for. */
+export function toMemberRow({
+  memberships,
+  home,
+  home_of: _h,
+  left_at: _l,
+  ...p
+}: EmbedRow): MemberRow {
+  const own = ((memberships ?? []) as unknown as MembershipEmbed[])[0];
+  const national = (home ?? null) as MembershipEmbed | null;
   return {
     ...p,
-    membership: m
-      ? {
-          id: m.id,
-          status: m.status,
-          paid_through: m.paid_through,
-          lifetime: m.lifetime,
-          joined_on: m.joined_on,
-          tier_id: m.tier_id,
-          term_id: m.term_id,
-          tier_name: m.membership_tiers?.name ?? "",
-          term_label: m.tier_terms?.label ?? "",
-        }
-      : null,
+    membership: own ? toMembership(own, false) : national ? toMembership(national, true) : null,
   };
+}
+
+/** A column or relationship this database doesn't have yet (a migration not applied). */
+export function isMissingColumnError(e: { code?: string; message?: string }): boolean {
+  return (
+    ["42703", "PGRST200", "PGRST204"].includes(e.code ?? "") ||
+    /does not exist|could not find a relationship/i.test(e.message ?? "")
+  );
 }
 
 /** PostgREST returns at most 1000 rows per request; read every page. */
@@ -136,7 +188,7 @@ export const treeMembersQuery = (orgIds: readonly string[]) =>
           supabase
             .from("org_member_profiles")
             .select(
-              "id,org_id,user_id,display_name,email,source,created_at,directory_listed,memberships(id,status,paid_through,lifetime,joined_on,tier_id,term_id,membership_tiers(name),tier_terms(label))",
+              "id,org_id,user_id,display_name,email,source,created_at,directory_listed,memberships!memberships_profile_id_fkey(id,status,paid_through,lifetime,joined_on,tier_id,term_id,membership_tiers(name),tier_terms(label))",
             )
             .in("org_id", [...orgIds])
             .order("created_at")
@@ -323,27 +375,20 @@ export const myMembershipQuery = (orgId: string) =>
     queryFn: async (): Promise<MemberRow["membership"] | null> => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return null;
-      const { data, error } = await supabase
-        .from("org_member_profiles")
-        .select(
-          "id,memberships(id,status,paid_through,lifetime,joined_on,tier_id,term_id,membership_tiers(name),tier_terms(label))",
-        )
-        .eq("org_id", orgId)
-        .eq("user_id", u.user.id)
-        .maybeSingle();
-      if (error) throw error;
-      const m = ((data?.memberships ?? []) as unknown as MembershipEmbed[])[0];
-      if (!m) return null;
-      return {
-        id: m.id,
-        status: m.status,
-        paid_through: m.paid_through,
-        lifetime: m.lifetime,
-        joined_on: m.joined_on,
-        tier_id: m.tier_id,
-        term_id: m.term_id,
-        tier_name: m.membership_tiers?.name ?? "",
-        term_label: m.tier_terms?.label ?? "",
-      };
+      const read = (cols: string) =>
+        supabase
+          .from("org_member_profiles")
+          .select(cols)
+          .eq("org_id", orgId)
+          .eq("user_id", u.user!.id)
+          .maybeSingle();
+      // With 0030 a chapter record may stand for the national membership (A8); before it, the
+      // extra columns don't exist, so read the record's own membership only.
+      let res = await read(`id,${OWN_EMBED_HOME},${HOME_EMBED}`);
+      if (res.error && isMissingColumnError(res.error)) res = await read(`id,${OWN_EMBED}`);
+      if (res.error) throw res.error;
+      const data = res.data as unknown as EmbedRow | null;
+      if (!data || data.left_at) return null;
+      return toMemberRow({ ...data }).membership;
     },
   });
