@@ -196,7 +196,7 @@ flowchart TD
 | F-08 | Tool-specific accounting export formats |
 | F-09 | Internationalization and multi-currency |
 | F-10 | Mobile app or PWA enhancements |
-| F-11 | **Deployment packaging:** a lightweight standalone install (D-160): Docker image, Docker Compose (app + hosted Supabase, or app + a minimal self-hosted Supabase subset), Caddy configuration, backup and restore notes, upgrade notes (moved from E-02). Pull forward before E-22 (custom domains) or E-42 (hosted billing), or sooner if we need a shared test environment |
+| F-11 | **Deployment packaging:** a lightweight standalone install (D-160; default: app + hosted Supabase, D-168): Docker image, Docker Compose (app + hosted Supabase, or app + a minimal self-hosted Supabase subset), Caddy configuration, backup and restore notes, upgrade notes (moved from E-02). Pull forward before E-22 (custom domains) or E-42 (hosted billing), or sooner if we need a shared test environment |
 
 ## 5. Scrum guidance
 

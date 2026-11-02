@@ -63,7 +63,7 @@ Two things hold back most of what's left:
 
 Work in waves. Each item follows the commit rules (tests, docs, migration conventions D-125) and ships its setup flow, audit events and permissions with it (`instructions.md` §7).
 
-### Wave A: close Phase 1–2 gaps that need no new infrastructure (≈ 1–2 sprints)
+### Wave A: close Phase 1–2 gaps that need no new infrastructure (detailed plan and MVP release: [`wave-a-mvp.md`](wave-a-mvp.md)) (≈ 1–2 sprints)
 
 | # | Item | Epic | Notes |
 |---|---|---|---|
@@ -120,11 +120,8 @@ Settled on 2026-11-02:
 | A8 | A national chooses, permanently, "separate memberships" or "national membership with a home chapter"; members may have no chapter or an at-large chapter, change chapter freely, hold one at most; chapters may bill local dues themselves (D-166) |
 | D5 | Admins see individual ballots during and after voting; every view is audited (D-163) |
 
-Still open:
+Still open: nothing. The F-11 default install is the app with a hosted Supabase project (D-168).
 
-| For | Question |
-|---|---|
-| F-11 | Default install: recommended the app container with a hosted Supabase project, with the self-hosted profile documented (D-160). Confirm when F-11 starts |
 
 ## 4. Documentation updates
 

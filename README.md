@@ -41,7 +41,7 @@ Working today:
   - members see what they need to do, their profile, their roles and seats, and who to contact
   - admins can preview the page "as a member"
 
-Every migration up to `0028` is applied. Phases 1 and 2 meet their exit criteria; what's left in Phases 1–3 and the plan for it are in [`docs/plans/phases-1-3-review.md`](docs/plans/phases-1-3-review.md).
+Every migration up to `0028` is applied. The next goal is the **MVP release (v0.1.0)**; its plan is [`docs/plans/wave-a-mvp.md`](docs/plans/wave-a-mvp.md). Phases 1 and 2 meet their exit criteria; what's left in Phases 1–3 and the plan for it are in [`docs/plans/phases-1-3-review.md`](docs/plans/phases-1-3-review.md).
 
 Next: the open items in [`roadmap.md`](roadmap.md).
 
