@@ -234,4 +234,3 @@ describe("exports across a national's tree (A7)", () => {
     expect(exportableTreeRows(rows, rules, true).map((r) => r.id)).toEqual(["1", "2", "3"]);
   });
 });
-
