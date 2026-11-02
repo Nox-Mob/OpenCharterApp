@@ -1,6 +1,6 @@
 # Phases 1–3: epic clearance review and plan
 
-Status on 2026-11-02, after migrations `0000`–`0027` were applied. Sources: `docs/epic.md` (scope and exit criteria), `roadmap.md`, `docs/decisions.md`, the code under `src/` and `drizzle/migrations/`, and the tests under `db/tests/` and `src/**/*.test.ts*`.
+Status on 2026-11-02 (refreshed after Sprint 1 of the MVP plan), with migrations `0000`–`0031` applied. Sources: `docs/epic.md` (scope and exit criteria), `roadmap.md`, `docs/decisions.md`, the code under `src/` and `drizzle/migrations/`, and the tests under `db/tests/` and `src/**/*.test.ts*`.
 
 **Legend:** ✅ cleared (the outcome in `epic.md` is built and tested) · 🟡 cleared with follow-ups (usable, named gaps) · 🟠 partly built · ⬜ not started.
 
@@ -8,13 +8,13 @@ Status on 2026-11-02, after migrations `0000`–`0027` were applied. Sources: `d
 
 | Phase | Epics | Cleared | With follow-ups | Partly built | Not started | Exit criteria met? |
 |---|---|---|---|---|---|---|
-| 1 Membership MVP | 7 | 4 | 3 | 0 | 0 | **Yes**, apart from a real Stripe account check (test gateway proven; Stripe test mode not yet checked live) |
+| 1 Membership MVP | 7 | 4 | 3 | 0 | 0 | **Yes**, apart from a real Stripe account check (test gateway proven; Stripe test mode not yet checked live, A1) |
 | 2 Chapters at scale | 8 | 3 | 2 | 1 | 2 | **Yes for the exit as written** (wizard, officers, own dues, roll-ups); E-20, E-21 and E-22 are open |
 | 3 Governance and documents | 5 | 0 | 0 | 1 | 4 | **No**: no board reports, documents, elections or alerts yet |
 
-Two things hold back most of what's left:
-1. **E-08 (jobs and email) is deferred (D-111).** Lapse handling, renewal reminders, vacancy alerts, overdue-report chasing, signed approval links (E-24) and the automation engine (E-28) all need it.
-2. **No end-to-end (Playwright) tests yet.** `instructions.md` §5 requires them for user-facing flows (sign-up, checkout, approvals, setup, elections). Today these are covered by component tests, database tests and the live smoke suite, but not by a browser test.
+What holds back most of what's left: **E-08 (jobs and email) is deferred** (D-111, and out of the MVP, D-169). Lapse handling, renewal reminders, vacancy alerts, overdue-report chasing, signed approval links (E-24) and the automation engine (E-28) all need it.
+
+End-to-end tests now exist (Playwright, D-170, D-175) and grow with each feature.
 
 ## 2. Clearance by epic
 
@@ -25,8 +25,8 @@ Two things hold back most of what's left:
 | E-09 Custom attributes | ✅ | 7 types incl. ordered lists, visibility, self-edit, inheritance, chapter fields, locked chapter fields, retire-not-delete (D-060, D-061, D-112, D-121); `60_attributes.sql` | — |
 | E-10 Setup engine + Membership flow | 🟡 | Engine, drafts, review with diff, one-transaction `apply_setup`; Membership setup v4; setup hub (D-113, D-143) | Pricing-rules step (E-19 follow-up); setup flows for documents / elections arrive with their epics |
 | E-11 Tiers and terms | ✅ | Levels, org-defined terms, lifetime, prices in minor units, tax treatment, parent control (D-126); `90_tiers.sql` | — |
-| E-12 Gateway + Stripe | 🟡 | Gateway interface, Stripe adapter (no SDK), sealed per-org keys, webhooks, refunds, test gateway (D-127, D-129); return links to the public address and direct confirmation (D-158) | **Verify a real Stripe test-mode account end to end** (only the test gateway has been run live); generic transaction CSV export (D-047) |
-| E-13 Signup and renewals | 🟡 | Join page, approval, decline with refund, renewal with stacking, grace, derived standing (D-130..D-134); `95`, `97` | **Automatic lapse handling and renewal reminders** need E-08 (standing is derived on read, so a lapse already shows correctly; nothing notifies the member) |
+| E-12 Gateway + Stripe | 🟡 | Gateway interface, Stripe adapter (no SDK), sealed per-org keys, webhooks, refunds, test gateway (D-127, D-129); return links to the public address and direct confirmation (D-158); transaction CSV export (D-173) | **Verify a real Stripe test-mode account end to end** (A1; only the test gateway has been run live) |
+| E-13 Signup and renewals | 🟡 | Join page, approval, decline with refund, renewal with stacking, grace, derived standing (D-130..D-134); national membership with a home chapter (D-166, D-174, D-176); `95`, `97`, `9L` | **Automatic lapse handling and renewal reminders** need E-08 (standing is derived on read, so a lapse already shows correctly; nothing notifies the member) |
 | E-14 Lists and exports | ✅ | Filters, expiring 30/60/90, saved views, audited privacy-aware exports, directory with privacy choice, admin view across the tree (D-138, D-139, D-154) | Nice-to-have: chosen fields as columns and cross-chapter export in the "everyone" view |
 | E-15 Basic receipts | ✅ | Automatic, numbered, immutable, void / reissue, refunds, print, footer (D-140) | Templates and manual receipts are E-36 (Phase 5); CPA review of wording (R-07) |
 
@@ -38,12 +38,12 @@ Two things hold back most of what's left:
 |---|---|---|---|
 | E-16 Chapter wizard + chapter attributes | ✅ | Wizard with chapter fields, first admin, required-officer invitations (D-144) | — |
 | E-17 Board seats and appointments | ✅ | Seats for an org, its chapters or both; custom titles; each org's own terms with by-law history; appointments grant / revoke the seat's role; contact emails; Board setup (D-141..D-143, D-151, D-156, D-157); `9B`, `9D`, `9I`, `9J` | — |
-| E-18 Two-level dues + national controls | 🟡 | National-first two payments, chapter dues none / optional / required, price range, "chapters use our levels" (D-146) | **"Suggested" level structures** from the national (D-055: locked *or suggested*); national standing next to chapter standing on the chapter's Members page; linked renewals; national-dues reminder in "Actions needed" |
+| E-18 Two-level dues + national controls | 🟡 | National-first two payments, chapter dues none / optional / required, price range, "chapters use our levels" (D-146) | **Suggested levels, copy or linked** (A4, D-165); national standing next to chapter standing on the chapter's Members page and a national-dues reminder in "Actions needed" (A5); linked renewals. The home-chapter model (A8) is built |
 | E-19 Rules + attribute-based pricing | ✅ | Declarative conditions shared by SQL and TypeScript, pricing per term, quotes (D-147); `9G` | Pricing step in setup; reuse for eligibility and approvers comes with E-24 / E-27 / E-31 |
 | E-20 Postpaid dues | ⬜ | Nothing built (no balances, invoices or due dates) | Whole epic (D-053, D-054, Q-15, R-14) |
 | E-21 Per-org gateways and PayPal | 🟠 | Each org connects its own Stripe (Direct mode) | **PayPal adapter** (D-043, R-02). Connect mode is dropped and the national fee is invoiced through E-20 (D-162) |
 | E-22 Custom domains | ⬜ | Nothing built; needs a reverse proxy, so F-11 first; per-org addresses (E-07) are deferred too | Whole epic; recommend keeping it deferred until hosting is decided (R-08, Q-14) |
-| E-23 National roll-ups | ✅ | Reports for the org and every org below it (chapter admins: their chapter), overview numbers (D-145, D-152); `9E`, `9I` | Revenue export across chapters with the transaction CSV (D-047) |
+| E-23 National roll-ups | ✅ | Reports for the org and every org below it (chapter admins: their chapter), overview numbers (D-145, D-152), payment export across the tree (D-173); `9E`, `9I`, `9K` | — |
 
 **Exit check:** national creates a chapter through the wizard ✅, seats its officers ✅, the chapter collects its own dues ✅, national sees roll-ups ✅.
 
@@ -51,10 +51,10 @@ Two things hold back most of what's left:
 
 | Epic | Status | Evidence | Remaining |
 |---|---|---|---|
-| E-24 Approval workflow engine | ⬜ | Membership approval is a single built-in step, not the generic engine | Whole epic: chains, approver resolution (role and/or rank, D-081), escalation, delegation to national (D-083), batch approval, signed links with confirmation page (D-084, Q-07). Needs E-08 for links |
+| E-24 Approval workflow engine | ⬜ | Membership approval is a single built-in step, not the generic engine | Whole epic: chains, approver resolution (role and/or rank, D-081), escalation, delegation to national (D-083), batch approval, signed links to a signed-in confirmation page (D-084, D-164). Needs E-08 for links |
 | E-25 Governance compliance | 🟠 | Good standing for officers (D-056); vacancies and terms past their end in Reports and the Overview | **Board reports** (types, schedules, submit, review, D-073); **vacancy alerts** (needs E-08); national **oversight dashboard** that combines vacancies, overdue reports and document compliance |
 | E-26 Document repository | ⬜ | — | Whole epic (D-075): libraries, national categories, required types, versions, visibility, change alerts, compliance view; private storage bucket per `architecture.md` §11; virus scanning stays deferred (F-06) |
-| E-27 Elections | ⬜ | — | Whole epic (D-074, R-13): positions linked to seats, eligibility (rules engine), nominations, voting windows, single and ranked choice, hybrid entry, certification, auto-appointment into the board, immutable results |
+| E-27 Elections | ⬜ | — | Whole epic (D-074, D-163, D-167, R-13): positions linked to seats, eligibility (rules engine), nominations, voting windows, first past the post or ranked choice per org, private choices, hybrid entry, certification, auto-appointment into the board, immutable results |
 | E-28 Automation engine expansion | ⬜ | No jobs table or scheduled routes yet (D-103 decided, E-08 deferred) | Triggers and schedules from `architecture.md` §10, after E-08 |
 
 **Exit check:** national sees vacancies ✅ (Reports, Overview), overdue reports ⬜ and document changes ⬜ at a glance; a chapter can run an election that seats its new board ⬜.
@@ -67,14 +67,14 @@ Work in waves. Each item follows the commit rules (tests, docs, migration conven
 
 | # | Item | Epic | Notes |
 |---|---|---|---|
-| A1 | Live Stripe test-mode run on a non-demo test org: connect, join, webhook, refund, decline with refund | E-12 | Steps in `user-testing.md` §10. Add the outcome to the smoke suite if a Stripe test key can be stored as a CI secret |
-| A2 | Playwright end-to-end tests for join → test checkout → approval → renewal, Membership setup, Board setup, chapter wizard | cross-cutting | Chromium is available; run against a local build with a seeded database. Closes the §5 gap |
-| A3 | Transaction CSV export (payments, refunds, receiving org, tax treatment), audited, for one org and for a national's tree | E-12, E-23 | D-047; reuse the report-export audit (`log_report_export`) |
-| A4 | Suggested levels: the national marks levels as suggested; a chapter starts from one and chooses **Copy** or **Linked** (same price, or a set reduction), with an explanation of each | E-18 | D-165; design notes in §5 |
-| A5 | National standing on the chapter's Members page; national-dues reminder in "Actions needed" | E-18 | Read-only; aggregate through a definer function so chapters don't read the national's roster |
-| A6 | Pricing step in Membership setup | E-19, E-10 | Writes `pricing_rules` through `apply_setup` |
-| A7 | Members "everyone" view: chosen fields as columns; export across chapters applying each chapter's directory rule per row | E-14 | D-154 follow-up |
-| A8 | **Membership model: national membership with a home chapter**, as an alternative to separate memberships | E-13, E-18 | D-166 (rules settled). Larger than the other A items (data model, join, Members, Board, reports). Do it before E-20 and E-27, which depend on who counts as a chapter's member |
+| A1 | Live Stripe test-mode run on a non-demo test org: connect, join, webhook, refund, decline with refund | E-12 | Sprint 3. Steps in `user-testing.md` §10 |
+| A2 | ✅ Playwright end-to-end harness and first specs (Sprint 1, D-175); more specs as features land | cross-cutting | `docs/testing.md` "End-to-end tests" |
+| A3 | ✅ Transaction CSV export, audited, for one org or a national's tree (Sprint 1, D-173, migration 0029) | E-12, E-23 | — |
+| A4 | Sprint 2. Suggested levels: the national marks levels as suggested; a chapter starts from one and chooses **Copy** or **Linked** (same price, or a set reduction), with an explanation of each | E-18 | D-165; design notes in §5 |
+| A5 | Sprint 2. National standing on the chapter's Members page; national-dues reminder in "Actions needed" | E-18 | Read-only; aggregate through a definer function so chapters don't read the national's roster |
+| A6 | Sprint 3. Pricing step in Membership setup | E-19, E-10 | Writes `pricing_rules` through `apply_setup` |
+| A7 | Sprint 3. Members "everyone" view: chosen fields as columns; export across chapters applying each chapter's directory rule per row | E-14 | D-154 follow-up |
+| A8 | ✅ National membership with a home chapter, chosen once (on creating a national or on Settings → General) (Sprint 1, D-166, D-174, D-176, migration 0030) | E-13, E-18 | — |
 
 ### Wave B: infrastructure that unblocks the rest (≈ 2 sprints)
 
@@ -123,22 +123,9 @@ Settled on 2026-11-02:
 Still open: nothing. The F-11 default install is the app with a hosted Supabase project (D-168).
 
 
-## 4. Documentation updates
+## 4. Documentation
 
-Done with this review:
-- `docs/epic.md`: a status column for Phases 1–3 and a pointer to this plan.
-- `roadmap.md`: "Open" now follows the waves above.
-- `docs/setup-engine.md` §6.5: three "used by" choices and changing them (D-151, D-157).
-- `docs/architecture.md` §14: repository layout matches the real `src/modules` and `src/engines`.
-
-To do as each wave lands (owner: whoever ships the item):
-- `README.md` "Where it stands" and `docs/user-testing.md` for every user-facing change.
-- `docs/data-domains.md` "Built" markers for new tables (balances, invoices, approvals, reports, documents, elections, jobs).
-- `docs/architecture.md` §6 (approval and automation engines), §8 (PayPal; §8 already says Direct only), §10 (automation inventory status), §11 (documents storage), each with its diagram description.
-- `docs/glossary.md`: board report, approval chain, ballot, certification, invoice / balance, role email, member view.
-- `docs/risks-and-open-questions.md`: Q-05, Q-07, Q-15 closed and R-01 closed (2026-11-02); update R-02, R-14 as their epics land.
-- `docs/testing.md`: an end-to-end section once A2 lands.
-- `docs/instructions.md` §9: CI doesn't yet have the pre-commit hook, coverage gate or docs check it describes. Either add them (small, in Wave A) or mark them as planned so the doc stays true.
+Each item updates its docs in the same change (`instructions.md` §6). The documentation round of 2026-11-02 brought the README, the planning docs, the roadmap, testing and user-testing guides and the demo data up to date after Sprint 1.
 
 ## 5. Design notes from the 2026-11-02 decisions
 
@@ -173,21 +160,20 @@ To do as each wave lands (owner: whoever ships the item):
 - **Switching:** "Make it our own" turns a linked level into a copy (one way only).
 - **Tests:** price rules (same, amount, percent, range clamp, rounding), the national's change flowing to linked but not to copied levels, retirement, permissions and tenant isolation.
 
-### A8 national membership with a home chapter (D-166)
-- **Setting:** `membership.model` at the national: `separate` (default, today) or `home_chapter`. It's locked for the whole tree and decided by the national only.
-- **Joining:** the national's join page asks "Which chapter do you belong to?" (a list of its chapters, optionally "None for now"). A chapter's join page sends people to the national's, with that chapter preselected.
-- **Data:** the membership stays at the national. A new `home_org_id` on the national membership, plus an append-only `affiliation_history` (from, to, when, by whom), both owned by the national (`org_id` = national) so tenant rules hold. Chapter admins read their affiliated members through definer functions (like the roll-ups), never by widening RLS on the national's tables.
-- **What changes for chapters:**
-  - Members page: lists members whose home chapter is this one, with standing from their national membership
-  - Board: officers must have this chapter as their home chapter and be in good standing at the national
-  - Directory, Overview numbers and Reports count affiliated members
-  - Membership levels and chapter dues are hidden (there are none)
-- **What changes for members:** the Overview shows "Your chapter: Austin" with "Change chapter". Changing ends the old affiliation and starts the new one; seats held in the old chapter end with the reason "changed chapter".
-- **Privacy (D-036, D-037):** choosing a chapter is the member sharing their record with it. The chapter sees the fields marked visible to members or to chapter admins, not admin-only national fields.
-- **Settled rules (D-166, 2026-11-02):**
-  1. **No chapter is allowed** (member at large). The national may also name an **at-large chapter** (e.g. the Signal Corps Regimental Association's "online chapter"); when it does, the join page offers it as the choice for people without a local chapter. Setting: `membership.at_large_chapter` (optional).
-  2. **Members change chapter themselves, any time**, no approval. Each change is written to `affiliation_history`; seats held in the old chapter end with the reason "changed chapter".
-  3. **One chapter at most** per member (unique on the national membership).
-  4. **Local dues:** a chapter may charge its own dues and collects them itself, normally postpaid through E-20 invoices with the chapter's settings (D-161). Unpaid local dues affect only chapter matters (e.g. that chapter's officer eligibility, if its by-laws say so), never national standing (keeps R-14 manageable).
-  5. **Permanent choice:** once a national selects a model it can't change it (enforced by a trigger on the setting). It is chosen on Settings → General, with both models explained (D-174).
+### A8 national membership with a home chapter (built)
+Built in Sprint 1. How it works is recorded in D-166 (the rules), D-174 (data, standing, moving chapter) and D-176 (choosing it when a national is created). User steps: `user-testing.md` §13b.
+
+## 6. Member overview backlog
+
+Built (D-153): Actions needed, Your profile, Your roles and seats, Board and who to contact (with role or officer emails, D-156), Your chapter (home-chapter model, D-174). Still to come:
+
+| Item | Shows | Needs | When |
+|---|---|---|---|
+| All my memberships | One line per org the member belongs to, with standing and a link | Existing data | Next (useful with two-level dues) |
+| National-dues reminder | "Your national membership is missing or lapsed" for chapter members (separate model) | A5 | Sprint 2 |
+| Membership history | Joined date, years of membership, past renewals and payments | A small helper for years of membership | Later |
+| Organization info | Logo, contact details, chapter fields visible to members (meeting place, charter date) | Existing data | Later |
+| Announcements, events, documents, awards, elections | From their modules | Their epics | With those epics |
+
+Open questions: should an officer be able to hide their own email (forcing a role email)? Should chapter members also see the national's officers? Should "years of membership" count only continuous years? Should members see any aggregate about their org (needs a deliberately narrow function)?
 

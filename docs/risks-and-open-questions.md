@@ -49,7 +49,7 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 | R-12 | **Rank-based eligibility accuracy.** Approver rank depends on member-maintained or admin-maintained data | Wrong approvers | Rank verified flag by chapter president, national review, audit trail |
 | R-13 | **Elections trust.** Admins can see ballots but never change them; members never see who voted for whom (D-163). Disputes still happen | Disputed outcomes | Immutable certified results, full audit trail, defined recount process, hybrid vote entry logged |
 | R-15 | **Account enumeration and cross-org privacy.** A global account makes it possible to leak that an email exists, or that someone belongs to another org | Privacy breach | Uniform responses on sign-up and sign-in, no cross-org membership visibility in any admin screen or export, tests for it |
-| R-14 | **Postpaid and standing edge cases.** Multiple levels with different rules can produce confusing overall standing | Wrong eligibility decisions | Define standing derivation clearly (which layers count is a national setting), test matrix of combinations |
+| R-14 | **Postpaid and standing edge cases.** Multiple levels with different rules can produce confusing overall standing | Wrong eligibility decisions | Define standing derivation clearly (which layers count is a national setting), test matrix of combinations In the home-chapter model, unpaid local dues affect only chapter matters, never national standing (D-166) |
 
 ## 3. Assumptions
 

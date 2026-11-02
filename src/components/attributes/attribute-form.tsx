@@ -203,7 +203,7 @@ export function AttributeForm({
       {subject === "chapter" && value.locked && (
         <p className="text-sm text-muted-foreground">
           Chapter admins will see this value but can't change it. Your admins set it on each
-          chapter's overview.
+          chapter's Settings → Chapter fields.
         </p>
       )}
     </div>

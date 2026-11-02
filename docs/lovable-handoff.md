@@ -2,14 +2,7 @@
 
 Status on 2026-11-02.
 
-**Done:** migrations `0000`–`0028` are applied, the types are regenerated, and the `GATEWAY_ENCRYPTION_KEY` secret is set. Thank you. A record is at the end.
-
-**Waiting** (Sprint 1 of the MVP plan, `docs/plans/wave-a-mvp.md`), on branch `BoardUpdates`, tested against Postgres 16:
-
-| File | What it adds | Check it worked (SQL editor) |
-|---|---|---|
-| `0029_payments_export.sql` | `export_payments` (D-173): paid and refunded payments for an org or its tree, audited before returning; no tables | `select count(*) from pg_proc where proname = 'export_payments';` returns 1 |
-| `0030_home_chapter.sql` | National membership with a home chapter (D-166, D-174): columns `memberships.home_org_id`, `org_member_profiles.home_of` / `left_at`, table `affiliation_history` (full grants, RLS, append-only), a guard on `org_settings` for `membership.model`, `set_home_chapter`, `set_member_home_chapter`, `public_home_chapter_info` (anon), and new versions of `appoint_officer`, `member_directory`, `org_rollup_members`, `org_overview_stats` (same signatures). Applies inside one transaction | `select public.membership_model(id) from public.organizations where slug = 'demo-national';` returns `separate` |
+**Nothing waiting.** Migrations `0000`–`0031` are applied (your `0031` confirms `0029`–`0030`), the types are regenerated, and the `GATEWAY_ENCRYPTION_KEY` secret is set. Thank you. A record is at the end. New migrations from the MVP plan (`docs/plans/wave-a-mvp.md`, Sprint 2: A4 suggested levels) will be listed here with their checks.
 
 ## 1. When a migration is waiting
 - Apply them strictly in order. They're additive only (D-125, checked in CI by `bun run check:migrations`).
@@ -23,11 +16,12 @@ In `smoke/live.smoke.test.ts`, as the Austin admin: `set_seat_contact(austin, <p
 Return links after paying now use the app's public address (D-158). Nothing is needed from Lovable. Optionally set the secret `PUBLIC_APP_URL` (e.g. `https://<your domain>`) to pin it. Stripe payments are now also confirmed from the return page when a webhook is late, so a misconfigured webhook no longer leaves members waiting (refunds still need it).
 
 ## 4. Checking by hand
-`docs/user-testing.md` §14 step 10 (Board → Contact email) and §14a (member overview → Board and who to contact).
+`docs/user-testing.md` covers every screen; the newest are §8 (members across chapters, export payments in §10), §13b (national membership with a home chapter) and §14a (the member overview).
 
 ## 5. Don'ts
-- Don't edit, reorder, rename or re-run applied migrations (`0000`–`0025`).
-- Don't drop tables or columns, or add DELETE policies to history, payment, receipt, term-rule, appointment or pricing-rule tables.
+- Don't edit, reorder, rename or re-run applied migrations (`0000`–`0031`).
+- Don't drop tables or columns, or add DELETE policies to history, payment, receipt, term-rule, appointment, pricing-rule or chapter-history (`affiliation_history`) tables.
+- Don't change `membership.model` in `org_settings` by hand: a national's choice is permanent by design (D-166).
 - Don't expose the `private` schema through the API.
 - Don't force-push or rewrite `main`.
 - Don't put `GATEWAY_ENCRYPTION_KEY` or any Stripe key in the repository.
@@ -50,3 +44,4 @@ Nothing more is needed from Lovable: the encryption secret is already set.
 | `0017`–`0023` | Purge audit summary, Board setup, reports roll-ups, two-level dues, pricing rules, demo organizations | 2026-11-02 |
 | `0024`–`0025` | Seats for an org and its chapters, overview numbers | 2026-11-02 |
 | `0026`–`0028` | Board contact emails; Board setup can change "used by"; Rank required at Demo National | 2026-11-02 |
+| `0029`–`0031` | Payments export (D-173); national membership with a home chapter (D-166, D-174) | 2026-11-02 |

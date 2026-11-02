@@ -78,3 +78,7 @@
 | **First past the post / Ranked choice** | The two voting methods an org can choose for its elections (D-167). First past the post: one choice per seat, most votes wins. Ranked choice: voters rank candidates, counted by instant runoff (single transferable vote for several seats) |
 | **At-large chapter** | In the home-chapter model, a chapter the national names for members without a local chapter (e.g. an "online chapter"); optional (D-166) |
 | **Local dues** | In the home-chapter model, dues a chapter charges its own members and collects itself, usually postpaid; they never affect national standing (D-166) |
+| **View as member** | A preview an admin turns on for an org page (`?as=member`): the page shows what a plain member sees. UI only; the database keeps the admin's real access (D-155) |
+| **Actions needed** | The member's to-do list on an org's Overview: join, renew, a pending application, missing profile fields, a chapter to pick, a board term ending (D-153) |
+| **Role email** | An email address for a board seat (e.g. president@…) shown instead of the officer's own email (D-156) |
+| **Payments export** | The audited CSV of paid and refunded payments for an org or its tree, for bookkeeping (D-173) |

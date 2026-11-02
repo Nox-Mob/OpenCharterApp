@@ -22,24 +22,24 @@ flowchart LR
 
 Phases 4 and 5 can swap or run in parallel if two streams are available. Hosted-service billing (E-42) can be pulled earlier if we want to start selling hosting sooner.
 
-Detailed plans for epics being worked on live in [`plans/`](plans/), e.g. [E-12 / E-13](plans/e12-e13-payments-and-joining.md).
+Current plans live in [`plans/`](plans/): the review of Phases 1–3 with the plan for what's left ([`phases-1-3-review.md`](plans/phases-1-3-review.md)) and the MVP release plan ([`wave-a-mvp.md`](plans/wave-a-mvp.md)).
 
 ## 2. Epics by phase
 
-Status for Phases 1–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly built, ⬜ not started) comes from the review in [`plans/phases-1-3-review.md`](plans/phases-1-3-review.md), which also holds the plan for what's left. Phase 1 and Phase 2 exit criteria are met; Phase 3's are not.
+Status for Phases 0–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly built, ⬜ not started or deferred) comes from the review in [`plans/phases-1-3-review.md`](plans/phases-1-3-review.md), refreshed after Sprint 1 of the MVP plan. Phase 1 and Phase 2 exit criteria are met; Phase 0's subdomain sign-in waits for E-07, and Phase 3's are not met yet. Later phases haven't started.
 
 ### Phase 0: Foundation
 
-| ID | Epic | Outcome |
-|---|---|---|
-| E-01 | Project scaffolding and CI/CD | Repo, lint, types, tests, CI pipeline, environments, npm scripts, local development setup (local Postgres, env vars, `.env.example`) |
-| ~~E-02~~ | ~~Deployment packaging~~ | **Moved to the future backlog as F-11** (D-012). ID retired, not reused |
-| E-03 | Identity and authentication | Global person and account, sign-in, sessions, email verification, password reset, invitations, **joining a new org with an existing account, org switcher** |
-| E-04 | Organization hierarchy and platform tier | Org tree (platform, national, region, chapter, standalone), org settings, tax profile, **branding with logo upload and chapter override** |
-| E-05 | RBAC and permissions | Roles, permissions, scoped assignments with downward inheritance, policy layer |
-| E-06 | Audit log | Append-only log and viewer, hooks for all modules |
-| E-07 | Host-based tenant resolution | Wildcard subdomain mapping (tested locally with `*.localhost`), org context per request, RLS wiring, tenant-isolation tests. **Deferred** (D-111): RLS and tenant-isolation tests are done; per-org web addresses wait |
-| E-08 | Jobs, email, and notifications infrastructure | Postgres jobs table and scheduled server routes (D-103, replacing pg-boss), email through Lovable's email or the client's own server chosen by `EMAIL_TRANSPORT`, server settings and send-from address per org (D-159), template system, signed-action links that open a signed-in confirmation page (D-164). **Deferred** (D-111); its email follow-up list is in `roadmap.md` |
+| ID | Epic | Outcome | Status (2026-11-02) |
+|---|---|---|---|
+| E-01 | Project scaffolding and CI/CD | Repo, lint, types, tests, CI pipeline, environments, npm scripts, local development setup (local Postgres, env vars, `.env.example`) | 🟡 CI, checks and end-to-end tests run; the pre-commit hook and coverage gate in `instructions.md` §9 are not set up yet |
+| ~~E-02~~ | ~~Deployment packaging~~ | **Moved to the future backlog as F-11** (D-012). ID retired, not reused | — |
+| E-03 | Identity and authentication | Global person and account, sign-in, sessions, email verification, password reset, invitations, **joining a new org with an existing account, org switcher** | ✅ Cleared |
+| E-04 | Organization hierarchy and platform tier | Org tree (platform, national, region, chapter, standalone), org settings, tax profile, **branding with logo upload and chapter override** | ✅ Cleared |
+| E-05 | RBAC and permissions | Roles, permissions, scoped assignments with downward inheritance, policy layer | ✅ Cleared |
+| E-06 | Audit log | Append-only log and viewer, hooks for all modules | ✅ Cleared |
+| E-07 | Host-based tenant resolution | Wildcard subdomain mapping (tested locally with `*.localhost`), org context per request, RLS wiring, tenant-isolation tests. **Deferred** (D-111): RLS and tenant-isolation tests are done; per-org web addresses wait | ⬜ Deferred (D-111); RLS and isolation tests done |
+| E-08 | Jobs, email, and notifications infrastructure | Postgres jobs table and scheduled server routes (D-103, replacing pg-boss), email through Lovable's email or the client's own server chosen by `EMAIL_TRANSPORT`, server settings and send-from address per org (D-159), template system, signed-action links that open a signed-in confirmation page (D-164). **Deferred** (D-111); its email follow-up list is in `roadmap.md` | ⬜ Deferred (D-111); first update after the MVP (D-169) |
 
 **Exit:** a national and a chapter can exist, users can sign in on the right subdomain, a chapter admin sees only their chapter, and every action is audited.
 
@@ -48,10 +48,10 @@ Status for Phases 1–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly 
 | ID | Epic | Outcome | Status (2026-11-02) |
 |---|---|---|---|
 | E-09 | Custom attribute system | Org-defined member attributes (types, validation, visibility), attribute values on members, admin UI | ✅ Cleared |
-| E-10 | Setup engine framework + Membership setup flow | Reusable guided-setup framework, first flow covering members, attributes, tiers, and dues questions (see `setup-engine.md`) | 🟡 Cleared, follow-ups |
+| E-10 | Setup engine framework + Membership setup flow | Reusable guided-setup framework, first flow covering members, attributes, tiers, and dues questions (see `setup-engine.md`) | 🟡 Cleared, follow-ups (see the review) |
 | E-11 | Membership tiers and terms | Org-defined tiers, term options, prices, tax treatment, prepaid model | ✅ Cleared |
-| E-12 | Payment gateway abstraction and Stripe | Gateway interface, Stripe adapter, transactions, webhooks, refunds | 🟡 Cleared, follow-ups |
-| E-13 | Member signup and renewals | Public join form, application and approval (optional), renewals, lapses, grace periods, standing | 🟡 Cleared, follow-ups |
+| E-12 | Payment gateway abstraction and Stripe | Gateway interface, Stripe adapter, transactions, webhooks, refunds | 🟡 Cleared; transaction export done (D-173); live Stripe test-mode check open (A1) |
+| E-13 | Member signup and renewals | Public join form, application and approval (optional), renewals, lapses, grace periods, standing; national membership with a home chapter (D-166, D-174, D-176) | 🟡 Cleared; automatic lapse notices and reminders wait for E-08 |
 | E-14 | Member directory, lists, and exports | Member list with standing and time-to-expiration, filters, saved segments, privacy-aware CSV exports | ✅ Cleared |
 | E-15 | Basic automatic receipts | Receipt on payment, default template, receipt history | ✅ Cleared |
 
@@ -63,7 +63,7 @@ Status for Phases 1–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly 
 |---|---|---|---|
 | E-16 | Chapter creation wizard and chapter attributes | National-led chapter creation, national-defined chapter attributes (e.g., charter date), prompts for required officers | ✅ Cleared |
 | E-17 | Board role templates and appointments | National-defined seats (required, count, term, permissions), custom titles, appointments with history, access grant and revoke | ✅ Cleared |
-| E-18 | Two-level dues and national controls | National and chapter tiers, none/optional-range/required chapter dues, locked or suggested structures (chapter chooses copy or linked, D-165), two-payment checkout UX; alternative model: national membership with a home chapter (D-166) | 🟡 Cleared, follow-ups |
+| E-18 | Two-level dues and national controls | National and chapter tiers, none/optional-range/required chapter dues, locked or suggested structures (chapter chooses copy or linked, D-165), two-payment checkout UX; alternative model: national membership with a home chapter (D-166) | 🟡 Cleared, follow-ups (see the review) |
 | E-19 | Rules engine and attribute-based pricing | Declarative rules UI, pricing by attribute (e.g., rank bands), reused later for eligibility and approvals | ✅ Cleared |
 | E-20 | Postpaid dues | Balances, invoices, due dates, delinquency, admin-defined enforcement as inheritable settings (D-161), manual payment recording, **parent orgs invoicing subordinate orgs** (national fee, D-162) | ⬜ Not started |
 | E-21 | Per-org gateways and PayPal | Each org connects Stripe or PayPal, **Direct mode only** (Connect dropped, D-162), PayPal adapter. The national fee is invoiced through E-20 | 🟠 Partly built (Stripe done; PayPal open) |

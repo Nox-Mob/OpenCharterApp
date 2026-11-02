@@ -193,7 +193,9 @@ export function CreateOrgDialog({
     try {
       await saveAttributeValues(chapterFields, id, details);
     } catch {
-      toast.warning("Some chapter details weren't saved. Add them on the chapter's overview.");
+      toast.warning(
+        "Some chapter details weren't saved. Add them in the chapter's Settings → Chapter fields.",
+      );
     }
     const sent = await sendInvites(
       id,

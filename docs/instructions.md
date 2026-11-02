@@ -44,6 +44,7 @@ bun run test              # unit and component tests
 bun run check:migrations  # Lovable's migration rules (D-125)
 bun run test:db           # database rules (needs TEST_DATABASE_URL, see testing.md)
 bun run build
+bun run test:e2e          # end-to-end in Chromium (needs network; see testing.md)
 ```
 
 *(Script names are the standard set established in E-01. If a script is missing, adding it is part of E-01, not a reason to skip the check.)*
@@ -182,7 +183,9 @@ Every diagram is followed by a "Diagram description" block explaining in plain p
 
 ## 9. Enforcing the rules
 
-Rules that depend on memory will be forgotten, so automate them where possible. This is part of E-01:
+Rules that depend on memory will be forgotten, so automate them where possible. This is part of E-01.
+
+**Status (2026-11-02):** the CI pipeline runs install, migration rules, lint, formatting, types, unit tests, the database rule tests (including tenant isolation), the build, and end-to-end tests on pull requests to `main` (D-175). **Not yet in place:** the pre-commit hook, the coverage gate and the docs check below (planned as R3 in `docs/plans/wave-a-mvp.md`), and branch protection, which the repository owner sets on GitHub. Until then, run the checks in §3 yourself before pushing.
 
 - **Pre-commit hook** (for example Husky with lint-staged): runs lint, typecheck, and the tests related to changed files. Block the commit on failure.
 - **CI pipeline** on every push to any branch and on pull requests: install with `bun install --frozen-lockfile`, migration-rule check, lint, typecheck, full unit and integration tests, tenant-isolation suite, and e2e on the main branch or before merge.

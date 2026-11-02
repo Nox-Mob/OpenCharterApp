@@ -105,7 +105,7 @@ const COPY: Record<AttributeSubject, { intro: string; empty: string; add: string
   },
   chapter: {
     intro:
-      "What you track about each chapter, such as its charter date. Chapter admins fill these in on their chapter's overview.",
+      "What you track about each chapter, such as its charter date. Chapter admins fill these in on their chapter's Settings → Chapter fields.",
     empty: "No chapter fields yet.",
     add: "Add a chapter field",
   },

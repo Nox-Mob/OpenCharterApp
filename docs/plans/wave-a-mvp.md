@@ -1,6 +1,6 @@
 # Wave A and the MVP release
 
-Status: **plan, decisions settled**, 2026-11-02. Builds on `docs/plans/phases-1-3-review.md` (Wave A items A1–A8) and the decisions up to D-168.
+Status, 2026-11-02: **Sprint 1 done** (A2, A3, A8; migrations 0029–0031 applied). Sprint 2 (A4, A5) is next. Builds on `docs/plans/phases-1-3-review.md` (Wave A items A1–A8); decisions D-169..D-176.
 
 ## 1. Goal
 
@@ -41,27 +41,8 @@ And when we can show it's safe:
 
 Sizes: S ≈ 1–2 days, M ≈ 3–5 days, L ≈ 1–2 weeks. Every item follows the commit rules: tests, docs, migration conventions (D-125), audit events, permissions through the policy layer.
 
-### A8 Membership model: national membership with a home chapter (L, do first)
-*Why first:* it changes who counts as a chapter's member, which the Members page, Board, directory, overview and reports all read.
-- **Setting:** `membership.model` (`separate` | `home_chapter`) at the national, ancestor-only and locked for the tree. A trigger allows it to be set once (D-166 rule 5). It's chosen on Settings → General with both models explained (built, D-174); a Membership setup question can follow. Also `membership.at_large_chapter` (optional chapter id).
-- **Data (migration):** `home_org_id` on the national's membership (one chapter at most, rule 3) and append-only `affiliation_history`, both with `org_id` = the national.
-- **RPCs:**
-  - `set_home_chapter` (the member themselves, any time, rule 2; ends their seats in the old chapter with the reason "changed chapter")
-  - `chapter_affiliates(_chapter)` (definer, for chapter admins: affiliated members with the fields shared with the chapter)
-  - extend `org_overview_stats`, the roll-ups and `member_directory` to count affiliates in this model
-- **Join:**
-  - the national's join page asks "Which chapter do you belong to?" (its chapters, the at-large chapter if named, or "None for now", rule 1)
-  - a chapter's join page sends people to the national's with that chapter preselected
-  - two-level dues and chapter levels are hidden in this model
-- **Members and Board:**
-  - a chapter's Members page lists its affiliates, with standing from the national membership
-  - officers must be affiliated with the chapter and in good national standing (`appoint_officer` checks it)
-- **Member overview:** "Your chapter: Austin" with "Change chapter".
-- **Tests:**
-  - database: the setting can be set once, one chapter per member, changes logged, seats ended, a chapter admin sees only its affiliates, siblings and outsiders refused, counts in the overview and reports
-  - unit and component tests for the join and change-chapter screens
-  - an end-to-end test of joining with a chapter and changing it
-- **Docs:** `data-domains.md`, `architecture.md` §3 / §7, `setup-engine.md` §6.3, `user-testing.md`, README.
+### A8 Membership model: national membership with a home chapter: ✅ done in Sprint 1
+Built as planned, with two changes: chapter admins see their members through the chapter's own member records (each standing for the national membership) rather than a separate `chapter_affiliates` function, and the model is also chosen when a national is created. Details: D-174, D-176; migration 0030; tests `db/tests/9L_home_chapter.sql`; user steps `user-testing.md` §13b. End-to-end specs for joining with a chapter and changing it are still to add.
 
 ### A4 Suggested levels: Copy or Linked (M)
 Design in `phases-1-3-review.md` §5 (D-165).
@@ -81,28 +62,15 @@ Design in `phases-1-3-review.md` §5 (D-165).
 - An optional step: rules per term (same rule builder as the levels page), applied through `apply_setup` as a `pricing_rules` section.
 - Tests: setup tests plus a database test that re-applying doesn't duplicate rules.
 
-### A3 Transaction CSV export (S)
-- Settings → Payments: "Export CSV" for a date range. Columns: receiving org, date, member, purpose, level / term, amount, refunded, net, currency, method, gateway, reference, receipt number, tax treatment.
-- For a national: optionally include every org below it. That needs `payments.view` there, which inherits downward.
-- Audited through the report-export log (D-047); spreadsheet formulas are neutralised as in member exports.
+### A3 Transaction CSV export: ✅ done in Sprint 1
+Settings → Payments → "Export payments" (D-173; migration 0029; `db/tests/9K_payments_export.sql`). Emails only for exporters who may see members; the database audits every export.
 
 ### A7 Members "everyone" view (S–M)
 - A column picker for member fields (saved per viewer in the browser).
 - Export across chapters, applying each chapter's directory rule per row (D-139). It resolves each org's rule the way `privacyRulesQuery` does today, so nobody opted out slips through.
 
-### A2 End-to-end tests (M, start in Sprint 1, grows with each item): harness built in Sprint 1 (D-175)
-Playwright approved (D-170).
-- Playwright against `bun run build` + preview, with the database tests' Postgres and seeded demo-like data, or against a dedicated test project on Lovable Cloud if the auth stub isn't enough. **Spike first (1 day).**
-- **Flows:**
-  1. sign up and join with the test gateway, then approval
-  2. renewal
-  3. Membership setup
-  4. Board setup
-  5. the chapter wizard
-  6. appoint an officer and set a contact email
-  7. view as member
-  8. A8: join with a chapter, then change it
-- CI runs them on pull requests to `main`. `docs/testing.md` gets an end-to-end section.
+### A2 End-to-end tests: ✅ harness done in Sprint 1, specs grow with each item
+Playwright in Chromium against the live demo backend (D-170, D-175); `bun run test:e2e`; CI on pull requests to `main`. Covered so far: the menu by role and "View as member", members across chapters, the board's contact-email choice, Settings → Setup, the join page's required questions, and joining with the test gateway (against a deployed site). Still to add: renewal, Membership and Board setup applied, the chapter wizard, appointing an officer, A8 join with a chapter and change chapter, A3 export, A4 and A5 as they land. See `docs/testing.md`.
 
 ### A1 Live Stripe test-mode check (S, needs a Stripe test account)
 - On a non-demo test org: connect a test key and webhook, then join, return, refund, and decline with refund. Covered by `user-testing.md` §10.
@@ -135,11 +103,10 @@ Playwright approved (D-170).
 
 | Sprint | Work |
 |---|---|
-| 1 | A2 end-to-end harness and first flows; A8 in full (setting, data, join, change chapter, and the chapter Members page, Board, directory, overview and reports in the home-chapter model); A3 |
+| 1 ✅ | A2 end-to-end harness and first flows; A8 in full, including choosing the model when a national is created; A3 |
 | 2 | A4; A5; end-to-end tests for them |
 | 3 | A6; A7; A1 live Stripe check; R1–R7; release checklist and v0.1.0 |
 
 **Risks to the plan:**
-- **A8 is the largest item and is all in Sprint 1:** if it slips, it continues into Sprint 2 ahead of A4 / A5; if it still isn't done by the end of Sprint 2, the MVP ships with only the separate model and A8 follows in 0.2.
 - **End-to-end tests run against the live demo backend** (like `bun run test:smoke`): a feature whose migration Lovable hasn't applied yet can only be tested end to end after it is applied.
 - **R1 may turn up fixes:** keep Sprint 3 light for that.
