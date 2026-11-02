@@ -1125,6 +1125,48 @@ export type Database = {
           },
         ]
       }
+      seat_contacts: {
+        Row: {
+          id: string
+          org_id: string
+          role_email: string | null
+          template_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          role_email?: string | null
+          template_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          role_email?: string | null
+          template_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seat_contacts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seat_contacts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "seat_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seat_templates: {
         Row: {
           active: boolean
@@ -1773,6 +1815,18 @@ export type Database = {
           title: string
         }[]
       }
+      org_board_contacts: {
+        Args: { _org: string }
+        Returns: {
+          display_name: string
+          email: string
+          email_source: string
+          seat_number: number
+          sort_order: number
+          template_id: string
+          title: string
+        }[]
+      }
       org_lineage: {
         Args: { _org: string }
         Returns: {
@@ -2013,6 +2067,10 @@ export type Database = {
       }
       set_seat_active: {
         Args: { _active: boolean; _template: string }
+        Returns: undefined
+      }
+      set_seat_contact: {
+        Args: { _org: string; _role_email: string; _template: string }
         Returns: undefined
       }
       set_seat_scope: {

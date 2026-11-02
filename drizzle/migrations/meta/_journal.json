@@ -197,6 +197,13 @@
       "when": 1793608800002,
       "tag": "0027_board_setup_scope_and_demo_rank",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1793626291231,
+      "tag": "0028_confirm_0026_0027_applied",
+      "breakpoints": true
     }
   ]
 }
