@@ -61,3 +61,12 @@ Accounts and password are in `docs/demo-data.md` (`demo-national@…`, `demo-cha
 
 ## 7. Optional: real Stripe for a non-demo org
 Each org connects its own Stripe account (direct mode, D-127). In the org's Payments tab the admin pastes a restricted or secret key and a webhook signing secret. In Stripe they add a webhook endpoint at `https://<app domain>/api/public/stripe/<org id>` (the Payments tab shows the exact address) sending `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired` and `charge.refunded`. Nothing is needed from Lovable for this beyond step 3.
+
+## 8. Later migrations
+Apply each in order after the ones above. Each is additive and passes the D-125 rules check.
+
+| # | File | What it adds | Check it worked |
+|---|---|---|---|
+| 8 | `0017_purge_audit_summary.sql` | `purge_smoke_data` also writes one summary audit event; restores the `seat_templates` comment | After a smoke run: `select after from public.audit_events where action = 'purge' order by id desc limit 1;` shows the counts |
+
+After applying, run `bun run test:smoke` as usual and regenerate the types.

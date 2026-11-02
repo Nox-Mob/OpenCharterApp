@@ -16,10 +16,18 @@ Apply these in order (Lovable → apply pending migrations). Step-by-step instru
 | `0012_member_privacy` | E-14 member directory, each member's directory choice, export privacy rule from the parent | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
 | `0013_receipts` | E-15 automatic, numbered, immutable receipts; void / reissue; refund handling; receipts for payments recorded earlier | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
 | `0014_board_seats` | E-17 board seats, each org's own seat terms with by-law history, appointments that grant and revoke the seat's role, `governance.manage` / `governance.define` permissions | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-
-Note: Lovable added `0015_confirm_0008_0014_applied` (a table comment only) to trigger the apply. Number the next fix migration `0016` or later.
+| `0015_confirm_0008_0014_applied` | Added by Lovable to trigger the apply (a table comment only) | Applied 2026-11-01 |
+| `0016_purge_smoke_data` | Added by Lovable: `purge_smoke_data` cleans up after a live smoke run in the demo orgs (D-150) | Applied 2026-11-01 |
+| `0017_purge_audit_summary` | The purge records one summary audit event with what it removed; restores the `seat_templates` comment | Waiting |
 
 ## Done
+- [x] E-12: Payments tab to connect Stripe (key checked, sealed, stored privately) or the demo test gateway, payments list, webhook route (applied 2026-11-01)
+- [x] E-13b: public join page `/join/<slug>`, Stripe / test checkout, webhook endpoint per org, return page, test checkout outcomes, online renewal, decline with refund (applied 2026-11-01; covered by `bun run test:smoke`)
+- [x] E-14: search, filters, "expiring within 30 / 60 / 90 days", sorting, audited privacy-aware CSV export, saved views, member directory with each member's own listing choice (D-138, D-139)
+- [x] E-15: automatic, numbered, immutable receipts with void / reissue versions, refunds, printable receipt page, receipt links, footer setting (D-140)
+- [x] E-17: Board tab, seats from the org and its parents, custom titles, Vacant badges, appoint / end with good-standing and no-escalation checks, seat roles granted and revoked, each org's own seat terms with by-law history (D-141, D-142)
+- [x] Live smoke test against the real backend (`bun run test:smoke`, added by Lovable) with automatic cleanup (D-150)
+- [x] User testing guide for checking the app by hand (docs/user-testing.md)
 - [x] Step 0: planning docs in /docs, decisions for the Lovable stack recorded (D-100+)
 - [x] Demo organization and accounts for testing (docs/demo-data.md). Delete before launch
 - [x] E-03: email/password + Google sign-in, password reset, R-15 neutral messages
@@ -46,11 +54,7 @@ Note: Lovable added `0015_confirm_0008_0014_applied` (a table comment only) to t
 
 ## Open — Phase 1
 Plan for E-12 / E-13: docs/plans/e12-e13-payments-and-joining.md
-- [ ] E-12 (built, waiting for 0009): Payments tab to connect Stripe (key checked, sealed, stored privately) or the demo test gateway, payments list. Remaining: the webhook route and checkout come with E-13b; a "Connect payments" step in guided setup needs the setup page to run more than one flow
-- [ ] E-13b (built, waiting for 0008–0010): public join page `/join/<slug>`, Stripe / test checkout, webhook endpoint per org, return page that waits for confirmation, test checkout with accepted / declined / insufficient funds / slow / cancel, online renewal, decline with refund, join link on the Payments tab. Remaining: a Playwright end-to-end test once the database has the migrations
-- [ ] E-14 (built; search, filters and the expiring report work now, the rest waits for 0011–0012): search, filters by standing / level / member field ("at least" for ranks), "expiring within 30 / 60 / 90 days", sorting, audited privacy-aware CSV export, saved views, member directory with each member's own listing choice (D-138, D-139)
-- [ ] E-15 (built, waiting for 0008–0013): automatic receipts on payment, numbered per org and year, immutable with void / reissue versions, refunds void or replace, printable receipt page with the issuing org's logo, receipt links for admins and members, footer setting. Remaining: receipt wording reviewed by a CPA (R-07), emailing receipts (E-08 follow-up), templates and manual receipts (E-36)
-- [ ] E-17 (built, waiting for 0008–0014): Board tab with seats from the org and its parents, custom titles where allowed, Vacant badges for required seats, appoint / end term with good-standing and no-escalation checks, the seat's role granted and revoked with the appointment, each org's own term per seat with by-law reference and term history, "apply to current officers", past officers, seat editor (D-141, D-142). Remaining: a governance step in guided setup (needs the setup page to run more than one flow), elections (E-27) and vacancy alerts (E-25)
+- [ ] Phase 1 follow-ups: a "Connect payments" and a "Board" step in guided setup (needs the setup page to run several flows); receipt wording reviewed by a CPA (R-07); templates and manual receipts (E-36); elections (E-27) and vacancy alerts (E-25)
 
 ## Deferred (user decision 2026-10-30: core first, automations later)
 - [ ] E-07: per-org web addresses (subdomain / `/o/$slug`)

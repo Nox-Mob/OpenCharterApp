@@ -29,8 +29,11 @@ All accounts share the same password: `OpenCharterDemo!2026`
 
 Run these steps in order.
 
-1. Delete the files under `branding/d1000000-*` in storage.
-2. Delete the rows in `seat_title_overrides` and `seat_templates` (their `seat_terms` and `appointments` go with them), `receipt_counters` (receipts go with their payments), `member_segments`, `webhook_events` and `gateway_connections`, and in `private.gateway_secrets` (as the database owner), then the rows in `payments` (they are kept even when a membership goes), then `memberships` (their `membership_events` go with them), then `tier_terms`, `membership_tiers`, `attribute_values`, `attribute_options`, `attribute_definitions`, `setup_states`, `org_settings`, `tax_profiles`, `invitations`, `role_assignments` and `org_member_profiles` whose `org_id` starts with `d1000000-`.
-3. Delete the chapters, then the national. Parents are protected while they still have children.
-4. Delete the `auth.users` rows whose `id` starts with `d0000000-`.
-5. Audit events stay in the log by design (the log is append-only). Add a note in the risks doc if you want them purged too.
+1. Switch off the smoke-test cleanup: add a migration that replaces `public.purge_smoke_data` with a function that only raises "smoke cleanup is disabled" (D-150), and stop running `bun run test:smoke` against production.
+2. Delete the files under `branding/d1000000-*` in storage.
+3. Delete the rows in `seat_title_overrides` and `seat_templates` (their `seat_terms` and `appointments` go with them), `receipt_counters` (receipts go with their payments), `member_segments`, `webhook_events` and `gateway_connections`, and in `private.gateway_secrets` (as the database owner), then the rows in `payments` (they are kept even when a membership goes), then `memberships` (their `membership_events` go with them), then `tier_terms`, `membership_tiers`, `attribute_values`, `attribute_options`, `attribute_definitions`, `setup_states`, `org_settings`, `tax_profiles`, `invitations`, `role_assignments` and `org_member_profiles` whose `org_id` starts with `d1000000-`.
+4. Delete the chapters, then the national. Parents are protected while they still have children.
+5. Delete the `auth.users` rows whose `id` starts with `d0000000-`.
+6. Audit events stay in the log by design (the log is append-only). Add a note in the risks doc if you want them purged too.
+
+Note: smoke runs delete their own rows (D-150), including receipts, so receipt numbers in the demo orgs can skip. That's expected for demo data only.
