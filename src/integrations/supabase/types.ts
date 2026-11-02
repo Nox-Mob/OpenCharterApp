@@ -1783,6 +1783,20 @@ export type Database = {
           type: Database["public"]["Enums"]["org_type"]
         }[]
       }
+      org_overview_stats: {
+        Args: { _org: string }
+        Returns: {
+          chapter_memberships: number
+          chapters: number
+          current_members: number
+          expiring_30: number
+          joined_30d: number
+          lifetime_members: number
+          orgs_below: number
+          pending_members: number
+          roster: number
+        }[]
+      }
       org_rollup_governance: {
         Args: { _org: string }
         Returns: {
@@ -2001,6 +2015,13 @@ export type Database = {
         Args: { _active: boolean; _template: string }
         Returns: undefined
       }
+      set_seat_scope: {
+        Args: {
+          _scope: Database["public"]["Enums"]["seat_scope"]
+          _template: string
+        }
+        Returns: undefined
+      }
       set_seat_term: {
         Args: {
           _bylaw_reference?: string
@@ -2110,7 +2131,7 @@ export type Database = {
       payment_purpose: "join" | "renew"
       payment_status: "pending" | "paid" | "refunded" | "failed"
       receipt_status: "issued" | "voided" | "superseded"
-      seat_scope: "self" | "chapters"
+      seat_scope: "self" | "chapters" | "self_and_chapters"
       setting_mode: "inherit" | "override" | "locked"
       setup_status: "in_progress" | "applied" | "needs_review"
       tax_treatment: "deductible" | "non_deductible" | "partial"
@@ -2268,7 +2289,7 @@ export const Constants = {
       payment_purpose: ["join", "renew"],
       payment_status: ["pending", "paid", "refunded", "failed"],
       receipt_status: ["issued", "voided", "superseded"],
-      seat_scope: ["self", "chapters"],
+      seat_scope: ["self", "chapters", "self_and_chapters"],
       setting_mode: ["inherit", "override", "locked"],
       setup_status: ["in_progress", "applied", "needs_review"],
       tax_treatment: ["deductible", "non_deductible", "partial"],

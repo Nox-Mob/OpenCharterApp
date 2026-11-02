@@ -176,6 +176,13 @@
       "when": 1793601600001,
       "tag": "0024_board_scope_and_overview",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793601600002,
+      "tag": "0025_confirm_0024_applied",
+      "breakpoints": true
     }
   ]
 }
