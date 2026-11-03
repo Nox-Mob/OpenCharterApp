@@ -148,7 +148,8 @@ export function LevelsTab({
     }
   }
 
-  if (home.data?.model === "home_chapter")
+  // only below the national: the query can be cached from another page at the national itself
+  if (org.parent_id && home.data?.model === "home_chapter")
     return (
       <p className="rounded-md border bg-card p-5 text-sm">
         Members join {home.data.national.name} and choose {org.name} as their chapter, so {org.name}{" "}

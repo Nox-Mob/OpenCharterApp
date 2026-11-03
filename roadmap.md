@@ -71,6 +71,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 
 ## Done
 ### 2026-11-02
+- [x] Fix: a home-chapter national's Membership levels page could show the chapter explanation instead of its levels after visiting Members
 - [x] A national's Membership levels page shows how membership works there, as in setup; no "Suggest to chapters" in the home-chapter model (D-203)
 - [x] The browser tests also check approvals, two-level dues (first step), receipt footers and reissue, logos, roles and fields; two refresh bugs fixed (D-202)
 - [x] The Board shows each officer's sign-in email as the contact where a seat has no role email (D-201)

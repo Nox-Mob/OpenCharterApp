@@ -99,3 +99,20 @@ test("§14.0 members see the board but nothing to configure it", async ({ page }
   await page.goto(`/orgs/${DEMO.orgs.austin}?tab=board-settings`);
   await expect(page.getByRole("button", { name: "Board settings" })).toHaveCount(0);
 });
+
+test("§6.2 a home-chapter national manages its own levels, even after opening Members", async ({
+  page,
+}) => {
+  // Test-Demo (the sales demo, home-chapter model); read-only here
+  const TEST_DEMO = "d60400ef-9dbb-414a-9a3e-e0cbf2fc15ab";
+  await signIn(page, "national");
+  await page.goto(`/orgs/${TEST_DEMO}?tab=members`);
+  await expect(page.getByRole("heading", { level: 1, name: "Test-Demo" })).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  // through the menu, so what the Members page loaded is still cached
+  await orgMenu(page).getByRole("button", { name: "Settings", exact: true }).click();
+  await orgMenu(page).getByRole("button", { name: "Membership levels" }).click();
+  await expect(page.getByRole("heading", { name: "How membership works here" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add level" })).toBeVisible();
+  await expect(page.getByText(/doesn.t sell memberships of its own/)).toHaveCount(0);
+});
