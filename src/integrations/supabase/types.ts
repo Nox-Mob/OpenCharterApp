@@ -313,6 +313,7 @@ export type Database = {
           org_id: string | null
           target_id: string | null
           target_type: string
+          tx_id: number | null
         }
         Insert: {
           action: string
@@ -324,6 +325,7 @@ export type Database = {
           org_id?: string | null
           target_id?: string | null
           target_type: string
+          tx_id?: number | null
         }
         Update: {
           action?: string
@@ -335,6 +337,7 @@ export type Database = {
           org_id?: string | null
           target_id?: string | null
           target_type?: string
+          tx_id?: number | null
         }
         Relationships: []
       }
@@ -1677,6 +1680,22 @@ export type Database = {
         Args: { _org: string; _role_key: string; _user: string }
         Returns: string
       }
+      audit_log: {
+        Args: { _before?: number; _limit?: number; _org: string }
+        Returns: {
+          action: string
+          actor_id: string
+          actor_name: string
+          after: Json
+          before: Json
+          created_at: string
+          id: number
+          refs: Json
+          target_id: string
+          target_type: string
+          tx_id: number
+        }[]
+      }
       begin_join: {
         Args: { _answers?: Json; _org: string; _term: string }
         Returns: string
@@ -1878,6 +1897,10 @@ export type Database = {
       holds_all_role_permissions: {
         Args: { _org: string; _role: string; _user: string }
         Returns: boolean
+      }
+      import_members: {
+        Args: { _apply?: boolean; _org: string; _rows: Json }
+        Returns: Json
       }
       is_org_member: { Args: { _org: string; _user: string }; Returns: boolean }
       is_platform_operator: { Args: never; Returns: boolean }
@@ -2143,6 +2166,10 @@ export type Database = {
         Args: { _reason: string; _receipt: string }
         Returns: string
       }
+      remove_member_record: {
+        Args: { _profile: string; _reason?: string }
+        Returns: undefined
+      }
       remove_role: { Args: { _assignment: string }; Returns: undefined }
       renewal_start: {
         Args: {
@@ -2155,6 +2182,7 @@ export type Database = {
         Returns: string
       }
       resolve_role: { Args: { _key: string; _org: string }; Returns: string }
+      restore_member_record: { Args: { _profile: string }; Returns: undefined }
       revoke_invitation: { Args: { _id: string }; Returns: undefined }
       role_applies_at: {
         Args: {
@@ -2283,6 +2311,7 @@ export type Database = {
         Returns: undefined
       }
       sync_linked_level: { Args: { _tier: string }; Returns: undefined }
+      sync_my_email: { Args: never; Returns: number }
       term_end: {
         Args: {
           _count: number
