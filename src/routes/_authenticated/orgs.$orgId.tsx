@@ -157,7 +157,7 @@ function OrgPage() {
         )}
       </div>
 
-      <div className="mt-8 grid gap-6 md:grid-cols-[12rem_minmax(0,1fr)]">
+      <div className="mt-8 grid gap-6 md:grid-cols-1">
         <OrgNavigation nav={nav} value={section} onChange={go} />
         <div className="min-w-0 space-y-6">
           {section === "overview" && (
