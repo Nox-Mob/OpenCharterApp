@@ -1,6 +1,6 @@
 # Wave A and the MVP release
 
-Status, 2026-11-02: **Sprints 1–3 done** except the owner actions (A1 live Stripe check, R4 CPA review). Migrations 0029–0035 are applied; 0036 (a follow-up, D-184) is waiting for Lovable. Then the release checklist (§6). Builds on `docs/plans/phases-1-3-review.md` (Wave A items A1–A8); decisions D-169..D-176.
+Status, 2026-11-03: **Sprints 1–3 done**; a release-readiness review (§8) proposes Sprint 4, except the owner actions (A1 live Stripe check, R4 CPA review). Migrations 0029–0035 are applied; 0036 (a follow-up, D-184) is waiting for Lovable. Then the release checklist (§6). Builds on `docs/plans/phases-1-3-review.md` (Wave A items A1–A8); decisions D-169..D-176.
 
 ## 1. Goal
 
@@ -111,8 +111,34 @@ Playwright in Chromium against the live demo backend (D-170, D-175); `bun run te
 |---|---|
 | 1 ✅ | A2 end-to-end harness and first flows; A8 in full, including choosing the model when a national is created; A3 |
 | 2 ✅ | A4; A5; end-to-end tests for them |
-| 3 ✅ | A6; A7; R1–R3, R5–R7 (A1 and R4 are owner actions); then the release checklist and v0.1.0 |
+| 3 ✅ | A6; A7; R1–R3, R5–R7 (A1 and R4 are owner actions) |
+| 4 | Ready for real use (§8): U1–U7; then the release checklist and v0.1.0 |
 
 **Risks to the plan:**
 - **End-to-end tests run against the live demo backend** (like `bun run test:smoke`): a feature whose migration Lovable hasn't applied yet can only be tested end to end after it is applied.
 - **R1 may turn up fixes:** keep Sprint 3 light for that.
+
+## 8. Release-readiness review (2026-11-03)
+
+A check of Phases 0–2 against one question: could a real association start using 0.1.0 tomorrow? The Phase 1 and 2 exit criteria are met (Phase 1's "sell through Stripe" still needs the live test-mode run, A1). The gaps below are things a real admin or member would hit in the first week. They are proposed as **Sprint 4, "ready for real use"**, before the release checklist (§6).
+
+### What a real association would hit
+| # | Gap | Why it matters | Proposal | Size |
+|---|---|---|---|---|
+| U1 | **No member import.** Members are added one at a time ("Add member", then "Record membership") | A national moving from a spreadsheet has hundreds or thousands of members with paid-through dates; typing them in isn't realistic | Settings → Members import: upload a CSV, map columns (name, email, level, term, joined, paid through, member fields, chapter), preview with row errors, then apply in one transaction through a definer function; audited; re-running matches by email, so it doesn't duplicate | M |
+| U2 | **Records can't be taken off the roster.** There's no delete (by design) and no "remove" | Duplicates, typos and people who left stay listed forever and count in reports | "Remove from roster": the record is marked as left (history, payments and receipts kept), seats end, roles from seats go; audited; can be restored | S |
+| U3 | **The audit log isn't readable.** It shows time, action and table only | Admins can't tell who changed what (the data is already stored) | The readable log proposed on 2026-11-02: who, what, previous → current, grouped per save | M |
+| U4 | **No account page.** A signed-in person can't change their name, email or password (only "forgot password") | People change emails; admins will get these requests by hand | Account page: name, email (with confirmation), password, and the organizations you belong to | S |
+| U5 | **No privacy policy or terms links.** Join pages collect personal details and payments | Stripe and members expect them; legally needed before real data | Settings → General: privacy policy and terms URLs per organization (inherited from the national), linked on join pages and in the footer; the owner supplies the text | S + owner |
+| U6 | **The join link is hard to find.** It's only on Settings → Payments | Sharing the join page is the first thing a new org does | A "Share your join page" card on the admin Overview (copy link), shown once payments are connected | S |
+| U7 | **`has_permission` / `is_org_member` callable without signing in** (security review F1) | Low risk, but cheap to close before real data | Revoke from anonymous callers, with a database test | S |
+
+### Accepted for 0.1.0 (known limits, in `CHANGELOG.md`)
+- **No automatic email** (D-169). Invitations are copied links; there are no renewal reminders. Workaround: Members → "Expiring within 30 days", then export and email from your own mail. Email is the first update (Wave B).
+- **No postpaid dues or invoices** (E-20, Wave C), no PayPal (E-21), no per-org web addresses or custom domains (E-07, E-22).
+- **Demo organizations stay** until a second real national joins (D-171).
+- **Coverage gate** (E-01) waits for a dependency decision.
+
+### Owner and maintainer actions (unchanged)
+A1 live Stripe test-mode run · R4 CPA look at receipt wording · the AGPL-3.0 `LICENSE` file (R-24) · Lovable applies 0036 · the release checklist (§6).
+

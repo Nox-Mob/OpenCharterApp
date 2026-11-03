@@ -33,4 +33,21 @@ describe("OrgNavigation", () => {
     fireEvent.click(within(side).getByRole("button", { name: "Settings" }));
     expect(onChange).toHaveBeenLastCalledWith("settings");
   });
+
+  it("lists the Settings pages only while Settings is open (D-188)", () => {
+    const { rerender } = render(<OrgNavigation nav={nav} value="members" onChange={vi.fn()} />);
+    const side = screen.getByRole("navigation", { name: "Organization" });
+    expect(within(side).queryByRole("list", { name: "Settings" })).toBeNull();
+    expect(within(side).queryByRole("button", { name: "Roles" })).toBeNull();
+    expect(within(side).getByRole("button", { name: "Settings" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    rerender(<OrgNavigation nav={nav} value="settings" onChange={vi.fn()} />);
+    expect(within(side).getByRole("list", { name: "Settings" })).toBeInTheDocument();
+    expect(within(side).getByRole("button", { name: "Settings" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+  });
 });

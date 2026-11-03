@@ -2,7 +2,7 @@
 
 What to check by hand in the live app. The automated checks already cover the database rules (`db/tests/`), the screens in isolation (`bun run test`), the backend flows with the demo accounts (`bun run test:smoke`) and the main screens in a real browser (`bun run test:e2e`, docs/testing.md). This guide covers what only a person can judge: whether screens make sense, look right, work on a phone, print well, and say the right thing.
 
-The org page has a menu on the left (a "Section" dropdown on a phone): Overview, Members or Directory, Board, Reports, Chapters, and Settings with its pages (General, Setup, Membership levels, Member fields, Chapter fields, Board settings, Roles, Payments, Audit log). Everything that configures the organization is under Settings; the other pages show information or let you do something (D-185). "Where" lines below use those names.
+The org page has a menu on the left (a "Section" dropdown on a phone): Overview, Members or Directory, Board, Reports, Chapters, and Settings. Settings' pages are listed under it only once you click Settings (on a phone, a second "Settings page" dropdown appears; D-188). They are: (General, Setup, Membership levels, Member fields, Chapter fields, Board settings, Roles, Payments, Audit log). Everything that configures the organization is under Settings; the other pages show information or let you do something (D-185). "Where" lines below use those names.
 
 **Accounts.** Use the demo accounts in [demo-data.md](demo-data.md) (shared password there):
 

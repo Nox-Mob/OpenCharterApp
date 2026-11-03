@@ -9,7 +9,11 @@ test("a national admin gets the admin menu and can preview the member view", asy
   for (const item of ["Overview", "Members", "Board", "Reports", "Chapters", "Settings"])
     await expect(menu.getByRole("button", { name: item, exact: true })).toBeVisible();
   await expect(menu.getByRole("button", { name: "Directory" })).toHaveCount(0);
+  // Settings' pages appear only once Settings is open (D-188)
+  await expect(menu.getByRole("list", { name: "Settings" })).toHaveCount(0);
+  await menu.getByRole("button", { name: "Settings", exact: true }).click();
   await expect(menu.getByRole("list", { name: "Settings" })).toContainText("Audit log");
+  await menu.getByRole("button", { name: "Overview", exact: true }).click();
 
   await page.getByRole("button", { name: "View as member" }).click();
   await expect(page.getByRole("status").filter({ hasText: "as a member would" })).toBeVisible();

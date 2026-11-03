@@ -30,8 +30,19 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 - [ ] **Owner:** A1 live Stripe test-mode run on a non-demo test org (connect, join, webhook, refund; `user-testing.md` §10)
 - [ ] **Owner:** R4 receipt wording reviewed by a CPA (R-07), or ship with the placeholder and say so (it's in the changelog)
 - [ ] Still to add as end-to-end specs: renewal, Membership and Board setup applied, appointing an officer
+
+**Sprint 4, proposed: ready for real use** (`wave-a-mvp.md` §8, review of 2026-11-03)
+- [ ] U1 Member import from CSV (preview, then apply in one transaction; matched by email)
+- [ ] U2 "Remove from roster" for duplicates and people who left (history kept, restorable)
+- [ ] U3 Readable audit log: who, what, previous → current, grouped per save
+- [ ] U4 Account page: name, email, password, your organizations
+- [ ] U5 Privacy policy and terms links on join pages (owner supplies the text)
+- [ ] U6 "Share your join page" on the admin Overview
+- [ ] U7 Revoke `has_permission` / `is_org_member` from anonymous callers (security review F1)
+
+**Then release**
 - [ ] Release checklist (`wave-a-mvp.md` §6): Lovable applies 0036, full `user-testing.md` pass, add the AGPL-3.0 `LICENSE` file (R-24), pull request to `main`, `v0.1.0` tag
-- After 0.1.0 (`security-review.md` §1.6): F1 revoke `has_permission` / `is_org_member` from anonymous callers; F2 and F3 done (D-187)
+- Security review follow-ups (`security-review.md` §1.6): F1 is U7 above; F2 and F3 done (D-187)
 
 ## After the MVP (`docs/plans/phases-1-3-review.md` §3)
 **Wave B: infrastructure**
@@ -59,6 +70,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 
 ## Done
 ### 2026-11-02
+- [x] Settings' pages are listed in the menu only while Settings is open (D-188)
 - [x] Dependencies refreshed, majors included (D-187); Playwright pinned at 1.64.1 and the test browser hardened: sandbox on, Chrome stable in CI, origin guard (D-186); `bun audit` 29 → 2 moderate (dev tooling)
 - [x] Home-chapter model shows only what applies: no chapter acceptance, chapter levels, "must also join" or chapter dues settings and setup questions; chapters have no levels (D-184; 0036 waiting); dues settings reworded for the separate model; no real organization named as an example
 - [x] Configuration only in Settings (D-185): Settings → Board settings holds seat terms, contact emails, seat titles, the seats an org defines and the board rules; the Board page shows the board and appoints officers
