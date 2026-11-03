@@ -302,6 +302,13 @@
       "when": 1793742430586,
       "tag": "0042_tighten_permission_and_logo_reads",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1793743922005,
+      "tag": "0043_permissions_read_role_holders",
+      "breakpoints": true
     }
   ]
 }
