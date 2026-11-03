@@ -95,6 +95,9 @@ Playwright in Chromium against the live demo backend (D-170, D-175); `bun run te
 
 ## 6. Release checklist
 
+Current status and owners: [`release-v0.1.0.md`](release-v0.1.0.md). As of 2026-11-03: 1 ✅ (CI and the live demo checks green); 2 waits for Lovable to apply `0040`; 3, 4 (owner sign-off), 7, 8 and 9 are for the owner; 5 and 6 ✅.
+
+
 1. All Wave A items merged on `BoardUpdates`; CI green (lint, format, types, unit, database rules, migration conventions, build, end-to-end).
 2. Lovable has applied every pending migration; `bun run test:smoke` passes against the live backend.
 3. Full pass of `docs/user-testing.md` as National, Chapter and Member, on desktop and phone width.

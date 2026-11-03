@@ -41,7 +41,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 - [x] U7 `has_permission` / `is_org_member` closed to anonymous callers (D-195; 0037)
 
 **Then release**
-- [ ] Release checklist (`wave-a-mvp.md` §6): the owner replaces the privacy and terms text, full `user-testing.md` pass, add the AGPL-3.0 `LICENSE` file (R-24), pull request to `main`, `v0.1.0` tag
+- [ ] Release: what's left, who does it, and the pull request description are in [`docs/plans/release-v0.1.0.md`](docs/plans/release-v0.1.0.md): Lovable applies 0040; the owner runs the live Stripe check, replaces the privacy and terms text, adds the `LICENSE` file, does a `user-testing.md` pass and sets branch protection; then the pull request to `main` and the `v0.1.0` tag
 - Security review follow-ups (`security-review.md` §1.6): F1 is U7 above; F2 and F3 done (D-187)
 
 ## After the MVP (`docs/plans/phases-1-3-review.md` §3)
@@ -58,6 +58,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 **Wave D: Phase 3**
 - [ ] D1 E-24 approval engine, with board report review as its first consumer
 - [ ] D2 E-25 board reports (types, schedules, submit, review, overdue)
+- [ ] D2b E-43 annual chapter reports, optional per national: the national builds the form and sets a due date; chapter presidents get a task to submit it (D-204; needs a first form builder, E-29)
 - [ ] D3 E-25 vacancy alerts and national oversight dashboard
 - [ ] D4 E-26 document repository
 - [ ] D5 E-27 elections (each org chooses first past the post or ranked choice, D-167; private choices, own ballot visible until the next election, admins can view but never change, results after certification, D-163)

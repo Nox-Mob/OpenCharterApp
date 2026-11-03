@@ -24,7 +24,7 @@ These documents are the shared reference for the whole build. At any point in de
 | [`testing.md`](testing.md) | How to run checks locally, how CI works, and how database rule tests are built |
 | [`user-testing.md`](user-testing.md) | What to test by hand in the live app, step by step, with the demo accounts |
 | [`demo-data.md`](demo-data.md) | Demo accounts and organizations, how the demo national is set up, and how to remove them |
-| [`plans/`](plans/) | Current plans: [`phases-1-3-review.md`](plans/phases-1-3-review.md) (where Phases 1–3 stand and the waves for what's left) and [`wave-a-mvp.md`](plans/wave-a-mvp.md) (the MVP release, v0.1.0). Finished plans are removed; their outcome lives in `decisions.md` and git history |
+| [`plans/`](plans/) | Current plans: [`phases-1-3-review.md`](plans/phases-1-3-review.md) (where Phases 1–3 stand and the waves for what's left) [`wave-a-mvp.md`](plans/wave-a-mvp.md) (the MVP plan) and [`release-v0.1.0.md`](plans/release-v0.1.0.md) (what's left before tagging v0.1.0, and the pull request description). Finished plans are removed; their outcome lives in `decisions.md` and git history |
 | [`lovable-handoff.md`](lovable-handoff.md) | What Lovable needs to do: migrations to apply, checks, and the record of what's applied |
 
 ## Vision
@@ -71,4 +71,4 @@ Every diagram (Mermaid or image) is followed by a **"Diagram description"** bloc
 
 ## Current status
 
-Phases 1 and 2 meet their exit criteria, and the MVP release (v0.1.0) is built and live (migrations up to 0039 applied), with the owner actions (live Stripe check, CPA review, the privacy and terms text) and the release checklist: see [`plans/wave-a-mvp.md`](plans/wave-a-mvp.md) and the root [`README.md`](../README.md) "Where it stands". Day-to-day progress is in [`/roadmap.md`](../roadmap.md); epic status is in [`epic.md`](epic.md).
+Phases 1 and 2 meet their exit criteria, and the MVP release (v0.1.0) is built and live (migrations up to 0039 applied, 0040 waiting); what's left before tagging is in [`plans/release-v0.1.0.md`](plans/release-v0.1.0.md), with the plan in [`plans/wave-a-mvp.md`](plans/wave-a-mvp.md) and the root [`README.md`](../README.md) "Where it stands". Day-to-day progress is in [`/roadmap.md`](../roadmap.md); epic status is in [`epic.md`](epic.md).

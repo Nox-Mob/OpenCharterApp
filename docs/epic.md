@@ -81,6 +81,7 @@ Status for Phases 0–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly 
 | E-26 | Document repository | Libraries, categories, required types, versions, visibility levels, change alerts to national, compliance dashboard | ⬜ Not started |
 | E-27 | Elections | Positions, eligibility, nominations, voting windows, single choice and ranked choice, hybrid entry, certification, auto-appointment, immutable results | ⬜ Not started |
 | E-28 | Automation engine expansion | Reusable triggers and schedules, the full automation inventory from `architecture.md` | ⬜ Not started (needs E-08) |
+| E-43 | Annual chapter reports (optional, per national) | A national that wants annual reports builds the report form itself (its own questions, required or not, using the form builder); sets a due date (and which years); every chapter's president then has a task, "Submit the annual report by …", on their Overview, can save a draft and submit once; the national sees who has submitted, who is late and each answer, and can export them. Entirely optional: a national that doesn't build a form sees nothing. Builds on E-29 (the form builder, pulled forward for this or built first here), E-17 (presidents' seats) and E-08 (reminders, later); review and sign-off can use E-24 | ⬜ Not started (proposed 2026-11-03, D-204) |
 
 **Exit:** national sees vacancies, overdue reports, and document changes at a glance, and a chapter can run an election that seats its new board.
 
@@ -142,6 +143,8 @@ flowchart TD
     E19 --> E18
     E17 --> E25[E-25 Governance compliance]
     E17 --> E27[E-27 Elections]
+    E29 --> E43[E-43 Annual chapter reports]
+    E17 --> E43
     E08[E-08 Jobs and notifications] --> E24[E-24 Approval engine]
     E19 --> E24
     E24 --> E31[E-31 Award approvals]
@@ -163,7 +166,8 @@ flowchart TD
 > - E-09 (Attributes) leads to E-10 (Setup engine), E-19 (Rules and pricing), and E-29 (Form builder).
 > - E-11 (Tiers) and E-12 (Gateway and Stripe) both lead to E-13 (Signup and renewals).
 > - E-13 leads to E-14 (Member lists) and E-18 (Two-level dues); E-19 also leads to E-18.
-> - E-17 (Board seats) leads to E-25 (Governance compliance) and E-27 (Elections).
+> - E-17 (Board seats) leads to E-25 (Governance compliance), E-27 (Elections) and E-43 (Annual chapter reports).
+> - E-29 (Form builder) also leads to E-43 (Annual chapter reports): the national builds the report form with it.
 > - E-08 (Jobs and notifications) and E-19 (Rules) both lead to E-24 (Approval engine).
 > - E-24 leads to E-31 (Award approvals) and E-26 (Documents review flow).
 > - E-29 (Form builder) leads to E-30 (Award catalog), which leads to E-31.
