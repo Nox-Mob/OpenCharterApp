@@ -2,6 +2,10 @@
 -- each with a membership and a payment, read as the national admin. Prints each read's time;
 -- the budget is under 1 second each (docs/security-review.md §R6 has the last results).
 \set ON_ERROR_STOP on
+\if :{?budget_ms}
+\else
+  \set budget_ms 1000
+\endif
 select tests.fixture();
 
 -- 20 chapters under the fixture's national
@@ -56,6 +60,34 @@ select count(*) from public.member_directory('aaaaaaaa-0000-4000-8000-0000000000
 \echo '--- Export payments across the tree (export_payments)'
 select count(*) from public.export_payments('22222222-0000-4000-8000-000000000001', current_date - 365, current_date, true);
 \timing off
+
+-- Budget (D-181): each heavy read must finish within :budget_ms milliseconds (default 1000; CI
+-- passes a looser one for its shared runners). Fails the run when one doesn't.
+select set_config('perf.budget_ms', :'budget_ms', true);
+do $$
+declare _t timestamptz; _ms numeric; _budget numeric := current_setting('perf.budget_ms')::numeric;
+  _slow text := '';
+  _nat uuid := '22222222-0000-4000-8000-000000000001';
+  _ch uuid := 'aaaaaaaa-0000-4000-8000-000000000001';
+begin
+  _t := clock_timestamp(); perform * from public.org_overview_stats(_nat);
+  _ms := extract(epoch from clock_timestamp() - _t) * 1000; raise notice 'overview % ms', round(_ms);
+  if _ms > _budget then _slow := _slow || ' overview'; end if;
+  _t := clock_timestamp(); perform * from public.org_rollup_members(_nat);
+  _ms := extract(epoch from clock_timestamp() - _t) * 1000; raise notice 'members roll-up % ms', round(_ms);
+  if _ms > _budget then _slow := _slow || ' members-rollup'; end if;
+  _t := clock_timestamp(); perform * from public.org_rollup_revenue(_nat, current_date - 365, current_date);
+  _ms := extract(epoch from clock_timestamp() - _t) * 1000; raise notice 'revenue roll-up % ms', round(_ms);
+  if _ms > _budget then _slow := _slow || ' revenue-rollup'; end if;
+  _t := clock_timestamp(); perform * from public.member_directory(_ch);
+  _ms := extract(epoch from clock_timestamp() - _t) * 1000; raise notice 'directory % ms', round(_ms);
+  if _ms > _budget then _slow := _slow || ' directory'; end if;
+  _t := clock_timestamp(); perform * from public.org_member_profiles p
+    left join public.memberships m on m.profile_id = p.id where p.org_id in (select id from public.organizations);
+  _ms := extract(epoch from clock_timestamp() - _t) * 1000; raise notice 'everyone view % ms', round(_ms);
+  if _ms > _budget then _slow := _slow || ' everyone-view'; end if;
+  if _slow <> '' then raise exception 'over the % ms budget:%', _budget, _slow; end if;
+end $$;
 rollback;
 
 -- Security catalogue checks (docs/security-review.md §1.1, §1.2), printed for the review:

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Performance check (R6): applies every migration to a throwaway Postgres, seeds a large roster
-# (db/perf/large-roster.sql: 20 chapters, 5,000 members) and prints how long the heavy reads take.
+# (db/perf/large-roster.sql: 20 chapters, 5,000 members), prints how long the heavy reads take and
+# fails if one is over PERF_BUDGET_MS (default 1000 ms, D-181).
 # Requires TEST_DATABASE_URL, like test:db. Never point this at the real project database.
 set -euo pipefail
 : "${TEST_DATABASE_URL:?Set TEST_DATABASE_URL, e.g. postgres://postgres:postgres@localhost:5432/postgres}"
@@ -13,5 +14,5 @@ admin -c "drop database if exists $DB" -c "create database $DB"
 run -f "$ROOT/db/ci/supabase-stub.sql"
 for f in $(ls "$ROOT"/drizzle/migrations/*.sql | sort); do run -f "$f"; done
 run -f "$ROOT/db/tests/00_helpers.sql"
-run -f "$ROOT/db/perf/large-roster.sql"
+run -v budget_ms="${PERF_BUDGET_MS:-1000}" -f "$ROOT/db/perf/large-roster.sql"
 [ -n "${KEEP_DB:-}" ] || admin -c "drop database if exists $DB"

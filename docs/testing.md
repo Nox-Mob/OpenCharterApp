@@ -1,6 +1,11 @@
 # Testing and CI
 
-Every change must keep all of these green (instructions.md §3). CI runs them on every push to any branch and on every pull request (`.github/workflows/ci.yml`).
+Every change must keep all of these green (instructions.md §3). GitHub runs them in two workflows (D-197):
+
+- **`ci.yml`, no live backend needed:** on every push to any branch, every pull request, every Monday (so new dependency advisories surface without a push) and on demand. Jobs: lint, formatting, types, unit tests and migration conventions; database rules; performance; dependency audit; build; and the docs check on pull requests.
+- **`live.yml`, the live demo backend:** on pushes to `main` and `BoardUpdates`, pull requests to `main`, daily at 06:41 UTC (catching backend changes made in Lovable) and on demand (Actions → Live demo checks → Run workflow). The smoke test runs, then the end-to-end tests, never at the same time as another run, because both write to the demo organizations and clean up afterwards.
+
+Repository settings, all optional: the secret `SMOKE_DEMO_PASSWORD` if the demo accounts' password changes, and the variable `E2E_BASE_URL` (a deployed site) to also run the checkout test. Branch protection, which makes these checks required before merging, is set by the repository owner (Settings → Branches).
 
 | Check | Command | What it covers |
 |---|---|---|
@@ -8,12 +13,14 @@ Every change must keep all of these green (instructions.md §3). CI runs them on
 | Formatting | `bun run format:check` | Prettier. Planning docs and generated files are excluded (`.prettierignore`) |
 | Types | `bun run typecheck` | `tsc --noEmit`, in strict mode |
 | Unit tests | `bun run test` | Vitest. Pure rules live next to their code (`*.test.ts`) |
-| Database rules | `TEST_DATABASE_URL=… bun run test:db` | Applies every migration to a throwaway Postgres and runs `db/tests/*.sql` |
+| Database rules | `TEST_DATABASE_URL=… bun run test:db` | Applies every migration to a throwaway Postgres, each in one transaction as Lovable may apply them, and runs `db/tests/*.sql` |
 | Migration conventions | `bun run check:migrations` | Lovable's import rules for migrations from 0004 on: `org_id`, full grants to `authenticated`, RLS with `has_permission` / `is_org_member` policies, no `DROP TABLE` / `DROP COLUMN` (`scripts/migration-rules.ts`) |
 | Build | `bun run build` | Production build |
-| End to end | `bun run test:e2e` | Playwright in Chromium against the live demo backend (D-170). In CI on pull requests to `main` only |
+| Smoke test | `bun run test:smoke` | The backend flows against the live demo, without a browser (below). In `live.yml` |
+| End to end | `bun run test:e2e` | Playwright against the live demo backend (D-170). In `live.yml`, after the smoke test |
+| Dependency audit | `bun audit --audit-level=high` and `bun audit --production --audit-level=low` | Fails on a high or critical advisory anywhere, or any advisory in what ships to production. In CI |
 | Docs check | `bash scripts/docs-check.sh origin/main` | Code or migrations changed without docs or tests (D-182). In CI on pull requests; label `no-docs-needed` to skip |
-| Performance | `TEST_DATABASE_URL=… bun run test:perf` | Seeds 20 chapters and 5,000 members in a throwaway database and times the heavy reads (budget under 1 second each, D-181); also prints the security catalogue checks (`docs/security-review.md`). Run before a release, not in CI |
+| Performance | `TEST_DATABASE_URL=… bun run test:perf` | Seeds 20 chapters and 5,000 members in a throwaway database, times the heavy reads and fails if one is over `PERF_BUDGET_MS` (default 1000 ms, D-181; CI uses 3000 ms for its slower shared runners); also prints the security catalogue checks (`docs/security-review.md`). In CI |
 
 ## Pre-commit hook
 
@@ -49,6 +56,8 @@ Notes:
 - In CI the job installs Google Chrome stable (`playwright install --with-deps chrome`) and runs as a non-root user with the sandbox on. It uses the repository variable `E2E_BASE_URL` when set, and uploads traces when a test fails.
 
 ## Live smoke test
+
+In CI it runs in `live.yml` (see the top of this page). A receipt-numbering check looks only at the receipts issued during the run, because earlier runs' receipts are purged and leave gaps in the demo org's numbering.
 
 `bun run test:smoke` signs in as the demo accounts (docs/demo-data.md) and checks the applied migrations against the real backend, with no clicking: levels and parent control, check payments and standing, receipts and voiding, the test gateway, joining (declined, accepted, idempotent, approval, renewal, decline with refund; required join questions such as Rank are answered automatically), audited exports, saved views, the directory opt-out, board seats, terms and appointments, board setup applied twice (0018), national/region reports (0019), two-level dues with an Austin level (0020), pricing rules (0021), and creating/deleting a demo organization (0022). The dues section saves and restores the national's dues settings itself. Each run creates uniquely named records in the demo orgs only; when it finishes it calls `purge_smoke_data` (D-150) to delete everything created in the demo orgs since the run started, while the original demo data stays. Don't edit the demo orgs while a smoke run is in progress, or those edits are removed too. It is not part of `bun run test` or CI because it needs network access and changes demo data. Set `SMOKE_DEMO_PASSWORD` if the demo password changes. Checks for 0024 onwards (seat scope, contact emails, payments export, home chapter) are covered by the database tests and end-to-end specs instead.
 

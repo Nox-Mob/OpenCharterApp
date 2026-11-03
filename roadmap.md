@@ -72,6 +72,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 
 ## Done
 ### 2026-11-02
+- [x] GitHub runs the smoke test and end-to-end tests against the live demo on pushes to `main` and `BoardUpdates`, pull requests, daily and on demand; CI adds a performance budget, a dependency audit and one-transaction migrations (D-197)
 - [x] Reports count members by current membership, not records; the home-chapter total counts each member once; chapter creators aren't added to the chapter's roster (D-196; 0038)
 - [x] Sprint 4, ready for real use: import, remove from roster, readable audit log, account page, privacy and terms pages, share the join page, helpers closed to anonymous callers (D-189..D-195; 0037)
 - [x] Settings' pages are listed in the menu only while Settings is open (D-188)
