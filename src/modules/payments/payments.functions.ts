@@ -12,7 +12,12 @@ import { publicOrigin } from "./origin";
 /** The app's public address for links that come back to it (D-158), never the internal URL. */
 const appOrigin = () => {
   const req = getRequest();
-  return publicOrigin(req.headers, req.url, process.env["PUBLIC_APP_URL"]);
+  return publicOrigin(
+    req.headers,
+    req.url,
+    process.env["PUBLIC_APP_URL"],
+    process.env["PUBLIC_APP_ALLOWED_ORIGINS"],
+  );
 };
 
 /**

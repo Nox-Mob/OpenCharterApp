@@ -8,7 +8,9 @@
  * 2. the browser's address: the Origin header of the request, else the Referer;
  * 3. the proxy's forwarded host (X-Forwarded-Host / X-Forwarded-Proto);
  * 4. the request URL, as a last resort (local development).
- * Only http(s) origins are accepted, and plain http only for localhost.
+ * Only http(s) origins are accepted, and plain http only for localhost. Browser- and
+ * proxy-supplied values must also be on the allowlist (`isAllowedOrigin`), so a caller can't
+ * point checkout return links at a site they control.
  */
 export function normalizeOrigin(value: string | null | undefined): string | null {
   if (!value || value === "null") return null;
@@ -24,22 +26,46 @@ export function normalizeOrigin(value: string | null | undefined): string | null
 
 const isLocalHost = (h: string) => h === "localhost" || h === "127.0.0.1" || h === "[::1]";
 
+/**
+ * Origins the app may send people back to: the configured PUBLIC_APP_URL, any extra origins in
+ * PUBLIC_APP_ALLOWED_ORIGINS (comma-separated), Lovable-hosted addresses, the request's own
+ * origin, and localhost.
+ */
+export function isAllowedOrigin(
+  origin: string,
+  requestOrigin: string,
+  configured: string | undefined,
+  extra: string | undefined,
+): boolean {
+  const host = new URL(origin).hostname;
+  if (isLocalHost(host)) return true;
+  if (origin === requestOrigin) return true;
+  if (host.endsWith(".lovable.app") || host.endsWith(".lovableproject.com")) return true;
+  const list = [configured, ...(extra ?? "").split(",")]
+    .map((v) => normalizeOrigin(v?.trim()))
+    .filter((v): v is string => !!v);
+  return list.includes(origin);
+}
+
 export function publicOrigin(
   headers: { get(name: string): string | null },
   requestUrl: string,
   configured: string | undefined = undefined,
+  extraAllowed: string | undefined = undefined,
 ): string {
+  const requestOrigin = new URL(requestUrl).origin;
+  const fixed = normalizeOrigin(configured);
+  if (fixed) return fixed;
   const forwardedHost = headers.get("x-forwarded-host")?.split(",")[0]?.trim();
   const forwardedProto = headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https";
   const candidates = [
-    configured,
     headers.get("origin"),
     headers.get("referer"),
     forwardedHost ? `${forwardedProto}://${forwardedHost}` : null,
   ];
   for (const c of candidates) {
     const o = normalizeOrigin(c);
-    if (o) return o;
+    if (o && isAllowedOrigin(o, requestOrigin, configured, extraAllowed)) return o;
   }
-  return new URL(requestUrl).origin;
+  return requestOrigin;
 }
