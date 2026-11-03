@@ -295,6 +295,13 @@
       "when": 1793713103793,
       "tag": "0041_0041_confirm_0040_applied",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1793742430586,
+      "tag": "0042_tighten_permission_and_logo_reads",
+      "breakpoints": true
     }
   ]
 }

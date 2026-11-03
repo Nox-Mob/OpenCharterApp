@@ -118,6 +118,7 @@ Current coverage:
 | `9Q_ready_for_real_use_home` | 0037 in the home-chapter model: only the national imports, a chapter needs a membership, members land in their chapter; chapter records can't be removed, and removing the national record takes them off both rosters and logs the chapter change |
 | `9R_creator_not_a_chapter_member` | 0038: a new chapter has nobody on its roster and its creator still manages it from the national but isn't a member; a new national makes its creator a member and admin |
 | `9S_overview_people_once` | 0040: in the home-chapter model the overview counts two members due for renewal as two people, not four records; chapter memberships still count chapter records |
+| `9T_no_open_read_rules` | 0042: permission lists, role permissions and logos have no "everyone" read rule; logos need sign-in and access to the organization |
 | `9A_receipts` | Receipt issued for each paid payment and frozen, numbering per org and year with no gaps, can't be changed or deleted, payer and admin access, void / issue again / reissue versions, partial and full refunds |
 | `90_tiers` | Membership levels and terms: isolation, term rules, parent control, retire not delete (deletes remove nothing), identity columns can't change |
 

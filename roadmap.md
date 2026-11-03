@@ -153,3 +153,5 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 ## Cleanup before launch
 - [ ] Remove the demo data before a second real national is onboarded (D-171; steps in `docs/demo-data.md`)
 - [ ] Switch off `purge_smoke_data` in production (D-150) at the same time
+
+- [x] Security fix: tightened permission-list and logo read rules (0042, applied).
