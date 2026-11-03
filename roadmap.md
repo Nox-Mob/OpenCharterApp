@@ -66,6 +66,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 
 ## Done
 ### 2026-11-02
+- [x] The browser tests take over about 30 steps of the user-testing guide (sign-in messages, invitations, levels, memberships and dates, receipts, the board, locks, the audit log, deleting a demo org), in a throwaway demo national (D-198)
 - [x] Migrations 0036–0038 applied by Lovable; their hand-written types and readiness checks retired
 - [x] GitHub runs the smoke test and end-to-end tests against the live demo on pushes to `main` and `BoardUpdates`, pull requests, daily and on demand; CI adds a performance budget, a dependency audit and one-transaction migrations (D-197)
 - [x] Reports count members by current membership, not records; the home-chapter total counts each member once; chapter creators aren't added to the chapter's roster (D-196; 0038)
