@@ -8,6 +8,7 @@ import { safeRedirect } from "@/modules/invitations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LegalLinks } from "@/components/legal/legal-page";
 
 const search = z.object({ redirect: z.string().optional() });
 
@@ -133,6 +134,19 @@ function AuthPage() {
                 Continue with Google
               </Button>
             )}
+            {mode === "up" && (
+              <p className="text-xs text-muted-foreground">
+                By creating an account you agree to the{" "}
+                <Link to="/terms" className="underline">
+                  terms of service
+                </Link>{" "}
+                and the{" "}
+                <Link to="/privacy" className="underline">
+                  privacy policy
+                </Link>
+                .
+              </p>
+            )}
           </form>
         )}
         <div className="mt-6 flex justify-between text-sm">
@@ -154,6 +168,7 @@ function AuthPage() {
             </button>
           )}
         </div>
+        <LegalLinks className="mt-6 text-center" />
       </div>
     </div>
   );

@@ -132,6 +132,12 @@ export const FEATURES = {
     rpc: "restore_member_record",
     args: { _profile: "00000000-0000-0000-0000-000000000000" },
   },
+  email_sync: {
+    migration: "0037_ready_for_real_use",
+    label: "Member records follow a new sign-in email",
+    rpc: "sync_my_email",
+    args: {},
+  },
   readable_audit: {
     migration: "0037_ready_for_real_use",
     label: "The readable audit log",

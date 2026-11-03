@@ -14,6 +14,7 @@ import { PaymentsTab } from "@/components/payments/payments-tab";
 import { MembersDirectory } from "@/components/members/members-directory";
 import { BoardTab } from "@/components/governance/board-tab";
 import { AuditLogTab } from "@/components/org/audit-log";
+import { ShareJoinPage } from "@/components/org/share-join-page";
 import { BoardSettingsTab } from "@/components/governance/board-settings-tab";
 import { membershipModelQuery } from "@/modules/membership/home-chapter";
 import { ReportsTab } from "@/components/reports/reports-tab";
@@ -169,6 +170,14 @@ function OrgPage() {
                     canSeeBoards={canSeeBoards}
                   />
                 </RequiresDatabase>
+              )}
+              {(canManage || canInvite) && (
+                <ShareJoinPage
+                  org={org}
+                  {...(isSettingsSection(nav, "payments")
+                    ? { onOpenPayments: () => go("payments") }
+                    : {})}
+                />
               )}
               <MemberOverview org={org} orgs={orgs} />
               <RequiresDatabase feature="memberships" fallback={null}>

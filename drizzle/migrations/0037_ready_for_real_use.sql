@@ -328,3 +328,21 @@ begin
 end $$;
 revoke execute on function public.import_members(uuid, jsonb, boolean) from public, anon;
 grant execute on function public.import_members(uuid, jsonb, boolean) to authenticated;
+
+-- ----- U4 (D-192): the account page -----
+-- After a person confirms a new sign-in email, their member records follow it (members can't
+-- edit the email column themselves). Returns how many records changed.
+create or replace function public.sync_my_email()
+returns int language plpgsql security definer set search_path = public as $$
+declare _uid uuid := auth.uid(); _email text; _n int;
+begin
+  if _uid is null then raise exception 'not authenticated'; end if;
+  select lower(email) into _email from auth.users where id = _uid;
+  if coalesce(_email, '') = '' then return 0; end if;
+  update public.org_member_profiles set email = _email
+    where user_id = _uid and email is distinct from _email;
+  get diagnostics _n = row_count;
+  return _n;
+end $$;
+revoke execute on function public.sync_my_email() from public, anon;
+grant execute on function public.sync_my_email() to authenticated;

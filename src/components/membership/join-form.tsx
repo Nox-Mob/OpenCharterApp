@@ -328,7 +328,16 @@ export function JoinForm({ orgSlug, chapter }: { orgSlug: string; chapter?: stri
               </Button>
               <p className="text-xs text-muted-foreground">
                 Payment is handled by {j.gateway === "test" ? "a test checkout" : "Stripe"} on
-                behalf of {j.org.name}. Card details never reach OpenCharterApp.
+                behalf of {j.org.name}. Card details never reach OpenCharterApp. By joining you
+                agree to the{" "}
+                <Link to="/terms" className="underline">
+                  terms of service
+                </Link>{" "}
+                and the{" "}
+                <Link to="/privacy" className="underline">
+                  privacy policy
+                </Link>
+                .
               </p>
             </>
           )}

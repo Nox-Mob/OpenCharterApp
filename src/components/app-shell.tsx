@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { LegalLinks } from "@/components/legal/legal-page";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
@@ -49,7 +50,10 @@ export function AppShell({ children }: { children: ReactNode }) {
               </SelectContent>
             </Select>
           )}
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/account">Account</Link>
+            </Button>
             <Button variant="ghost" size="sm" onClick={signOut}>
               Sign out
             </Button>
@@ -57,6 +61,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+      <footer className="mx-auto max-w-6xl border-t px-4 py-6">
+        <LegalLinks />
+      </footer>
     </div>
   );
 }

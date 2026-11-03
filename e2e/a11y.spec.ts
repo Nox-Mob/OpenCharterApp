@@ -74,6 +74,7 @@ const SCREENS: { role: Role; org: "national" | "austin"; tabs: string[] }[] = [
       "board-settings",
       "levels",
       "payments",
+      "audit",
     ],
   },
   {
@@ -94,6 +95,16 @@ for (const { role, org, tabs } of SCREENS) {
     }
   });
 }
+
+test("the account, privacy and terms pages are named and headed", async ({ page }) => {
+  for (const path of ["/privacy", "/terms"]) {
+    await page.goto(path);
+    await checkPage(page, path);
+  }
+  await signIn(page, "member");
+  await page.goto("/account");
+  await checkPage(page, "account");
+});
 
 test("sign-in works by keyboard alone, with visible focus", async ({ page }) => {
   await page.goto("/auth");

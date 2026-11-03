@@ -142,4 +142,15 @@ select tests.as_user('11111111-0000-4000-8000-000000000001');
 select tests.eq((select count(*) from public.audit_log('22222222-0000-4000-8000-000000000001') where target_type = 'org_member_profiles'
   and target_id = '33333333-0000-4000-8000-000000000003'), 0::bigint, 'no events from below');
 select tests.reset_role();
+-- ===== U4: member records follow a confirmed new sign-in email =====
+update auth.users set email = 'Morgan.New@test.org' where id = '11111111-0000-4000-8000-000000000003';
+select tests.as_user('11111111-0000-4000-8000-000000000003');
+select tests.eq(public.sync_my_email(), 1, 'one record updated');
+select tests.eq(public.sync_my_email(), 0, 'nothing left to update');
+select tests.reset_role();
+select tests.eq((select email from public.org_member_profiles where id = '33333333-0000-4000-8000-000000000003'), 'morgan.new@test.org', 'email follows');
+select tests.eq((select email from public.org_member_profiles where id = '33333333-0000-4000-8000-000000000002'), 'a@test.org', 'others untouched');
+set local role anon;
+select tests.throws($$select public.sync_my_email()$$, 'permission denied');
+reset role;
 rollback;

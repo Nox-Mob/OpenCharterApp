@@ -294,27 +294,30 @@ export function describeEvent(e: AuditEvent): DescribedEvent {
   }
   if (e.target_type === "appointments") {
     const seat = e.refs["template_id"] ?? "a seat";
-    const person = e.refs["profile_id"] ?? "someone";
+    const person = e.refs["profile_id"] ?? "an officer";
     const ended = e.action === "update" && !before["ended_on"] && after["ended_on"];
     return {
       ...base,
       what:
         e.action === "insert"
-          ? `appointed ${person} as`
+          ? `appointed ${person} as ${seat}`
           : ended
-            ? `ended ${person}'s term as`
-            : `modified the appointment for`,
-      record: seat,
+            ? `ended ${person}'s term as ${seat}`
+            : `modified ${person}'s appointment as ${seat}`,
+      record: null,
       changes: fieldChanges(e).filter((c) => c.field !== "Seat" && c.field !== "Member"),
     };
   }
   if (e.target_type === "role_assignments") {
-    const role = e.refs["role_id"] ?? "a role";
+    const role = e.refs["role_id"] ?? "a";
     const person = e.refs["user_id"] ?? "someone";
     return {
       ...base,
-      what: e.action === "delete" ? `removed the ${role} role from` : `gave the ${role} role to`,
-      record: person,
+      what:
+        e.action === "delete"
+          ? `removed the ${role} role from ${person}`
+          : `gave ${person} the ${role} role`,
+      record: null,
       changes: [],
     };
   }
@@ -381,6 +384,8 @@ export function groupEvents(events: readonly AuditEvent[]): AuditEntry[] {
   let current: { tx: number; actor: string | null; entry: AuditEntry } | null = null;
   for (const e of events) {
     const d = describeEvent(e);
+    // an update that only touched bookkeeping columns says nothing to a reader
+    if (e.action === "update" && d.changes.length === 0 && d.what.startsWith("modified")) continue;
     if (current && e.tx_id !== null && current.tx === e.tx_id && current.actor === e.actor_id) {
       current.entry.more.push(d);
       continue;

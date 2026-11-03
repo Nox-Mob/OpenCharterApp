@@ -36,6 +36,8 @@ export type PendingFunctions = {
   };
   remove_member_record: { Args: { _profile: string; _reason?: string }; Returns: undefined };
   restore_member_record: { Args: { _profile: string }; Returns: undefined };
+  // 0037 (U4): member records follow a confirmed new sign-in email
+  sync_my_email: { Args: Record<string, never>; Returns: number };
   audit_log: {
     Args: { _org: string; _before?: number; _limit?: number };
     Returns: {

@@ -92,7 +92,7 @@ describe("describeEvent (D-191)", () => {
           refs: { template_id: "Treasurer", profile_id: "Morgan" },
         }),
       ),
-    ).toMatchObject({ what: "appointed Morgan as", record: "Treasurer" });
+    ).toMatchObject({ what: "appointed Morgan as Treasurer", record: null });
     expect(
       describeEvent(
         ev({
@@ -102,7 +102,7 @@ describe("describeEvent (D-191)", () => {
           refs: { role_id: "Admin", user_id: "Chris" },
         }),
       ),
-    ).toMatchObject({ what: "removed the Admin role from", record: "Chris" });
+    ).toMatchObject({ what: "removed the Admin role from Chris", record: null });
     const removed = describeEvent(
       ev({
         target_type: "org_member_profiles",
@@ -170,12 +170,20 @@ describe("groupEvents", () => {
     expect(entries[0]!.more.map((m) => m.what)).toEqual(["added Member fields"]);
   });
 
+  it("leaves out updates that changed only bookkeeping columns", () => {
+    const entries = groupEvents([
+      ev({ id: 2, before: { title: "A", sort_order: 1 }, after: { title: "A", sort_order: 2 } }),
+      ev({ id: 1, before: { title: "A" }, after: { title: "B" } }),
+    ]);
+    expect(entries.map((e) => e.id)).toEqual([1]);
+  });
+
   it("keeps different people's changes apart, and older events (no transaction) one by one", () => {
     const entries = groupEvents([
-      ev({ id: 3, tx_id: 5, actor_id: "a" }),
-      ev({ id: 2, tx_id: 5, actor_id: "b" }),
-      ev({ id: 1, tx_id: null }),
-      ev({ id: 0, tx_id: null }),
+      ev({ id: 3, tx_id: 5, actor_id: "a", action: "insert", after: { title: "A" } }),
+      ev({ id: 2, tx_id: 5, actor_id: "b", action: "insert", after: { title: "B" } }),
+      ev({ id: 1, tx_id: null, action: "insert", after: { title: "C" } }),
+      ev({ id: 0, tx_id: null, action: "insert", after: { title: "D" } }),
     ]);
     expect(entries).toHaveLength(4);
   });
