@@ -69,21 +69,6 @@ export const myPermissionsQuery = () =>
     },
   });
 
-export const auditQuery = (orgId: string) =>
-  queryOptions({
-    queryKey: ["audit", orgId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("audit_events")
-        .select("id,action,target_type,target_id,actor_id,created_at")
-        .eq("org_id", orgId)
-        .order("created_at", { ascending: false })
-        .limit(100);
-      if (error) throw error;
-      return data;
-    },
-  });
-
 export const TYPE_LABEL: Record<Org["type"], string> = {
   platform: "Platform",
   national: "National",

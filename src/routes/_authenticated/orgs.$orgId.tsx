@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { auditQuery, isDemoOrg, myOrgsQuery, myPermissionsQuery, TYPE_LABEL } from "@/lib/orgs";
+import { isDemoOrg, myOrgsQuery, myPermissionsQuery, TYPE_LABEL } from "@/lib/orgs";
 import { grantsForView, hasAdminAccess, hasPermission, type Grant } from "@/lib/policy";
 import { MemberOverview } from "@/components/members/member-overview";
 import { CreateOrgDialog } from "@/components/create-org-dialog";
@@ -13,6 +13,7 @@ import { LevelsTab } from "@/components/membership/levels-tab";
 import { PaymentsTab } from "@/components/payments/payments-tab";
 import { MembersDirectory } from "@/components/members/members-directory";
 import { BoardTab } from "@/components/governance/board-tab";
+import { AuditLogTab } from "@/components/org/audit-log";
 import { BoardSettingsTab } from "@/components/governance/board-settings-tab";
 import { membershipModelQuery } from "@/modules/membership/home-chapter";
 import { ReportsTab } from "@/components/reports/reports-tab";
@@ -27,14 +28,6 @@ import { DeleteDemoOrg } from "@/components/demo/delete-demo-org";
 import { DemoBadge } from "@/components/demo/demo-badge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 export const Route = createFileRoute("/_authenticated/orgs/$orgId")({
   head: () => ({ meta: [{ title: "Organization — OpenCharterApp" }] }),
@@ -303,34 +296,9 @@ function OrgPage() {
               <PaymentsTab org={org} canManage={hasPermission(grants, "payments.manage", org)} />
             </RequiresDatabase>
           )}
-          {section === "audit" && <AuditLog orgId={org.id} />}
+          {section === "audit" && <AuditLogTab orgId={org.id} orgName={org.name} />}
         </div>
       </div>
     </div>
-  );
-}
-
-function AuditLog({ orgId }: { orgId: string }) {
-  const { data = [], isLoading } = useQuery(auditQuery(orgId));
-  if (isLoading) return <p className="text-muted-foreground">Loading…</p>;
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>When</TableHead>
-          <TableHead>Action</TableHead>
-          <TableHead>Record</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {data.map((e) => (
-          <TableRow key={e.id}>
-            <TableCell>{new Date(e.created_at).toLocaleString()}</TableCell>
-            <TableCell className="capitalize">{e.action}</TableCell>
-            <TableCell>{e.target_type.replace(/_/g, " ")}</TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
   );
 }

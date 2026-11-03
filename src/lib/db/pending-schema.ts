@@ -7,18 +7,52 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When Lovable applies a migration, delete its section here (the generated types take over).
- * Pending: none (see roadmap.md).
+ * Pending: 0037_ready_for_real_use (see roadmap.md).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 type Generated = Database["public"];
 
 // Add types for a migration here while Lovable hasn't applied it yet; delete them once applied.
 export type PendingEnums = Record<never, never>;
-export type PendingTables = Record<never, never>;
-export type PendingFunctions = Record<never, never>;
+type Tables = Generated["Tables"];
+/** A generated table with columns a pending migration adds. */
+type WithColumns<T extends keyof Tables, C> = Omit<Tables[T], "Row" | "Update"> & {
+  Row: Tables[T]["Row"] & C;
+  Update: Tables[T]["Update"] & Partial<C>;
+};
+
+export type PendingTables = {
+  // 0037_ready_for_real_use (U3): events carry the transaction they belong to
+  audit_events: WithColumns<"audit_events", { tx_id: number | null }>;
+};
+export type PendingFunctions = {
+  // 0037_ready_for_real_use (U1, U2, U3)
+  import_members: {
+    Args: { _org: string; _rows: Json; _apply?: boolean };
+    Returns: Json;
+  };
+  remove_member_record: { Args: { _profile: string; _reason?: string }; Returns: undefined };
+  restore_member_record: { Args: { _profile: string }; Returns: undefined };
+  audit_log: {
+    Args: { _org: string; _before?: number; _limit?: number };
+    Returns: {
+      id: number;
+      created_at: string;
+      tx_id: number | null;
+      actor_id: string | null;
+      actor_name: string | null;
+      action: string;
+      target_type: string;
+      target_id: string | null;
+      before: Json | null;
+      after: Json | null;
+      refs: Json;
+    }[];
+  };
+};
 
 export type FullDatabase = Omit<Database, "public"> & {
   public: {
