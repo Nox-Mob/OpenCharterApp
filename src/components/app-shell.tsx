@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LayoutDashboard, LogOut, UserCircle } from "lucide-react";
+import { Home, LogOut, UserCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { myOrgsQuery } from "@/lib/orgs";
 import {
@@ -92,7 +92,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               className={sidebarItemClass(false)}
               activeProps={{ className: sidebarItemClass(true) }}
             >
-              <LayoutDashboard className="h-4 w-4 shrink-0" />
+              <Home className="h-4 w-4 shrink-0" />
               Dashboard
             </Link>
             <div ref={setSlot} className="mt-2" />
