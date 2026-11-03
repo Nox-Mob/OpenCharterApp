@@ -1,6 +1,6 @@
 # Wave A and the MVP release
 
-Status, 2026-11-03: **Sprints 1–3 done** except the owner actions (A1 live Stripe check, R4 CPA review). A release-readiness review (§8) proposes Sprint 4, "ready for real use". Migrations 0029–0035 are applied; 0036 (a follow-up, D-184) is waiting for Lovable. Then the release checklist (§6). Builds on `docs/plans/phases-1-3-review.md` (Wave A items A1–A8); decisions D-169..D-176.
+Status, 2026-11-03: **Sprints 1–3 done** except the owner actions (A1 live Stripe check, R4 CPA review). Sprint 4 ("ready for real use", §8) is built: U1–U7, with migration 0037 waiting for Lovable. Migrations 0029–0035 are applied; 0036 (a follow-up, D-184) is waiting for Lovable. Then the release checklist (§6). Builds on `docs/plans/phases-1-3-review.md` (Wave A items A1–A8); decisions D-169..D-176.
 
 ## 1. Goal
 
@@ -112,13 +112,15 @@ Playwright in Chromium against the live demo backend (D-170, D-175); `bun run te
 | 1 ✅ | A2 end-to-end harness and first flows; A8 in full, including choosing the model when a national is created; A3 |
 | 2 ✅ | A4; A5; end-to-end tests for them |
 | 3 ✅ | A6; A7; R1–R3, R5–R7 (A1 and R4 are owner actions) |
-| 4 | Ready for real use (§8): U1–U7; then the release checklist and v0.1.0 |
+| 4 ✅ | Ready for real use (§8): U1–U7 (D-189..D-195); then the release checklist and v0.1.0 |
 
 **Risks to the plan:**
 - **End-to-end tests run against the live demo backend** (like `bun run test:smoke`): a feature whose migration Lovable hasn't applied yet can only be tested end to end after it is applied.
 - **R1 may turn up fixes:** keep Sprint 3 light for that.
 
 ## 8. Release-readiness review (2026-11-03)
+
+**Outcome:** all seven built in Sprint 4 (D-189..D-195, migration 0037). U5's pages carry placeholder text for the owner to replace.
 
 A check of Phases 0–2 against one question: could a real association start using 0.1.0 tomorrow? The Phase 1 and 2 exit criteria are met (Phase 1's "sell through Stripe" still needs the live test-mode run, A1). The gaps below are things a real admin or member would hit in the first week. They are proposed as **Sprint 4, "ready for real use"**, before the release checklist (§6).
 
@@ -140,5 +142,5 @@ A check of Phases 0–2 against one question: could a real association start usi
 - **Coverage gate** (E-01) waits for a dependency decision.
 
 ### Owner and maintainer actions (unchanged)
-A1 live Stripe test-mode run · R4 CPA look at receipt wording · the AGPL-3.0 `LICENSE` file (R-24) · Lovable applies 0036 · the release checklist (§6).
+A1 live Stripe test-mode run · R4 CPA look at receipt wording · the AGPL-3.0 `LICENSE` file (R-24) · the privacy policy and terms text (`src/content/legal.tsx`) · Lovable applies 0036 and 0037 · the release checklist (§6).
 

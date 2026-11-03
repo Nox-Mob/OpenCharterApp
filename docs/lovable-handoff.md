@@ -4,11 +4,12 @@ Status on 2026-11-02.
 
 **Done:** migrations `0000`–`0035` are applied, the types are regenerated, and the `GATEWAY_ENCRYPTION_KEY` secret is set. Thank you. A record is at the end.
 
-**Waiting**, on branch `BoardUpdates`, tested against Postgres 16 (`db/tests/9O_home_chapter_settings.sql`); it applies inside one transaction:
+**Waiting**, on branch `BoardUpdates`, tested against Postgres 16 (`db/tests/9O_home_chapter_settings.sql`, `9P_ready_for_real_use.sql`, `9Q_ready_for_real_use_home.sql`); each applies inside one transaction. Apply `0036`, then `0037`:
 
 | File | What it adds | Check it worked (SQL editor) |
 |---|---|---|
 | `0036_home_chapter_no_chapter_levels.sql` | A new version of `tier_parent_check` (same signature): below a national that chose the home-chapter model, adding or restoring a membership level is refused (D-184). Existing levels are untouched | `select prosrc like '%home_chapter%' from pg_proc where proname = 'tier_parent_check';` returns `true` |
+| `0037_ready_for_real_use.sql` | Column `audit_events.tx_id` (new events only; existing rows stay empty); new versions of `is_org_member` (ignores records that left) with `has_permission` and `is_org_member` no longer executable by `anon`; functions `remove_member_record`, `restore_member_record`, `audit_log`, `import_members`, `sync_my_email` | `select count(*) from information_schema.routines where routine_schema = 'public' and routine_name in ('remove_member_record','restore_member_record','audit_log','import_members','sync_my_email');` returns `5`, and `select has_function_privilege('anon', 'public.has_permission(uuid,text,uuid)', 'execute');` returns `false` |
 
 ## 1. When a migration is waiting
 - Apply them strictly in order. They're additive only (D-125, checked in CI by `bun run check:migrations`).

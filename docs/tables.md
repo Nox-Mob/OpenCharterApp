@@ -1,6 +1,6 @@
 # Tables: what's stored and how it connects
 
-A map of every database table in use, as of migration `0036`: what each table holds, what it links to, which migration created it, and how it may be written. Start with the mind map (§1) for the big picture. Use the diagrams in §2 to follow the links within each area, and the reference in §3 when you need a table's details.
+A map of every database table in use, as of migration `0037`: what each table holds, what it links to, which migration created it, and how it may be written. Start with the mind map (§1) for the big picture. Use the diagrams in §2 to follow the links within each area, and the reference in §3 when you need a table's details.
 
 For how the data is *meant* to be shaped (including things not built yet), see `data-domains.md`. For the rules behind it, see `decisions.md` and `architecture.md`. When a migration adds or changes a table, update this page in the same commit (§5).
 
@@ -247,13 +247,13 @@ erDiagram
 | Table | What it holds | Key columns | Links to | Created in | Writes |
 |---|---|---|---|---|---|
 | `organizations` | Every organization: national, region, chapter or standalone | `parent_id`, `type`, `name`, `slug`, `ancestor_ids` (kept by trigger), `is_demo`, `logo_path` | itself (`parent_id`; *blocks*) | 0000 (0001 logo, 0022 demo) | Created only by `create_organization` / `create_demo_organization`; name, logo and similar by RLS (`org.manage`); removed only by `delete_demo_organization` |
-| `org_member_profiles` | A person's record in one organization, with or without a sign-in account | `user_id`, `display_name`, `email`, `source`, `claimed_at`, `directory_listed`, `home_of`, `left_at` | `organizations` (*cascade*), `memberships` via `home_of` (*set null*) | 0000 (0008 source and claim, 0012 directory, 0030 home chapter) | Created by `create_organization` (the creator), `accept_invitation`, `admin_create_member`, joining online (`payment_succeeded`) and a chapter change (`move_home_chapter`); own record updated by RLS; admins use `update_member_record`. No insert policy |
+| `org_member_profiles` | A person's record in one organization, with or without a sign-in account | `user_id`, `display_name`, `email`, `source`, `claimed_at`, `directory_listed`, `home_of`, `left_at` | `organizations` (*cascade*), `memberships` via `home_of` (*set null*) | 0000 (0008 source and claim, 0012 directory, 0030 home chapter) | Created by `create_organization` (the creator), `accept_invitation`, `admin_create_member`, `import_members` (0037), joining online (`payment_succeeded`) and a chapter change (`move_home_chapter`); own record updated by RLS (name), own email by `sync_my_email`; admins use `update_member_record`; taken off and back on the roster by `remove_member_record` / `restore_member_record` (sets `left_at`, never deletes). No insert policy |
 | `roles` | Built-in roles (no `org_id`) and each organization's custom roles | `key`, `name`, `active` | `organizations` (*cascade*) | 0000 (0004 custom roles) | `create_role`, `update_role`, `set_role_active` (retired, never deleted) |
 | `permissions` | The global permission catalogue (`members.view`, `payments.manage`, …) | `key` | — | 0000 | Migrations only |
 | `role_permissions` | Which permissions each role has | `role_id`, `permission_key` | `roles`, `permissions` (*cascade*) | 0000 | `create_role`, `update_role` (no escalation beyond the creator's own) |
 | `role_assignments` | An account holding a role at an organization (and, by inheritance, below it) | `user_id`, `role_id`, `org_id`, `source` | `roles`, `organizations` (*cascade*) | 0000 | `assign_role`, `remove_role`, `accept_invitation`, appointments; the last admin can't be removed |
 | `invitations` | Copy-a-link invitations: single-use, email-bound, expiring | `email`, `role_id`, `token_hash`, `expires_at`, `accepted_at`, `revoked_at` | `organizations` (*cascade*), `roles` (*blocks*) | 0001 | `create_invitation`, `accept_invitation`, `revoke_invitation` (only the hash is stored) |
-| `audit_events` | The append-only audit log | `actor_id`, `action`, `target_type`, `target_id`, `before`, `after` | `organizations` by `org_id`, with no foreign key | 0000 | Triggers and `write_audit` only; no client writes. *Append-only* |
+| `audit_events` | The append-only audit log | `actor_id`, `action`, `target_type`, `target_id`, `before`, `after`, `tx_id` (the save it belongs to) | `organizations` by `org_id`, with no foreign key | 0000 (0037 `tx_id`) | Triggers and `write_audit` only; no client writes. Read through `audit_log()` (names, one org only, setup drafts left out). *Append-only* |
 
 ### 3.2 Configuration
 

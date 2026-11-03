@@ -27,6 +27,9 @@ Use a private browser window for a second account at the same time. Test only in
 3. "Forgot password?" → enter an email → "Send reset link". Expect a neutral message, whether or not the account exists.
 4. As **Chapter**: Demo Austin Chapter → Members → "Invite someone" → "Create invite link". Copy the link and open it in a private window. Expect the invitation page; accepting needs a button press.
 
+5. **Account** (header → Account), as **Member**: your name, email and organizations are shown. Change your name and save: it shows on your member record at Austin. "Change email" sends a confirmation link to the new address (use a mailbox you control; don't change the demo accounts' emails); the page says so until it's opened. Change the password twice to put it back (`OpenCharterDemo!2026`). A Google sign-in shows no password section.
+6. **Privacy policy and terms**: the sign-in page, the landing page and the app's footer link to them; "Create an account" says "By creating an account you agree to…", and the join page says "By joining you agree to…". Both pages show the placeholder banner and text in [brackets] to fill in.
+
 **Also try:** opening the same invite link a second time after accepting (it should say it's used).
 
 ## 2. Organizations and chapters
@@ -110,6 +113,8 @@ Use a private browser window for a second account at the same time. Test only in
 3. Record a renewal. Expect it to start the day after the current paid-through date.
 4. Cancel the membership ("Cancel this membership now?"). History shows it.
 
+5. **Remove from roster** (needs migration 0037): open a member you added → "Remove from roster…", give a reason → "Remove …". They leave the list, their membership shows as cancelled in the history, and any seat they held ends. At the bottom of the Members page, "Show 1 removed from the roster" lists them with **Restore**; restoring brings them back (record a new membership to make them current again). You can't remove yourself or someone with a role given on Settings → Roles. In the home-chapter model, a chapter record can't be removed (move the member from the national); removing the national record takes them off the chapter too.
+
 **Also try:** a historical member with a start date years ago; check the standing (Grace or Lapsed) and "expires in".
 
 ## 8. Finding and exporting members
@@ -122,6 +127,8 @@ Use a private browser window for a second account at the same time. Test only in
 5. **Everyone view export** (as **National**, "Everyone in … and below"): the file has an Organization column. Members who opted out of their chapter's directory are left out unless "Include … who opted out" is ticked, and each chapter's own default applies to its rows. The Audit log entry says it covered the organization and the orgs below.
 6. **Columns**: "Columns" lists the member fields; tick Rank and Branch. They appear as columns; reload and they're still there (remembered for you in this browser, per organization). Untick to hide.
 7. **National standing** (separate model, where the national requires its own membership): as **Chapter**, Austin's Members page has a column named after the national, showing each member's national standing next to the chapter one. In the home-chapter model this column doesn't appear (standing is already the national's).
+
+8. **Import members** (needs migration 0037), as **Chapter** at Austin: "Import members" → "Download a template", fill in three people (one with a level and paid-through date, one with "Lifetime" and no paid-through date, one with only a name), save as CSV and choose it. The columns are matched from the headings (change any that are wrong; Rank and other member fields are offered). "Check the file" lists problems by row number (try a date like 05/01/2020, a level that doesn't exist, the same email twice) and saves nothing. With no problems, "Import 3 members" adds them; open one to see the level, dates and fields. Import the same file again: "3 already here (they'll be updated)", and nobody is duplicated. The Audit log shows the import. In the home-chapter model, import at the national, with a Chapter column; chapters have no Import button.
 
 **Also try:** a member who opted out of the directory. The export leaves them out unless "Include … who opted out" is ticked, if your national allows it.
 
@@ -224,6 +231,7 @@ Also: edit a seat and set "No role" and a suggested term of "No fixed term"; and
 **Where:** Overview.
 1. As **National**: "At a glance" shows Current members, Chapters, Average members per chapter, Lifetime members (with "N other current members · X% lifetime" and a bar), New in the last 30 days, Waiting for approval, Renewals due in 30 days, Revenue this year and Vacant required seats. A person in both the national and a chapter counts once. "See each chapter on the Reports page" opens Reports.
 2. As **Chapter**, Austin: the same tiles for Austin only, without Chapters or the average.
+   - **Share your join page** (admins, below the tiles): the join page address with Copy and Open. At an org without connected payments it adds "Online joining opens once payments are connected" with a link to Settings → Payments.
 3. As **Member**: no numbers. Instead:
    - **Actions needed**: e.g. "Your membership ends on … (in N days)" with Renew, "Complete your profile: …" if a required field the member may edit is empty, "Your term as … ends on …" for a seat ending within 30 days, or "You're all set".
    - **Your profile**: name, email and member fields (no admin-only fields). "Edit" shows only the fields members may change; save and reload.
@@ -246,8 +254,11 @@ Also: edit a seat and set "No role" and a suggested term of "No fixed term"; and
 
 ## 15. Audit log
 **Where:** Settings → Audit log.
-1. After the steps above, the log shows who did what (role changes, payments, receipts voided, exports, appointments).
-2. Nothing in the app offers to edit or delete log entries.
+1. Each entry reads like "8:53:23 PM, Nora National modified Board settings · President", grouped under the day, newest first. Below it, a small table shows each changed field's Previous and Current value (for example Title: President → Emperor Elect). Rename a seat on Settings → Board settings and check it appears that way. Until migration 0037 is applied, people show as "Someone" and some records as "a seat"; afterwards, names show.
+2. One save is one entry: apply Membership setup and the entry says "applied Membership setup" with "Show N more changes in this save". Saving a setup draft doesn't appear.
+3. Filter by person and by area; "Show older changes" loads more.
+4. Each organization sees only its own log: the national's doesn't show Austin's changes, and Austin's doesn't show the national's.
+5. Nothing in the app offers to edit or delete log entries.
 
 ---
 

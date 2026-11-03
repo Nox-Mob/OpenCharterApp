@@ -11,7 +11,8 @@ The first version a national (with chapters) or a standalone association can run
 - Sign-in with email and password, or Google; password reset; invitations as a copy-a-link.
 - National → region → chapter hierarchy, created only through `create_organization`, with a chapter creation wizard.
 - Roles, including custom roles. Permissions only flow down. Settings can be inherited, overridden or locked for chapters.
-- Every important change goes to an append-only audit log.
+- Every important change goes to an append-only audit log that reads plainly: when, who, what, and each field's previous and current value, one entry per save, for that organization only.
+- An account page for your name, sign-in email and password; privacy policy and terms of service pages (placeholder text until the operator replaces it).
 - Demo organizations and accounts for testing (`docs/demo-data.md`), clearly badged and never emailed.
 
 ### How membership works
@@ -35,6 +36,8 @@ The first version a national (with chapters) or a standalone association can run
 - In the separate model, chapter admins see each member's national standing, and members are reminded when their national membership needs attention.
 - A member directory that respects each member's privacy choice.
 - An audited payments export for bookkeeping.
+- Import members from a spreadsheet (checked before anything is saved; re-running updates instead of duplicating), and take records off the roster (history kept, restorable).
+- A "Share your join page" card on the admin Overview.
 
 ### Governance and the org page
 
@@ -58,5 +61,3 @@ The first version a national (with chapters) or a standalone association can run
   - PayPal, custom domains, approvals, board reports, documents, elections, automation
   - packaging for self-hosting
 - **Receipt tax wording is a placeholder** until a CPA has reviewed it (R-07). Check it with your accountant before relying on it.
-- **Follow-ups planned after release** (`docs/security-review.md` §1.6):
-  - stop `has_permission` and `is_org_member` being callable without signing in

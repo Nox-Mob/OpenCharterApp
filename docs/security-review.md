@@ -18,9 +18,9 @@ There are 129 `security definer` functions in `public`. A scripted pass checked 
 - **It checks the caller first.** `auth.uid()` together with `has_permission`, `is_org_member` or `is_platform_operator`. Examples: `create_demo_organization` and `delete_demo_organization` need a platform operator; `export_payments` needs `payments.view`; `chapter_national_standing` needs `members.view`.
 - **It is a trigger.** Triggers can't be called through the API.
 - **It is an internal helper revoked from API roles,** such as `profile_membership_id`, `listed_in_directory`, `linked_price` and `sync_linked_level`.
-- **It is deliberately callable without signing in,** and these are the only four:
+- **It is deliberately callable without signing in,** and these are the only two since migration 0037 (four before):
   - `public_join_info` and `public_home_chapter_info`. These return only what a public join page shows: name, levels and prices, required questions, and chapters to pick from.
-  - `has_permission` and `is_org_member`. These answer yes or no for a given user and org. Low severity: someone could probe whether a user ID belongs to an org, but user IDs are random UUIDs that aren't published. **Follow-up F1:** revoke both from `anon` in the first migration after 0.1.0. They are used in policies, so check that every policy still evaluates as `authenticated`.
+  - `has_permission` and `is_org_member`. These answer yes or no for a given user and org. Low severity: someone could probe whether a user ID belongs to an org, but user IDs are random UUIDs that aren't published. **F1 done (migration 0037, D-195):** both are revoked from `anon`; no table is readable without signing in, so no policy is affected (`db/tests/9P_ready_for_real_use.sql`).
 
 Every definer function sets `search_path = public`, which prevents search-path hijacking.
 
