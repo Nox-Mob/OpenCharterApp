@@ -1,0 +1,33 @@
+-- 0044 (D-209): every foreign key on the tables that grow with the roster has an index that
+-- starts with it, so per-member lookups stay fast at 10,000 and 20,000 members (bun run test:perf),
+-- and the heavy reports skip JIT compilation.
+begin;
+select tests.eq((
+  select count(*)::int
+  from pg_constraint c
+  where c.contype = 'f' and c.connamespace = 'public'::regnamespace
+    and c.conrelid in ('public.memberships'::regclass, 'public.org_member_profiles'::regclass,
+      'public.payments'::regclass, 'public.receipts'::regclass, 'public.membership_events'::regclass,
+      'public.affiliation_history'::regclass, 'public.webhook_events'::regclass,
+      'public.role_assignments'::regclass, 'public.appointments'::regclass)
+    and not exists (select 1 from pg_index i
+      where i.indrelid = c.conrelid and i.indkey[0] = c.conkey[1])
+), 0, 'foreign keys on member-scale tables are indexed');
+select tests.eq(exists (select 1 from pg_indexes where schemaname = 'public'
+  and indexname = 'memberships_profile_id_idx'), true, 'memberships are found by member record');
+select tests.eq((
+  select count(*)::int from pg_proc p
+  where p.pronamespace = 'public'::regnamespace
+    and p.proname in ('org_overview_stats', 'org_rollup_members', 'org_rollup_revenue',
+      'export_payments', 'member_directory', 'audit_log')
+    and 'jit=off' = any(p.proconfig)
+), 6, 'the heavy reports run without JIT compilation');
+-- still answers, and still refuses outsiders
+select tests.fixture();
+select tests.as_user('11111111-0000-4000-8000-000000000001');
+select tests.eq((select roster from public.org_overview_stats('22222222-0000-4000-8000-000000000001')) >= 0, true, 'overview still answers');
+select tests.reset_role();
+select tests.as_user('11111111-0000-4000-8000-000000000003');
+select tests.throws($$select public.org_overview_stats('22222222-0000-4000-8000-000000000001')$$, 'not allowed'); -- still refused without members.view
+select tests.reset_role();
+rollback;

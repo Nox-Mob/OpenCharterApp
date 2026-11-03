@@ -72,7 +72,7 @@ Linked levels (A4, D-177) can only be changed while the database session flag `a
 - Database tests, build and end-to-end tests stay in CI.
 
 ## 4. Performance with a large roster (R6)
-`bun run test:perf` (needs `TEST_DATABASE_URL`, like `test:db`) seeds a national with 20 chapters and 5,000 members, each with a membership and a payment, then times the heavy reads as the national admin. Budget: under 1 second each (D-181).
+`bun run test:perf` (needs `TEST_DATABASE_URL`, like `test:db`) seeds a national with 20 chapters and 5,000 members, each with a membership and a payment, then times the heavy reads as the national admin. Budget: under 1 second each (D-181). Since D-209 it then grows the same roster to 10,000 and 20,000 members (250 per chapter) and times them again; results at the end of this section.
 
 | Read | Before | After 0034 |
 |---|---|---|
@@ -86,6 +86,21 @@ Linked levels (A4, D-177) can only be changed while the database session flag `a
 Laptop-class Postgres 16; the hosted database will differ, but the ratios hold. Two fixes came out of this:
 - **Inherited settings resolved per row.** Grace days, and the directory's listed-by-default setting, were resolved once for every member row. Migration 0034 resolves them once per organization; `db/tests/9N_rollup_performance.sql` checks that each membership still uses its own org's grace days.
 - **Lists truncated at 1,000 rows.** The API returns at most 1,000 rows per request, so a single chapter's Members page, the directory and the payments export would have stopped at 1,000. All three now read every page, like the "everyone" view already did (`src/lib/db/pages.ts`). A very large payments export writes one audit event per 1,000 rows.
+
+**At 10,000 and 20,000 members (D-209).** Times in ms, laptop-class Postgres 16:
+
+| Read | 5,000 | 10,000 before 0044 | 10,000 | 20,000 before 0044 | 20,000 |
+|---|---|---|---|---|---|
+| Overview numbers | 70 | 192 | 166 | 979 | 284 |
+| Reports: members by chapter | 64 | 131 | 118 | 286 | 234 |
+| Reports: revenue by chapter | 4 | 7 | 5 | 8 | 7 |
+| Members "everyone" view | 91 | 1,188 | 172 | over budget | 381 |
+| Directory of one chapter | 6 | 13 | 6 | 13 | 10 |
+| Payments export | 59 | 121 | 121 | 258 | 245 |
+
+After 0044 every read grows in step with the roster and stays well under the 1 second budget at 20,000. The two fixes:
+- **A missing index.** `memberships` was indexed on `(org_id, profile_id)` but not on `profile_id` alone, so finding each member's membership read the whole index once per member: twice the members took about three times as long. 0044 indexes the foreign keys of every table that grows with the roster (memberships, member records, payments, receipts, membership events, chapter changes, webhook events, role assignments, appointments); `9U_scale_indexes` fails if a new one is added without an index.
+- **JIT compilation.** At 20,000 members the planner's cost estimate for the Overview crossed Postgres's JIT thresholds, and compiling took about 700 ms of the read. JIT is off for the six heavy report functions (overview, both roll-ups, payments export, directory, audit log). Supabase leaves JIT on by default, so this matters on the hosted database too.
 
 ## 5. Monitoring (R7) and owner actions
 - **Errors:** unexpected errors in the browser and on the server go to Lovable's error reporting (`src/lib/lovable-error-reporting.ts`, `src/lib/error-capture.ts`, wired in `src/routes/__root.tsx` and `src/server.ts`). Owner: confirm error reporting is on in the Lovable project settings.

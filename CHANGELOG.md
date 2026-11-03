@@ -54,7 +54,7 @@ The first version a national (with chapters) or a standalone association can run
 - Database rule tests, unit and component tests, and end-to-end tests in Chrome (including accessibility checks and about 40 steps of the user-testing guide), run by GitHub on every push and daily against the live demo.
 - A sales demo, Test-Demo: 15 chapters, about 500 members with years of history, and a full board.
 - A pre-commit hook and a docs check on pull requests.
-- Large rosters (5,000 members) stay fast; lists beyond 1,000 rows are read in full.
+- Large rosters stay fast: checked at 5,000, 10,000 and 20,000 members, with every heavy read under a second; lists beyond 1,000 rows are read in full.
 - Dependencies up to date (TanStack Start 1.169, Vite 8.3, zod 4, ESLint 10, Vitest 5, TypeScript 6.0) with a 24-hour release-age guard; `bun audit` shows only 2 moderate advisories in development tooling. Playwright is pinned at 1.64.1 and its test browser hardened (sandbox on, Chrome stable in CI, other sites blocked).
 
 ### Known limits

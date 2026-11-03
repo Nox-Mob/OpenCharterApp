@@ -1,45 +1,51 @@
--- Performance check (R6, docs/testing.md): a national with 20 chapters and 5,000 members,
--- each with a membership and a payment, read as the national admin. Prints each read's time;
--- the budget is under 1 second each (docs/security-review.md §R6 has the last results).
+-- Performance check (R6, D-181, D-209, docs/testing.md): grows the roster to :members member
+-- records (250 per chapter, so 5,000 → 20 chapters, 20,000 → 80), each with a membership and a
+-- payment, then times the heavy reads as the national admin. Run after setup.sql, once per size
+-- in increasing order; each run adds only what's missing. Each read must stay under :budget_ms.
 \set ON_ERROR_STOP on
 \if :{?budget_ms}
 \else
   \set budget_ms 1000
 \endif
-select tests.fixture();
+\if :{?members}
+\else
+  \set members 5000
+\endif
+select set_config('perf.members', :'members', false);
+\echo
+\echo '=== Roster of' :members 'members'
 
--- 20 chapters under the fixture's national
+-- one chapter per 250 members under the fixture's national
 insert into public.organizations (id, parent_id, type, name, slug)
 select ('aaaaaaaa-0000-4000-8000-' || lpad(i::text, 12, '0'))::uuid,
   '22222222-0000-4000-8000-000000000001', 'chapter', 'Perf chapter ' || i, 'perf-' || i
-from generate_series(1, 20) i;
+from generate_series(1, greatest(1, :members / 250)) i
+on conflict (id) do nothing;
 
-insert into public.membership_tiers (id, org_id, key, name) values
-  ('55555555-0000-4000-8000-0000000000f1', '22222222-0000-4000-8000-000000000001', 'reg', 'Regular');
-insert into public.tier_terms (id, tier_id, org_id, key, label, length_count, length_unit, price_minor) values
-  ('66666666-0000-4000-8000-0000000000f1', '55555555-0000-4000-8000-0000000000f1',
-   '22222222-0000-4000-8000-000000000001', '1_year', '1 year', 1, 'year', 2500);
-
--- 5,000 member records, 250 per chapter, without sign-in accounts (admin-added)
+-- member records without sign-in accounts (admin-added), spread over the chapters
 insert into public.org_member_profiles (id, org_id, user_id, display_name, email, source)
 select ('bbbbbbbb-0000-4000-8000-' || lpad(i::text, 12, '0'))::uuid,
-  ('aaaaaaaa-0000-4000-8000-' || lpad((1 + i % 20)::text, 12, '0'))::uuid,
+  ('aaaaaaaa-0000-4000-8000-' || lpad((1 + i % greatest(1, :members / 250))::text, 12, '0'))::uuid,
   null, 'Member ' || i, 'member' || i || '@perf.test', 'admin'
-from generate_series(1, 5000) i;
+from generate_series(1, :members) i
+on conflict (id) do nothing;
 
--- one membership each: most active, some lapsed, some pending
+-- one membership each for the new records: most active, some lapsed, some pending
 insert into public.memberships (org_id, profile_id, tier_id, term_id, status, joined_on, paid_through)
 select p.org_id, p.id, '55555555-0000-4000-8000-0000000000f1', '66666666-0000-4000-8000-0000000000f1',
   case when n % 10 = 0 then 'pending' else 'active' end::public.membership_status,
   case when n % 10 = 0 then null else current_date - (n % 300) end,
   case when n % 10 = 0 then null when n % 7 = 0 then current_date - 40 else current_date + (n % 300) end
-from (select id, org_id, (row_number() over (order by id))::int n from public.org_member_profiles
-      where email like '%@perf.test') p;
+from (select id, org_id, (substr(id::text, 25))::int n from public.org_member_profiles p
+      where email like '%@perf.test'
+        and not exists (select 1 from public.memberships m where m.profile_id = p.id)) p;
 
--- one paid payment per active membership this year
+-- one paid payment per active membership without one
 insert into public.payments (org_id, membership_id, profile_id, purpose, amount_minor, status, gateway, method, livemode, received_on)
 select m.org_id, m.id, m.profile_id, 'join', 2500, 'paid', 'manual', 'check', true, m.joined_on
-from public.memberships m where m.joined_on is not null;
+from public.memberships m
+where m.joined_on is not null
+  and not exists (select 1 from public.payments x where x.membership_id = m.id);
 analyze;
 
 begin;
@@ -86,16 +92,12 @@ begin
     left join public.memberships m on m.profile_id = p.id where p.org_id in (select id from public.organizations);
   _ms := extract(epoch from clock_timestamp() - _t) * 1000; raise notice 'everyone view % ms', round(_ms);
   if _ms > _budget then _slow := _slow || ' everyone-view'; end if;
-  if _slow <> '' then raise exception 'over the % ms budget:%', _budget, _slow; end if;
+  _t := clock_timestamp(); perform * from public.export_payments(_nat, current_date - 365, current_date, true);
+  _ms := extract(epoch from clock_timestamp() - _t) * 1000; raise notice 'payments export % ms', round(_ms);
+  if _ms > _budget then _slow := _slow || ' payments-export'; end if;
+  if _slow <> '' then
+    raise exception 'with % members, over the % ms budget:%', current_setting('perf.members'), _budget, _slow;
+  end if;
 end $$;
 rollback;
 
--- Security catalogue checks (docs/security-review.md §1.1, §1.2), printed for the review:
-\echo '--- Tables in public without row-level security (expect none)'
-select tablename from pg_tables where schemaname = 'public' and not rowsecurity;
-\echo '--- DELETE (or ALL) policies (expect org_settings and member_segments only)'
-select tablename, policyname from pg_policies where schemaname = 'public' and cmd in ('DELETE', 'ALL');
-\echo '--- Definer functions callable without signing in (expect the four in §1.2)'
-select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-where n.nspname = 'public' and p.prosecdef and p.prorettype <> 'trigger'::regtype
-  and has_function_privilege('anon', p.oid, 'execute') order by 1;

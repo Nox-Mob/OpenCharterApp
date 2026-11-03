@@ -278,7 +278,7 @@ flowchart LR
 | Observability | Structured logs, error tracking, job queue dashboards, health checks |
 | Accessibility | WCAG 2.1 AA target for public and member-facing UI; automated name, heading and keyboard checks in the end-to-end suite (D-183) |
 | Internationalization | English and USD first. Keep strings and currency out of hard-coded paths so it can be added |
-| Performance | Lists past 1,000 rows are read in pages (the API's limit); roll-ups resolve inherited settings once per org; `bun run test:perf` with 5,000 members, budget under 1 second per read (D-181) |
+| Performance | Lists past 1,000 rows are read in pages (the API's limit); roll-ups resolve inherited settings once per org; `bun run test:perf` with 5,000, 10,000 and 20,000 members, budget under 1 second per read (D-181, D-209) |
 | Testing | Unit and component tests with Vitest, database rule tests against a throwaway Postgres (`db/tests/`), end-to-end flows with Playwright against the live demo backend (D-175), a live smoke suite, with tenant-isolation tests as a first-class category (`docs/testing.md`) |
 | Backups | Documented backup and restore for self-hosters, automated for hosted |
 

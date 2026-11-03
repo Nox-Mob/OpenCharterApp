@@ -20,7 +20,7 @@ Repository settings, all optional: the secret `SMOKE_DEMO_PASSWORD` if the demo 
 | End to end | `bun run test:e2e` | Playwright against the live demo backend (D-170). In `live.yml`, after the smoke test |
 | Dependency audit | `bun audit --audit-level=high` and `bun audit --production --audit-level=low` | Fails on a high or critical advisory anywhere, or any advisory in what ships to production. In CI |
 | Docs check | `bash scripts/docs-check.sh origin/main` | Code or migrations changed without docs or tests (D-182). In CI on pull requests; label `no-docs-needed` to skip |
-| Performance | `TEST_DATABASE_URL=… bun run test:perf` | Seeds 20 chapters and 5,000 members in a throwaway database, times the heavy reads and fails if one is over `PERF_BUDGET_MS` (default 1000 ms, D-181; CI uses 3000 ms for its slower shared runners); also prints the security catalogue checks (`docs/security-review.md`). In CI |
+| Performance | `TEST_DATABASE_URL=… bun run test:perf` | Grows one roster in a throwaway database through 5,000, 10,000 and 20,000 members (250 per chapter; `PERF_SIZES` to change, D-209), times the heavy reads at each size and fails if one is over `PERF_BUDGET_MS` (default 1000 ms, D-181; CI uses 3000 ms for its slower shared runners); also prints the security catalogue checks (`docs/security-review.md`). In CI |
 
 ## Pre-commit hook
 
@@ -117,6 +117,7 @@ Current coverage:
 | `9P_ready_for_real_use` | 0037: helpers refused to anonymous callers while join pages still work; remove from roster (permissions, yourself, hand-given roles, membership cancelled with the reason, member role removed, no longer a member, audited) and restore; import (every bad row reported and nothing written, preview writes nothing, applied membership, lifetime, fields, no payment invented, audited, re-running updates without duplicates, siblings refused); the audit log (permission, setup drafts hidden, names, references, transactions, no token hashes, only the org's own events); `sync_my_email` |
 | `9Q_ready_for_real_use_home` | 0037 in the home-chapter model: only the national imports, a chapter needs a membership, members land in their chapter; chapter records can't be removed, and removing the national record takes them off both rosters and logs the chapter change |
 | `9R_creator_not_a_chapter_member` | 0038: a new chapter has nobody on its roster and its creator still manages it from the national but isn't a member; a new national makes its creator a member and admin |
+| `9U_scale_indexes` | 0044 (D-209): every foreign key on the tables that grow with the roster has an index; JIT is off for the six heavy report functions; the overview still answers and still refuses someone without `members.view` |
 | `9S_overview_people_once` | 0040: in the home-chapter model the overview counts two members due for renewal as two people, not four records; chapter memberships still count chapter records |
 | `9T_no_open_read_rules` | 0042: permission lists, role permissions and logos have no "everyone" read rule; logos need sign-in and access to the organization |
 | `9A_receipts` | Receipt issued for each paid payment and frozen, numbering per org and year with no gaps, can't be changed or deleted, payer and admin access, void / issue again / reissue versions, partial and full refunds |

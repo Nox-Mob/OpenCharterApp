@@ -50,7 +50,7 @@ Working today:
 
 Not in the MVP: automatic email (the first update after it), postpaid dues and invoices, PayPal, custom domains, approvals, board reports, documents, elections. Progress and what's next: [`roadmap.md`](roadmap.md).
 
-Every migration up to `0039` is applied to the live database; `0040` is waiting (see [`roadmap.md`](roadmap.md)). For demos, the demo national **Test-Demo** looks like a real association: 15 chapters, about 500 members with years of history, and a full board ([`docs/demo-data.md`](docs/demo-data.md)). The security, accessibility and performance review is in [`docs/security-review.md`](docs/security-review.md), and a map of every table is in [`docs/tables.md`](docs/tables.md).
+Every migration up to `0043` is applied to the live database; `0044` is waiting (see [`roadmap.md`](roadmap.md)). For demos, the demo national **Test-Demo** looks like a real association: 15 chapters, about 500 members with years of history, and a full board ([`docs/demo-data.md`](docs/demo-data.md)). The security, accessibility and performance review is in [`docs/security-review.md`](docs/security-review.md), and a map of every table is in [`docs/tables.md`](docs/tables.md).
 
 ## Install and run
 
@@ -92,7 +92,7 @@ bun run build
 bun run test:e2e             # end-to-end, in Chromium (needs network; see docs/testing.md)
 ```
 
-Install the pre-commit hook once per clone with `bun run hooks:install`; it runs the fast checks on every commit. `bun run test:perf` (with `TEST_DATABASE_URL`) times the heavy reads with 5,000 members and fails over budget; `bun run test:smoke` checks the backend flows against the live demo.
+Install the pre-commit hook once per clone with `bun run hooks:install`; it runs the fast checks on every commit. `bun run test:perf` (with `TEST_DATABASE_URL`) times the heavy reads with 5,000, 10,000 and 20,000 members and fails over budget; `bun run test:smoke` checks the backend flows against the live demo.
 
 GitHub runs all of these (D-197): `ci.yml` on every push and pull request, and `live.yml` (the smoke test, then the end-to-end tests against the live demo) on pushes to `main` and `BoardUpdates`, pull requests to `main`, daily and on demand. See [`docs/testing.md`](docs/testing.md).
 
