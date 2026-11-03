@@ -13,7 +13,9 @@ import {
   endAppointment,
   openSeats,
   plannedEnd,
+  seatContactLine,
   seatContactsQuery,
+  boardContactsQuery,
   seatTermLabel,
   termRulesQuery,
   termSummary,
@@ -69,6 +71,8 @@ export function BoardTab({
   // Contact emails need migration 0026 (D-135, D-156).
   const contactsReady = useFeatureReady("seat_contacts") === true;
   const contacts = useQuery({ ...seatContactsQuery(org.id), enabled: contactsReady });
+  // the officers' own emails, for seats without a role email (D-201)
+  const officerContacts = useQuery({ ...boardContactsQuery(org.id), enabled: contactsReady });
   const [historyFor, setHistoryFor] = useState<string | null>(null);
 
   const refresh = () => {
@@ -150,17 +154,14 @@ export function BoardTab({
                   )}
                   <p className="text-sm">{termSummary(s)}</p>
                   {contactsReady && (
-                    <p className="text-sm">
-                      Contact:{" "}
-                      {contacts.data?.[s.template_id] ? (
-                        <>
-                          <span>{contacts.data[s.template_id]}</span>{" "}
-                          <span className="text-muted-foreground">(role email)</span>
-                        </>
-                      ) : (
-                        <span className="text-muted-foreground">the officer&apos;s own email</span>
+                    <ContactLine
+                      lines={seatContactLine(
+                        s.template_id,
+                        contacts.data?.[s.template_id],
+                        officerContacts.data,
                       )}
-                    </p>
+                      vacant={s.holders.length === 0}
+                    />
                   )}
                   {s.holders.length > 0 ? (
                     <ul className="space-y-1 text-sm">
@@ -358,5 +359,39 @@ function AppointDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** "Contact: president@… (role email)" or each officer's own email (D-201). */
+function ContactLine({
+  lines,
+  vacant,
+}: {
+  lines: ReturnType<typeof seatContactLine>;
+  vacant: boolean;
+}) {
+  return (
+    <p className="text-sm">
+      Contact:{" "}
+      {lines.length === 0 ? (
+        <span className="text-muted-foreground">
+          {vacant ? "nobody yet" : "no email on the officer's record"}
+        </span>
+      ) : (
+        lines.map((l, i) => (
+          <span key={l.email}>
+            {i > 0 && ", "}
+            <a href={`mailto:${l.email}`} className="underline-offset-2 hover:underline">
+              {l.email}
+            </a>
+            {l.role ? (
+              <span className="text-muted-foreground"> (role email)</span>
+            ) : lines.length > 1 && l.who ? (
+              <span className="text-muted-foreground"> ({l.who})</span>
+            ) : null}
+          </span>
+        ))
+      )}
+    </p>
   );
 }

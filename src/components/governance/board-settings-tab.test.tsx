@@ -74,7 +74,24 @@ vi.mock("@/integrations/supabase/client", () => {
     supabase: {
       from: (t: string) => (t === "seat_contacts" ? contacts : chain),
       rpc: vi.fn(async (fn: string) => ({
-        data: fn === "org_board" ? board : fn === "board_history" ? history : null,
+        data:
+          fn === "org_board"
+            ? board
+            : fn === "board_history"
+              ? history
+              : fn === "org_board_contacts"
+                ? [
+                    {
+                      template_id: "t2",
+                      title: "Chaplain",
+                      sort_order: 0,
+                      seat_number: 1,
+                      display_name: "Morgan",
+                      email: "morgan@a.org",
+                      email_source: "officer",
+                    },
+                  ]
+                : null,
         error: null,
       })),
     },
@@ -127,12 +144,13 @@ describe("BoardSettingsTab (D-185)", () => {
     expect(screen.queryByRole("button", { name: "Appoint" })).toBeNull();
   });
 
-  it("switches a seat back to the officer's own email", async () => {
+  it("shows the officer's email, and switches a seat back to it", async () => {
     renderSettings(true, true);
     expect(await screen.findByText("president@a.org")).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole("button", { name: "Contact email" })[0]!);
     expect(await screen.findByLabelText("Role email")).toHaveValue("president@a.org");
-    fireEvent.click(screen.getByRole("radio", { name: "The officer's own email" }));
+    expect(await screen.findByText("morgan@a.org")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "The officer's sign-in email" }));
     expect(screen.queryByLabelText("Role email")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await vi.waitFor(() =>

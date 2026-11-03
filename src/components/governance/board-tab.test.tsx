@@ -74,7 +74,24 @@ vi.mock("@/integrations/supabase/client", () => {
     supabase: {
       from: (t: string) => (t === "seat_contacts" ? contacts : chain),
       rpc: vi.fn(async (fn: string) => ({
-        data: fn === "org_board" ? board : fn === "board_history" ? history : null,
+        data:
+          fn === "org_board"
+            ? board
+            : fn === "board_history"
+              ? history
+              : fn === "org_board_contacts"
+                ? [
+                    {
+                      template_id: "t2",
+                      title: "Chaplain",
+                      sort_order: 0,
+                      seat_number: 1,
+                      display_name: "Morgan",
+                      email: "morgan@a.org",
+                      email_source: "officer",
+                    },
+                  ]
+                : null,
         error: null,
       })),
     },
@@ -137,7 +154,9 @@ describe("BoardTab", () => {
     renderTab(true, true);
     expect(await screen.findByText("president@a.org")).toBeInTheDocument();
     expect(screen.getByText("(role email)")).toBeInTheDocument();
-    expect(screen.getByText("the officer's own email")).toBeInTheDocument();
+    // a seat without a role email shows its officer's sign-in email (D-201)
+    expect(await screen.findByText("morgan@a.org")).toBeInTheDocument();
+    expect(screen.queryByText(/officer's own email/)).toBeNull();
     expect(screen.queryByRole("button", { name: "Contact email" })).toBeNull();
   });
 

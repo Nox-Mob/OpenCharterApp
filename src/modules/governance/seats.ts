@@ -199,6 +199,22 @@ export const seatContactsQuery = (orgId: string) =>
     },
   });
 
+/**
+ * How to reach a seat's holders (D-201): the seat's role email if it has one, else each current
+ * officer's sign-in email (or, for a record without a login, the email on it). Empty when nobody
+ * holds the seat and it has no role email.
+ */
+export function seatContactLine(
+  templateId: string,
+  roleEmail: string | undefined,
+  contacts: readonly BoardContact[] | undefined,
+): { email: string; who: string | null; role: boolean }[] {
+  if (roleEmail) return [{ email: roleEmail, who: null, role: true }];
+  return (contacts ?? [])
+    .filter((c) => c.key.startsWith(`${templateId}:`) && c.source === "officer" && c.email)
+    .map((c) => ({ email: c.email!, who: c.name, role: false }));
+}
+
 /** Who to contact at an org: each officer with the seat's role email or their own (definer RPC). */
 export const boardContactsQuery = (orgId: string) =>
   queryOptions({

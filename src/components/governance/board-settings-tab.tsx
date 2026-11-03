@@ -17,7 +17,9 @@ import {
   scopeLabel,
   SEAT_SCOPES,
   roleEmailSchema,
+  seatContactLine,
   seatContactsQuery,
+  boardContactsQuery,
   seatInputSchema,
   seatKey,
   seatTermLabel,
@@ -87,6 +89,7 @@ export function BoardSettingsTab({
   const board = useQuery(boardQuery(org.id));
   const contactsReady = useFeatureReady("seat_contacts") === true;
   const contacts = useQuery({ ...seatContactsQuery(org.id), enabled: contactsReady });
+  const officerContacts = useQuery({ ...boardContactsQuery(org.id), enabled: contactsReady });
   const [termFor, setTermFor] = useState<Seat | null>(null);
   const [contactFor, setContactFor] = useState<Seat | null>(null);
   const refresh = () => {
@@ -144,10 +147,26 @@ export function BoardSettingsTab({
                     <TableCell className="text-sm">{termSummary(s)}</TableCell>
                     {contactsReady && (
                       <TableCell className="text-sm">
-                        {contacts.data?.[s.template_id] ?? (
-                          <span className="text-muted-foreground">
-                            the officer&apos;s own email
-                          </span>
+                        {contacts.data?.[s.template_id] ? (
+                          <>
+                            {contacts.data[s.template_id]}{" "}
+                            <span className="text-muted-foreground">(role email)</span>
+                          </>
+                        ) : (
+                          (() => {
+                            const own = seatContactLine(
+                              s.template_id,
+                              undefined,
+                              officerContacts.data,
+                            );
+                            return own.length > 0 ? (
+                              own.map((l) => l.email).join(", ")
+                            ) : (
+                              <span className="text-muted-foreground">
+                                {s.holders.length === 0 ? "nobody yet" : "no email on record"}
+                              </span>
+                            );
+                          })()
                         )}
                       </TableCell>
                     )}
@@ -313,11 +332,12 @@ function ContactDialog({
           className="space-y-3"
         >
           <label className="flex items-start gap-2 text-sm">
-            <RadioGroupItem value="officer" aria-label="The officer's own email" />
+            <RadioGroupItem value="officer" aria-label="The officer's sign-in email" />
             <span>
-              <span className="font-medium">The officer&apos;s own email</span>
+              <span className="font-medium">The officer&apos;s sign-in email</span>
               <span className="block text-muted-foreground">
-                Whoever holds the seat is listed with the email on their member record.
+                Whoever holds the seat is listed with the email they sign in with (or, without a
+                login, the email on their member record).
               </span>
             </span>
           </label>
@@ -326,7 +346,7 @@ function ContactDialog({
             <span>
               <span className="font-medium">A role email for this seat</span>
               <span className="block text-muted-foreground">
-                Stays the same when the officer changes. The officer&apos;s own email isn&apos;t
+                Stays the same when the officer changes. The officer&apos;s sign-in email isn&apos;t
                 shown.
               </span>
             </span>

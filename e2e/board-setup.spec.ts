@@ -19,7 +19,7 @@ test("a chapter admin sets a seat's contact email in Settings → Board", async 
   test.skip(!hasSeats, "no seats at Demo Austin");
   await contact.click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog.getByRole("radio", { name: "The officer's own email" })).toBeVisible();
+  await expect(dialog.getByRole("radio", { name: "The officer's sign-in email" })).toBeVisible();
   await dialog.getByRole("radio", { name: "A role email for this seat" }).click();
   await expect(dialog.getByLabel("Role email", { exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
