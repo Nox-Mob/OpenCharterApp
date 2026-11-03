@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Home, LogOut, UserCircle } from "lucide-react";
@@ -12,20 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LegalLinks } from "@/components/legal/legal-page";
-import { cn } from "@/lib/utils";
-
-/** Pages put their own section links into the sidebar through this slot (org nav). */
-const SidebarSlot = createContext<HTMLElement | null>(null);
-export const useSidebarSlot = () => useContext(SidebarSlot);
-
-export const sidebarItemClass = (active: boolean) =>
-  cn(
-    "flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors",
-    "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-    active
-      ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"
-      : "text-sidebar-foreground",
-  );
+import { SidebarSlot, sidebarItemClass } from "@/components/sidebar-slot";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const qc = useQueryClient();

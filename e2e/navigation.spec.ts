@@ -47,3 +47,17 @@ test("a chapter admin sees Reports for their own chapter only", async ({ page })
   await expect(page.getByText(/^Demo Austin.*, as of today\./).first()).toBeVisible();
   await expect(page.getByText(/every organization below it/)).toHaveCount(0);
 });
+
+// D-205: the left sidebar holds Dashboard, the organization's menu, Account and Sign out.
+test("the sidebar holds the menu, Account and Sign out", async ({ page }) => {
+  await signIn(page, "national");
+  const sidebar = page.getByRole("complementary");
+  await expect(sidebar.getByRole("link", { name: "Dashboard" })).toBeVisible();
+  await openOrg(page, "national");
+  await expect(sidebar.getByRole("navigation", { name: "Organization" })).toBeVisible();
+  await expect(sidebar.getByRole("button", { name: "Members", exact: true })).toBeVisible();
+  await sidebar.getByRole("link", { name: "Account" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Your account" })).toBeVisible();
+  await sidebar.getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/auth/);
+});

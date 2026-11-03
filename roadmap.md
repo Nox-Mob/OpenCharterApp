@@ -71,6 +71,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 
 ## Done
 ### 2026-11-02
+- [x] Full left sidebar: the OpenCharter name and organization switcher at the top, Dashboard and the organization's menu with icons, Account and Sign out at the bottom; softer colours; phones keep the header and dropdowns (D-205)
 - [x] Fix: a home-chapter national's Membership levels page could show the chapter explanation instead of its levels after visiting Members
 - [x] A national's Membership levels page shows how membership works there, as in setup; no "Suggest to chapters" in the home-chapter model (D-203)
 - [x] The browser tests also check approvals, two-level dues (first step), receipt footers and reissue, logos, roles and fields; two refresh bugs fixed (D-202)
@@ -151,4 +152,3 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 ## Cleanup before launch
 - [ ] Remove the demo data before a second real national is onboarded (D-171; steps in `docs/demo-data.md`)
 - [ ] Switch off `purge_smoke_data` in production (D-150) at the same time
-- [x] Full left sidebar: section links with icons, Account and Sign out pinned bottom-left (mobile keeps dropdowns).

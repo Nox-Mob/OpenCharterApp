@@ -19,7 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { sidebarItemClass, useSidebarSlot } from "@/components/app-shell";
+import { sidebarItemClass, useSidebarSlot } from "@/components/sidebar-slot";
 
 import { isSettingsSection, type NavItem, type OrgNav } from "./org-nav-items";
 

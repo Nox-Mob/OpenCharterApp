@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { OrgNavigation } from "./org-nav";
+import { SidebarSlot } from "@/components/sidebar-slot";
 import { buildOrgNav } from "./org-nav-items";
 
 const nav = buildOrgNav({
@@ -49,5 +50,21 @@ describe("OrgNavigation", () => {
       "aria-expanded",
       "true",
     );
+  });
+
+  it("puts the menu into the app's sidebar when there is one (D-205)", () => {
+    const sidebar = document.createElement("div");
+    sidebar.setAttribute("data-testid", "sidebar");
+    document.body.appendChild(sidebar);
+    const { container } = render(
+      <SidebarSlot.Provider value={sidebar}>
+        <OrgNavigation nav={nav} value="overview" onChange={vi.fn()} />
+      </SidebarSlot.Provider>,
+    );
+    // the desktop menu lives in the sidebar, not in the page; the phone dropdown stays in the page
+    expect(within(sidebar).getByRole("navigation", { name: "Organization" })).toBeInTheDocument();
+    expect(container.querySelector("nav")).toBeNull();
+    expect(within(container).getByRole("combobox", { name: "Section" })).toBeInTheDocument();
+    sidebar.remove();
   });
 });

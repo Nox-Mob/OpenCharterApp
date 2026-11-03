@@ -32,7 +32,7 @@ Install once per clone with `bun run hooks:install` (it sets `core.hooksPath` to
 
 | Spec | What it checks |
 |---|---|
-| `navigation` | The left-hand menu for a national admin (no Directory; Settings' pages appear only after clicking Settings, D-188), "View as member" and back, the member view (Overview, Directory, Board, own cards), a chapter admin's Reports for their chapter only |
+| `navigation` | The sidebar (Dashboard, the organization's menu, Account, Sign out, D-205); the left-hand menu for a national admin (no Directory; Settings' pages appear only after clicking Settings, D-188), "View as member" and back, the member view (Overview, Directory, Board, own cards), a chapter admin's Reports for their chapter only |
 | `members` | A national's Members page lists every chapter's members with their organization |
 | `board-setup` | A chapter's Board page has no configuration controls and links to Settings → Board settings, where the contact-email choice opens (not saved) (D-185); guided setup under Settings → Setup |
 | `join` | The join page asks every required question (Rank) before payment; joining with the test gateway and returning to the app's own address (D-158) |
