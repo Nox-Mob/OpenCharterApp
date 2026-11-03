@@ -24,7 +24,8 @@ import { EMPTY_TIER } from "@/modules/membership/tiers";
 import { TierDialog } from "./tier-editor";
 import { PricingRulesDialog } from "./pricing-rules-dialog";
 import { useFeatureReady } from "@/lib/db/readiness";
-import { homeChapterInfoQuery } from "@/modules/membership/home-chapter";
+import { homeChapterInfoQuery, membershipModelQuery } from "@/modules/membership/home-chapter";
+import { MembershipRulesCard } from "./membership-rules-card";
 import {
   describePriceRule,
   levelLinksQuery,
@@ -80,6 +81,9 @@ export function LevelsTab({
     ...homeChapterInfoQuery(org.slug),
     enabled: homeReady && org.type !== "national",
   });
+  // A national's own model, to leave out chapter-only actions in the home-chapter model
+  const ownModel = useQuery({ ...membershipModelQuery(org.id), enabled: !org.parent_id });
+  const homeNational = !org.parent_id && ownModel.data === "home_chapter";
   if (tiers.isLoading || allowed.isLoading)
     return <p className="text-muted-foreground">Loading…</p>;
 
@@ -92,7 +96,8 @@ export function LevelsTab({
   const byId = new Map((tiers.data ?? []).map((t) => [t.id, t]));
   const orgName = (id: string) => orgs.find((o) => o.id === id)?.name ?? "your national";
   const range = { min: rule.data?.min ?? null, max: rule.data?.max ?? null };
-  const hasBelow = org.type === "national" || org.type === "region";
+  // In the home-chapter model chapters have no levels, so there's nothing to suggest (D-203)
+  const hasBelow = (org.type === "national" || org.type === "region") && !homeNational;
   async function runLink(action: () => Promise<void>, done: string) {
     try {
       await action();
@@ -155,6 +160,7 @@ export function LevelsTab({
 
   return (
     <div className="space-y-6">
+      {!org.parent_id && <MembershipRulesCard org={org} orgs={orgs} />}
       <div className="flex items-center justify-between gap-4">
         <p className="text-muted-foreground">
           The membership levels you offer, how long each lasts, and what it costs.

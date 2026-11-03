@@ -115,6 +115,7 @@ Still for a person: anything about looks, wording, phones, printing and screen r
 1. As **National**, open setup and walk through every step. "Review and apply" should show what changes.
 2. Membership levels: "Add level" with two terms (1 year, Lifetime). Prices show in dollars.
 3. An org with only one level shows it as "Membership" without needing a name.
+   - As **National**, Settings → Membership levels opens with **How membership works here**: the model, approval, the grace period and the rules for chapters, matching Membership setup, with links to change them. In a home-chapter national (Test-Demo) it names the at-large chapter and there's no "Suggest to chapters".
 
 4. **Prices by member fields** (a setup step, after the levels): add a rule "Senior rate" for the 1-year term, "Rank is one of E-7, E-8, E-9", price $20.00. Review shows it; apply. Settings → Membership levels shows the rule under that term. Run setup again: the rule is filled in; change the price to $18.00 and apply. There's still one rule, now $18.00.
 5. **Suggested levels** (separate-memberships model; Demo National uses it): as **National**, on a level press "Suggest to chapters" (it then says "Stop suggesting").
