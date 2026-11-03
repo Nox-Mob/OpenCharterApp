@@ -28,22 +28,25 @@ Use a private browser window for a second account at the same time. Test only in
 | §1.5, §1.6 | The account page; privacy and terms links on sign-in, sign-up and the app | `real-use`, `a11y` |
 | §2.1, §2.2, §2.5 | The menu by role; the chapter wizard; creating a national with the model comparison | `navigation`, `lifecycle` |
 | §2b.1, §2b.3, §2b.4, §2b.5 | Only operators are offered a demo org; deleting needs the exact name; a demo chapter can't be deleted on its own | `guide-checks`, `guide-sandbox` |
-| §3.1, §3.2 | A setting locked at the national is read-only at its chapter; a badly formed EIN is refused and nothing is saved | `guide-sandbox`, `guide-checks` |
+| §3.1–3.3 | A setting locked at the national is read-only at its chapter; a badly formed EIN is refused and nothing is saved; a logo shows at once, and at the chapter | `guide-sandbox`, `guide-checks`, `guide-admin` |
+| §4 | A role defined at the national is offered at its chapter; the only admin can't be removed | `guide-admin` |
+| §5 | A field with 21 choices (the dialog keeps Save reachable); an ordered list used in the member filters; a chapter field locked at the national | `guide-admin` |
 | §6.2, §6.5–6.7 | Adding a level with its price in dollars; suggested levels, linked at 20% less | `guide-sandbox`, `levels` |
 | §6b | Settings → Setup shows the setup cards | `board-setup` |
 | §7.1–7.5 | Adding a member without an email; recording a membership (Good standing, paid through a year less a day), a renewal from the day after, cancelling; removing from the roster and restoring | `guide-sandbox`, `real-use` |
 | §8.0–8.3, §8.8 | Everyone across chapters; search with the "Showing x of y" count; a saved view surviving a reload; importing a member | `members`, `guide-sandbox`, `real-use` |
 | §9.2 | The directory shows no email addresses | `guide-checks` |
 | §10.3 | Export payments downloads the bookkeeping columns | `export` |
-| §11.1 | The join page asks every required question before payment | `join` |
-| §13.1, §13.3 | A recorded payment gets a numbered receipt (`2026-00001` style) with Print; voiding with a reason shows VOID | `guide-sandbox` |
+| §11.1, §11.4 | The join page asks every required question before payment; an application waits for approval, and approving makes them a member | `join`, `guide-admin` |
+| §12b.3 | A chapter's join page asks someone who isn't a national member to join the national first (step 1 of 2) | `guide-admin` |
+| §13.1, §13.3–13.5 | A recorded payment gets a numbered receipt (`2026-00001` style) with Print; voiding with a reason shows VOID; reissuing links the old receipt to the new one; the receipt footer appears on receipts issued afterwards | `guide-sandbox`, `guide-admin` |
 | §13b.1–13b.4 | The home-chapter model: picking and changing chapter, the chapter's Members page | `lifecycle` |
 | §14.0–14.4, §14.8, §14.10 | Members see nothing to configure; adding seats, a required chapter seat shown as vacant with the warning; a bad role email refused; appointing and ending a term with a reason in Past officers; a member whose membership was cancelled can't be appointed | `guide-checks`, `guide-sandbox`, `board-setup` |
 | §14a | The Share your join page card | `real-use` |
 | §15.1, §15.4 | The audit log in plain words, each organization seeing only its own | `real-use`, `guide-sandbox` |
 | §16 | Every control named, one heading, keyboard sign-in with visible focus | `a11y` |
 
-Still for a person: anything about looks, wording, phones, printing and screen readers; Stripe and real payments (§10, §11.2–§12c, which need a deployed site or a Stripe account); approving applications (§11.4); two-level dues (§12b); receipt reissue and footers (§13.4–13.5); and the demo org's own data (§3 logo, §4 roles, §5 fields).
+Still for a person: anything about looks, wording, phones, printing and screen readers; Stripe and real payments (§10, §11.2–§12c, which need a deployed site or a Stripe account); declining an application with a refund (§11, needs a deployed site); paying two-level dues end to end (§12b.4–12b.6); and how logos, receipts, roles and fields look. Approving, two-level dues' first step, receipt reissue and footers, logos, roles and fields are checked for working (above), and still deserve a person's eye.
 
 ---
 

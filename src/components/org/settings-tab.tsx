@@ -199,7 +199,13 @@ function LogoCard({
   allowed: boolean;
   onSaved: () => void;
 }) {
-  const effective = resolveLogo(chain, allowed);
+  // The logo just uploaded shows at once: the organization data reloads in the background, and
+  // the lineage can be read before it has the new path.
+  const [uploaded, setUploaded] = useState<string | null>(null);
+  const effective = resolveLogo(
+    uploaded ? chain.map((c) => (c.id === org.id ? { ...c, logo_path: uploaded } : c)) : chain,
+    allowed,
+  );
   const effectivePath = effective?.path ?? null;
   const [url, setUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -220,7 +226,7 @@ function LogoCard({
     if (err) return void toast.error(err);
     setBusy(true);
     try {
-      await uploadLogo(org.id, file);
+      setUploaded(await uploadLogo(org.id, file));
       toast.success("Logo updated");
       onSaved();
     } catch {

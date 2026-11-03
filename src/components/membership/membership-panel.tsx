@@ -66,6 +66,8 @@ export function MembershipPanel({
         action === "approve" ? "Approved" : action === "decline" ? "Declined" : "Cancelled",
       );
       qc.invalidateQueries({ queryKey: ["members", org.id] });
+      // a national's list of everyone below it is cached apart
+      qc.invalidateQueries({ queryKey: ["members-tree"] });
       qc.invalidateQueries({ queryKey: ["membership-history", m.id] });
     } catch (e) {
       toast.error(membershipErrorMessage(String((e as Error).message)));

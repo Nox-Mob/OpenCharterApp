@@ -160,6 +160,8 @@ function RecordContact({
       await updateMemberRecord(member.id, parsed.data);
       toast.success("Contact details saved");
       qc.invalidateQueries({ queryKey: ["members", org.id] });
+      // a national's list of everyone below it is cached apart
+      qc.invalidateQueries({ queryKey: ["members-tree"] });
     } catch (e) {
       toast.error(membershipErrorMessage(String((e as Error).message)));
     }

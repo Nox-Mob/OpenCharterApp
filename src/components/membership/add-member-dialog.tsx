@@ -43,6 +43,8 @@ export function AddMemberDialog({
       const id = await createMemberRecord(orgId, parsed.data);
       toast.success("Member added");
       qc.invalidateQueries({ queryKey: ["members", orgId] });
+      // a national's list of everyone below it is cached apart
+      qc.invalidateQueries({ queryKey: ["members-tree"] });
       setName("");
       setEmail("");
       onCreated(id);

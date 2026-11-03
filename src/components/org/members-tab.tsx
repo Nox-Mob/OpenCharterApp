@@ -319,6 +319,8 @@ export function MembersTab({
       } else await decideMembership(membershipId, action);
       toast.success(action === "approve" ? "Application approved" : "Application declined");
       qc.invalidateQueries({ queryKey: ["members", orgId] });
+      // a national's list of everyone below it is cached apart
+      qc.invalidateQueries({ queryKey: ["members-tree"] });
     } catch (e) {
       toast.error(membershipErrorMessage(String((e as Error).message)));
     }

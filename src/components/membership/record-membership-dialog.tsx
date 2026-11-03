@@ -117,6 +117,8 @@ export function RecordMembershipDialog({
       await recordMembership(member.id, parsed.data);
       toast.success(renewing ? "Renewal recorded" : "Membership recorded");
       qc.invalidateQueries({ queryKey: ["members", org.id] });
+      // a national's list of everyone below it is cached apart
+      qc.invalidateQueries({ queryKey: ["members-tree"] });
       qc.invalidateQueries({ queryKey: ["membership-history"] });
       onClose();
     } catch (e) {

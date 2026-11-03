@@ -70,6 +70,8 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 
 ## Done
 ### 2026-11-02
+- [x] The browser tests also check approvals, two-level dues (first step), receipt footers and reissue, logos, roles and fields; two refresh bugs fixed (D-202)
+- [x] The Board shows each officer's sign-in email as the contact where a seat has no role email (D-201)
 - [x] Sales demo: Test-Demo filled with 15 chapters, 500 people with years of history, every standing and every board seat filled (D-199); found and fixed double counting on the Overview (D-200; 0040)
 - [x] The browser tests take over about 30 steps of the user-testing guide (sign-in messages, invitations, levels, memberships and dates, receipts, the board, locks, the audit log, deleting a demo org), in a throwaway demo national (D-198)
 - [x] Migrations 0036–0038 applied by Lovable; their hand-written types and readiness checks retired
