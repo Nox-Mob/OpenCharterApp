@@ -15,17 +15,32 @@ import {
   saveMyName,
   syncMyEmail,
 } from "@/modules/account";
+import { defaultOrgIdOf, saveDefaultOrg } from "@/modules/account/landing";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/account")({
   head: () => ({ meta: [{ title: "Your account — OpenCharterApp" }] }),
   component: AccountPage,
 });
 
-type Me = { id: string; email: string; name: string; provider: string; pendingEmail: string };
+type Me = {
+  id: string;
+  email: string;
+  name: string;
+  provider: string;
+  pendingEmail: string;
+  defaultOrgId: string | null;
+};
 
 const meQuery = {
   queryKey: ["me-account"],
@@ -47,6 +62,7 @@ const meQuery = {
         (profiles?.[0]?.display_name ?? ""),
       provider: String((u.app_metadata as Record<string, unknown>)?.["provider"] ?? "email"),
       pendingEmail: (u as { new_email?: string }).new_email ?? "",
+      defaultOrgId: defaultOrgIdOf(u),
     };
   },
 };
@@ -76,6 +92,7 @@ function AccountPage() {
     <div className="mx-auto max-w-2xl space-y-8">
       <h1 className="text-3xl font-semibold">Your account</h1>
       <NameCard me={m} />
+      <DefaultOrgCard me={m} orgs={orgs.data ?? []} />
       <EmailCard me={m} />
       {m.provider === "email" ? (
         <PasswordCard />
@@ -106,6 +123,58 @@ function AccountPage() {
         </p>
       </section>
     </div>
+  );
+}
+
+const NO_DEFAULT = "none";
+
+/** Which organization opens after signing in (D-206). */
+function DefaultOrgCard({ me, orgs }: { me: Me; orgs: readonly { id: string; name: string }[] }) {
+  const qc = useQueryClient();
+  const [value, setValue] = useState(me.defaultOrgId ?? NO_DEFAULT);
+  const [busy, setBusy] = useState(false);
+  // a default you no longer belong to reads as "no default"
+  const current = orgs.some((o) => o.id === value) ? value : NO_DEFAULT;
+  async function choose(next: string) {
+    const previous = value;
+    setValue(next);
+    setBusy(true);
+    try {
+      await saveDefaultOrg(next === NO_DEFAULT ? null : next);
+      toast.success("Default organization saved");
+      qc.invalidateQueries({ queryKey: meQuery.queryKey });
+    } catch (err) {
+      setValue(previous);
+      toast.error(accountErrorMessage(String((err as Error).message)));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <section className="space-y-3 rounded-md border bg-card p-5">
+      <h2 className="text-lg font-semibold">Default organization</h2>
+      <div className="space-y-1">
+        <Label htmlFor="account-default-org">Open after signing in</Label>
+        <Select value={current} onValueChange={choose} disabled={busy || orgs.length === 0}>
+          <SelectTrigger id="account-default-org" className="w-full sm:w-80">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={NO_DEFAULT}>
+              {orgs.length === 1 ? "My only organization" : "The list of my organizations"}
+            </SelectItem>
+            {orgs.map((o) => (
+              <SelectItem key={o.id} value={o.id}>
+                {o.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-sm text-muted-foreground">
+          Switch organizations any time with the dropdown at the top of the menu.
+        </p>
+      </div>
+    </section>
   );
 }
 

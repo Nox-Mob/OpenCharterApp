@@ -8,7 +8,7 @@ Status on 2026-11-03. The MVP on branch `BoardUpdates` is built and live on Lova
 |---|---|
 | Features | Wave A (A1–A8), release hardening (R1–R3, R5–R7) and Sprint 4 "ready for real use" (U1–U7) are built. See `CHANGELOG.md` for the full list |
 | Database | `0000`–`0039` applied by Lovable. **Waiting: `0040`** (Overview counts people once in the home-chapter model, D-200) |
-| Automated checks | GitHub runs, on every push: lint, formatting, types, 423 unit and component tests, 33 database rule test files (each migration in one transaction), migration conventions, a 5,000-member performance budget, a dependency audit and the build (`ci.yml`). On pushes to `BoardUpdates` and `main`, pull requests to `main`, daily and on demand: the live smoke test (89 checks) and 50 end-to-end tests in Chrome against the live demo, including about 40 steps of the user-testing guide (`live.yml`). All green on the last runs |
+| Automated checks | GitHub runs, on every push: lint, formatting, types, 428 unit and component tests, 33 database rule test files (each migration in one transaction), migration conventions, a 5,000-member performance budget, a dependency audit and the build (`ci.yml`). On pushes to `BoardUpdates` and `main`, pull requests to `main`, daily and on demand: the live smoke test (89 checks) and 51 end-to-end tests in Chrome against the live demo, including about 40 steps of the user-testing guide (`live.yml`). All green on the last runs |
 | Security | Review done (`docs/security-review.md`), follow-ups F1–F3 closed; `bun audit`: 2 moderate advisories in development tooling only |
 | Demo data | Demo National (for tests) and **Test-Demo**, a sales demo with 15 chapters, ~500 members with years of history and a full board (`docs/demo-data.md`) |
 | Version | `package.json` is `0.1.0`; `CHANGELOG.md` lists what's in it and the known limits |
@@ -45,7 +45,7 @@ numbers, and a readable audit log. Version 0.1.0; the full list is in CHANGELOG.
 - CI (`ci.yml`): lint, formatting, types, unit and component tests, database rule tests with every
   migration applied in one transaction, Lovable migration conventions, a 5,000-member performance
   budget, dependency audit, production build.
-- Live demo checks (`live.yml`): the smoke test against the live backend, then 50 end-to-end tests
+- Live demo checks (`live.yml`): the smoke test against the live backend, then 51 end-to-end tests
   in Chrome (sandboxed, other sites blocked), covering the main flows and about 40 steps of the
   user-testing guide.
 - Security review: docs/security-review.md (no blocking findings; follow-ups closed).
@@ -62,14 +62,14 @@ numbers, and a readable audit log. Version 0.1.0; the full list is in CHANGELOG.
 - [x] Tests pass locally and in CI (lint, typecheck, unit, integration, e2e)
 - [x] New or changed behavior has tests in this PR
 - [x] Tenant-isolation tests added or updated for tenant-scoped data
-- [x] Root README and supporting docs updated: README, CHANGELOG, roadmap, decisions (D-100..D-204),
+- [x] Root README and supporting docs updated: README, CHANGELOG, roadmap, decisions (D-100..D-206),
       testing, user-testing, demo-data, tables, security-review, lovable-handoff, plans
 - [x] Diagram descriptions updated where diagrams changed (epic.md, tables.md)
 - [x] decisions.md / epic.md / risks updated
 - [x] Audit events and permission checks included where needed
 - [x] No hard-coded org-specific values (terms, ranks, prices, titles)
 - [x] Linked epics and decisions: E-01..E-19, E-23 (Phases 0–2), Wave A A1–A8, R1–R7, U1–U7;
-      decisions up to D-204
+      decisions up to D-206
 
 ## After merging
 Tag `v0.1.0` on main and publish the CHANGELOG section as the release notes.

@@ -112,7 +112,7 @@ function Done() {
     </Button>
   ) : (
     <Button asChild variant="outline">
-      <Link to="/dashboard">Go to your dashboard</Link>
+      <Link to="/dashboard">Continue</Link>
     </Button>
   );
 

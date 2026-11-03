@@ -2,7 +2,7 @@
 
 What to check by hand in the live app. The automated checks already cover the database rules (`db/tests/`), the screens in isolation (`bun run test`), the backend flows with the demo accounts (`bun run test:smoke`) and the main screens in a real browser (`bun run test:e2e`, docs/testing.md). This guide covers what only a person can judge: whether screens make sense, look right, work on a phone, print well, and say the right thing.
 
-The app has a sidebar on the left: the organization switcher at the top, then Dashboard and the organization's menu with icons, and Account and Sign out at the bottom (D-205). On a phone the menu is a "Section" dropdown and Account and Sign out are below the page. The organization's menu is: Overview, Members or Directory, Board, Reports, Chapters, and Settings. Settings' pages are listed under it only once you click Settings (on a phone, a second "Settings page" dropdown appears; D-188). They are: (General, Setup, Membership levels, Member fields, Chapter fields, Board settings, Roles, Payments, Audit log). Everything that configures the organization is under Settings; the other pages show information or let you do something (D-185). "Where" lines below use those names.
+The app has a sidebar on the left: the organization switcher at the top (its last entry, "All organizations…", opens the list of your organizations and Create organization), then the organization's menu with icons, and Account and Sign out at the bottom (D-205, D-206). There's no separate dashboard: each organization's Overview is its dashboard. On a phone the menu is a "Section" dropdown and Account and Sign out are below the page. The organization's menu is: Overview, Members or Directory, Board, Reports, Chapters, and Settings. Settings' pages are listed under it only once you click Settings (on a phone, a second "Settings page" dropdown appears; D-188). They are: (General, Setup, Membership levels, Member fields, Chapter fields, Board settings, Roles, Payments, Audit log). Everything that configures the organization is under Settings; the other pages show information or let you do something (D-185). "Where" lines below use those names.
 
 **Accounts.** Use the demo accounts in [demo-data.md](demo-data.md) (shared password there):
 
@@ -26,6 +26,7 @@ Use a private browser window for a second account at the same time. Test only in
 | §1 | Signed-out visitors are sent to sign in and land back where they were going | `guide-checks` |
 | §1.4 | An invitation link: signed out it asks to sign in, nothing is accepted on opening, another account's accept is refused, a revoked link is unavailable | `guide-sandbox` |
 | §1.5, §1.6 | The account page; privacy and terms links on sign-in, sign-up and the app | `real-use`, `a11y` |
+| §1.5 | The default organization opens after signing in; "the list" puts it back | `navigation` |
 | §2.1, §2.2, §2.5 | The menu by role; the chapter wizard; creating a national with the model comparison | `navigation`, `lifecycle` |
 | §2b.1, §2b.3, §2b.4, §2b.5 | Only operators are offered a demo org; deleting needs the exact name; a demo chapter can't be deleted on its own | `guide-checks`, `guide-sandbox` |
 | §3.1–3.3 | A setting locked at the national is read-only at its chapter; a badly formed EIN is refused and nothing is saved; a logo shows at once, and at the chapter | `guide-sandbox`, `guide-checks`, `guide-admin` |
@@ -52,18 +53,18 @@ Still for a person: anything about looks, wording, phones, printing and screen r
 
 ## 1. Sign-in, password reset, invitations
 **Where:** `/auth`, the sign-in link on the home page.
-1. Sign in as **Chapter**. Expect the dashboard with your orgs.
+1. Sign in as **Chapter**. Expect your default organization (Account → Default organization), or your only one, or else the list of your organizations.
 2. Sign out, then sign in with a wrong password. Expect "Email or password is incorrect." Nothing should say whether the email exists.
 3. "Forgot password?" → enter an email → "Send reset link". Expect a neutral message, whether or not the account exists.
 4. As **Chapter**: Demo Austin Chapter → Members → "Invite someone" → "Create invite link". Copy the link and open it in a private window. Expect the invitation page; accepting needs a button press.
 
-5. **Account** (header → Account), as **Member**: your name, email and organizations are shown. Change your name and save: it shows on your member record at Austin. "Change email" sends a confirmation link to the new address (use a mailbox you control; don't change the demo accounts' emails); the page says so until it's opened. Change the password twice to put it back (`OpenCharterDemo!2026`). A Google sign-in shows no password section.
+5. **Account** (sidebar → Account), as **Member**: your name, email and organizations are shown. **Default organization**: pick an organization, sign out and back in, and expect it to open; pick "The list of my organizations" to put it back. Change your name and save: it shows on your member record at Austin. "Change email" sends a confirmation link to the new address (use a mailbox you control; don't change the demo accounts' emails); the page says so until it's opened. Change the password twice to put it back (`OpenCharterDemo!2026`). A Google sign-in shows no password section.
 6. **Privacy policy and terms**: the sign-in page, the landing page and the app's footer link to them; "Create an account" says "By creating an account you agree to…", and the join page says "By joining you agree to…". Both pages show the placeholder banner and text in [brackets] to fill in.
 
 **Also try:** opening the same invite link a second time after accepting (it should say it's used).
 
 ## 2. Organizations and chapters
-**Where:** dashboard, org page, Chapters.
+**Where:** the list of your organizations (switcher → All organizations…), org page, Chapters.
 1. As **National**, open Demo National Association. Expect a menu on the left (a "Section" dropdown on a phone): Overview, Members, Board, Reports, Chapters, Settings (no Directory: admins have Members), and under Settings: General, Setup, Membership levels, Member fields, Chapter fields, Roles, Payments, Audit log. As **Chapter** (Austin) expect the same without Chapters, with Reports showing only Austin. As **Member** expect only Overview, Directory and Board (and Chapters at a national).
 2. Chapters → "Add chapter". The wizard asks, step by step:
    - **Name and type.** Try a region too: it skips the chapter steps.
@@ -74,16 +75,16 @@ Still for a person: anything about looks, wording, phones, printing and screen r
    After "Create", you see the invitation links to copy, and "Open …" goes to the new chapter. Expect it in the Chapters list and the org switcher; its Board shows the required seats as **Vacant**.
 3. Open an officer's invitation link in a private window and accept it. Then appoint that person on the chapter's Board (they need a membership in good standing first, unless the rule is off).
 4. Open the new chapter. Expect "← Demo National Association" at the top.
-5. **Creating a national** (Dashboard → create an organization, type National; tick "demo" if you're an operator): step 2 is **How membership works**. Both models are shown side by side, each with joining, dues, chapters, changing chapter, "A good fit if" and an example. "Create" is refused until you pick one or "Decide later". Pick one and check Settings → General says it's chosen and can't be changed; with "Decide later", Settings → General still offers the choice. A standalone organization has no such step.
+5. **Creating a national** (switcher → All organizations… → Create organization, type National; tick "demo" if you're an operator): step 2 is **How membership works**. Both models are shown side by side, each with joining, dues, chapters, changing chapter, "A good fit if" and an example. "Create" is refused until you pick one or "Decide later". Pick one and check Settings → General says it's chosen and can't be changed; with "Decide later", Settings → General still offers the choice. A standalone organization has no such step.
 
 **Also try:** a chapter name with accents or an apostrophe, and check the suggested web address (slug); a bad email (it stops before anything is created); the same email for the admin and an officer (one invitation).
 
 ## 2b. Demo organizations (for QA)
-**Where:** Dashboard → create an organization; the new org's Settings → General.
-1. As **National** (a platform operator), create an organization and tick **This is a demo organization**. It shows a **Demo** badge on its page and in the dashboard list.
+**Where:** switcher → All organizations… → Create organization; the new org's Settings → General.
+1. As **National** (a platform operator), create an organization and tick **This is a demo organization**. It shows a **Demo** badge on its page and in the list of your organizations.
 2. Run setup from scratch in it: Membership setup, Board setup, add chapters (they're demo too: the wizard says "Demo, like …"), turn on test payments, join, pay.
 3. In a private window, sign in as an account that isn't an operator: the demo checkbox doesn't appear when creating an org.
-4. As the demo org's admin: Settings → General → **Delete this demo organization**. "Delete for good" stays disabled until you type the exact name. After deleting you land on the dashboard and the org and its chapters are gone; the accounts you used still sign in.
+4. As the demo org's admin: Settings → General → **Delete this demo organization**. "Delete for good" stays disabled until you type the exact name. After deleting you land on the list of your organizations and the org and its chapters are gone; the accounts you used still sign in.
 5. A production org's Settings never shows the delete section, and a demo chapter's doesn't either (delete from the top).
 
 **Also try:** creating a chapter under a production national: no demo option there.

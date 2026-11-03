@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { DEMO, openOrg, orgMenu, signIn } from "./helpers";
+import { DEMO, openOrg, openOrganizations, orgMenu, signIn } from "./helpers";
 
 // Steps from docs/user-testing.md that a browser can check without changing anything (D-198).
 // Each test names the guide section it covers.
@@ -45,6 +45,7 @@ test("§1 signed-out visitors are sent to sign in, and come back afterwards", as
 
 test("§2b.3 only platform operators can create a demo organization", async ({ page }) => {
   await signIn(page, "chapter");
+  await openOrganizations(page);
   await page.getByRole("button", { name: "Create organization" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByLabel("Name")).toBeVisible();
@@ -53,6 +54,7 @@ test("§2b.3 only platform operators can create a demo organization", async ({ p
 
 test("§2b.1 a platform operator is offered a demo organization", async ({ page }) => {
   await signIn(page, "national");
+  await openOrganizations(page);
   await page.getByRole("button", { name: "Create organization" }).click();
   await expect(page.getByRole("dialog").getByText("This is a demo organization")).toBeVisible();
 });

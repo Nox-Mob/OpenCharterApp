@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "./fixtures";
-import { openOrg, signIn, type Role } from "./helpers";
+import { openOrg, openOrganizations, signIn, type Role } from "./helpers";
 
 // Accessibility pass (R2, WCAG 2.1 AA, Q-16), checked without extra dependencies:
 // - every button, link, form field and combobox on the main screens has an accessible name
@@ -88,7 +88,8 @@ const SCREENS: { role: Role; org: "national" | "austin"; tabs: string[] }[] = [
 for (const { role, org, tabs } of SCREENS) {
   test(`${role}: controls are named on every main screen`, async ({ page }) => {
     await signIn(page, role);
-    await checkPage(page, "dashboard");
+    await openOrganizations(page);
+    await checkPage(page, "organizations");
     for (const tab of tabs) {
       await openOrg(page, org, tab);
       await checkPage(page, `${org} ${tab}`);

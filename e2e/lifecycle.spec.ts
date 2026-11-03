@@ -1,6 +1,6 @@
 import { expect, guardedPage, test, type Page } from "./fixtures";
 import { rpc, signIn as apiSignIn, type Db } from "../smoke/client";
-import { DEMO, orgMenu, signIn } from "./helpers";
+import { DEMO, openOrganizations, orgMenu, signIn } from "./helpers";
 
 // A throwaway demo national, built through the real screens and always deleted afterwards
 // (delete_demo_organization). Covers: creating a national with the membership-model step
@@ -48,6 +48,7 @@ async function openSection(page: Page, orgId: string, section: string) {
 
 test("create a national and choose how membership works", async ({ page }) => {
   await signIn(page, "national");
+  await openOrganizations(page);
   await page.getByRole("button", { name: "Create organization" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Name").fill(NAME);

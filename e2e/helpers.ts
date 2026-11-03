@@ -12,7 +12,14 @@ export async function signIn(page: Page, role: Role) {
   await page.getByLabel("Email").fill(DEMO[role]);
   await page.getByLabel("Password").fill(DEMO.password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page).toHaveURL(/\/dashboard/);
+  // lands on the default or only organization, or the list of organizations (D-206)
+  await expect(page).toHaveURL(/\/orgs(\/|$)/);
+}
+
+/** The list of your organizations, with Create organization (D-206). */
+export async function openOrganizations(page: Page) {
+  await page.goto("/orgs");
+  await expect(page.getByRole("heading", { level: 1, name: "Your organizations" })).toBeVisible();
 }
 
 /** Open a demo org's page, optionally on a section (?tab=). */

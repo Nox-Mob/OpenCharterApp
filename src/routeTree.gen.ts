@@ -18,6 +18,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as AuthenticatedOrgsIndexRouteImport } from './routes/_authenticated/orgs.index'
 import { Route as AuthenticatedOrgsOrgIdRouteImport } from './routes/_authenticated/orgs.$orgId'
 import { Route as AuthenticatedReceiptsReceiptIdRouteImport } from './routes/_authenticated/receipts.$receiptId'
 import { Route as JoinOrgSlugIndexRouteImport } from './routes/join.$orgSlug.index'
@@ -70,6 +71,11 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
   path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedOrgsIndexRoute = AuthenticatedOrgsIndexRouteImport.update({
+  id: '/orgs/',
+  path: '/orgs/',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOrgsOrgIdRoute = AuthenticatedOrgsOrgIdRouteImport.update({
   id: '/orgs/$orgId',
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/orgs/$orgId': typeof AuthenticatedOrgsOrgIdRoute
   '/receipts/$receiptId': typeof AuthenticatedReceiptsReceiptIdRoute
   '/join/$orgSlug/cancelled': typeof JoinOrgSlugCancelledRoute
+  '/orgs/': typeof AuthenticatedOrgsIndexRoute
   '/join/$orgSlug/': typeof JoinOrgSlugIndexRoute
   '/join/$orgSlug/done': typeof AuthenticatedJoinOrgSlugDoneRoute
   '/orgs/$orgId/setup': typeof AuthenticatedOrgsOrgIdSetupRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/orgs/$orgId': typeof AuthenticatedOrgsOrgIdRoute
   '/receipts/$receiptId': typeof AuthenticatedReceiptsReceiptIdRoute
   '/join/$orgSlug/cancelled': typeof JoinOrgSlugCancelledRoute
+  '/orgs': typeof AuthenticatedOrgsIndexRoute
   '/join/$orgSlug': typeof JoinOrgSlugIndexRoute
   '/join/$orgSlug/done': typeof AuthenticatedJoinOrgSlugDoneRoute
   '/orgs/$orgId/setup': typeof AuthenticatedOrgsOrgIdSetupRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/_authenticated/orgs/$orgId': typeof AuthenticatedOrgsOrgIdRoute
   '/_authenticated/receipts/$receiptId': typeof AuthenticatedReceiptsReceiptIdRoute
   '/join/$orgSlug/cancelled': typeof JoinOrgSlugCancelledRoute
+  '/_authenticated/orgs/': typeof AuthenticatedOrgsIndexRoute
   '/join/$orgSlug/': typeof JoinOrgSlugIndexRoute
   '/_authenticated/join/$orgSlug/done': typeof AuthenticatedJoinOrgSlugDoneRoute
   '/_authenticated/orgs/$orgId_/setup': typeof AuthenticatedOrgsOrgIdSetupRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/orgs/$orgId'
     | '/receipts/$receiptId'
     | '/join/$orgSlug/cancelled'
+    | '/orgs/'
     | '/join/$orgSlug/'
     | '/join/$orgSlug/done'
     | '/orgs/$orgId/setup'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/orgs/$orgId'
     | '/receipts/$receiptId'
     | '/join/$orgSlug/cancelled'
+    | '/orgs'
     | '/join/$orgSlug'
     | '/join/$orgSlug/done'
     | '/orgs/$orgId/setup'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/_authenticated/orgs/$orgId'
     | '/_authenticated/receipts/$receiptId'
     | '/join/$orgSlug/cancelled'
+    | '/_authenticated/orgs/'
     | '/join/$orgSlug/'
     | '/_authenticated/join/$orgSlug/done'
     | '/_authenticated/orgs/$orgId_/setup'
@@ -308,6 +320,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/orgs/': {
+      id: '/_authenticated/orgs/'
+      path: '/orgs'
+      fullPath: '/orgs/'
+      preLoaderRoute: typeof AuthenticatedOrgsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/orgs/$orgId': {
       id: '/_authenticated/orgs/$orgId'
       path: '/orgs/$orgId'
@@ -372,6 +391,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedOrgsOrgIdRoute: typeof AuthenticatedOrgsOrgIdRoute
   AuthenticatedReceiptsReceiptIdRoute: typeof AuthenticatedReceiptsReceiptIdRoute
+  AuthenticatedOrgsIndexRoute: typeof AuthenticatedOrgsIndexRoute
   AuthenticatedJoinOrgSlugDoneRoute: typeof AuthenticatedJoinOrgSlugDoneRoute
   AuthenticatedOrgsOrgIdSetupRoute: typeof AuthenticatedOrgsOrgIdSetupRoute
   AuthenticatedPayTestPaymentIdRoute: typeof AuthenticatedPayTestPaymentIdRoute
@@ -382,6 +402,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedOrgsOrgIdRoute: AuthenticatedOrgsOrgIdRoute,
   AuthenticatedReceiptsReceiptIdRoute: AuthenticatedReceiptsReceiptIdRoute,
+  AuthenticatedOrgsIndexRoute: AuthenticatedOrgsIndexRoute,
   AuthenticatedJoinOrgSlugDoneRoute: AuthenticatedJoinOrgSlugDoneRoute,
   AuthenticatedOrgsOrgIdSetupRoute: AuthenticatedOrgsOrgIdSetupRoute,
   AuthenticatedPayTestPaymentIdRoute: AuthenticatedPayTestPaymentIdRoute,

@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { openOrg, orgMenu, signIn } from "./helpers";
+import { DEMO, openOrg, orgMenu, signIn } from "./helpers";
 
 // D-152, D-154, D-155: the left-hand menu by role, and "View as member".
 test("a national admin gets the admin menu and can preview the member view", async ({ page }) => {
@@ -48,11 +48,16 @@ test("a chapter admin sees Reports for their own chapter only", async ({ page })
   await expect(page.getByText(/every organization below it/)).toHaveCount(0);
 });
 
-// D-205: the left sidebar holds Dashboard, the organization's menu, Account and Sign out.
+// D-205, D-206: the left sidebar holds the organization dropdown, the organization's menu,
+// Account and Sign out; there's no separate Dashboard page.
 test("the sidebar holds the menu, Account and Sign out", async ({ page }) => {
   await signIn(page, "national");
   const sidebar = page.getByRole("complementary");
-  await expect(sidebar.getByRole("link", { name: "Dashboard" })).toBeVisible();
+  await expect(sidebar.getByRole("link", { name: "Dashboard" })).toHaveCount(0);
+  await openOrg(page, "national");
+  await sidebar.getByRole("combobox", { name: "Switch organization" }).click();
+  await page.getByRole("option", { name: "All organizations…" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Your organizations" })).toBeVisible();
   await openOrg(page, "national");
   await expect(sidebar.getByRole("navigation", { name: "Organization" })).toBeVisible();
   await expect(sidebar.getByRole("button", { name: "Members", exact: true })).toBeVisible();
@@ -60,4 +65,29 @@ test("the sidebar holds the menu, Account and Sign out", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: "Your account" })).toBeVisible();
   await sidebar.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL(/\/auth/);
+});
+
+// D-206: the account's default organization opens after signing in; "the list" clears it.
+test("the default organization opens after signing in", async ({ page }) => {
+  const choose = async (option: string | RegExp) => {
+    await page.goto("/account");
+    await page.getByRole("combobox", { name: "Open after signing in" }).click();
+    await page.getByRole("option", { name: option }).click();
+    await expect(page.getByText("Default organization saved")).toBeVisible();
+  };
+  const signOutAndIn = async () => {
+    await page.getByRole("complementary").getByRole("button", { name: "Sign out" }).click();
+    await expect(page).toHaveURL(/\/auth/);
+    await signIn(page, "national");
+  };
+  await signIn(page, "national");
+  try {
+    await choose(/^Demo Austin/);
+    await signOutAndIn();
+    await expect(page).toHaveURL(new RegExp(`/orgs/${DEMO.orgs.austin}`));
+  } finally {
+    await choose("The list of my organizations");
+  }
+  await signOutAndIn();
+  await expect(page).toHaveURL(/\/orgs$/);
 });

@@ -306,7 +306,7 @@ test("§2b.4 a demo organization is deleted only after typing its exact name", a
   await dialog.getByLabel(`Type ${NAME} to confirm`).fill(NAME);
   await expect(go).toBeEnabled();
   await go.click();
-  await expect(page).toHaveURL(/\/dashboard/);
+  await expect(page).toHaveURL(/\/orgs$/);
   deleted = true;
   await expect(page.getByText(NAME)).toHaveCount(0);
 });
