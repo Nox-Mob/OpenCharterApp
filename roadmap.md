@@ -3,7 +3,11 @@
 Where things stand and what's next. Plans: `docs/plans/` (MVP: `wave-a-mvp.md`; Phases 1–3 and later waves: `phases-1-3-review.md`). Epics: `docs/epic.md`. Decisions: `docs/decisions.md`. Testing by hand: `docs/user-testing.md`.
 
 ## Pending migrations for Lovable
-`0000`–`0039` are applied (0036–0038 on 2026-11-03, with Lovable's confirm migration 0039). Nothing is waiting. When a new migration is written it is listed here, with steps and checks in `docs/lovable-handoff.md`; until it is applied, the screens that need it leave the feature out (D-135).
+`0000`–`0039` are applied. Apply the one below (steps and checks in `docs/lovable-handoff.md`).
+
+| Migration | Enables | Status |
+|---|---|---|
+| `0040_overview_people_once` | D-200: the Overview counts each person once for renewals due and applications waiting in the home-chapter model | Waiting |
 
 ## Now: the MVP release, v0.1.0 (`docs/plans/wave-a-mvp.md`)
 Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D-170, D-175), demo data kept until a second real national joins (D-171), version 0.1.0 with a changelog and tag (D-172).
@@ -66,6 +70,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 
 ## Done
 ### 2026-11-02
+- [x] Sales demo: Test-Demo filled with 15 chapters, 500 people with years of history, every standing and every board seat filled (D-199); found and fixed double counting on the Overview (D-200; 0040)
 - [x] The browser tests take over about 30 steps of the user-testing guide (sign-in messages, invitations, levels, memberships and dates, receipts, the board, locks, the audit log, deleting a demo org), in a throwaway demo national (D-198)
 - [x] Migrations 0036–0038 applied by Lovable; their hand-written types and readiness checks retired
 - [x] GitHub runs the smoke test and end-to-end tests against the live demo on pushes to `main` and `BoardUpdates`, pull requests, daily and on demand; CI adds a performance budget, a dependency audit and one-transaction migrations (D-197)

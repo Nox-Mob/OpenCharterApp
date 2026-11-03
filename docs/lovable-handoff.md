@@ -4,7 +4,11 @@ Status on 2026-11-03.
 
 **Done:** migrations `0000`–`0039` are applied, the types are regenerated, and the `GATEWAY_ENCRYPTION_KEY` secret is set. Thank you. A record is at the end.
 
-**Waiting:** nothing.
+**Waiting**, on branch `BoardUpdates`, tested against Postgres 16 (`db/tests/9S_overview_people_once.sql`); it applies inside one transaction:
+
+| File | What it adds | Check it worked (SQL editor) |
+|---|---|---|
+| `0040_overview_people_once.sql` | A new version of `org_overview_stats` (same signature) that counts people once for renewals due and applications waiting | On Test-Demo, the Overview's "Renewals due in 30 days" matches the Reports page's national row (about 20, not 40) |
 
 ## 1. When a migration is waiting
 - Apply them strictly in order. They're additive only (D-125, checked in CI by `bun run check:migrations`).

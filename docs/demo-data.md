@@ -34,6 +34,18 @@ All three are platform operators (they can create and delete demo organizations)
 
 Smoke and end-to-end runs add and then remove their own records (D-150), so counts can change briefly while they run. Some end-to-end specs (`lifecycle`, `levels`) create their own throwaway demo nationals named "E2E National …" or "E2E Levels …" and delete them afterwards; the lifecycle spec also deletes "E2E National …" orgs left over from earlier runs.
 
+## The sales demo: Test-Demo (D-199)
+
+**Test-Demo** (`test-demo`, d60400ef-…) is a demo national set up to look like a real association, for sales demos and for checking screens that need judgement with realistic numbers. It uses the **home-chapter model** (members belong to the national and pick a chapter). Filled on 2026-11-03 by `bun scripts/seed-sales-demo.ts`:
+
+- **15 chapters** in the Southwest and Colorado (Los Alamos is the at-large chapter), each with a charter date.
+- **501 people:** 415 current members (40 of them lifetime, 30 on three-year terms, 15 associates), 38 who joined in the last 30 days, about 20 renewing within 30 days, 25 in their grace period, 55 lapsed, 15 who cancelled, and 16 prospects with no membership. Most have years of renewals behind them (up to ten), each with a payment and a receipt: 1,792 payments in all, $13,610 of them this year so far.
+- **Member fields:** Rank (E-3 to O-6, required), Branch and Veteran, filled in for everyone. **Levels:** Regular (1 year $45, 3 years $120), Life Member ($600), Associate (1 year $25). Test payments are on, so the join page works.
+- **Board:** President, Vice President, Secretary and Treasurer, required for the national and every chapter: all 64 seats are filled by members in good standing.
+- Nora National (demo-national) is its admin.
+
+The script refuses to run on an organization that already has members, and works only on demo organizations in the home-chapter model (`--org <id>` seeds another one). The smoke and end-to-end tests never touch Test-Demo.
+
 ## Creating your own demo organizations (D-148)
 
 Platform operators can mark a new national or standalone org as a demo when creating it ("This is a demo organization" in the create dialog). Its chapters are demo too. A demo org:
