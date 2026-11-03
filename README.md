@@ -29,7 +29,7 @@ The full vision, scope and feature map are in [`docs/README.md`](docs/README.md)
 
 ### Where it stands
 
-**Next milestone: the MVP release (v0.1.0)**, the first version a real national or standalone association can run on, hosted on Lovable Cloud. All three sprints are built; what's left is Lovable applying migrations `0036`–`0037`, three owner actions (a live Stripe test-mode run, a CPA look at receipt wording, and the final privacy policy and terms text) and the release checklist in [`docs/plans/wave-a-mvp.md`](docs/plans/wave-a-mvp.md). What's in it: [`CHANGELOG.md`](CHANGELOG.md). Phases 1 and 2 of the [epic map](docs/epic.md) meet their exit criteria; what's left in Phases 1–3 is in [`docs/plans/phases-1-3-review.md`](docs/plans/phases-1-3-review.md).
+**Next milestone: the MVP release (v0.1.0)**, the first version a real national or standalone association can run on, hosted on Lovable Cloud. All three sprints are built; what's left is three owner actions (a live Stripe test-mode run, a CPA look at receipt wording, and the final privacy policy and terms text) and the release checklist in [`docs/plans/wave-a-mvp.md`](docs/plans/wave-a-mvp.md). What's in it: [`CHANGELOG.md`](CHANGELOG.md). Phases 1 and 2 of the [epic map](docs/epic.md) meet their exit criteria; what's left in Phases 1–3 is in [`docs/plans/phases-1-3-review.md`](docs/plans/phases-1-3-review.md).
 
 Working today:
 
@@ -50,7 +50,7 @@ Working today:
 
 Not in the MVP: automatic email (the first update after it), postpaid dues and invoices, PayPal, custom domains, approvals, board reports, documents, elections. Progress and what's next: [`roadmap.md`](roadmap.md).
 
-Every migration up to `0035` is applied to the live database; `0036` and `0037` (Sprint 4: import, remove from roster, the readable audit log) are waiting (see [`roadmap.md`](roadmap.md)). The security, accessibility and performance review is in [`docs/security-review.md`](docs/security-review.md), and a map of every table is in [`docs/tables.md`](docs/tables.md).
+Every migration up to `0039` is applied to the live database. The security, accessibility and performance review is in [`docs/security-review.md`](docs/security-review.md), and a map of every table is in [`docs/tables.md`](docs/tables.md).
 
 ## Install and run
 

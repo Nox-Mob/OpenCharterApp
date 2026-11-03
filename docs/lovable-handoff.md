@@ -1,16 +1,10 @@
 # Hand-off to Lovable
 
-Status on 2026-11-02.
+Status on 2026-11-03.
 
-**Done:** migrations `0000`–`0035` are applied, the types are regenerated, and the `GATEWAY_ENCRYPTION_KEY` secret is set. Thank you. A record is at the end.
+**Done:** migrations `0000`–`0039` are applied, the types are regenerated, and the `GATEWAY_ENCRYPTION_KEY` secret is set. Thank you. A record is at the end.
 
-**Waiting**, on branch `BoardUpdates`, tested against Postgres 16 (`db/tests/9O_home_chapter_settings.sql`, `9P_ready_for_real_use.sql`, `9Q_ready_for_real_use_home.sql`, `9R_creator_not_a_chapter_member.sql`); each applies inside one transaction. Apply `0036`, then `0037`, then `0038`:
-
-| File | What it adds | Check it worked (SQL editor) |
-|---|---|---|
-| `0036_home_chapter_no_chapter_levels.sql` | A new version of `tier_parent_check` (same signature): below a national that chose the home-chapter model, adding or restoring a membership level is refused (D-184). Existing levels are untouched | `select prosrc like '%home_chapter%' from pg_proc where proname = 'tier_parent_check';` returns `true` |
-| `0037_ready_for_real_use.sql` | Column `audit_events.tx_id` (new events only; existing rows stay empty); new versions of `is_org_member` (ignores records that left) with `has_permission` and `is_org_member` no longer executable by `anon`; functions `remove_member_record`, `restore_member_record`, `audit_log`, `import_members`, `sync_my_email` | `select count(*) from information_schema.routines where routine_schema = 'public' and routine_name in ('remove_member_record','restore_member_record','audit_log','import_members','sync_my_email');` returns `5`, and `select has_function_privilege('anon', 'public.has_permission(uuid,text,uuid)', 'execute');` returns `false` |
-| `0038_creator_not_a_chapter_member.sql` | A new version of `create_organization` (same signature): only a top-level organization's creator gets a member record; and a one-time update that marks as left (never deletes) the bare records earlier chapter creators got, where they have no membership, seat, role or filled-in details there | `select count(*) from public.org_member_profiles p join public.organizations o on o.id = p.org_id where o.parent_id is not null and p.user_id = o.created_by and p.left_at is null and p.display_name = '' and not exists (select 1 from public.memberships m where m.profile_id = p.id);` drops (to 0 unless those people hold a seat or role there) |
+**Waiting:** nothing.
 
 ## 1. When a migration is waiting
 - Apply them strictly in order. They're additive only (D-125, checked in CI by `bun run check:migrations`).
@@ -27,7 +21,7 @@ Return links after paying now use the app's public address (D-158). Nothing is n
 `docs/user-testing.md` covers every screen; the newest are §8 (members across chapters, export payments in §10), §13b (national membership with a home chapter) and §14a (the member overview).
 
 ## 5. Don'ts
-- Don't edit, reorder, rename or re-run applied migrations (`0000`–`0035`).
+- Don't edit, reorder, rename or re-run applied migrations (`0000`–`0039`).
 - Don't drop tables or columns, or add DELETE policies to history, payment, receipt, term-rule, appointment, pricing-rule or chapter-history (`affiliation_history`) tables.
 - Don't change `membership.model` in `org_settings` by hand: a national's choice is permanent by design (D-166).
 - Don't expose the `private` schema through the API.
@@ -53,4 +47,5 @@ Nothing more is needed from Lovable: the encryption secret is already set.
 | `0024`–`0025` | Seats for an org and its chapters, overview numbers | 2026-11-02 |
 | `0026`–`0028` | Board contact emails; Board setup can change "used by"; Rank required at Demo National | 2026-11-02 |
 | `0029`–`0031` | Payments export (D-173); national membership with a home chapter (D-166, D-174) | 2026-11-02 |
+| `0036`–`0039` | Chapters have no levels in the home-chapter model (D-184); import, remove from roster, the readable audit log, email sync, helpers closed to anonymous callers (D-189..D-195); chapter creators aren't chapter members (D-196) | 2026-11-03 |
 | `0032`–`0035` | Suggested levels, national standing for chapters, pricing step in setup (D-177, D-178); deleting home-chapter demo nationals (0033); faster roll-ups (D-181) | 2026-11-02 |

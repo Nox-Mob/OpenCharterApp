@@ -49,7 +49,7 @@ export async function changeMyPassword(password: string) {
 
 /** Bring the member records in line with a confirmed new sign-in email. */
 export async function syncMyEmail(): Promise<number> {
-  const { data, error } = await db.rpc("sync_my_email", {});
+  const { data, error } = await db.rpc("sync_my_email");
   if (error) throw error;
   return typeof data === "number" ? data : 0;
 }

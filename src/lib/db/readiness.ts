@@ -125,24 +125,28 @@ export const FEATURES = {
     label: "Importing members from a file",
     rpc: "import_members",
     args: { _org: "00000000-0000-0000-0000-000000000000", _rows: [], _apply: false },
+    applied: true,
   },
   roster_removal: {
     migration: "0037_ready_for_real_use",
     label: "Removing members from the roster",
     rpc: "restore_member_record",
     args: { _profile: "00000000-0000-0000-0000-000000000000" },
+    applied: true,
   },
   email_sync: {
     migration: "0037_ready_for_real_use",
     label: "Member records follow a new sign-in email",
     rpc: "sync_my_email",
     args: {},
+    applied: true,
   },
   readable_audit: {
     migration: "0037_ready_for_real_use",
     label: "The readable audit log",
     rpc: "audit_log",
     args: { _org: "00000000-0000-0000-0000-000000000000", _limit: 1 },
+    applied: true,
   },
   exports: {
     migration: "0011_member_exports",

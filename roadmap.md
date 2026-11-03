@@ -3,13 +3,7 @@
 Where things stand and what's next. Plans: `docs/plans/` (MVP: `wave-a-mvp.md`; Phases 1–3 and later waves: `phases-1-3-review.md`). Epics: `docs/epic.md`. Decisions: `docs/decisions.md`. Testing by hand: `docs/user-testing.md`.
 
 ## Pending migrations for Lovable
-`0000`–`0035` are applied (0032–0034 on 2026-11-02, with Lovable's confirm migration 0035). Apply the ones below in order (steps and checks in `docs/lovable-handoff.md`). Until then their screens leave the feature out (D-135).
-
-| Migration | Enables | Status |
-|---|---|---|
-| `0036_home_chapter_no_chapter_levels` | D-184: below a home-chapter national, chapters can't add or restore membership levels (the screens already hide them; this makes the database refuse it too) | Waiting |
-| `0037_ready_for_real_use` | Sprint 4: member import (D-189), remove from roster and the membership-check fix (D-190), the readable audit log with names and one entry per save (D-191), member records following a new sign-in email (D-192), helpers closed to anonymous callers (D-195) | Waiting |
-| `0038_creator_not_a_chapter_member` | D-196: creating a chapter no longer puts its creator on the chapter's roster; bare creator records added earlier leave those rosters | Waiting |
+`0000`–`0039` are applied (0036–0038 on 2026-11-03, with Lovable's confirm migration 0039). Nothing is waiting. When a new migration is written it is listed here, with steps and checks in `docs/lovable-handoff.md`; until it is applied, the screens that need it leave the feature out (D-135).
 
 ## Now: the MVP release, v0.1.0 (`docs/plans/wave-a-mvp.md`)
 Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D-170, D-175), demo data kept until a second real national joins (D-171), version 0.1.0 with a changelog and tag (D-172).
@@ -33,7 +27,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 - [ ] **Owner:** R4 receipt wording reviewed by a CPA (R-07), or ship with the placeholder and say so (it's in the changelog)
 - [ ] Still to add as end-to-end specs: renewal, Membership and Board setup applied, appointing an officer
 
-**Sprint 4, done: ready for real use** (`wave-a-mvp.md` §8; needs 0037 applied for U1–U3 names and U7)
+**Sprint 4, done: ready for real use** (`wave-a-mvp.md` §8; live: 0037 applied)
 - [x] U1 Members → "Import members": CSV with column matching, a check that saves nothing, import in one transaction per batch, matched by email so re-running updates (D-189; 0037)
 - [x] U2 "Remove from roster" with a reason, and Restore; membership ends, seats end, history kept; `is_org_member` ignores records that left (D-190; 0037)
 - [x] U3 Readable audit log: "time, who did what" with previous → current, one entry per save, filters, only this org's events, setup drafts hidden (D-191; 0037)
@@ -43,7 +37,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 - [x] U7 `has_permission` / `is_org_member` closed to anonymous callers (D-195; 0037)
 
 **Then release**
-- [ ] Release checklist (`wave-a-mvp.md` §6): Lovable applies 0036–0038, the owner replaces the privacy and terms text, full `user-testing.md` pass, add the AGPL-3.0 `LICENSE` file (R-24), pull request to `main`, `v0.1.0` tag
+- [ ] Release checklist (`wave-a-mvp.md` §6): the owner replaces the privacy and terms text, full `user-testing.md` pass, add the AGPL-3.0 `LICENSE` file (R-24), pull request to `main`, `v0.1.0` tag
 - Security review follow-ups (`security-review.md` §1.6): F1 is U7 above; F2 and F3 done (D-187)
 
 ## After the MVP (`docs/plans/phases-1-3-review.md` §3)
@@ -72,6 +66,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 
 ## Done
 ### 2026-11-02
+- [x] Migrations 0036–0038 applied by Lovable; their hand-written types and readiness checks retired
 - [x] GitHub runs the smoke test and end-to-end tests against the live demo on pushes to `main` and `BoardUpdates`, pull requests, daily and on demand; CI adds a performance budget, a dependency audit and one-transaction migrations (D-197)
 - [x] Reports count members by current membership, not records; the home-chapter total counts each member once; chapter creators aren't added to the chapter's roster (D-196; 0038)
 - [x] Sprint 4, ready for real use: import, remove from roster, readable audit log, account page, privacy and terms pages, share the join page, helpers closed to anonymous callers (D-189..D-195; 0037)
