@@ -9,6 +9,7 @@ Where things stand and what's next. Plans: `docs/plans/` (MVP: `wave-a-mvp.md`; 
 |---|---|---|
 | `0036_home_chapter_no_chapter_levels` | D-184: below a home-chapter national, chapters can't add or restore membership levels (the screens already hide them; this makes the database refuse it too) | Waiting |
 | `0037_ready_for_real_use` | Sprint 4: member import (D-189), remove from roster and the membership-check fix (D-190), the readable audit log with names and one entry per save (D-191), member records following a new sign-in email (D-192), helpers closed to anonymous callers (D-195) | Waiting |
+| `0038_creator_not_a_chapter_member` | D-196: creating a chapter no longer puts its creator on the chapter's roster; bare creator records added earlier leave those rosters | Waiting |
 
 ## Now: the MVP release, v0.1.0 (`docs/plans/wave-a-mvp.md`)
 Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D-170, D-175), demo data kept until a second real national joins (D-171), version 0.1.0 with a changelog and tag (D-172).
@@ -42,7 +43,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 - [x] U7 `has_permission` / `is_org_member` closed to anonymous callers (D-195; 0037)
 
 **Then release**
-- [ ] Release checklist (`wave-a-mvp.md` §6): Lovable applies 0036 and 0037, the owner replaces the privacy and terms text, full `user-testing.md` pass, add the AGPL-3.0 `LICENSE` file (R-24), pull request to `main`, `v0.1.0` tag
+- [ ] Release checklist (`wave-a-mvp.md` §6): Lovable applies 0036–0038, the owner replaces the privacy and terms text, full `user-testing.md` pass, add the AGPL-3.0 `LICENSE` file (R-24), pull request to `main`, `v0.1.0` tag
 - Security review follow-ups (`security-review.md` §1.6): F1 is U7 above; F2 and F3 done (D-187)
 
 ## After the MVP (`docs/plans/phases-1-3-review.md` §3)
@@ -71,6 +72,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 
 ## Done
 ### 2026-11-02
+- [x] Reports count members by current membership, not records; the home-chapter total counts each member once; chapter creators aren't added to the chapter's roster (D-196; 0038)
 - [x] Sprint 4, ready for real use: import, remove from roster, readable audit log, account page, privacy and terms pages, share the join page, helpers closed to anonymous callers (D-189..D-195; 0037)
 - [x] Settings' pages are listed in the menu only while Settings is open (D-188)
 - [x] Dependencies refreshed, majors included (D-187); Playwright pinned at 1.64.1 and the test browser hardened: sandbox on, Chrome stable in CI, origin guard (D-186); `bun audit` 29 → 2 moderate (dev tooling)

@@ -63,7 +63,7 @@ const boards = [
     terms_past_end: 0,
   },
 ];
-const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
+const { rpc, model } = vi.hoisted(() => ({ rpc: vi.fn(), model: { value: "separate" } }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc } }));
 rpc.mockImplementation(async (fn: string) => ({
   data:
@@ -73,7 +73,9 @@ rpc.mockImplementation(async (fn: string) => ({
         ? revenue
         : fn === "org_rollup_governance"
           ? boards
-          : null,
+          : fn === "membership_model"
+            ? model.value
+            : null,
   error: null,
 }));
 
@@ -114,12 +116,33 @@ describe("ReportsTab", () => {
     expect(within(a).getByText("1 / 2 / 2")).toBeInTheDocument();
     expect(within(a).getByRole("img", { name: "Chapter A standing" })).toBeInTheDocument();
     expect(within(a).getByTitle("Good standing: 2 (50%)")).toBeInTheDocument();
+    // Members counts current memberships (good or grace), not records (D-196): Nat's only
+    // record is its admin, without a membership
+    expect(within(a).getAllByRole("cell")[2]).toHaveTextContent("3");
+    const nat = screen
+      .getAllByText("Nat")
+      .map((el) => el.closest("tr")!)
+      .find(Boolean)!;
+    expect(within(nat).getAllByRole("cell")[2]).toHaveTextContent("0");
     const total = screen.getByText("Total").closest("tr")!;
-    expect(within(total).getByText("5")).toBeInTheDocument();
+    expect(within(total).getAllByRole("cell")[2]).toHaveTextContent("3");
     expect(screen.getByRole("list", { name: "Legend" })).toHaveTextContent("Grace period");
     expect(await screen.findByText("Total (USD)")).toBeInTheDocument();
     expect(screen.getAllByText("$45.00").length).toBeGreaterThan(0);
     expect(await screen.findByText("Treasurer")).toBeInTheDocument();
+  });
+
+  it("counts each member once in the home-chapter model's total (D-196)", async () => {
+    model.value = "home_chapter";
+    try {
+      renderTab({ members: true, revenue: false, boards: false });
+      expect(await screen.findByText(/so the total counts them once/)).toBeInTheDocument();
+      const total = (await screen.findByText("Total")).closest("tr")!;
+      // the national's own row (0 here), not the national plus its chapters
+      await vi.waitFor(() => expect(within(total).getAllByRole("cell")[2]).toHaveTextContent("0"));
+    } finally {
+      model.value = "separate";
+    }
   });
 
   it("shows only the sections you may see", async () => {
@@ -137,7 +160,7 @@ describe("ReportsTab", () => {
       { members: true, revenue: false, boards: false },
       { ...nat, id: "a", name: "Chapter A", type: "chapter", parent_id: "n" },
     );
-    expect(await screen.findByText("Chapter A, as of today.")).toBeInTheDocument();
+    expect(await screen.findByText(/Chapter A, as of today\./)).toBeInTheDocument();
     expect(screen.queryByText(/every organization below it/)).toBeNull();
     expect(rpc).toHaveBeenCalledWith("org_rollup_members", { _org: "a" });
   });

@@ -267,6 +267,13 @@
       "when": 1793658162298,
       "tag": "0037_ready_for_real_use",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793661762298,
+      "tag": "0038_creator_not_a_chapter_member",
+      "breakpoints": true
     }
   ]
 }

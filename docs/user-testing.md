@@ -244,7 +244,7 @@ Also: edit a seat and set "No role" and a suggested term of "No fixed term"; and
 
 ## 14b. Reports
 **Where:** Demo National → Reports.
-1. **Members:** one row per organization (chapters indented under the national) and a Total row. Check the counts against each chapter's Members page. The standing bar shows good / grace / lapsed / pending; hovering a segment shows the count and share.
+1. **Members:** one row per organization (chapters indented under the national) and a Total row. "Members" counts people with a current membership (good standing or grace), not everyone on the Members page: an administrator without a membership isn't counted. In a home-chapter national, the Total equals the national's own row (each member is also listed in their chapter, and counted once). Creating a chapter doesn't add you to its Members page. The standing bar shows good / grace / lapsed / pending; hovering a segment shows the count and share.
 2. **Revenue:** defaults to this year so far. Change the dates. Test payments aren't counted; a partly refunded payment shows the refund and the net amount.
 3. **Boards:** required seats with nobody in them are listed per chapter; "Terms past their end" counts officers still serving after their planned end.
 4. "Export CSV" on each section: open the files in Excel or Sheets, then check the Audit log shows each export.

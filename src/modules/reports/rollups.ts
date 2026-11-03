@@ -71,6 +71,26 @@ export function memberTotals(rows: readonly MemberRollup[]): MemberCounts {
   return t;
 }
 
+/**
+ * Members are people with a current membership: in good standing or in grace (D-196), as on the
+ * Overview. Records without a membership (an administrator, a contact) aren't members.
+ */
+export const currentMembers = (r: Pick<MemberRollup, "good" | "grace">) => r.good + r.grace;
+
+/**
+ * The Total row. In the home-chapter model every member belongs to the national and is also
+ * listed in their chapter, so the national's own row already counts each member once; adding the
+ * chapters would count them twice. Otherwise each organization's memberships are its own.
+ */
+export function rollupTotal(rows: readonly MemberRollup[], homeChapter: boolean): MemberCounts {
+  const top = rows.find((r) => r.depth === 0);
+  if (homeChapter && top) {
+    const t = Object.fromEntries(MEMBER_COUNTS.map((k) => [k, top[k]])) as MemberCounts;
+    return t;
+  }
+  return memberTotals(rows);
+}
+
 /** Totals per currency (amounts are never added across currencies). */
 export function revenueTotals(rows: readonly RevenueRollup[]) {
   const by = new Map<string, { payments: number; gross: number; refunded: number; net: number }>();
