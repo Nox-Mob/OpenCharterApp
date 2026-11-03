@@ -259,7 +259,7 @@ begin
           if _v is not null and _v <> 'null'::jsonb and _v <> '""'::jsonb then
             begin
               perform public.validate_attribute_value(_d, _v);
-            exception when others then raise exception '%: %', _d.label, sqlerrm;
+            exception when others then raise exception '%', sqlerrm;
             end;
           end if;
         end loop;

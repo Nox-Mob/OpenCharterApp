@@ -31,6 +31,8 @@ import { chapterNationalStandingQuery } from "@/modules/membership/national-stan
 import { joinRequirementsQuery } from "@/modules/membership/joining";
 import { declineApplication } from "@/modules/payments/payments.functions";
 import { MemberDetailsDialog } from "./member-details-dialog";
+import { ImportMembersDialog } from "@/components/members/import-members-dialog";
+import { RemovedMembers } from "@/components/members/removed-members";
 import { RosterToolbar } from "@/components/members/roster-toolbar";
 import {
   attributeDefsQuery,
@@ -166,6 +168,9 @@ export function MembersTab({
   const homeReady = useFeatureReady("home_chapter") === true;
   const homeInfo = useQuery({ ...homeChapterInfoQuery(org.slug), enabled: homeReady });
   const homeModel = homeInfo.data?.model === "home_chapter";
+  // Import (U1) and Remove from roster (U2) need migration 0037
+  const importReady = useFeatureReady("member_import") === true;
+  const [importing, setImporting] = useState(false);
   const members = useQuery(membersQuery(orgId, ready, directoryReady, homeReady));
   const subtree = [org, ...orgs.filter((o) => o.id !== org.id && o.ancestor_ids.includes(org.id))];
   const subtreeIds = subtree.map((o) => o.id);
@@ -459,6 +464,11 @@ export function MembersTab({
             )}
           </div>
           {ready && canManageMembers && <Button onClick={() => setAdding(true)}>Add member</Button>}
+          {ready && canManageMembers && importReady && !(homeModel && org.type !== "national") && (
+            <Button variant="outline" onClick={() => setImporting(true)}>
+              Import members
+            </Button>
+          )}
         </div>
         <div className="mb-3">
           <RosterToolbar
@@ -696,6 +706,13 @@ export function MembersTab({
         graceDays={graceDays}
         isSelf={!!details && details.user_id === me.data}
         onClose={() => setDetailsId(null)}
+      />
+      {canManageMembers && <RemovedMembers orgId={orgId} />}
+      <ImportMembersDialog
+        org={org}
+        homeChapterNational={homeModel && org.type === "national"}
+        open={importing}
+        onClose={() => setImporting(false)}
       />
       <AddMemberDialog
         orgId={orgId}

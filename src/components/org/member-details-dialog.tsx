@@ -19,6 +19,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useFeatureReady } from "@/lib/db/readiness";
+import { removeFromRoster, rosterErrorMessage } from "@/modules/members/roster-removal";
 
 export function MemberDetailsDialog({
   org,
@@ -122,6 +125,9 @@ export function MemberDetailsDialog({
                 </>
               )}
             </section>
+            {canEdit && !isSelf && !member.membership?.via_national && (
+              <RemoveFromRoster member={member} orgId={org.id} onDone={onClose} />
+            )}
           </div>
         )}
       </DialogContent>
@@ -217,6 +223,77 @@ function RecordContact({
             Send the link yourself for now. It works once, for {member.email} only, and expires in
             14 days.
           </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Take a record off the roster (U2, D-190): for duplicates, mistakes and people who left. The
+ * record, its history, payments and receipts stay; it can be restored from the Members page.
+ */
+function RemoveFromRoster({
+  member,
+  orgId,
+  onDone,
+}: {
+  member: MemberRow;
+  orgId: string;
+  onDone: () => void;
+}) {
+  const ready = useFeatureReady("roster_removal") === true;
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  if (!ready) return null;
+  const name = member.display_name || member.email;
+
+  async function remove() {
+    setBusy(true);
+    try {
+      await removeFromRoster(member.id, reason.trim());
+      toast.success(`${name} is off the roster`);
+      for (const k of ["members", "members-tree", "removed-members", "overview-stats"])
+        qc.invalidateQueries({ queryKey: [k] });
+      onDone();
+    } catch (e) {
+      toast.error(rosterErrorMessage(String((e as Error).message)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="space-y-2 border-t pt-4">
+      <h3 className="font-semibold">Remove from the roster</h3>
+      <p className="text-sm text-muted-foreground">
+        For a duplicate, a mistake or someone who has left. Their membership here ends and any seats
+        they hold end; their history, payments and receipts are kept, and you can restore them from
+        the bottom of the Members page.
+      </p>
+      {!open ? (
+        <Button variant="outline" onClick={() => setOpen(true)}>
+          Remove from roster…
+        </Button>
+      ) : (
+        <div className="space-y-2">
+          <Label htmlFor="remove-reason">Reason (optional, kept in the history)</Label>
+          <Textarea
+            id="remove-reason"
+            value={reason}
+            maxLength={300}
+            onChange={(e) => setReason(e.target.value)}
+          />
+          <div className="flex gap-2">
+            <Button variant="destructive" onClick={remove} disabled={busy}>
+              {busy ? "Removing…" : `Remove ${name}`}
+            </Button>
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Keep them
+            </Button>
+          </div>
         </div>
       )}
     </section>
