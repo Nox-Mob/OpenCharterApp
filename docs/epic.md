@@ -26,15 +26,15 @@ Current plans live in [`plans/`](plans/): the review of Phases 1–3 with the pl
 
 ## 2. Epics by phase
 
-Status for Phases 0–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly built, ⬜ not started or deferred) comes from the review in [`plans/phases-1-3-review.md`](plans/phases-1-3-review.md), refreshed after Sprint 1 of the MVP plan. Phase 1 and Phase 2 exit criteria are met; Phase 0's subdomain sign-in waits for E-07, and Phase 3's are not met yet. Later phases haven't started.
+Status for Phases 0–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly built, ⬜ not started or deferred) comes from the review in [`plans/phases-1-3-review.md`](plans/phases-1-3-review.md), refreshed for the v0.1.0 release candidate (2026-11-05). Phase 1 and Phase 2 exit criteria are met; Phase 0's subdomain sign-in waits for E-07, and Phase 3's are not met yet. Later phases haven't started.
 
 ### Phase 0: Foundation
 
-| ID | Epic | Outcome | Status (2026-11-02) |
+| ID | Epic | Outcome | Status (2026-11-05) |
 |---|---|---|---|
-| E-01 | Project scaffolding and CI/CD | Repo, lint, types, tests, CI pipeline, environments, npm scripts, local development setup (local Postgres, env vars, `.env.example`) | 🟡 CI, checks, end-to-end tests, the pre-commit hook and the docs check run (D-182); the coverage gate in `instructions.md` §9 needs a dependency decision |
+| E-01 | Project scaffolding and CI/CD | Repo, lint, types, tests, CI pipeline, environments, npm scripts, local development setup (local Postgres, env vars, `.env.example`) | 🟡 CI, checks, end-to-end tests (including about 40 user-testing steps, D-198, D-202), a performance budget at 5,000–20,000 members (D-209), the pre-commit hook and the docs check run (D-182, D-197); the coverage gate in `instructions.md` §9 needs a dependency decision |
 | ~~E-02~~ | ~~Deployment packaging~~ | **Moved to the future backlog as F-11** (D-012). ID retired, not reused | — |
-| E-03 | Identity and authentication | Global person and account, sign-in, sessions, email verification, password reset, invitations, **joining a new org with an existing account, org switcher** | ✅ Cleared |
+| E-03 | Identity and authentication | Global person and account, sign-in, sessions, email verification, password reset, invitations, **joining a new org with an existing account, org switcher** | ✅ Cleared; account page with a default organization, no separate dashboard (D-192, D-206) |
 | E-04 | Organization hierarchy and platform tier | Org tree (platform, national, region, chapter, standalone), org settings, tax profile, **branding with logo upload and chapter override** | ✅ Cleared |
 | E-05 | RBAC and permissions | Roles, permissions, scoped assignments with downward inheritance, policy layer | ✅ Cleared |
 | E-06 | Audit log | Append-only log and viewer, hooks for all modules | ✅ Cleared |
@@ -45,21 +45,21 @@ Status for Phases 0–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly 
 
 ### Phase 1: Membership MVP
 
-| ID | Epic | Outcome | Status (2026-11-02) |
+| ID | Epic | Outcome | Status (2026-11-05) |
 |---|---|---|---|
 | E-09 | Custom attribute system | Org-defined member attributes (types, validation, visibility), attribute values on members, admin UI | ✅ Cleared |
 | E-10 | Setup engine framework + Membership setup flow | Reusable guided-setup framework, first flow covering members, attributes, tiers, and dues questions (see `setup-engine.md`) | ✅ Cleared; setup now also covers prices by member fields (D-177) |
 | E-11 | Membership tiers and terms | Org-defined tiers, term options, prices, tax treatment, prepaid model | ✅ Cleared |
 | E-12 | Payment gateway abstraction and Stripe | Gateway interface, Stripe adapter, transactions, webhooks, refunds | 🟡 Cleared; transaction export done (D-173); live Stripe test-mode check open (A1, owner action) |
 | E-13 | Member signup and renewals | Public join form, application and approval (optional), renewals, lapses, grace periods, standing; national membership with a home chapter (D-166, D-174, D-176) | 🟡 Cleared; automatic lapse notices and reminders wait for E-08 |
-| E-14 | Member directory, lists, and exports | Member list with standing and time-to-expiration, filters, saved segments, privacy-aware CSV exports | ✅ Cleared |
+| E-14 | Member directory, lists, and exports | Member list with standing and time-to-expiration, filters, saved segments, privacy-aware CSV exports | ✅ Cleared; import, off-roster records and lists past 1,000 rows (D-181, D-189, D-190); checked at 20,000 members (D-209) |
 | E-15 | Basic automatic receipts | Receipt on payment, default template, receipt history | ✅ Cleared |
 
 **Exit:** a standalone org can complete setup, sell memberships through Stripe, renew them, see its roster, and export a mailing list.
 
 ### Phase 2: Chapters at scale
 
-| ID | Epic | Outcome | Status (2026-11-02) |
+| ID | Epic | Outcome | Status (2026-11-05) |
 |---|---|---|---|
 | E-16 | Chapter creation wizard and chapter attributes | National-led chapter creation, national-defined chapter attributes (e.g., charter date), prompts for required officers | ✅ Cleared |
 | E-17 | Board role templates and appointments | National-defined seats (required, count, term, permissions), custom titles, appointments with history, access grant and revoke | ✅ Cleared |
@@ -68,13 +68,13 @@ Status for Phases 0–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly 
 | E-20 | Postpaid dues | Balances, invoices, due dates, delinquency, admin-defined enforcement as inheritable settings (D-161), manual payment recording, **parent orgs invoicing subordinate orgs** (national fee, D-162) | ⬜ Not started |
 | E-21 | Per-org gateways and PayPal | Each org connects Stripe or PayPal, **Direct mode only** (Connect dropped, D-162), PayPal adapter. The national fee is invoiced through E-20 | 🟠 Partly built (Stripe done; PayPal open) |
 | E-22 | Custom domains | Domain settings, DNS verification, on-demand TLS, subdomain remains default. **Needs a reverse proxy, so F-11 must be pulled forward before or with this epic** | ⬜ Not started (keep deferred until F-11) |
-| E-23 | National roll-up reporting | Cross-chapter membership and revenue reporting | ✅ Cleared |
+| E-23 | National roll-up reporting | Cross-chapter membership and revenue reporting | ✅ Cleared; roll-ups checked at 20,000 members across 80 chapters (D-209) |
 
 **Exit:** national can create a chapter through the wizard, seat its officers, and have it collect its own dues, while national sees roll-ups.
 
 ### Phase 3: Governance and documents
 
-| ID | Epic | Outcome | Status (2026-11-02) |
+| ID | Epic | Outcome | Status (2026-11-05) |
 |---|---|---|---|
 | E-24 | Approval workflow engine | Generic multi-step approvals, approver resolution, escalation, delegation to national, batch approval, signed one-click links with confirmation page and comment | ⬜ Not started |
 | E-25 | Governance compliance | Vacancy alerts, good-standing checks for officers, board reports (types, schedules, submit, review), national oversight dashboard | 🟠 Partly built (good standing, vacancy views) |

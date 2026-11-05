@@ -13,6 +13,8 @@ Checked against a database built from every migration (the `test:db` setup):
 - **Writes** to sensitive tables go only through `security definer` functions that check permission first. Only two tables have a DELETE policy, and both deletes are intended: `org_settings` (managers remove an override) and `member_segments` (saved views). No history, payment, receipt, term, appointment, pricing-rule or chapter-history table can be deleted from the API. `audit_events` has no write grant or policy at all; triggers and definer functions write it.
 - **Member records** (`org_member_profiles`) have no insert policy. A member can't create a record in a chapter or point one at someone else's national membership (`home_of`). Records are created by invitation, joining or an admin, all through definer functions.
 
+- **No open read rules (D-207, D-208; migrations 0042, 0043).** A later pass found three read rules that let more through than needed. The permission catalogue is now readable only by signed-in people who hold at least one role, role permissions only for roles the reader can see, and logos in the private `branding` bucket only by signed-in people who can see that organization's tree. `db/tests/9T_no_open_read_rules.sql` fails if a rule that lets every row through comes back.
+
 ### 1.2 Definer functions
 There are 129 `security definer` functions in `public`. A scripted pass checked each one. Each falls into one of these groups:
 - **It checks the caller first.** `auth.uid()` together with `has_permission`, `is_org_member` or `is_platform_operator`. Examples: `create_demo_organization` and `delete_demo_organization` need a platform operator; `export_payments` needs `payments.view`; `chapter_national_standing` needs `members.view`.
@@ -30,7 +32,7 @@ Linked levels (A4, D-177) can only be changed while the database session flag `a
 ### 1.4 Credentials and payments
 - Each org's Stripe keys and webhook secrets are sealed with `GATEWAY_ENCRYPTION_KEY` and stored in `private.gateway_secrets`. The `private` schema is not exposed through the API, and only `service_role` can use it. Server functions unseal them on the server only, and the browser never sees them.
 - Webhooks are verified with the org's signing secret before anything is recorded. Already-handled events (`webhook_events`, unique per gateway event) are ignored, so replaying an event does nothing.
-- Return links after paying use the app's public address (D-158), never one taken from the request. Payments are also confirmed from the return page by asking Stripe, so a forged return URL can't mark a payment paid.
+- Return links after paying use the app's public address (D-158). An address taken from the browser or the proxy is used only if it's on the allowlist (`PUBLIC_APP_URL`, `PUBLIC_APP_ALLOWED_ORIGINS`, Lovable-hosted addresses, the request's own origin, localhost), so a caller can't send payers back to a site they control (`src/modules/payments/origin.ts`). Payments are also confirmed from the return page by asking Stripe, so a forged return URL can't mark a payment paid.
 - No secrets are in the repository. `.env` only holds the publishable Supabase key.
 
 ### 1.5 Exports and audit

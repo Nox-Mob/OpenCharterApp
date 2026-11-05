@@ -1,14 +1,10 @@
 # Hand-off to Lovable
 
-Status on 2026-11-03.
+Status on 2026-11-05.
 
-**Done:** migrations `0000`–`0043` are applied, the types are regenerated, and the `GATEWAY_ENCRYPTION_KEY` secret is set. Thank you. A record is at the end.
+**Done:** migrations `0000`–`0045` are applied, the types are regenerated, and the `GATEWAY_ENCRYPTION_KEY` secret is set. Thank you. A record is at the end.
 
-**Waiting**, on branch `BoardUpdates`, tested against Postgres 16 (`db/tests/9U_scale_indexes.sql`); it applies inside one transaction:
-
-| File | What it adds | Check it worked (SQL editor) |
-|---|---|---|
-| `0044_scale_indexes.sql` | Indexes only, on the foreign keys of the tables that grow with the roster, and `jit = off` on six report functions (bodies unchanged). No types change, so nothing to regenerate | `select count(*) from pg_indexes where schemaname = 'public' and indexname in ('memberships_profile_id_idx', 'payments_profile_id_idx');` returns 2 |
+**Waiting:** nothing.
 
 ## 1. When a migration is waiting
 - Apply them strictly in order. They're additive only (D-125, checked in CI by `bun run check:migrations`).
@@ -25,7 +21,7 @@ Return links after paying now use the app's public address (D-158). Nothing is n
 `docs/user-testing.md` covers every screen; the newest are §8 (members across chapters, export payments in §10), §13b (national membership with a home chapter) and §14a (the member overview).
 
 ## 5. Don'ts
-- Don't edit, reorder, rename or re-run applied migrations (`0000`–`0043`).
+- Don't edit, reorder, rename or re-run applied migrations (`0000`–`0045`).
 - Don't drop tables or columns, or add DELETE policies to history, payment, receipt, term-rule, appointment, pricing-rule or chapter-history (`affiliation_history`) tables.
 - Don't change `membership.model` in `org_settings` by hand: a national's choice is permanent by design (D-166).
 - Don't expose the `private` schema through the API.
@@ -53,4 +49,5 @@ Nothing more is needed from Lovable: the encryption secret is already set.
 | `0029`–`0031` | Payments export (D-173); national membership with a home chapter (D-166, D-174) | 2026-11-02 |
 | `0036`–`0039` | Chapters have no levels in the home-chapter model (D-184); import, remove from roster, the readable audit log, email sync, helpers closed to anonymous callers (D-189..D-195); chapter creators aren't chapter members (D-196) | 2026-11-03 |
 | `0040`–`0043` | The Overview counts people once in the home-chapter model (D-200); permission lists, role permissions and logos readable only by those who need them (D-207, D-208) | 2026-11-03 |
+| `0044`–`0045` | Indexes for large rosters and no JIT for the heavy reports (D-209) | 2026-11-05 |
 | `0032`–`0035` | Suggested levels, national standing for chapters, pricing step in setup (D-177, D-178); deleting home-chapter demo nationals (0033); faster roll-ups (D-181) | 2026-11-02 |

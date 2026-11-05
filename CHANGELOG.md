@@ -50,7 +50,7 @@ The first version a national (with chapters) or a standalone association can run
 
 ### Quality and safety
 
-- Row-level security on every table, and permission checks in every database function the app calls. Reviewed in `docs/security-review.md`.
+- Row-level security on every table, and permission checks in every database function the app calls. Reviewed in `docs/security-review.md`; a later pass closed three read rules that were wider than needed (permission lists, role permissions, logos) and limited checkout return links to the app's own addresses.
 - Database rule tests, unit and component tests, and end-to-end tests in Chrome (including accessibility checks and about 40 steps of the user-testing guide), run by GitHub on every push and daily against the live demo.
 - A sales demo, Test-Demo: 15 chapters, about 500 members with years of history, and a full board.
 - A pre-commit hook and a docs check on pull requests.
