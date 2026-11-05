@@ -1,11 +1,15 @@
 name: CI
 
-# Runs on every branch so work-in-progress branches are checked before they're needed,
-# plus pull requests (D-115).
+# Checks that need no live backend (D-115, D-197): every push to any branch and every pull
+# request, plus a weekly run on the default branch so new dependency advisories surface even
+# when nothing is pushed. The live-demo checks (smoke and end-to-end) are in live.yml.
 on:
   push:
     branches: ["**"]
   pull_request:
+  schedule:
+    - cron: "23 5 * * 1" # Mondays 05:23 UTC
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -46,10 +50,50 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install psql
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      # Each migration is applied in one transaction, as Lovable may apply them.
       - name: Apply migrations and run rule tests
         env:
           TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
         run: bash scripts/db-test.sh
+
+  performance:
+    # One roster grown to 5,000, 10,000 and 20,000 members; fails if a heavy read is over budget at
+    # any size (D-181, D-209). The budget is
+    # looser than the 1 second target because shared runners are slower and vary.
+    name: Performance (5,000 to 20,000 members)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install psql
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Seed a large roster and time the heavy reads
+        env:
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+          PERF_BUDGET_MS: "3000"
+        run: bash scripts/db-perf.sh
+
+  audit:
+    # Fails on high or critical advisories in any dependency, and on any advisory in what ships
+    # to production (development-only moderate ones are tracked in docs/security-review.md §1.6).
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: High or critical, anywhere
+        run: bun audit --audit-level=high
+      - name: Anything in production dependencies
+        run: bun audit --production --audit-level=low
 
   build:
     name: Production build
@@ -60,3 +104,14 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bun run build
+
+  docs-check:
+    # Code changes come with docs or tests (instructions.md §9). Label "no-docs-needed" to skip.
+    name: Docs check
+    if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'no-docs-needed')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: bash scripts/docs-check.sh origin/${{ github.base_ref }}

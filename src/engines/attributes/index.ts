@@ -190,7 +190,8 @@ export const STARTER_ATTRIBUTES: readonly (Omit<AttributeInput, "options"> & {
     label: "Rank",
     key: "rank",
     data_type: "ordered",
-    required: false,
+    // Required, so the join page asks for it (it only asks required or member-editable fields).
+    required: true,
     visibility: "members",
     member_editable: false,
     show_in_directory: true,

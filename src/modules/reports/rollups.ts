@@ -1,5 +1,8 @@
 import { queryOptions } from "@tanstack/react-query";
-import { db, type PendingFunctions } from "@/lib/db/pending-schema";
+import { db } from "@/lib/db/pending-schema";
+import type { Database } from "@/integrations/supabase/types";
+
+type Fn = Database["public"]["Functions"];
 import { csvCell } from "@/modules/members/roster";
 
 /**
@@ -7,9 +10,9 @@ import { csvCell } from "@/modules/members/roster";
  * returns aggregates only (org_rollup_members / _revenue / _governance), so a roll-up never
  * shows another chapter's members. Exporting a report is audited (log_report_export).
  */
-export type MemberRollup = PendingFunctions["org_rollup_members"]["Returns"][number];
-export type RevenueRollup = PendingFunctions["org_rollup_revenue"]["Returns"][number];
-export type GovernanceRollup = PendingFunctions["org_rollup_governance"]["Returns"][number];
+export type MemberRollup = Fn["org_rollup_members"]["Returns"][number];
+export type RevenueRollup = Fn["org_rollup_revenue"]["Returns"][number];
+export type GovernanceRollup = Fn["org_rollup_governance"]["Returns"][number];
 
 export const memberRollupQuery = (orgId: string) =>
   queryOptions({
@@ -66,6 +69,26 @@ export function memberTotals(rows: readonly MemberRollup[]): MemberCounts {
   const t = Object.fromEntries(MEMBER_COUNTS.map((k) => [k, 0])) as MemberCounts;
   for (const r of rows) for (const k of MEMBER_COUNTS) t[k] += r[k];
   return t;
+}
+
+/**
+ * Members are people with a current membership: in good standing or in grace (D-196), as on the
+ * Overview. Records without a membership (an administrator, a contact) aren't members.
+ */
+export const currentMembers = (r: Pick<MemberRollup, "good" | "grace">) => r.good + r.grace;
+
+/**
+ * The Total row. In the home-chapter model every member belongs to the national and is also
+ * listed in their chapter, so the national's own row already counts each member once; adding the
+ * chapters would count them twice. Otherwise each organization's memberships are its own.
+ */
+export function rollupTotal(rows: readonly MemberRollup[], homeChapter: boolean): MemberCounts {
+  const top = rows.find((r) => r.depth === 0);
+  if (homeChapter && top) {
+    const t = Object.fromEntries(MEMBER_COUNTS.map((k) => [k, top[k]])) as MemberCounts;
+    return t;
+  }
+  return memberTotals(rows);
 }
 
 /** Totals per currency (amounts are never added across currencies). */

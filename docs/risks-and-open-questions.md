@@ -4,7 +4,7 @@ Review at each sprint review. Move resolved items into `decisions.md`.
 
 ## 1. Open questions
 
-> Struck-through items were resolved in v6: Q-01 (person is global, D-036/D-037), Q-02 (region in the DB now, D-035), Q-03 (two Stripe modes, D-049), Q-04 (JSONB attributes, D-065).
+> Struck-through items are resolved. Q-05, Q-07 and Q-15 were resolved on 2026-11-02 (D-159, D-164, D-161). Earlier, in v6: Q-01 (person is global, D-036/D-037), Q-02 (region in the DB now, D-035), Q-03 (two Stripe modes, D-049), Q-04 (JSONB attributes, D-065).
 
 Priority: **P1** = settle before database design. **P2** = settle before the owning epic starts. **P3** = can wait.
 
@@ -16,9 +16,9 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 | ~~Q-04~~ | ~~P1~~ | **Attribute storage approach** (typed columns, JSONB, EAV) | JSONB driven by definitions, validated with Zod, with indexes. Prototype before committing |
 | Q-18 | P2 | **Branding limits.** Allowed logo formats and sizes, whether chapters may also override colors, and whether a chapter can hide national's logo entirely | SVG, PNG, and JPEG within a size limit. Logo and colors overridable independently, national controls the mode |
 | Q-19 | P2 | **Join-with-existing-account flow.** Proof of ownership when someone signs up for a second org with an email that already has an account | Require sign-in or email verification, never confirm account existence to an unauthenticated visitor |
-| Q-05 | P2 | **Email sending identity.** Do orgs send from their own domain, or from a platform domain with reply-to? | Platform sender with the org name and reply-to by default, optional custom sender domain later |
+| ~~Q-05~~ | ~~P2~~ | **Email sending identity.** Do orgs send from their own domain, or from a platform domain with reply-to? | **Resolved by D-159:** `EMAIL_TRANSPORT` = Lovable email or the client's own server; each org picks its send-from address |
 | ~~Q-06~~ | ~~P2~~ | *Resolved 2026-10-31 as D-116.* **Do all members get accounts?** Or can some exist as records only (for example, added by CSV, with no login until invited)? | Records first, accounts on invite or on self-signup claim |
-| Q-07 | P2 | **Approval link confirmation.** Plain GET approval is unsafe because email scanners prefetch links. Is a confirmation page (one extra click, with the comment box) acceptable? | Yes. Link opens the confirmation page and the decision happens on submit |
+| ~~Q-07~~ | ~~P2~~ | **Approval link confirmation.** Plain GET approval is unsafe because email scanners prefetch links. Is a confirmation page (one extra click, with the comment box) acceptable? | **Resolved by D-164:** confirmation page that requires sign-in; decision on submit |
 | Q-08 | P2 | **Award appeals mechanics.** Appeal to whom, how many times, and within what window? Set by the owning org, but what options do we offer? | Appeal to a chosen higher level, one appeal, configurable window |
 | Q-09 | P2 | **Who can nominate for awards?** Any member, officers only, or per award? | Per award setting |
 | Q-10 | P2 | **Rank attribute scope.** One rank list per org, or can there be several (e.g., by branch)? | Attributes are generic, so an org can define several. Rules reference a specific attribute |
@@ -26,15 +26,15 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 | Q-12 | P2 | **Currency and locale.** USD and US tax only for v1? | Yes, but no hard-coded currency assumptions |
 | Q-13 | P3 | **Name and branding** for the project | TBD |
 | Q-14 | P3 | **Hosted tiers and thresholds** (chapters > 5, members < 100, and so on) | Remains configuration. Decide before E-42 |
-| Q-15 | P3 | **Postpaid reminders cadence** defaults | Sensible platform defaults, edited via setup |
-| Q-16 | P3 | **Accessibility target** (WCAG 2.1 AA) | Adopt as the target |
+| ~~Q-15~~ | ~~P3~~ | **Postpaid reminders cadence** defaults | **Resolved by D-161:** postpaid options are inheritable settings (parent sets, subordinates where allowed) |
+| Q-16 | P3 | **Accessibility target** (WCAG 2.1 AA) | Adopted; automated checks in `e2e/a11y.spec.ts`, manual checks in `user-testing.md` §16 (D-183) |
 | Q-17 | P3 | **Data retention periods** for governance records, receipts, and audit logs | Retain indefinitely by default, org-configurable for non-financial data. Confirm legal requirements |
 
 ## 2. Risks
 
 | ID | Risk | Impact | Mitigation |
 |---|---|---|---|
-| R-01 | **Stripe Connect and the national fee (mitigated by the two-mode decision D-049).** Application fees are collected by the Connect platform account. For a national fee to work, the national's Stripe account must be the platform, and each national would need to register as a Connect platform. On a multi-national hosted install, we are not the platform for them | National fee may not work automatically for every Stripe setup | Spike early. Offer two modes: Connect (national as platform, automatic fee) and direct (chapter's own account, fee settled by invoice). Keep fee logic behind the gateway abstraction |
+| R-01 | **Closed by D-162 (Direct only; parents invoice subordinate orgs).** **Stripe Connect and the national fee (mitigated by the two-mode decision D-049).** Application fees are collected by the Connect platform account. For a national fee to work, the national's Stripe account must be the platform, and each national would need to register as a Connect platform. On a multi-national hosted install, we are not the platform for them | National fee may not work automatically for every Stripe setup | Spike early. Offer two modes: Connect (national as platform, automatic fee) and direct (chapter's own account, fee settled by invoice). Keep fee logic behind the gateway abstraction |
 | R-02 | **PayPal complexity.** Fee splitting and multi-party flows are harder than Stripe | Delays Phase 2 | Treat PayPal as a plain "chapter collects directly" adapter first. Fee by invoicing (F-07) |
 | R-03 | **Tenant data leakage.** The highest-severity failure for this product | Loss of trust, legal exposure | RLS plus app checks, tenant-isolation tests required in the Definition of Done, review of every cross-org query |
 | R-04 | **Scope size.** The feature set is large (Tendenci-class plus governance, elections, awards) | Never ships | Strict phases with demoable exit criteria. Shared engines built with their first consumer. Park future items explicitly |
@@ -43,13 +43,13 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 | R-07 | **Compliance correctness.** Receipts, tax treatment, and retention can have legal consequences | Wrong receipts for donors | Keep wording as configurable data, have a CPA or attorney review the defaults before release, immutable receipts with versioned corrections |
 | R-08 | **Custom domain and TLS operations.** DNS verification, on-demand certificates, and abuse (someone pointing a domain they do not own) | Security and support burden | Verify ownership before issuing certificates, gate on-demand TLS with an allow-check endpoint, rate-limit |
 | R-09 | **Email deliverability and approval links.** Bulk mail reputation, scanners hitting links, expired tokens | Missed approvals, spam placement | Confirmation page for actions, single-use expiring tokens, resend flows, SPF/DKIM guidance, escalation after silence |
-| R-16 | **Late packaging.** Deferring Docker means deployment problems surface late | Painful first deploy | Keep config environment-driven from E-01, avoid host-specific features, and set an explicit trigger for pulling F-11 forward (before E-22, E-42, or the first shared test environment) | 
+| R-16 | **Late packaging.** Deferring Docker means deployment problems surface late. Direction set in D-160 (lightweight Compose; the Supabase dependency is the main sizing question) | Painful first deploy | Keep config environment-driven from E-01, avoid host-specific features, and set an explicit trigger for pulling F-11 forward (before E-22, E-42, or the first shared test environment) | 
 | R-10 | **Self-host support burden.** Free software with varied environments | Support cost | Single supported path (Docker Compose, built in F-11), clear docs, health checks, version upgrade notes |
 | R-11 | **AGPL and hosting competition.** AGPL does not prevent others from offering hosting, it only requires source sharing for modified network-served versions | Revenue pressure | Compete on hosting quality and support. Revisit licensing with an attorney before first public release if this concern grows |
 | R-12 | **Rank-based eligibility accuracy.** Approver rank depends on member-maintained or admin-maintained data | Wrong approvers | Rank verified flag by chapter president, national review, audit trail |
-| R-13 | **Elections trust.** Admin-visible votes are accepted, but disputes still happen | Disputed outcomes | Immutable certified results, full audit trail, defined recount process, hybrid vote entry logged |
+| R-13 | **Elections trust.** Admins can see ballots but never change them; members never see who voted for whom (D-163). Disputes still happen | Disputed outcomes | Immutable certified results, full audit trail, defined recount process, hybrid vote entry logged |
 | R-15 | **Account enumeration and cross-org privacy.** A global account makes it possible to leak that an email exists, or that someone belongs to another org | Privacy breach | Uniform responses on sign-up and sign-in, no cross-org membership visibility in any admin screen or export, tests for it |
-| R-14 | **Postpaid and standing edge cases.** Multiple levels with different rules can produce confusing overall standing | Wrong eligibility decisions | Define standing derivation clearly (which layers count is a national setting), test matrix of combinations |
+| R-14 | **Postpaid and standing edge cases.** Multiple levels with different rules can produce confusing overall standing | Wrong eligibility decisions | Define standing derivation clearly (which layers count is a national setting), test matrix of combinations In the home-chapter model, unpaid local dues affect only chapter matters, never national standing (D-166) |
 
 ## 3. Assumptions
 
@@ -63,11 +63,11 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 
 - CPA or attorney: receipt wording and tax treatment defaults for 501(c)(19) and 501(c)(3), dues vs. donations treatment, quid pro quo disclosures.
 - Attorney: AGPL implications for the hosted service, contributor terms, trademark for the project name.
-- Security review before first production release: tenant isolation, signed links, credential storage.
+- Security review before first production release: tenant isolation, signed links, credential storage. *Done for 0.1.0 (2026-11-02):* `docs/security-review.md`, no blocking findings, follow-ups F1–F3 after release (D-180). Signed links arrive with email (Wave B) and get their own review then.
 
 ## 5. Suggested first spikes (before or during Phase 0/1)
 
-1. **Stripe Connect and application fee spike** (resolves R-01, Q-03).
+1. ~~**Stripe Connect and application fee spike** (resolves R-01, Q-03).~~ Not needed: Direct payments only, fees invoiced (D-162).
 2. **Tenant isolation prototype** with RLS and an org-and-descendants policy (resolves Q-F in `data-domains.md`).
 3. **Attribute storage prototype** with filter, sort, export, and rule evaluation on 100k rows (resolves Q-04).
 4. **Wildcard subdomain and on-demand TLS** with Caddy locally (supports E-07 and E-22). Wildcard resolution can be spiked with `*.localhost` first. The TLS part ties to F-11.
@@ -80,3 +80,8 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 ## Added 2026-11-01
 - **R-23 Migrations blocked by hosting limits:** Lovable applies migrations to the live database and can be unavailable (for example a credit cap), while merged code already expects the new schema. Mitigation (D-135): migrations are prepared and tested locally, types for them live outside the generated file, and a readiness guard shows "needs a database update" instead of failing. The pending list in `roadmap.md` says what to apply, in order.
 - **R-24 License file:** AGPL-3.0 is decided (D-020), but the repository has no `LICENSE` file yet. Add the official AGPL-3.0 text before the first public release.
+
+## Added 2026-11-02
+- **R-25 Dependency advisories** (*mostly resolved 2026-11-02, D-187: 2 moderate dev-tooling advisories remain*): `bun audit` lists advisories in development tooling (accepted) and two in runtime code, `seroval` through TanStack Start and `zod` 3, that need a framework or major-version bump (`docs/security-review.md` §1.6, D-180). Mitigation: neither is reachable from our inputs today; upgrade in the first release after 0.1.0 and re-run `bun audit` before each release.
+- **R-26 Large organizations:** the API returns at most 1,000 rows per request and per-row setting lookups slowed roll-ups. Mitigation (D-181): paged reads, settings resolved once per org (0034), and `bun run test:perf` before releases.
+- R-24 (license file) is still open and is on the release checklist (`docs/plans/wave-a-mvp.md` §6).

@@ -34,7 +34,7 @@ export function DeleteDemoOrg({ org, orgs }: { org: Org; orgs: readonly Org[] })
       await deleteDemoOrganization(org, confirm.trim(), tree);
       toast.success(`${org.name} was deleted`);
       setOpen(false);
-      await navigate({ to: "/dashboard" });
+      await navigate({ to: "/orgs" });
       await qc.invalidateQueries();
     } catch (e) {
       toast.error(demoErrorMessage(String((e as Error).message)));

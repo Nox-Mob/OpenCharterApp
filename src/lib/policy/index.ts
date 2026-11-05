@@ -56,6 +56,21 @@ export function hasPermission(grants: readonly Grant[], perm: Permission, org: O
   return grants.some((g) => scope.has(g.org_id) && g.permissions.includes(perm));
 }
 
+/** Whether the viewer has any admin permission at this org (so "view as member" makes sense). */
+export function hasAdminAccess(grants: readonly Grant[], org: OrgNode): boolean {
+  return PERMISSIONS.some((p) => hasPermission(grants, p, org));
+}
+
+/**
+ * Grants to render a page with (D-155). "View as member" previews an org page the way a plain
+ * member sees it by dropping the viewer's admin grants in the UI. It changes only what the UI
+ * offers: the database still applies the viewer's real permissions, so this is a preview, never
+ * a way to gain or lose access.
+ */
+export function grantsForView(grants: readonly Grant[], viewAsMember: boolean): readonly Grant[] {
+  return viewAsMember ? [] : grants;
+}
+
 export const ORG_TYPES = ["national", "region", "chapter", "standalone"] as const;
 export type OrgType = (typeof ORG_TYPES)[number];
 

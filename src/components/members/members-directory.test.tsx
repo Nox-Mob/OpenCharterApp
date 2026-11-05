@@ -3,12 +3,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
-    rpc: async () => ({
-      data: [
-        { profile_id: "1", display_name: "Morgan", fields: { Rank: "E-4", Branch: ["Navy"] } },
-        { profile_id: "2", display_name: "Yara", fields: {} },
-      ],
-      error: null,
+    // the directory is read in pages of 1000 (.range)
+    rpc: () => ({
+      range: async () => ({
+        data: [
+          { profile_id: "1", display_name: "Morgan", fields: { Rank: "E-4", Branch: ["Navy"] } },
+          { profile_id: "2", display_name: "Yara", fields: {} },
+        ],
+        error: null,
+      }),
     }),
   },
 }));

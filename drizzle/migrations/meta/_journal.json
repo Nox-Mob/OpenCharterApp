@@ -169,6 +169,160 @@
       "when": 1793598000002,
       "tag": "0023_confirm_0017_0022_applied",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793601600001,
+      "tag": "0024_board_scope_and_overview",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793601600002,
+      "tag": "0025_confirm_0024_applied",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793605200002,
+      "tag": "0026_seat_contacts",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1793608800002,
+      "tag": "0027_board_setup_scope_and_demo_rank",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1793626291231,
+      "tag": "0028_confirm_0026_0027_applied",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793629891231,
+      "tag": "0029_payments_export",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793633491231,
+      "tag": "0030_home_chapter",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793639618976,
+      "tag": "0031_confirm_0029_0030_applied",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793643218976,
+      "tag": "0032_levels_standing_pricing_setup",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793646818976,
+      "tag": "0033_home_chapter_delete_fix",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793650418976,
+      "tag": "0034_rollup_performance",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1793650962298,
+      "tag": "0035_confirm_0032_0034_applied",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1793654562298,
+      "tag": "0036_home_chapter_no_chapter_levels",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1793658162298,
+      "tag": "0037_ready_for_real_use",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793661762298,
+      "tag": "0038_creator_not_a_chapter_member",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1793687874742,
+      "tag": "0039_confirm_0036_0038_applied",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1793691474742,
+      "tag": "0040_overview_people_once",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793713103793,
+      "tag": "0041_0041_confirm_0040_applied",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1793742430586,
+      "tag": "0042_tighten_permission_and_logo_reads",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1793743922005,
+      "tag": "0043_permissions_read_role_holders",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793747522005,
+      "tag": "0044_scale_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1793854360392,
+      "tag": "0045_confirm_0044_applied",
+      "breakpoints": true
     }
   ]
 }

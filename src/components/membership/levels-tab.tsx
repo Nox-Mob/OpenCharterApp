@@ -24,6 +24,16 @@ import { EMPTY_TIER } from "@/modules/membership/tiers";
 import { TierDialog } from "./tier-editor";
 import { PricingRulesDialog } from "./pricing-rules-dialog";
 import { useFeatureReady } from "@/lib/db/readiness";
+import { homeChapterInfoQuery, membershipModelQuery } from "@/modules/membership/home-chapter";
+import { MembershipRulesCard } from "./membership-rules-card";
+import {
+  describePriceRule,
+  levelLinksQuery,
+  linkErrorMessage,
+  makeLevelOwn,
+  setLevelSuggested,
+} from "@/modules/membership/suggested-levels";
+import { AdoptLevelDialog, LinkedPriceDialog } from "./suggested-level-dialogs";
 import { pricingRulesQuery } from "@/modules/membership/pricing";
 import type { Term } from "@/modules/membership/tiers";
 import { Button } from "@/components/ui/button";
@@ -57,6 +67,23 @@ export function LevelsTab({
     level: string;
   } | null>(null);
   const [busy, setBusy] = useState(false);
+  // Suggested levels (A4, D-165): the national suggests, a chapter copies or links
+  const linksReady = useFeatureReady("suggested_levels") === true;
+  const links = useQuery({
+    ...levelLinksQuery(org.id, org.ancestor_ids),
+    enabled: linksReady,
+  });
+  const [adopting, setAdopting] = useState<SavedTier | null>(null);
+  const [pricing, setPricing] = useState<{ tier: SavedTier; source: SavedTier } | null>(null);
+  // Home-chapter model (A8, D-166): members join the national; chapters sell no memberships.
+  const homeReady = useFeatureReady("home_chapter") === true;
+  const home = useQuery({
+    ...homeChapterInfoQuery(org.slug),
+    enabled: homeReady && org.type !== "national",
+  });
+  // A national's own model, to leave out chapter-only actions in the home-chapter model
+  const ownModel = useQuery({ ...membershipModelQuery(org.id), enabled: !org.parent_id });
+  const homeNational = !org.parent_id && ownModel.data === "home_chapter";
   if (tiers.isLoading || allowed.isLoading)
     return <p className="text-muted-foreground">Loading…</p>;
 
@@ -64,6 +91,29 @@ export function LevelsTab({
   const inherited = (tiers.data ?? []).filter((t) => t.org_id !== org.id && t.active);
   const mayCreate = canManage && allowed.data !== false;
   const parentName = orgs.find((o) => o.id === org.parent_id)?.name ?? "Your parent organization";
+
+  const link = (id: string) => links.data?.get(id);
+  const byId = new Map((tiers.data ?? []).map((t) => [t.id, t]));
+  const orgName = (id: string) => orgs.find((o) => o.id === id)?.name ?? "your national";
+  const range = { min: rule.data?.min ?? null, max: rule.data?.max ?? null };
+  // In the home-chapter model chapters have no levels, so there's nothing to suggest (D-203)
+  const hasBelow = (org.type === "national" || org.type === "region") && !homeNational;
+  async function runLink(action: () => Promise<void>, done: string) {
+    try {
+      await action();
+      toast.success(done);
+      qc.invalidateQueries({ queryKey: ["tiers"] });
+      qc.invalidateQueries({ queryKey: ["level-links"] });
+    } catch (e) {
+      toast.error(linkErrorMessage(String((e as Error).message)));
+    }
+  }
+  const refreshLinks = () => {
+    setAdopting(null);
+    setPricing(null);
+    qc.invalidateQueries({ queryKey: ["tiers"] });
+    qc.invalidateQueries({ queryKey: ["level-links"] });
+  };
 
   // Other active levels of this org (the parent's levels don't count, D-126).
   const others = own.filter((t) => t.active && t.id !== editing?.tier?.id);
@@ -98,8 +148,20 @@ export function LevelsTab({
     }
   }
 
+  // only below the national: the query can be cached from another page at the national itself
+  if (org.parent_id && home.data?.model === "home_chapter")
+    return (
+      <p className="rounded-md border bg-card p-5 text-sm">
+        Members join {home.data.national.name} and choose {org.name} as their chapter, so {org.name}{" "}
+        doesn&apos;t sell memberships of its own. Their levels and standing come from{" "}
+        {home.data.national.name}. Local dues, billed by the chapter itself, will come with
+        invoicing.
+      </p>
+    );
+
   return (
     <div className="space-y-6">
+      {!org.parent_id && <MembershipRulesCard org={org} orgs={orgs} />}
       <div className="flex items-center justify-between gap-4">
         <p className="text-muted-foreground">
           The membership levels you offer, how long each lasts, and what it costs.
@@ -133,50 +195,137 @@ export function LevelsTab({
         </p>
       )}
       <ul className="space-y-3">
-        {own.map((t) => (
-          <TierCard
-            key={t.id}
-            tier={t}
-            ruleCount={(id) =>
-              (rules.data ?? []).filter((r) => r.term_id === id && r.active).length
-            }
-            onTerm={
-              canManage && pricingReady && t.active
-                ? (term) => setPricingFor({ term, level: t.name })
-                : undefined
-            }
-            actions={
-              canManage && (
-                <>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() =>
-                      setEditing({
-                        tier: t,
-                        input: { ...t, terms: t.terms.filter((x) => x.active !== false) },
-                      })
-                    }
-                  >
-                    Edit
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => toggle(t)}>
-                    {t.active ? "Retire" : "Restore"}
-                  </Button>
-                </>
-              )
-            }
-          />
-        ))}
+        {own.map((t) => {
+          const l = link(t.id);
+          const linkedTo =
+            l?.link_mode === "linked" && l.source_tier_id ? byId.get(l.source_tier_id) : undefined;
+          return (
+            <TierCard
+              key={t.id}
+              tier={t}
+              note={
+                linkedTo
+                  ? `Linked to ${orgName(linkedTo.org_id)}'s ${linkedTo.name}: ${describePriceRule(l!.price_rule, l!.price_value, orgName(linkedTo.org_id))}`
+                  : l?.suggested
+                    ? "Suggested to the organizations below"
+                    : undefined
+              }
+              ruleCount={(id) =>
+                (rules.data ?? []).filter((r) => r.term_id === id && r.active).length
+              }
+              onTerm={
+                canManage && pricingReady && t.active
+                  ? (term) => setPricingFor({ term, level: t.name })
+                  : undefined
+              }
+              actions={
+                canManage && (
+                  <>
+                    {linkedTo ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setPricing({ tier: t, source: linkedTo })}
+                        >
+                          Price
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            if (
+                              window.confirm(
+                                `Make ${t.name} your own? It stops following ${orgName(linkedTo.org_id)}'s level, and you can't link it again.`,
+                              )
+                            )
+                              void runLink(() => makeLevelOwn(t.id), "It's your own level now");
+                          }}
+                        >
+                          Make it our own
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setEditing({
+                            tier: t,
+                            input: { ...t, terms: t.terms.filter((x) => x.active !== false) },
+                          })
+                        }
+                      >
+                        Edit
+                      </Button>
+                    )}
+                    {linksReady && hasBelow && t.active && !linkedTo && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          void runLink(
+                            () => setLevelSuggested(t.id, !l?.suggested),
+                            l?.suggested
+                              ? "No longer suggested"
+                              : "Suggested to the organizations below",
+                          )
+                        }
+                      >
+                        {l?.suggested ? "Stop suggesting" : "Suggest to chapters"}
+                      </Button>
+                    )}
+                    <Button size="sm" variant="ghost" onClick={() => toggle(t)}>
+                      {t.active ? "Retire" : "Restore"}
+                    </Button>
+                  </>
+                )
+              }
+            />
+          );
+        })}
         {inherited.map((t) => (
           <TierCard
             key={t.id}
             tier={t}
             badge={orgs.find((o) => o.id === t.org_id)?.name ?? "Parent organization"}
+            note={link(t.id)?.suggested ? "Suggested for you" : undefined}
+            actions={
+              mayCreate &&
+              linksReady &&
+              link(t.id)?.suggested && (
+                <Button size="sm" variant="outline" onClick={() => setAdopting(t)}>
+                  Start from this level
+                </Button>
+              )
+            }
           />
         ))}
       </ul>
 
+      {adopting && (
+        <AdoptLevelDialog
+          orgId={org.id}
+          level={adopting}
+          sourceName={orgName(adopting.org_id)}
+          range={range}
+          onClose={() => setAdopting(null)}
+          onDone={refreshLinks}
+        />
+      )}
+      {pricing && (
+        <LinkedPriceDialog
+          tierId={pricing.tier.id}
+          level={pricing.source}
+          current={{
+            rule: link(pricing.tier.id)?.price_rule ?? "same",
+            value: link(pricing.tier.id)?.price_value ?? 0,
+          }}
+          range={range}
+          onClose={() => setPricing(null)}
+          onDone={refreshLinks}
+        />
+      )}
       {pricingFor && (
         <PricingRulesDialog
           org={org}
@@ -210,12 +359,15 @@ export function LevelsTab({
 function TierCard({
   tier,
   badge,
+  note,
   actions,
   onTerm,
   ruleCount,
 }: {
   tier: SavedTier;
   badge?: string;
+  /** a line under the name, e.g. what a linked level follows (A4) */
+  note?: string | undefined;
   actions?: React.ReactNode;
   onTerm?: ((term: Term & { id: string }) => void) | undefined;
   ruleCount?: (termId: string) => number;
@@ -238,6 +390,7 @@ function TierCard({
               </Badge>
             )}
           </p>
+          {note && <p className="text-sm text-primary">{note}</p>}
           {tier.description && <p className="text-sm text-muted-foreground">{tier.description}</p>}
           <p className="text-xs text-muted-foreground">
             {TAX_TREATMENT_LABELS[tier.tax_treatment]}

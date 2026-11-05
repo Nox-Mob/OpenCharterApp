@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { membershipModelQuery } from "@/modules/membership/home-chapter";
 import { toast } from "sonner";
 import type { Org } from "@/lib/orgs";
 import { formatPrice } from "@/modules/membership/tiers";
@@ -8,7 +9,6 @@ import {
   governanceRollupQuery,
   logReportExport,
   memberRollupQuery,
-  memberTotals,
   revenueRollupQuery,
   revenueTotals,
   STANDING_SEGMENTS,
@@ -17,6 +17,8 @@ import {
   yearToDate,
   type MemberRollup,
   type StandingKey,
+  currentMembers,
+  rollupTotal,
 } from "@/modules/reports/rollups";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,7 +53,10 @@ function download(name: string, csv: string) {
   URL.revokeObjectURL(url);
 }
 
-/** Reports tab (E-23): members, revenue and board health for this org and every org below it. */
+/**
+ * Reports tab (E-23): members, revenue and board health for this org and every org below it.
+ * A chapter has nothing below it, so a chapter admin sees their own chapter only (D-152).
+ */
 export function ReportsTab({
   org,
   canSeeMembers,
@@ -65,6 +70,9 @@ export function ReportsTab({
 }) {
   const [range, setRange] = useState(() => yearToDate(today()));
   const members = useQuery({ ...memberRollupQuery(org.id), enabled: canSeeMembers });
+  // home-chapter model: members are counted once in the total (D-196)
+  const model = useQuery({ ...membershipModelQuery(org.id), enabled: canSeeMembers });
+  const homeChapter = model.data === "home_chapter";
   const revenue = useQuery({
     ...revenueRollupQuery(org.id, range.from, range.to),
     enabled: canSeeRevenue && range.from <= range.to,
@@ -96,7 +104,14 @@ export function ReportsTab({
             <div>
               <h2 className="text-lg font-semibold">Members</h2>
               <p className="text-sm text-muted-foreground">
-                {org.name} and every organization below it, as of today.
+                {org.type === "chapter"
+                  ? `${org.name}, as of today.`
+                  : `${org.name} and every organization below it, as of today.`}{" "}
+                Members are people with a current membership (good standing or in grace); records
+                without one, such as administrators, aren&apos;t counted.
+                {homeChapter && org.type !== "chapter"
+                  ? " Each member belongs to the national and is also listed in their chapter, so the total counts them once."
+                  : ""}
               </p>
             </div>
             <Button
@@ -108,13 +123,13 @@ export function ReportsTab({
                   "members",
                   [
                     "Organization",
-                    "Members",
+                    "Current members",
                     "Good standing",
                     "Grace period",
                     "Lapsed",
                     "Pending",
                     "Cancelled or declined",
-                    "No membership",
+                    "Records without a membership",
                     "Joined in the last 30 days",
                     "Expiring within 30 days",
                     "Expiring within 60 days",
@@ -122,7 +137,7 @@ export function ReportsTab({
                   ],
                   members.data!.map((r) => [
                     r.name,
-                    r.profiles,
+                    currentMembers(r),
                     r.good,
                     r.grace,
                     r.lapsed,
@@ -175,7 +190,7 @@ export function ReportsTab({
                   ))}
                   {(members.data?.length ?? 0) > 1 && (
                     <MemberRow
-                      r={memberTotals(members.data!)}
+                      r={rollupTotal(members.data!, homeChapter)}
                       label="Total"
                       className="font-semibold"
                     />
@@ -391,7 +406,7 @@ function MemberRow({
           </div>
         )}
       </TableCell>
-      <TableCell className="text-right">{r.profiles}</TableCell>
+      <TableCell className="text-right">{currentMembers(r)}</TableCell>
       <TableCell className="text-right">{r.good}</TableCell>
       <TableCell className="text-right">{r.grace}</TableCell>
       <TableCell className="text-right">{r.lapsed}</TableCell>

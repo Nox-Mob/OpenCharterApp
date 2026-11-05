@@ -1,0 +1,64 @@
+name: Live demo checks
+
+# The smoke test and the end-to-end tests against the live Lovable Cloud backend, signed in as
+# the demo accounts (D-175, D-197). They create records in the demo organizations and remove them
+# afterwards (purge_smoke_data, D-150), so runs never overlap: one at a time, newest waiting.
+# A feature whose migration Lovable hasn't applied yet is skipped until it is.
+#
+# Repository settings (all optional):
+# - secret SMOKE_DEMO_PASSWORD: the demo accounts' password, if it's changed from the default
+# - variable E2E_BASE_URL: a deployed site (preview or published) to also run the checkout test
+on:
+  push:
+    branches: [main, BoardUpdates]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "41 6 * * *" # daily 06:41 UTC: catches backend changes made outside this repository
+  workflow_dispatch:
+
+concurrency:
+  group: live-demo
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    name: Smoke test (live backend)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Run the smoke test
+        run: bun run test:smoke
+        env:
+          SMOKE_DEMO_PASSWORD: ${{ secrets.SMOKE_DEMO_PASSWORD }}
+
+  e2e:
+    # Google Chrome stable rather than Playwright's bundled Chromium, which lags Chrome's security
+    # fixes; the runner isn't root, so Chrome's sandbox stays on (D-186). Playwright is pinned at
+    # 1.64.1. Runs after the smoke test even if it failed, never at the same time.
+    name: End-to-end (Playwright)
+    needs: smoke
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx playwright install --with-deps chrome
+      - name: Run end-to-end tests
+        run: bun run test:e2e
+        env:
+          CI: "true"
+          E2E_BROWSER_CHANNEL: chrome
+          E2E_BASE_URL: ${{ vars.E2E_BASE_URL }}
+          SMOKE_DEMO_PASSWORD: ${{ secrets.SMOKE_DEMO_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7

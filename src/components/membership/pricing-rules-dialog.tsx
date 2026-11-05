@@ -318,7 +318,7 @@ export function PricingRulesDialog({
   );
 }
 
-function ConditionRow({
+export function ConditionRow({
   c,
   attrs,
   onChange,

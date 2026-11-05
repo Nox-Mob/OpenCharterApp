@@ -15,7 +15,7 @@ admin -c "drop database if exists $DB" -c "create database $DB"
 run -f "$ROOT/db/ci/supabase-stub.sql"
 for f in $(ls "$ROOT"/drizzle/migrations/*.sql | sort); do
   echo "migrate $(basename "$f")"
-  run -f "$f"
+  run -1 -f "$f"  # one transaction each, as Lovable may apply them
 done
 fail=0
 for f in $(ls "$ROOT"/db/tests/*.sql | sort); do

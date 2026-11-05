@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  currentMembers,
   memberTotals,
+  rollupTotal,
   revenueTotals,
   standingShares,
   tableCsv,
@@ -12,7 +14,7 @@ const row = (over: Partial<MemberRollup>): MemberRollup => ({
   org_id: "x",
   name: "X",
   type: "chapter",
-  parent_id: null,
+  parent_id: "n",
   depth: 1,
   profiles: 0,
   good: 0,
@@ -35,6 +37,17 @@ describe("roll-up helpers", () => {
       row({ profiles: 2, good: 1, pending: 1 }),
     ]);
     expect([t.profiles, t.good, t.lapsed, t.pending]).toEqual([5, 3, 1, 1]);
+  });
+
+  it("counts members by current membership, once in the home-chapter model (D-196)", () => {
+    expect(currentMembers(row({ profiles: 5, good: 2, grace: 1, lapsed: 1 }))).toBe(3);
+    const rows = [
+      row({ depth: 0, profiles: 4, good: 3 }),
+      row({ depth: 1, profiles: 2, good: 2 }),
+      row({ depth: 1, profiles: 1, good: 1 }),
+    ];
+    expect(rollupTotal(rows, true).good).toBe(3);
+    expect(rollupTotal(rows, false).good).toBe(6);
   });
 
   it("never adds amounts across currencies", () => {

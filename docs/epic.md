@@ -22,63 +22,66 @@ flowchart LR
 
 Phases 4 and 5 can swap or run in parallel if two streams are available. Hosted-service billing (E-42) can be pulled earlier if we want to start selling hosting sooner.
 
-Detailed plans for epics being worked on live in [`plans/`](plans/), e.g. [E-12 / E-13](plans/e12-e13-payments-and-joining.md).
+Current plans live in [`plans/`](plans/): the review of Phases 1–3 with the plan for what's left ([`phases-1-3-review.md`](plans/phases-1-3-review.md)) and the MVP release plan ([`wave-a-mvp.md`](plans/wave-a-mvp.md)).
 
 ## 2. Epics by phase
 
+Status for Phases 0–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly built, ⬜ not started or deferred) comes from the review in [`plans/phases-1-3-review.md`](plans/phases-1-3-review.md), refreshed for the v0.1.0 release candidate (2026-11-05). Phase 1 and Phase 2 exit criteria are met; Phase 0's subdomain sign-in waits for E-07, and Phase 3's are not met yet. Later phases haven't started.
+
 ### Phase 0: Foundation
 
-| ID | Epic | Outcome |
-|---|---|---|
-| E-01 | Project scaffolding and CI/CD | Repo, lint, types, tests, CI pipeline, environments, npm scripts, local development setup (local Postgres, env vars, `.env.example`) |
-| ~~E-02~~ | ~~Deployment packaging~~ | **Moved to the future backlog as F-11** (D-012). ID retired, not reused |
-| E-03 | Identity and authentication | Global person and account, sign-in, sessions, email verification, password reset, invitations, **joining a new org with an existing account, org switcher** |
-| E-04 | Organization hierarchy and platform tier | Org tree (platform, national, region, chapter, standalone), org settings, tax profile, **branding with logo upload and chapter override** |
-| E-05 | RBAC and permissions | Roles, permissions, scoped assignments with downward inheritance, policy layer |
-| E-06 | Audit log | Append-only log and viewer, hooks for all modules |
-| E-07 | Host-based tenant resolution | Wildcard subdomain mapping (tested locally with `*.localhost`), org context per request, RLS wiring, tenant-isolation tests. **Deferred** (D-111): RLS and tenant-isolation tests are done; per-org web addresses wait |
-| E-08 | Jobs, email, and notifications infrastructure | Postgres jobs table and scheduled server routes (D-103, replacing pg-boss), email provider integration, template system, signed-action link service. **Deferred** (D-111); its email follow-up list is in `roadmap.md` |
+| ID | Epic | Outcome | Status (2026-11-05) |
+|---|---|---|---|
+| E-01 | Project scaffolding and CI/CD | Repo, lint, types, tests, CI pipeline, environments, npm scripts, local development setup (local Postgres, env vars, `.env.example`) | 🟡 CI, checks, end-to-end tests (including about 40 user-testing steps, D-198, D-202), a performance budget at 5,000–20,000 members (D-209), the pre-commit hook and the docs check run (D-182, D-197); the coverage gate in `instructions.md` §9 needs a dependency decision |
+| ~~E-02~~ | ~~Deployment packaging~~ | **Moved to the future backlog as F-11** (D-012). ID retired, not reused | — |
+| E-03 | Identity and authentication | Global person and account, sign-in, sessions, email verification, password reset, invitations, **joining a new org with an existing account, org switcher** | ✅ Cleared; account page with a default organization, no separate dashboard (D-192, D-206) |
+| E-04 | Organization hierarchy and platform tier | Org tree (platform, national, region, chapter, standalone), org settings, tax profile, **branding with logo upload and chapter override** | ✅ Cleared |
+| E-05 | RBAC and permissions | Roles, permissions, scoped assignments with downward inheritance, policy layer | ✅ Cleared |
+| E-06 | Audit log | Append-only log and viewer, hooks for all modules | ✅ Cleared |
+| E-07 | Host-based tenant resolution | Wildcard subdomain mapping (tested locally with `*.localhost`), org context per request, RLS wiring, tenant-isolation tests. **Deferred** (D-111): RLS and tenant-isolation tests are done; per-org web addresses wait | ⬜ Deferred (D-111); RLS and isolation tests done |
+| E-08 | Jobs, email, and notifications infrastructure | Postgres jobs table and scheduled server routes (D-103, replacing pg-boss), email through Lovable's email or the client's own server chosen by `EMAIL_TRANSPORT`, server settings and send-from address per org (D-159), template system, signed-action links that open a signed-in confirmation page (D-164). **Deferred** (D-111); its email follow-up list is in `roadmap.md` | ⬜ Deferred (D-111); first update after the MVP (D-169) |
 
 **Exit:** a national and a chapter can exist, users can sign in on the right subdomain, a chapter admin sees only their chapter, and every action is audited.
 
 ### Phase 1: Membership MVP
 
-| ID | Epic | Outcome |
-|---|---|---|
-| E-09 | Custom attribute system | Org-defined member attributes (types, validation, visibility), attribute values on members, admin UI |
-| E-10 | Setup engine framework + Membership setup flow | Reusable guided-setup framework, first flow covering members, attributes, tiers, and dues questions (see `setup-engine.md`) |
-| E-11 | Membership tiers and terms | Org-defined tiers, term options, prices, tax treatment, prepaid model |
-| E-12 | Payment gateway abstraction and Stripe | Gateway interface, Stripe adapter, transactions, webhooks, refunds |
-| E-13 | Member signup and renewals | Public join form, application and approval (optional), renewals, lapses, grace periods, standing |
-| E-14 | Member directory, lists, and exports | Member list with standing and time-to-expiration, filters, saved segments, privacy-aware CSV exports |
-| E-15 | Basic automatic receipts | Receipt on payment, default template, receipt history |
+| ID | Epic | Outcome | Status (2026-11-05) |
+|---|---|---|---|
+| E-09 | Custom attribute system | Org-defined member attributes (types, validation, visibility), attribute values on members, admin UI | ✅ Cleared |
+| E-10 | Setup engine framework + Membership setup flow | Reusable guided-setup framework, first flow covering members, attributes, tiers, and dues questions (see `setup-engine.md`) | ✅ Cleared; setup now also covers prices by member fields (D-177) |
+| E-11 | Membership tiers and terms | Org-defined tiers, term options, prices, tax treatment, prepaid model | ✅ Cleared |
+| E-12 | Payment gateway abstraction and Stripe | Gateway interface, Stripe adapter, transactions, webhooks, refunds | 🟡 Cleared; transaction export done (D-173); live Stripe test-mode check open (A1, owner action) |
+| E-13 | Member signup and renewals | Public join form, application and approval (optional), renewals, lapses, grace periods, standing; national membership with a home chapter (D-166, D-174, D-176) | 🟡 Cleared; automatic lapse notices and reminders wait for E-08 |
+| E-14 | Member directory, lists, and exports | Member list with standing and time-to-expiration, filters, saved segments, privacy-aware CSV exports | ✅ Cleared; import, off-roster records and lists past 1,000 rows (D-181, D-189, D-190); checked at 20,000 members (D-209) |
+| E-15 | Basic automatic receipts | Receipt on payment, default template, receipt history | ✅ Cleared |
 
 **Exit:** a standalone org can complete setup, sell memberships through Stripe, renew them, see its roster, and export a mailing list.
 
 ### Phase 2: Chapters at scale
 
-| ID | Epic | Outcome |
-|---|---|---|
-| E-16 | Chapter creation wizard and chapter attributes | National-led chapter creation, national-defined chapter attributes (e.g., charter date), prompts for required officers |
-| E-17 | Board role templates and appointments | National-defined seats (required, count, term, permissions), custom titles, appointments with history, access grant and revoke |
-| E-18 | Two-level dues and national controls | National and chapter tiers, none/optional-range/required chapter dues, locked or suggested structures, two-payment checkout UX |
-| E-19 | Rules engine and attribute-based pricing | Declarative rules UI, pricing by attribute (e.g., rank bands), reused later for eligibility and approvals |
-| E-20 | Postpaid dues | Balances, invoices, due dates, delinquency, admin-defined enforcement, manual payment recording |
-| E-21 | Per-org gateways, PayPal, optional national fee | Each org connects Stripe or PayPal, **Stripe Connect and Direct modes**, PayPal adapter, national fee on chapter transactions |
-| E-22 | Custom domains | Domain settings, DNS verification, on-demand TLS, subdomain remains default. **Needs a reverse proxy, so F-11 must be pulled forward before or with this epic** |
-| E-23 | National roll-up reporting | Cross-chapter membership and revenue reporting |
+| ID | Epic | Outcome | Status (2026-11-05) |
+|---|---|---|---|
+| E-16 | Chapter creation wizard and chapter attributes | National-led chapter creation, national-defined chapter attributes (e.g., charter date), prompts for required officers | ✅ Cleared |
+| E-17 | Board role templates and appointments | National-defined seats (required, count, term, permissions), custom titles, appointments with history, access grant and revoke | ✅ Cleared |
+| E-18 | Two-level dues and national controls | National and chapter tiers, none/optional-range/required chapter dues, locked or suggested structures (chapter chooses copy or linked, D-165), two-payment checkout UX; alternative model: national membership with a home chapter (D-166) | ✅ Cleared: suggested levels, national standing and the home-chapter model built (D-174, D-177, D-178) |
+| E-19 | Rules engine and attribute-based pricing | Declarative rules UI, pricing by attribute (e.g., rank bands), reused later for eligibility and approvals | ✅ Cleared |
+| E-20 | Postpaid dues | Balances, invoices, due dates, delinquency, admin-defined enforcement as inheritable settings (D-161), manual payment recording, **parent orgs invoicing subordinate orgs** (national fee, D-162) | ⬜ Not started |
+| E-21 | Per-org gateways and PayPal | Each org connects Stripe or PayPal, **Direct mode only** (Connect dropped, D-162), PayPal adapter. The national fee is invoiced through E-20 | 🟠 Partly built (Stripe done; PayPal open) |
+| E-22 | Custom domains | Domain settings, DNS verification, on-demand TLS, subdomain remains default. **Needs a reverse proxy, so F-11 must be pulled forward before or with this epic** | ⬜ Not started (keep deferred until F-11) |
+| E-23 | National roll-up reporting | Cross-chapter membership and revenue reporting | ✅ Cleared; roll-ups checked at 20,000 members across 80 chapters (D-209) |
 
 **Exit:** national can create a chapter through the wizard, seat its officers, and have it collect its own dues, while national sees roll-ups.
 
 ### Phase 3: Governance and documents
 
-| ID | Epic | Outcome |
-|---|---|---|
-| E-24 | Approval workflow engine | Generic multi-step approvals, approver resolution, escalation, delegation to national, batch approval, signed one-click links with confirmation page and comment |
-| E-25 | Governance compliance | Vacancy alerts, good-standing checks for officers, board reports (types, schedules, submit, review), national oversight dashboard |
-| E-26 | Document repository | Libraries, categories, required types, versions, visibility levels, change alerts to national, compliance dashboard |
-| E-27 | Elections | Positions, eligibility, nominations, voting windows, single choice and ranked choice, hybrid entry, certification, auto-appointment, immutable results |
-| E-28 | Automation engine expansion | Reusable triggers and schedules, the full automation inventory from `architecture.md` |
+| ID | Epic | Outcome | Status (2026-11-05) |
+|---|---|---|---|
+| E-24 | Approval workflow engine | Generic multi-step approvals, approver resolution, escalation, delegation to national, batch approval, signed one-click links with confirmation page and comment | ⬜ Not started |
+| E-25 | Governance compliance | Vacancy alerts, good-standing checks for officers, board reports (types, schedules, submit, review), national oversight dashboard | 🟠 Partly built (good standing, vacancy views) |
+| E-26 | Document repository | Libraries, categories, required types, versions, visibility levels, change alerts to national, compliance dashboard | ⬜ Not started |
+| E-27 | Elections | Positions, eligibility, nominations, voting windows, single choice and ranked choice, hybrid entry, certification, auto-appointment, immutable results | ⬜ Not started |
+| E-28 | Automation engine expansion | Reusable triggers and schedules, the full automation inventory from `architecture.md` | ⬜ Not started (needs E-08) |
+| E-43 | Annual chapter reports (optional, per national) | A national that wants annual reports builds the report form itself (its own questions, required or not, using the form builder); sets a due date (and which years); every chapter's president then has a task, "Submit the annual report by …", on their Overview, can save a draft and submit once; the national sees who has submitted, who is late and each answer, and can export them. Entirely optional: a national that doesn't build a form sees nothing. Builds on E-29 (the form builder, pulled forward for this or built first here), E-17 (presidents' seats) and E-08 (reminders, later); review and sign-off can use E-24 | ⬜ Not started (proposed 2026-11-03, D-204) |
 
 **Exit:** national sees vacancies, overdue reports, and document changes at a glance, and a chapter can run an election that seats its new board.
 
@@ -140,6 +143,8 @@ flowchart TD
     E19 --> E18
     E17 --> E25[E-25 Governance compliance]
     E17 --> E27[E-27 Elections]
+    E29 --> E43[E-43 Annual chapter reports]
+    E17 --> E43
     E08[E-08 Jobs and notifications] --> E24[E-24 Approval engine]
     E19 --> E24
     E24 --> E31[E-31 Award approvals]
@@ -161,7 +166,8 @@ flowchart TD
 > - E-09 (Attributes) leads to E-10 (Setup engine), E-19 (Rules and pricing), and E-29 (Form builder).
 > - E-11 (Tiers) and E-12 (Gateway and Stripe) both lead to E-13 (Signup and renewals).
 > - E-13 leads to E-14 (Member lists) and E-18 (Two-level dues); E-19 also leads to E-18.
-> - E-17 (Board seats) leads to E-25 (Governance compliance) and E-27 (Elections).
+> - E-17 (Board seats) leads to E-25 (Governance compliance), E-27 (Elections) and E-43 (Annual chapter reports).
+> - E-29 (Form builder) also leads to E-43 (Annual chapter reports): the national builds the report form with it.
 > - E-08 (Jobs and notifications) and E-19 (Rules) both lead to E-24 (Approval engine).
 > - E-24 leads to E-31 (Award approvals) and E-26 (Documents review flow).
 > - E-29 (Form builder) leads to E-30 (Award catalog), which leads to E-31.
@@ -194,7 +200,7 @@ flowchart TD
 | F-08 | Tool-specific accounting export formats |
 | F-09 | Internationalization and multi-currency |
 | F-10 | Mobile app or PWA enhancements |
-| F-11 | **Deployment packaging:** Docker image, Docker Compose, Caddy configuration, backup and restore notes, upgrade notes (moved from E-02). Pull forward before E-22 (custom domains) or E-42 (hosted billing), or sooner if we need a shared test environment |
+| F-11 | **Deployment packaging:** a lightweight standalone install (D-160; default: app + hosted Supabase, D-168): Docker image, Docker Compose (app + hosted Supabase, or app + a minimal self-hosted Supabase subset), Caddy configuration, backup and restore notes, upgrade notes (moved from E-02). Pull forward before E-22 (custom domains) or E-42 (hosted billing), or sooner if we need a shared test environment |
 
 ## 5. Scrum guidance
 

@@ -74,6 +74,7 @@ Each flow lists the kind of questions it asks. Wording is illustrative.
 ### 6.3 Membership and dues
 - What membership levels do you offer? What is each called?
 - For each level: what terms are offered (any number, any length, lifetime optional) and the price per term. *Built (E-11):* each term is a count plus a Days / Months / Years drop-down, or Lifetime. The step is skipped when a parent organization manages levels.
+- *National only:* how membership works across the tree: separate memberships, or national membership with a home chapter (D-166). Chosen once, when the national is created (a "How membership works" step comparing both models, or "Decide later", D-176) or on Settings → General with the same comparison (D-174). A Membership setup question for it is a later addition.
 - *National only:* may chapters create their own membership levels? (Built, D-123.)
 - *National only:* how are new members of your chapters accepted: automatically, always reviewed by an admin, or each chapter decides? A chapter whose parent decides doesn't see its own approval question. (Built, D-130.) The grace-period lock is a separate switch.
 - Questions may carry their own `when` condition (like steps), so a question can hide based on earlier answers or the org; hidden answers are dropped before the plan is made.
@@ -87,7 +88,7 @@ Each flow lists the kind of questions it asks. Wording is illustrative.
 - *Built (Membership setup v4, D-146, once 0020 is applied):* "Must chapter members also be members of your organization?", "Must every chapter charge its own dues?" and the lowest / highest chapter price. "May chapters create their own membership levels?" off means no chapter dues. Locked or suggested level structures come later.
 
 ### 6.4 Payments
-- Connect Stripe and/or PayPal. *National:* use Stripe Connect (automatic fee) or let each org connect directly (fee by invoice)?
+- Connect Stripe and/or PayPal; each org connects its own account (Direct only, D-162). *National:* charge chapters a fee? It is invoiced to each chapter (E-20).
 - Optional: charge chapters a fee? Percentage or fixed, and which transaction types.
 - Receipt template basics (header, signature, footer) and who receives receipt copies.
 - *Built:* the overview's "Connect payments" card shows whether a gateway is connected and opens the Payments tab (`?tab=payments`). Keys are sealed on the server, so connecting can't go through `apply_setup`.
@@ -99,7 +100,7 @@ Each flow lists the kind of questions it asks. Wording is illustrative.
 - Board report types and schedules, and who reviews them.
 - Vacancy alert thresholds and who gets notified.
 - *Built (Board setup v1, D-143, `src/modules/governance/setup-flow.ts`):*
-  1. **Officer seats:** presets (President, Vice President, Secretary, Treasurer) or custom seats, each with required, number of seats and a suggested term. A national or region picks "every chapter" or "itself" per seat. Skipped when the parent manages seats. Linked roles are set on the Board tab, never by setup.
+  1. **Officer seats:** presets (President, Vice President, Secretary, Treasurer) or custom seats, each with required, number of seats and a suggested term. A national or region picks, per seat, "itself", "every chapter", or "itself and every chapter" (D-151). Running setup again can change that choice, unless a current officer would lose their seat (D-157). Skipped when the parent manages seats. Linked roles are set on the Board tab, never by setup.
   2. **Officer rules:** good standing for officers (a parent can require it of every chapter), and for parents, whether chapters may rename seats or add their own.
   3. **Terms from your by-laws:** this org's own term per seat used here, with the date it takes effect and a by-law reference (D-142). Applying again adds a rule only when it differs from the one in force on that date.
 - Board reports, vacancy alerts and elections come later (E-25, E-27).
@@ -109,7 +110,7 @@ The overview shows a card per flow from `src/modules/setup/flows.ts` (Membership
 
 ### 6.6 Elections
 - Who is eligible to vote and to run (membership status, minimum membership length, cutoff date logic)?
-- Default voting method (single choice or ranked choice, chapter can choose if allowed).
+- Voting method, chosen by each org to match its by-laws: first past the post or ranked choice (D-167), with the by-law reference. Fixed per election once voting opens.
 - Nomination method, voting window length, quorum requirements.
 
 ### 6.7 Documents

@@ -40,10 +40,23 @@ select public.apply_setup('22222222-0000-4000-8000-000000000001', 'board', '{}',
 select tests.eq((select count(*) from public.seat_templates), 2::bigint, 'no duplicates; left-out seats not retired');
 select tests.eq((select title from public.seat_templates where key = 'president'), 'Chapter President', 'updated in place');
 select tests.eq((select count(*) from public.seat_terms), 1::bigint, 'same rule not added twice');
--- scope can't change
-select tests.throws($$select public.apply_setup('22222222-0000-4000-8000-000000000001', 'board', '{}',
-  '{"seats": [{"key": "president", "title": "P", "seat_count": 1, "scope": "self"}]}')$$, 'can''t be changed');
+-- "used by" can change (D-157, 0027), but not while it would remove a current officer
 select tests.reset_role();
+insert into public.appointments (org_id, template_id, profile_id, seat_number, starts_on)
+  select '22222222-0000-4000-8000-000000000002', id, '33333333-0000-4000-8000-000000000003', 1, current_date
+  from public.seat_templates where key = 'president';
+select tests.as_user('11111111-0000-4000-8000-000000000001');
+select tests.throws($$select public.apply_setup('22222222-0000-4000-8000-000000000001', 'board', '{}',
+  '{"seats": [{"key": "president", "title": "Chapter President", "seat_count": 1, "scope": "self"}]}')$$, 'no longer be used');
+select public.apply_setup('22222222-0000-4000-8000-000000000001', 'board', '{}',
+  '{"seats": [{"key": "president", "title": "Chapter President", "description": "Leads", "required": true, "seat_count": 1, "term_count": 2, "term_unit": "year", "scope": "self_and_chapters", "sort_order": 10}]}');
+select tests.eq((select scope::text from public.seat_templates where key = 'president'), 'self_and_chapters', 'widened to the national and its chapters');
+select tests.eq((select count(*) from public.org_board('22222222-0000-4000-8000-000000000001') where key = 'president'), 1::bigint, 'now used at the national');
+select public.apply_setup('22222222-0000-4000-8000-000000000001', 'board', '{}',
+  '{"seats": [{"key": "president", "title": "Chapter President", "description": "Leads", "required": true, "seat_count": 1, "term_count": 2, "term_unit": "year", "scope": "chapters", "sort_order": 10}]}');
+select tests.eq((select scope::text from public.seat_templates where key = 'president'), 'chapters', 'narrowed back: the chapter officer keeps the seat');
+select tests.reset_role();
+update public.appointments set ended_on = current_date where ended_on is null;
 
 -- the chapter: can't add seats (parent rule), but sets its own term for the national's seat
 select tests.as_user('11111111-0000-4000-8000-000000000002');

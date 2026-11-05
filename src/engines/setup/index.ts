@@ -45,7 +45,9 @@ type QuestionBody =
   /** Board seats this org defines (governance flow). */
   | { id: string; type: "seats"; label: string; help?: string }
   /** This org's own term per seat, from its by-laws (governance flow, D-142). */
-  | { id: string; type: "seat_terms"; label: string; help?: string };
+  | { id: string; type: "seat_terms"; label: string; help?: string }
+  /** Pricing rules for the levels' terms, by member fields (Membership setup, A6, D-177). */
+  | { id: string; type: "pricing_rules"; label: string; help?: string };
 
 /** A question; `when` hides it (and drops its answer) based on earlier answers or the org. */
 export type Question = QuestionBody & { when?: (a: Answers, ctx: FlowContext) => boolean };
@@ -59,6 +61,13 @@ export type FlowContext = {
   parentApproval?: "auto" | "review";
   /** Migration 0020 is applied: national and chapter dues rules can be set (D-146). */
   twoLevelDues?: boolean;
+  /** Migration 0032 is applied: Membership setup has the pricing step (A6, D-177). */
+  setupPricing?: boolean;
+  /**
+   * The national chose "national membership with a home chapter" (D-166): members belong to the
+   * national, so chapters have no levels, acceptance or grace period of their own (D-184).
+   */
+  homeChapter?: boolean;
   /** Board setup: what applies at this org (from org_board and the parent's rules). */
   board?: {
     /** False when a parent turned off governance.chapter_extra_seats_allowed. */

@@ -1,6 +1,6 @@
 # Data Domains (input to database design)
 
-An inventory of what we will need to store, grouped by domain. This is **not a schema**. It lists the main entities, key relationships, and the design questions to settle before writing tables. Domains are ordered roughly by the order we will design them.
+An inventory of what we will need to store, grouped by domain. This is **not a schema**: for the tables actually in use and how they connect, see [`tables.md`](tables.md). It lists the main entities, key relationships, and the design questions to settle before writing tables. Domains are ordered roughly by the order we will design them.
 
 Conventions to assume at schema time: every tenant-owned table carries `org_id`; timestamps and soft-delete or status columns where history matters; audit events for meaningful changes; IDs are opaque (UUID or similar).
 
@@ -48,9 +48,10 @@ Conventions to assume at schema time: every tenant-owned table carries `org_id`;
 | Membership program / tier | Owned by an org (national or chapter), name, status, tax treatment, billing timing (prepaid or postpaid), approval required. *Built (E-11):* `membership_tiers` (key, name, description, tax_treatment, active). Billing timing comes with E-20 and approval stays an org setting (D-124). Sub-orgs may only create levels when their parent allows it (D-123) |
 | Term option | Per tier: label, duration (or lifetime), price. Fully org-defined. *Built (E-11):* `tier_terms` (length_count + length_unit day/month/year, or both null for lifetime; price_minor; currency), D-122 |
 | Pricing rule | *Built (E-19):* `pricing_rules` per term: conditions on member fields (jsonb), a price or a percentage off, order, active (D-147) |
-| Pricing rule | Rule record linked to a tier (attribute-based pricing or reductions), evaluated by the rules engine |
 | Membership | (person, org, tier, term, status, start, paid-through, source). *Built (E-13a):* `memberships`, one current row per member profile and org: tier, term, status (pending / active / cancelled / declined), joined_on, paid_through, lifetime (D-131) |
 | Membership event history | Joined, renewed, lapsed, upgraded, cancelled. *Built:* append-only `membership_events` (joined / renewed / approved / declined / cancelled) with the period covered and the payment |
+| Chapter affiliation | *Built (0030, D-166, D-174):* `memberships.home_org_id` (the national membership's chapter), `org_member_profiles.home_of` / `left_at` (the chapter's record standing for it), append-only `affiliation_history`; setting `membership.model` chosen once by the national |
+| Level link | *Built (A4, D-177, migration 0032):* `membership_tiers.suggested` on the national's level; on a chapter's level `source_tier_id`, `link_mode` (copy / linked), `price_rule` (same / minus_amount / minus_percent) and `price_value`; `tier_terms.source_term_id` |
 | Standing | Derived state (good standing, grace, lapsed, delinquent). Possibly materialized for query speed. *Built:* derived on read from paid_through and the grace period (`membership_standing`, `src/modules/membership/standing.ts`), not stored (D-111) |
 | Directory listing | *Built (E-14):* `org_member_profiles.directory_listed` (null = the org default), read through `member_directory` (D-139) |
 | Member record | *Built (E-13a):* `org_member_profiles` may have no login (`user_id` null, source admin / import) for historical members; an invitation claims it (D-116, D-134) |
@@ -76,14 +77,15 @@ Conventions to assume at schema time: every tenant-owned table carries `org_id`;
 
 | Entity | Notes |
 |---|---|
-| Board seat template | Defined by national: canonical role, default title, required, count, term length, linked permission set. *Built (E-17):* `seat_templates` (org, key, title, required, seat_count, suggested term, role_id, scope self / chapters, retire not delete, D-141) |
+| Board seat template | Defined by national: canonical role, default title, required, count, term length, linked permission set. *Built (E-17):* `seat_templates` (org, key, title, required, seat_count, suggested term, role_id, scope self / chapters / self_and_chapters, retire not delete, D-141, D-151) |
 | Board seat | Instance in an org, optional custom display title, status (filled, vacant). *Built (E-17):* derived by `org_board`; custom titles in `seat_title_overrides` |
+| Seat contact | *Built (0026):* `seat_contacts`, a role email per org and seat; none = the officer's own email is shown (D-156) |
 | Seat term rule | *Built (E-17):* `seat_terms`, each org's own term per seat with effective date and by-law reference, append-only (D-142) |
 | Appointment | (person, seat, start, end, how: appointed, elected). *Built (E-17):* `appointments` (seat number, starts_on, planned_end, ended_on, reason, the role assignment it created); elections come with E-27 |
 | Vacancy tracking | Derived or recorded vacancy start for alerting |
 | Report type | Defined by national, schedule, form |
 | Board report | Chapter submission, status (draft, submitted, acknowledged, changes requested), due date |
-| Oversight view data | Likely derived views over seats, reports, documents. *Built (E-23):* `org_rollup_members`, `org_rollup_revenue`, `org_rollup_governance` (aggregates over the org's subtree, D-145) |
+| Oversight view data | Likely derived views over seats, reports, documents. *Built (E-23):* `org_rollup_members`, `org_rollup_revenue`, `org_rollup_governance` (aggregates over the org's subtree, D-145); `org_overview_stats` for the Overview page (distinct people across the subtree, D-152) |
 
 ## 7. Approval workflow (second pass, shared)
 

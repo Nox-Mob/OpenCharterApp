@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { membershipModelQuery } from "@/modules/membership/home-chapter";
 import { toast } from "sonner";
 import { myOrgsQuery, myPermissionsQuery, type Org } from "@/lib/orgs";
 import { hasPermission } from "@/lib/policy";
@@ -9,6 +10,8 @@ import { FlowWizard } from "@/components/setup/flow-wizard";
 import { BoardSetup } from "@/components/governance/board-setup";
 import { RequiresDatabase } from "@/components/db/requires-database";
 import { useFeatureReady } from "@/lib/db/readiness";
+import { PricingRulesQuestion } from "@/components/setup/pricing-rules-question";
+import { pricingRulesQuery, ruleAttributes } from "@/modules/membership/pricing";
 import { isSetupFlowId, type SetupFlowId } from "@/modules/setup/flows";
 import {
   attributeInputSchema,
@@ -19,7 +22,11 @@ import {
   type AttributeSubject,
 } from "@/engines/attributes";
 import type { DefWithOptions } from "@/modules/attributes/queries";
-import { initialAnswers, membershipFlow } from "@/modules/membership/setup-flow";
+import {
+  initialAnswers,
+  membershipFlow,
+  type PricingRuleAnswer,
+} from "@/modules/membership/setup-flow";
 import { setupStateQuery } from "@/modules/setup/drafts";
 import { attributeDefsQuery } from "@/modules/attributes/queries";
 import {
@@ -95,15 +102,22 @@ function MembershipSetup({ org }: { org: Org }) {
   const levelsAllowed = useQuery(childLevelsAllowedQuery(org.id, org.ancestor_ids));
   const parentApproval = useQuery(parentApprovalQuery(org.id, org.ancestor_ids));
   const twoLevelDues = useFeatureReady("two_level_dues");
+  // A6: the pricing step needs migration 0032; existing rules pre-fill it on a re-run
+  const setupPricing = useFeatureReady("setup_pricing") === true;
+  const rules = useQuery({ ...pricingRulesQuery(org.id), enabled: setupPricing });
+  // Home-chapter model (D-184): chapters have no levels or joining rules of their own
+  const model = useQuery(membershipModelQuery(org.id));
   const ctx: FlowContext = useMemo(
     () => ({
       orgType: org.type,
       orgName: org.name,
       childLevelsAllowed: levelsAllowed.data !== false,
       twoLevelDues: twoLevelDues === true,
+      setupPricing,
+      homeChapter: model.data === "home_chapter",
       ...(parentApproval.data ? { parentApproval: parentApproval.data } : {}),
     }),
-    [org, levelsAllowed.data, parentApproval.data, twoLevelDues],
+    [org, levelsAllowed.data, parentApproval.data, twoLevelDues, setupPricing, model.data],
   );
 
   const existingOwn = useMemo(() => ownFields(defs.data, org.id, "member"), [defs.data, org.id]);
@@ -125,7 +139,9 @@ function MembershipSetup({ org }: { org: Org }) {
     tiers.isLoading ||
     levelsAllowed.isLoading ||
     parentApproval.isLoading ||
-    twoLevelDues === undefined;
+    model.isLoading ||
+    twoLevelDues === undefined ||
+    (setupPricing && rules.isLoading);
   // Computed once when loading finishes, so later refetches don't reset the wizard.
   const [initial, setInitial] = useState<Answers | null>(null);
   if (!initial && !loading) {
@@ -135,6 +151,8 @@ function MembershipSetup({ org }: { org: Org }) {
     if (!state.data?.answers?.["chapter_attributes"])
       base["chapter_attributes"] = existingChapter.map(toInput);
     if (!state.data?.answers?.["tiers"]) base["tiers"] = existingTiers;
+    if (!state.data?.answers?.["pricing_rules"])
+      base["pricing_rules"] = existingPricingRules(rules.data ?? [], existingTiers);
     setInitial(base);
   }
 
@@ -145,7 +163,7 @@ function MembershipSetup({ org }: { org: Org }) {
       flow={membershipFlow}
       ctx={ctx}
       initial={initial}
-      renderCustom={(q, value, onChange) =>
+      renderCustom={(q, value, onChange, answers) =>
         q.type === "attributes" ? (
           <AttributesQuestion
             value={(value as AttributeInput[]) ?? []}
@@ -154,6 +172,13 @@ function MembershipSetup({ org }: { org: Org }) {
           />
         ) : q.type === "tiers" ? (
           <TiersQuestion value={(value as Tier[]) ?? []} onChange={onChange} />
+        ) : q.type === "pricing_rules" ? (
+          <PricingRulesQuestion
+            value={(value as PricingRuleAnswer[]) ?? []}
+            onChange={onChange}
+            tiers={(answers["tiers"] as Tier[]) ?? []}
+            attrs={ruleAttributes(defs.data ?? [])}
+          />
         ) : null
       }
       reviewExtra={(answers, stepIds) => (
@@ -450,4 +475,33 @@ function AttributesQuestion({
       />
     </div>
   );
+}
+
+/** Active pricing rules of the org's levels, as setup answers (by level and term key). */
+function existingPricingRules(
+  rules: readonly {
+    term_id: string;
+    label: string;
+    conditions: unknown;
+    price_minor: number | null;
+    discount_pct: number | null;
+    active: boolean;
+  }[],
+  tiers: readonly Tier[],
+): PricingRuleAnswer[] {
+  const byTerm = new Map(
+    tiers.flatMap((t) =>
+      t.terms.filter((x) => x.id).map((x) => [x.id!, { tier: t.key, term: x.key }] as const),
+    ),
+  );
+  return rules
+    .filter((r) => r.active && byTerm.has(r.term_id))
+    .map((r) => ({
+      tier_key: byTerm.get(r.term_id)!.tier,
+      term_key: byTerm.get(r.term_id)!.term,
+      label: r.label,
+      conditions: (r.conditions ?? []) as PricingRuleAnswer["conditions"],
+      price_minor: r.price_minor,
+      discount_pct: r.discount_pct,
+    }));
 }

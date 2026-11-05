@@ -1,31 +1,107 @@
 # OpenCharterApp roadmap
 
-Testing by hand: docs/user-testing.md (updated with every feature).
-
-Full plan: docs/ and .lovable/plan/. Phase IDs map to docs/epic.md.
+Where things stand and what's next. Plans: `docs/plans/` (MVP: `wave-a-mvp.md`; Phases 1–3 and later waves: `phases-1-3-review.md`). Epics: `docs/epic.md`. Decisions: `docs/decisions.md`. Testing by hand: `docs/user-testing.md`.
 
 ## Pending migrations for Lovable
-Apply these in order (Lovable → apply pending migrations). Step-by-step instructions, checks and the smoke test: docs/lovable-handoff.md. Done so far: `0000`–`0016` applied and the `GATEWAY_ENCRYPTION_KEY` secret set; next are `0017`–`0022`. Until a migration is applied, the screens that need it show "needs a database update" instead of failing (D-135).
+None. `0000`–`0045` are applied (the last: `0044_scale_indexes`, D-209, confirmed by `0045`). When one is waiting it's listed here, with steps and checks in `docs/lovable-handoff.md`.
 
-| Migration | Enables | Status |
-|---|---|---|
-| `0008_memberships` | E-13a memberships, standing, recorded payments, member records without a login | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-| `0009_payments_gateway` | E-12 per-org Stripe / test gateway connections, encrypted credentials, webhook event log. Needs the Lovable Cloud secret `GATEWAY_ENCRYPTION_KEY` (set) | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-| `0010_joining` | E-13b public join page, checkout, payment completion and refunds, online renewal, decline with refund | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-| `0011_member_exports` | E-14 audited CSV export (`members.export` permission) and saved views of the member list | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-| `0012_member_privacy` | E-14 member directory, each member's directory choice, export privacy rule from the parent | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-| `0013_receipts` | E-15 automatic, numbered, immutable receipts; void / reissue; refund handling; receipts for payments recorded earlier | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-| `0014_board_seats` | E-17 board seats, each org's own seat terms with by-law history, appointments that grant and revoke the seat's role, `governance.manage` / `governance.define` permissions | Applied 2026-11-01 (smoke-tested: `bun run test:smoke`) |
-| `0015_confirm_0008_0014_applied` | Added by Lovable to trigger the apply (a table comment only) | Applied 2026-11-01 |
-| `0016_purge_smoke_data` | Added by Lovable: `purge_smoke_data` cleans up after a live smoke run in the demo orgs (D-150) | Applied 2026-11-01 |
-| `0017_purge_audit_summary` | The purge records one summary audit event with what it removed; restores the `seat_templates` comment | Waiting |
-| `0018_setup_governance` | Board setup: `apply_setup` learns the `seats` and `seat_terms` sections; `apply_setup_sections()` for the readiness check | Waiting |
-| `0019_rollups` | E-23 Reports tab: member, revenue and board roll-ups across a national's chapters (aggregates only), audited report exports | Waiting |
-| `0020_two_level_dues` | E-18 national dues required for chapter members (two payments, national first), chapter dues none / optional / required, chapter price range | Waiting |
-| `0021_pricing_rules` | E-19 attribute-based pricing: rules per term (conditions on member fields → a price or a discount), charged when joining and renewing online | Waiting |
-| `0022_demo_orgs` | Demo organizations: platform operators (the demo accounts), `is_demo` on organizations (inherited, can't change), create and delete demo orgs, test gateway and "no email" follow the flag | Waiting |
+## Now: the MVP release, v0.1.0 (`docs/plans/wave-a-mvp.md`)
+Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D-170, D-175), demo data kept until a second real national joins (D-171), version 0.1.0 with a changelog and tag (D-172).
+
+**Sprint 1, done**
+- [x] A8 National membership with a home chapter: a national chooses its model once, when it's created (both models compared side by side, or "decide later") or on Settings → General; members pick one chapter or none (or the national's at-large chapter, e.g. an online chapter) and change it whenever they like; chapters list their members with national standing (D-166, D-174, D-176; 0030)
+- [x] A3 Payments export: Settings → Payments → "Export payments", for the org or its tree, audited, emails only for member viewers (D-173; 0029)
+- [x] A2 End-to-end tests: Playwright harness, CI on pull requests to `main`, first specs (menu by role, view as member, members across chapters, board contact email, Settings → Setup, join-page required questions, test-gateway checkout against a deployed site) (D-175)
+
+**Sprint 2, done** (live: 0032 applied)
+- [x] A4 Suggested levels: the national marks levels "Suggest to chapters"; a chapter starts from one and chooses Copy (its own, editable) or Link (follows the national; same price, an amount less or a percentage less, kept within the range), with both explained (D-165, D-177; 0032)
+- [x] A5 National standing on the chapter's Members page (separate model, when the national requires its membership); "Actions needed" reminds the member to join or renew the national (D-178; 0032)
+- [x] End-to-end specs: a throwaway national created through the screens with the home-chapter model, the chapter wizard, a member picking and changing chapter (`lifecycle.spec.ts`); payments and member export downloads (`export.spec.ts`); suggested levels (`levels.spec.ts`, runs once 0032 is applied). The lifecycle run found a bug deleting home-chapter demo nationals, fixed in 0033
+
+**Sprint 3, done except owner actions** (live: 0032–0034 applied)
+- [x] A6 Pricing step in Membership setup: "Prices by member fields", applied by `apply_setup` and matched by rule name, so re-applying updates instead of duplicating (D-177; 0032)
+- [x] A7 Members "everyone" view: a "Columns" picker for member fields (remembered per viewer); export across chapters with each org's directory rule and an Organization column (D-179)
+- [x] More end-to-end specs: accessibility on every main screen by role (`a11y.spec.ts`)
+- [x] R1 security review (`docs/security-review.md`, D-180) · R2 accessibility checks (D-183) · R3 pre-commit hook and docs check (D-182) · R5 `CHANGELOG.md`, version 0.1.0 · R6 large-roster check, `bun run test:perf`; paged lists and 0034 (D-181) · R7 monitoring notes (`security-review.md` §5)
+- [ ] **Owner:** A1 live Stripe test-mode run on a non-demo test org (connect, join, webhook, refund; `user-testing.md` §10)
+- [ ] **Owner:** R4 receipt wording reviewed by a CPA (R-07), or ship with the placeholder and say so (it's in the changelog)
+- [ ] Still to add as end-to-end specs: renewal, Membership and Board setup applied, appointing an officer
+
+**Sprint 4, done: ready for real use** (`wave-a-mvp.md` §8; live: 0037 applied)
+- [x] U1 Members → "Import members": CSV with column matching, a check that saves nothing, import in one transaction per batch, matched by email so re-running updates (D-189; 0037)
+- [x] U2 "Remove from roster" with a reason, and Restore; membership ends, seats end, history kept; `is_org_member` ignores records that left (D-190; 0037)
+- [x] U3 Readable audit log: "time, who did what" with previous → current, one entry per save, filters, only this org's events, setup drafts hidden (D-191; 0037)
+- [x] U4 Account page: name, email (confirmation link; member records follow), password, your organizations (D-192)
+- [x] U5 `/privacy` and `/terms` with placeholder text, linked from sign-up, join pages and the footer; **owner:** replace the text in `src/content/legal.tsx` (D-193)
+- [x] U6 "Share your join page" on the admin Overview (D-194)
+- [x] U7 `has_permission` / `is_org_member` closed to anonymous callers (D-195; 0037)
+
+**Then release**
+- [ ] Release: what's left, who does it, and the pull request description are in [`docs/plans/release-v0.1.0.md`](docs/plans/release-v0.1.0.md): every migration is applied; the owner runs the live Stripe check, replaces the privacy and terms text, adds the `LICENSE` file, does a `user-testing.md` pass and sets branch protection; then the pull request to `main` and the `v0.1.0` tag
+- Security review follow-ups (`security-review.md` §1.6): F1 is U7 above; F2 and F3 done (D-187)
+
+## After the MVP (`docs/plans/phases-1-3-review.md` §3)
+**Wave B: infrastructure**
+- [ ] B1 E-08: jobs, scheduled routes, email via `EMAIL_TRANSPORT` (Lovable's email or the client's own server, Settings → Email, send-from address) (D-159), signed-in confirmation page for links (D-164)
+- [ ] B2 Lapse handling and renewal reminders (E-13)
+
+**Wave C: money**
+- [ ] C1 E-20 postpaid dues, options as inheritable settings (D-161); in the home-chapter model, chapters' local dues
+- [ ] C2 E-20 parent orgs invoice subordinate orgs (national fee; Direct payments only, D-162)
+- [ ] C3 E-21 PayPal adapter
+- E-22 custom domains stay deferred until F-11 (packaging, D-160, D-168) and a hosting decision
+
+**Wave D: Phase 3**
+- [ ] D1 E-24 approval engine, with board report review as its first consumer
+- [ ] D2 E-25 board reports (types, schedules, submit, review, overdue)
+- [ ] D2b E-43 annual chapter reports, optional per national: the national builds the form and sets a due date; chapter presidents get a task to submit it (D-204; needs a first form builder, E-29)
+- [ ] D3 E-25 vacancy alerts and national oversight dashboard
+- [ ] D4 E-26 document repository
+- [ ] D5 E-27 elections (each org chooses first past the post or ranked choice, D-167; private choices, own ballot visible until the next election, admins can view but never change, results after certification, D-163)
+- [ ] D6 E-28 automation engine
+
+**Also later**
+- [ ] Member overview: all my memberships, membership history, organization info (`phases-1-3-review.md` §6)
+- [ ] View as a *specific* member (impersonation with an audit trail): needs a decision and server-side support
+- [ ] Receipt templates and manual receipts (E-36)
 
 ## Done
+### 2026-11-02
+- [x] Full left sidebar: the OpenCharter name and organization switcher at the top, Dashboard and the organization's menu with icons, Account and Sign out at the bottom; softer colours; phones keep the header and dropdowns (D-205)
+- [x] No separate Dashboard page: the sidebar dropdown switches organizations ("All organizations…" opens the list at `/orgs`), and Account → Default organization picks the one that opens after signing in (D-206)
+- [x] Fix: a home-chapter national's Membership levels page could show the chapter explanation instead of its levels after visiting Members
+- [x] A national's Membership levels page shows how membership works there, as in setup; no "Suggest to chapters" in the home-chapter model (D-203)
+- [x] The browser tests also check approvals, two-level dues (first step), receipt footers and reissue, logos, roles and fields; two refresh bugs fixed (D-202)
+- [x] The Board shows each officer's sign-in email as the contact where a seat has no role email (D-201)
+- [x] Sales demo: Test-Demo filled with 15 chapters, 500 people with years of history, every standing and every board seat filled (D-199); found and fixed double counting on the Overview (D-200; 0040)
+- [x] Performance checked at 10,000 and 20,000 members; a missing index and JIT compiling fixed (D-209; 0044, applied)
+- [x] The browser tests take over about 30 steps of the user-testing guide (sign-in messages, invitations, levels, memberships and dates, receipts, the board, locks, the audit log, deleting a demo org), in a throwaway demo national (D-198)
+- [x] Migrations 0036–0038 applied by Lovable; their hand-written types and readiness checks retired
+- [x] GitHub runs the smoke test and end-to-end tests against the live demo on pushes to `main` and `BoardUpdates`, pull requests, daily and on demand; CI adds a performance budget, a dependency audit and one-transaction migrations (D-197)
+- [x] Reports count members by current membership, not records; the home-chapter total counts each member once; chapter creators aren't added to the chapter's roster (D-196; 0038)
+- [x] Sprint 4, ready for real use: import, remove from roster, readable audit log, account page, privacy and terms pages, share the join page, helpers closed to anonymous callers (D-189..D-195; 0037)
+- [x] Settings' pages are listed in the menu only while Settings is open (D-188)
+- [x] Dependencies refreshed, majors included (D-187); Playwright pinned at 1.64.1 and the test browser hardened: sandbox on, Chrome stable in CI, origin guard (D-186); `bun audit` 29 → 2 moderate (dev tooling)
+- [x] Home-chapter model shows only what applies: no chapter acceptance, chapter levels, "must also join" or chapter dues settings and setup questions; chapters have no levels (D-184; 0036 waiting); dues settings reworded for the separate model; no real organization named as an example
+- [x] Configuration only in Settings (D-185): Settings → Board settings holds seat terms, contact emails, seat titles, the seats an org defines and the board rules; the Board page shows the board and appoints officers
+- [x] Migrations 0032–0034 applied by Lovable; their hand-written types and readiness checks retired
+- [x] Sprints 2 and 3 of the MVP: A4, A5, A6, A7, release hardening R1–R3, R5–R7 (above); fixes 0033, 0034
+- [x] Choosing the membership model when a national is created, with both models compared (D-176)
+- [x] Sprint 1 of the MVP: A8, A3, A2 (above)
+- [x] Payments return to the app's own address instead of "localhost"; Stripe Checkout gets fresh return links; the return page confirms a Stripe payment directly when the webhook is late or missing (D-158)
+- [x] Board setup can change an existing seat's "used by" (D-157, 0027); Rank is required in new Membership setups and at Demo National (0027)
+- [x] Board contact emails: per seat, a role email or the officer's own email, never both (D-156, 0026)
+- [x] Members page for admins covers everyone in the org and every org below it (chapter admins: their chapter); admins no longer get the Directory (D-154)
+- [x] "View as member" preview for admins (D-155)
+- [x] Member overview: Actions needed, Your profile, Your roles and seats, Board and who to contact (D-153)
+- [x] Org page: left-hand menu with the admin pages under Settings; overview numbers; Reports for chapter admins (D-152, 0024)
+- [x] Board seats used by a national *and* every chapter; changing a seat's "Used by" (D-151, 0024)
+- [x] Decisions for later waves: email transport (D-159), packaging (D-160, D-168), postpaid settings (D-161), Direct payments only (D-162), ballots (D-163), approval links (D-164), suggested levels (D-165), voting method (D-167)
+
+### 2026-11-01 and 2026-11-02
+- [x] Demo organizations (D-148, 0022); E-19 rules engine and pricing rules (D-147, 0021); E-18 two-level dues (D-146, 0020); E-23 Reports (D-145, 0019); setup hub and Board setup (D-143, 0018); E-16 chapter creation wizard (D-144)
+
+### Earlier (2026-10-30 to 2026-11-01)
 - [x] E-12: Payments tab to connect Stripe (key checked, sealed, stored privately) or the demo test gateway, payments list, webhook route (applied 2026-11-01)
 - [x] E-13b: public join page `/join/<slug>`, Stripe / test checkout, webhook endpoint per org, return page, test checkout outcomes, online renewal, decline with refund (applied 2026-11-01; covered by `bun run test:smoke`)
 - [x] E-14: search, filters, "expiring within 30 / 60 / 90 days", sorting, audited privacy-aware CSV export, saved views, member directory with each member's own listing choice (D-138, D-139)
@@ -57,17 +133,7 @@ Apply these in order (Lovable → apply pending migrations). Step-by-step instru
 - [x] E-10: setup engine (steps, conditions, drafts, review with diff, one-transaction apply) + Membership flow v1
 - [x] CI: lint, formatting, types, unit tests, database rule tests, build
 
-## Open — Phase 1
-Plan for E-12 / E-13: docs/plans/e12-e13-payments-and-joining.md
-- [x] E-16: chapter creation wizard (name and type, chapter fields, first admin invitation, invitations for the required officers, links to copy; seats show Vacant until appointed) (D-144)
-- [ ] Demo organizations (built, waiting for 0022): platform operators can mark a new national or standalone org as demo; chapters inherit it; Demo badge; delete a demo org with everything in it; never emails; test payments allowed (D-148)
-- [ ] E-19 (built, waiting for 0021): rules engine (conditions on member fields, shared by TypeScript and SQL with the same test cases) and pricing rules per term: click a term on the Membership levels tab, add rules like "Rank is at least E-5 → $30" or "Veteran is yes → 20% off"; joining and renewing charge the member's price and show it first (D-147). Remaining: a pricing step in guided setup, eligibility and approver rules (E-24, E-31)
-- [ ] E-18 (built, waiting for 0020): two-level dues: the national can require its own membership for chapter members (join page step 1 of 2 → national, step 2 → chapter; two payments and receipts), chapter dues none / optional / required, a price range for chapter terms, Membership setup v4 for parents (D-146). Remaining: national standing next to chapter standing in the chapter's Members tab, linked renewals
-- [ ] E-23 (built, waiting for 0019): Reports tab for nationals and regions with members by standing (standing bar, new, expiring 30 / 60 / 90), revenue per currency for a date range, board vacancies and terms past their end, audited CSV exports (D-145)
-- [ ] Setup hub and Board setup (built, waiting for 0018; the Membership and "Connect payments" cards work now): a card per setup flow, `?flow=board`, seats / officer rules / terms from your by-laws (D-143)
-- [ ] Phase 1 follow-ups: receipt wording reviewed by a CPA (R-07); templates and manual receipts (E-36); elections (E-27) and vacancy alerts (E-25)
-
-## Deferred (user decision 2026-10-30: core first, automations later)
+## Deferred (user decision 2026-10-30: core first, automations later; E-08 is now Wave B, D-169)
 - [ ] E-07: per-org web addresses (subdomain / `/o/$slug`)
 - [ ] E-08: jobs + scheduled worker, automatic emails (incl. invitation emails), signed-action tokens
 - [ ] E-13 automated lapse job and renewal reminders (manual/derived standing for now)
@@ -82,6 +148,7 @@ Plan for E-12 / E-13: docs/plans/e12-e13-payments-and-joining.md
   - alerts when a Stripe connection fails verification or webhooks stop arriving
 
 ## Cleanup before launch
-- [ ] Remove the demo data (steps in docs/demo-data.md)
-- [x] Apply migrations 0017–0022 per docs/lovable-handoff.md (applied 2026-11-02 via marker 0023; next fix must be 0024+)
-- [x] Smoke checks for 0018–0022 (board setup, reports, two-level dues, pricing rules, demo orgs) added to smoke/live.smoke.test.ts — 89 checks passing
+- [ ] Remove the demo data before a second real national is onboarded (D-171; steps in `docs/demo-data.md`)
+- [ ] Switch off `purge_smoke_data` in production (D-150) at the same time
+
+- [x] Security fix: tightened permission-list and logo read rules (0042, applied).

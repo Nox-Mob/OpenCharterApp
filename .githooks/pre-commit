@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Pre-commit checks (instructions.md §9, R3). Install once per clone:
+#   bun run hooks:install
+# Runs the fast checks on every commit; the database rule tests, the build and the end-to-end
+# tests stay in CI (and in the checklist in instructions.md §3). Never bypass with --no-verify:
+# if a hook is wrong, fix the hook.
+set -euo pipefail
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+echo "pre-commit: lint, formatting, types, migration rules, related unit tests"
+bun run --silent lint
+bun run --silent format:check
+bun run --silent typecheck
+bun run --silent check:migrations
+code=$(echo "$staged" | grep -E '^(src|scripts)/.*\.(ts|tsx)$' || true)
+if [ -n "$code" ]; then
+  # shellcheck disable=SC2086
+  bunx vitest related --run $code
+fi

@@ -19,7 +19,11 @@ export default tseslint.config(
       "react-refresh": reactRefresh,
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
+      // The classic hooks rules. eslint-plugin-react-hooks 7 also recommends React Compiler
+      // rules (set-state-in-effect, purity, globals, ...); this project doesn't use the compiler,
+      // so they stay off until we adopt it (D-187).
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
       "no-restricted-imports": [
         "error",
         {
@@ -32,9 +36,19 @@ export default tseslint.config(
           ],
         },
       ],
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      // TanStack route files export `Route` next to their components.
+      "react-refresh/only-export-components": [
+        "warn",
+        { allowConstantExport: true, allowExportNames: ["Route"] },
+      ],
       "@typescript-eslint/no-unused-vars": "off",
     },
+  },
+  {
+    // Route files define their components next to `Route`; TanStack Router's plugin handles
+    // hot reloading for them, so the fast-refresh rule doesn't apply (D-187).
+    files: ["src/routes/**/*.tsx"],
+    rules: { "react-refresh/only-export-components": "off" },
   },
   eslintPluginPrettier,
 );

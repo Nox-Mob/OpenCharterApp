@@ -131,7 +131,7 @@ const termSchema = z
     length_count: z.number().int().min(1, "Length must be at least 1").max(1000).nullable(),
     length_unit: z.enum(TERM_UNITS).nullable(),
     price_minor: z
-      .number({ invalid_type_error: "Enter a price like 25.00" })
+      .number({ error: "Enter a price like 25.00" })
       .int()
       .min(0, "Price can't be negative")
       .max(100000000, "Price is too large"),

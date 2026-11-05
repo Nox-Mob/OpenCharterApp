@@ -29,7 +29,7 @@ const { rpc } = vi.hoisted(() => ({
 vi.mock("@/integrations/supabase/client", () => {
   const chain = (rows: unknown[]) => {
     const c: Record<string, unknown> = {};
-    for (const m of ["select", "eq", "in", "order"]) c[m] = () => c;
+    for (const m of ["select", "eq", "neq", "in", "order"]) c[m] = () => c;
     c["then"] = (ok: (v: unknown) => unknown) => ok({ data: rows, error: null });
     return c;
   };

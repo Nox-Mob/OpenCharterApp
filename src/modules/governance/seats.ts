@@ -10,7 +10,13 @@ import { termEndDate, type TermUnit } from "@/modules/membership/tiers";
  * set_seat_active, set_seat_title, set_seat_term, recalculate_planned_ends, appoint_officer,
  * end_appointment), so seat counts, good standing, no escalation and history hold in one place.
  */
-export type SeatScope = "self" | "chapters";
+/**
+ * Who uses a seat: only the org that defines it ("self"), every org below it ("chapters"), or
+ * both ("self_and_chapters", 0024): e.g. a President at the national and in every chapter. Each
+ * org fills its own seats either way.
+ */
+export const SEAT_SCOPES = ["self", "chapters", "self_and_chapters"] as const;
+export type SeatScope = (typeof SEAT_SCOPES)[number];
 export type SeatTerm = { count: number; unit: TermUnit } | null;
 
 export type Holder = {
@@ -166,6 +172,83 @@ export const extraSeatsAllowedQuery = (orgId: string, lineage: readonly string[]
     },
   });
 
+// ----- contact emails (0026, D-156) -----
+
+export type BoardContact = {
+  key: string;
+  title: string;
+  /** null for a vacant seat listed because it has a role email */
+  name: string | null;
+  email: string | null;
+  source: "role" | "officer" | "none";
+};
+
+/** Role emails this org set, by seat (seats without one show each officer's own email). */
+export const seatContactsQuery = (orgId: string) =>
+  queryOptions({
+    queryKey: ["seat-contacts", orgId],
+    queryFn: async (): Promise<Record<string, string>> => {
+      const { data, error } = await db
+        .from("seat_contacts")
+        .select("template_id,role_email")
+        .eq("org_id", orgId);
+      if (error) throw error;
+      return Object.fromEntries(
+        (data ?? []).filter((r) => r.role_email).map((r) => [r.template_id, r.role_email!]),
+      );
+    },
+  });
+
+/**
+ * How to reach a seat's holders (D-201): the seat's role email if it has one, else each current
+ * officer's sign-in email (or, for a record without a login, the email on it). Empty when nobody
+ * holds the seat and it has no role email.
+ */
+export function seatContactLine(
+  templateId: string,
+  roleEmail: string | undefined,
+  contacts: readonly BoardContact[] | undefined,
+): { email: string; who: string | null; role: boolean }[] {
+  if (roleEmail) return [{ email: roleEmail, who: null, role: true }];
+  return (contacts ?? [])
+    .filter((c) => c.key.startsWith(`${templateId}:`) && c.source === "officer" && c.email)
+    .map((c) => ({ email: c.email!, who: c.name, role: false }));
+}
+
+/** Who to contact at an org: each officer with the seat's role email or their own (definer RPC). */
+export const boardContactsQuery = (orgId: string) =>
+  queryOptions({
+    queryKey: ["board-contacts", orgId],
+    queryFn: async (): Promise<BoardContact[]> => {
+      const { data, error } = await db.rpc("org_board_contacts", { _org: orgId });
+      if (error) throw error;
+      return (data ?? []).map((r) => ({
+        key: `${r.template_id}:${r.seat_number ?? "role"}`,
+        title: r.title,
+        // the generated types widen these; the function returns null / one of three values
+        name: r.display_name as string | null,
+        email: r.email as string | null,
+        source: r.email_source as BoardContact["source"],
+      }));
+    },
+  });
+
+export const roleEmailSchema = z.union([
+  z.literal(""),
+  z.string().trim().toLowerCase().email("Enter a valid email address").max(254),
+]);
+
+/** Set a seat's role email here, or "" to show each officer's own email instead. */
+export async function setSeatContact(orgId: string, templateId: string, roleEmail: string) {
+  const email = roleEmailSchema.parse(roleEmail.trim());
+  const { error } = await db.rpc("set_seat_contact", {
+    _org: orgId,
+    _template: templateId,
+    _role_email: sqlNull(email === "" ? null : email),
+  });
+  if (error) throw error;
+}
+
 // ----- pure helpers -----
 
 const UNIT: Record<TermUnit, [string, string]> = {
@@ -209,6 +292,18 @@ export function ruleInForce(rules: readonly TermRule[], templateId: string, on: 
   return rules.find((r) => r.template_id === templateId && r.effective_from <= on) ?? null;
 }
 
+/** Whether a seat with this scope is used at the org that defines it. */
+export const usedByOwner = (scope: SeatScope) => scope !== "chapters";
+/** Whether a seat with this scope is used by the orgs below the one that defines it. */
+export const usedBelow = (scope: SeatScope) => scope !== "self";
+
+/** "Every chapter below Nat", "Nat and every chapter below it", or "Nat". */
+export function scopeLabel(scope: SeatScope, orgName: string): string {
+  if (scope === "chapters") return `Every chapter below ${orgName}`;
+  if (scope === "self_and_chapters") return `${orgName} and every chapter below it`;
+  return `Only ${orgName}`;
+}
+
 export function seatKey(title: string): string {
   const k = title
     .toLowerCase()
@@ -232,7 +327,7 @@ export const seatInputSchema = z.object({
   seat_count: z.number().int().min(1, "At least one seat").max(50),
   term: termShape,
   role_id: z.string().uuid().nullable(),
-  scope: z.enum(["self", "chapters"]),
+  scope: z.enum(SEAT_SCOPES),
   sort_order: z.number().int(),
 });
 export type SeatInput = z.infer<typeof seatInputSchema>;
@@ -289,6 +384,15 @@ export async function updateSeat(templateId: string, input: SeatInput) {
 
 export async function setSeatActive(templateId: string, active: boolean) {
   const { error } = await db.rpc("set_seat_active", { _template: templateId, _active: active });
+  if (error) throw error;
+}
+
+/** Widen or narrow who uses a seat (refused while it would remove a current officer). */
+export async function setSeatScope(templateId: string, scope: SeatScope) {
+  const { error } = await db.rpc("set_seat_scope", {
+    _template: templateId,
+    _scope: z.enum(SEAT_SCOPES).parse(scope),
+  });
   if (error) throw error;
 }
 
@@ -369,6 +473,16 @@ export function boardErrorMessage(message: string): string {
     ["keep at least one admin", "An organization must keep at least one admin"],
     ["role is retired", "The seat's role is retired"],
     ["isn't used here", "That seat isn't used here"],
+    ["valid email", "Enter a valid email address"],
+    // Board setup before migration 0027 (D-157): it couldn't change an existing seat's "used by".
+    [
+      '"used by" can',
+      'This seat already exists with a different "Used by". Change it on the Board page (Edit seat), then apply setup again',
+    ],
+    [
+      "no longer be used",
+      "End the current terms where this seat would no longer be used, then change who uses it",
+    ],
   ];
   return known.find(([k]) => message.includes(k))?.[1] ?? "Couldn't save the change";
 }

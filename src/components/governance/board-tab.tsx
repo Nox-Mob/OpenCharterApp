@@ -2,36 +2,25 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Org } from "@/lib/orgs";
-import type { Grant } from "@/lib/policy";
-import { canGrantRole, rolesForOrg } from "@/modules/roles";
-import { rolesQuery } from "@/modules/roles/queries";
+import { useFeatureReady } from "@/lib/db/readiness";
 import { membersQuery } from "@/modules/membership/memberships";
 import { today } from "@/modules/membership/standing";
 import {
-  applyTermToCurrentOfficers,
   appointOfficer,
   boardErrorMessage,
   boardHistoryQuery,
   boardQuery,
-  defineSeat,
   endAppointment,
   openSeats,
-  ownSeatsQuery,
   plannedEnd,
-  seatInputSchema,
+  seatContactLine,
+  seatContactsQuery,
+  boardContactsQuery,
   seatTermLabel,
-  setSeatActive,
-  setSeatTerm,
-  setSeatTitle,
-  termInputSchema,
   termRulesQuery,
   termSummary,
-  updateSeat,
   vacantRequired,
   type Seat,
-  type SeatInput,
-  type SeatTemplate,
-  type SeatTerm,
 } from "@/modules/governance/seats";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,30 +49,41 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const NONE = "__none";
-
-/** Board tab (E-17): the seats used here, who holds them, each seat's term and history. */
+/**
+ * Board page (E-17): the seats used here, who holds them, each seat's term and history, and
+ * appointing or ending terms. How the board is set up lives in Settings → Board (D-185).
+ */
 export function BoardTab({
   org,
-  grants,
   canManage,
-  canDefine,
+  onOpenSettings,
 }: {
   org: Org;
-  grants: readonly Grant[];
   canManage: boolean;
-  canDefine: boolean;
+  /** Set when the viewer may configure the board: opens Settings → Board. */
+  onOpenSettings?: () => void;
 }) {
   const qc = useQueryClient();
   const board = useQuery(boardQuery(org.id));
   const history = useQuery(boardHistoryQuery(org.id));
   const rules = useQuery(termRulesQuery(org.id));
   const [appointing, setAppointing] = useState<Seat | null>(null);
-  const [termFor, setTermFor] = useState<Seat | null>(null);
+  // Contact emails need migration 0026 (D-135, D-156).
+  const contactsReady = useFeatureReady("seat_contacts") === true;
+  const contacts = useQuery({ ...seatContactsQuery(org.id), enabled: contactsReady });
+  // the officers' own emails, for seats without a role email (D-201)
+  const officerContacts = useQuery({ ...boardContactsQuery(org.id), enabled: contactsReady });
   const [historyFor, setHistoryFor] = useState<string | null>(null);
 
   const refresh = () => {
-    for (const k of ["board", "board-history", "seat-terms", "seat-templates"])
+    for (const k of [
+      "board",
+      "board-history",
+      "seat-terms",
+      "seat-templates",
+      "seat-contacts",
+      "board-contacts",
+    ])
       qc.invalidateQueries({ queryKey: [k, org.id] });
   };
 
@@ -104,12 +104,19 @@ export function BoardTab({
   return (
     <div className="space-y-8">
       <section className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold">Board and officers</h2>
-          <p className="text-sm text-muted-foreground">
-            Seats come from {org.name} and the organizations above it. Terms follow {org.name}'s own
-            by-laws.
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-semibold">Board and officers</h2>
+            <p className="text-sm text-muted-foreground">
+              Seats come from {org.name} and the organizations above it. Terms follow {org.name}
+              &apos;s own by-laws.
+            </p>
+          </div>
+          {onOpenSettings && (
+            <Button size="sm" variant="outline" onClick={onOpenSettings}>
+              Change board settings
+            </Button>
+          )}
         </div>
         {vacant.length > 0 && (
           <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">
@@ -120,12 +127,11 @@ export function BoardTab({
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : seats.length === 0 ? (
           <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-            No board seats yet.{canDefine ? " Add one below." : ""}
+            No board seats yet.{onOpenSettings ? " Add them in Settings → Board." : ""}
           </p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {seats.map((s) => {
-              const inherited = s.owner_org_id !== org.id;
               const seatRules = (rules.data ?? []).filter((r) => r.template_id === s.template_id);
               return (
                 <div key={s.template_id} className="space-y-3 rounded-md border bg-card p-4">
@@ -147,6 +153,16 @@ export function BoardTab({
                     <p className="text-sm text-muted-foreground">{s.description}</p>
                   )}
                   <p className="text-sm">{termSummary(s)}</p>
+                  {contactsReady && (
+                    <ContactLine
+                      lines={seatContactLine(
+                        s.template_id,
+                        contacts.data?.[s.template_id],
+                        officerContacts.data,
+                      )}
+                      vacant={s.holders.length === 0}
+                    />
+                  )}
                   {s.holders.length > 0 ? (
                     <ul className="space-y-1 text-sm">
                       {s.holders.map((h) => (
@@ -191,27 +207,6 @@ export function BoardTab({
                         Appoint
                       </Button>
                     )}
-                    {canManage && (
-                      <Button size="sm" variant="outline" onClick={() => setTermFor(s)}>
-                        Change term
-                      </Button>
-                    )}
-                    {canManage && inherited && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          const t = window.prompt(
-                            `What ${org.name} calls this seat (blank: "${s.default_title}")`,
-                            s.title === s.default_title ? "" : s.title,
-                          );
-                          if (t === null) return;
-                          void run(() => setSeatTitle(org.id, s.template_id, t), "Title saved");
-                        }}
-                      >
-                        Rename here
-                      </Button>
-                    )}
                     {seatRules.length > 0 && (
                       <Button
                         size="sm"
@@ -242,8 +237,6 @@ export function BoardTab({
           </div>
         )}
       </section>
-
-      {canDefine && <SeatEditor org={org} grants={grants} onSaved={refresh} />}
 
       <section>
         <h2 className="mb-2 text-lg font-semibold">Past officers</h2>
@@ -286,55 +279,6 @@ export function BoardTab({
           }}
         />
       )}
-      {termFor && (
-        <TermDialog
-          org={org}
-          seat={termFor}
-          onClose={() => setTermFor(null)}
-          onDone={() => {
-            setTermFor(null);
-            refresh();
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-export function TermFields({
-  term,
-  onChange,
-}: {
-  term: SeatTerm;
-  onChange: (t: SeatTerm) => void;
-}) {
-  return (
-    <div className="flex gap-2">
-      <Input
-        aria-label="Term length"
-        type="number"
-        min={1}
-        max={100}
-        className="w-24"
-        disabled={!term}
-        value={term?.count ?? ""}
-        onChange={(e) => term && onChange({ ...term, count: Number(e.target.value) })}
-      />
-      <Select
-        value={term?.unit ?? NONE}
-        onValueChange={(v) =>
-          onChange(v === NONE ? null : { count: term?.count ?? 1, unit: v as "month" | "year" })
-        }
-      >
-        <SelectTrigger className="w-44" aria-label="Term unit">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="month">Months</SelectItem>
-          <SelectItem value="year">Years</SelectItem>
-          <SelectItem value={NONE}>No fixed term</SelectItem>
-        </SelectContent>
-      </Select>
     </div>
   );
 }
@@ -418,332 +362,36 @@ function AppointDialog({
   );
 }
 
-function TermDialog({
-  org,
-  seat,
-  onClose,
-  onDone,
+/** "Contact: president@… (role email)" or each officer's own email (D-201). */
+function ContactLine({
+  lines,
+  vacant,
 }: {
-  org: Org;
-  seat: Seat;
-  onClose: () => void;
-  onDone: () => void;
+  lines: ReturnType<typeof seatContactLine>;
+  vacant: boolean;
 }) {
-  const [term, setTerm] = useState<SeatTerm>(seat.term);
-  const [effectiveFrom, setEffectiveFrom] = useState(today());
-  const [bylaw, setBylaw] = useState("");
-  const [note, setNote] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  async function save() {
-    const parsed = termInputSchema.safeParse({
-      term,
-      effective_from: effectiveFrom,
-      bylaw_reference: bylaw,
-      note,
-    });
-    if (!parsed.success)
-      return void toast.error(parsed.error.issues[0]?.message ?? "Check the term");
-    setBusy(true);
-    try {
-      await setSeatTerm(org.id, seat.template_id, parsed.data);
-      toast.success("Term saved");
-      if (
-        seat.holders.length > 0 &&
-        effectiveFrom <= today() &&
-        window.confirm(
-          `Apply the new term to the current ${seat.title}? Otherwise it applies to appointments starting on or after ${effectiveFrom}.`,
-        )
-      ) {
-        const n = await applyTermToCurrentOfficers(org.id, seat.template_id);
-        toast.success(`Updated ${n} current term${n === 1 ? "" : "s"}`);
-      }
-      onDone();
-    } catch (e) {
-      toast.error(boardErrorMessage(String((e as Error).message)));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Change the {seat.title} term</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Record the term your by-laws set. Earlier rules stay in the term history.
-          </p>
-          <div className="space-y-2">
-            <Label>Term length</Label>
-            <TermFields term={term} onChange={setTerm} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="term-from">Takes effect</Label>
-            <Input
-              id="term-from"
-              type="date"
-              value={effectiveFrom}
-              onChange={(e) => setEffectiveFrom(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="term-bylaw">By-law reference</Label>
-            <Input
-              id="term-bylaw"
-              placeholder="Bylaws Art. IV §2, amended 2026-03"
-              value={bylaw}
-              onChange={(e) => setBylaw(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="term-note">Note (optional)</Label>
-            <Input id="term-note" value={note} onChange={(e) => setNote(e.target.value)} />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button onClick={save} disabled={busy}>
-            {busy ? "Saving…" : "Save term"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-const EMPTY_SEAT: SeatInput = {
-  title: "",
-  description: "",
-  required: false,
-  seat_count: 1,
-  term: { count: 1, unit: "year" },
-  role_id: null,
-  scope: "self",
-  sort_order: 0,
-};
-
-/** Seats this org defines: for itself, or (nationals and regions) for every org below it. */
-function SeatEditor({
-  org,
-  grants,
-  onSaved,
-}: {
-  org: Org;
-  grants: readonly Grant[];
-  onSaved: () => void;
-}) {
-  const own = useQuery(ownSeatsQuery(org.id));
-  const roles = useQuery(rolesQuery());
-  const [editing, setEditing] = useState<{ id: string | null; input: SeatInput } | null>(null);
-  const [busy, setBusy] = useState(false);
-  const canScopeChapters = org.type === "national" || org.type === "region";
-  const usableRoles = rolesForOrg(roles.data ?? [], org).filter((r) =>
-    canGrantRole(r, grants, org),
-  );
-  const roleName = (id: string | null) => roles.data?.find((r) => r.id === id)?.name;
-
-  const edit = (t: SeatTemplate) =>
-    setEditing({
-      id: t.id,
-      input: {
-        title: t.title,
-        description: t.description,
-        required: t.required,
-        seat_count: t.seat_count,
-        term: t.default_term,
-        role_id: t.role_id,
-        scope: t.scope,
-        sort_order: t.sort_order,
-      },
-    });
-
-  async function save() {
-    if (!editing) return;
-    const parsed = seatInputSchema.safeParse(editing.input);
-    if (!parsed.success)
-      return void toast.error(parsed.error.issues[0]?.message ?? "Check the seat");
-    setBusy(true);
-    try {
-      if (editing.id) await updateSeat(editing.id, parsed.data);
-      else await defineSeat(org.id, parsed.data);
-      toast.success("Seat saved");
-      setEditing(null);
-      onSaved();
-    } catch (e) {
-      toast.error(boardErrorMessage(String((e as Error).message)));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function toggle(t: SeatTemplate) {
-    try {
-      await setSeatActive(t.id, !t.active);
-      toast.success(t.active ? "Seat retired" : "Seat restored");
-      onSaved();
-    } catch (e) {
-      toast.error(boardErrorMessage(String((e as Error).message)));
-    }
-  }
-
-  const set = (patch: Partial<SeatInput>) =>
-    editing && setEditing({ ...editing, input: { ...editing.input, ...patch } });
-
-  return (
-    <section className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Seats {org.name} defines</h2>
-        <Button size="sm" onClick={() => setEditing({ id: null, input: EMPTY_SEAT })}>
-          Add seat
-        </Button>
-      </div>
-      {(own.data?.length ?? 0) === 0 ? (
-        <p className="text-sm text-muted-foreground">None yet.</p>
+    <p className="text-sm">
+      Contact:{" "}
+      {lines.length === 0 ? (
+        <span className="text-muted-foreground">
+          {vacant ? "nobody yet" : "no email on the officer's record"}
+        </span>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Seat</TableHead>
-              <TableHead>Used by</TableHead>
-              <TableHead>Suggested term</TableHead>
-              <TableHead>Grants role</TableHead>
-              <TableHead />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {own.data!.map((t) => (
-              <TableRow key={t.id} className={t.active ? "" : "opacity-60"}>
-                <TableCell>
-                  {t.title}
-                  {t.required && <span className="text-xs text-muted-foreground"> · required</span>}
-                  {t.seat_count > 1 && (
-                    <span className="text-xs text-muted-foreground"> · {t.seat_count} seats</span>
-                  )}
-                  {!t.active && (
-                    <Badge variant="outline" className="ml-2">
-                      Retired
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell>{t.scope === "chapters" ? "Every chapter" : org.name}</TableCell>
-                <TableCell>{seatTermLabel(t.default_term)}</TableCell>
-                <TableCell>{roleName(t.role_id) ?? "—"}</TableCell>
-                <TableCell className="space-x-1 text-right">
-                  {t.active && (
-                    <Button size="sm" variant="ghost" onClick={() => edit(t)}>
-                      Edit
-                    </Button>
-                  )}
-                  <Button size="sm" variant="ghost" onClick={() => toggle(t)}>
-                    {t.active ? "Retire" : "Restore"}
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        lines.map((l, i) => (
+          <span key={l.email}>
+            {i > 0 && ", "}
+            <a href={`mailto:${l.email}`} className="underline-offset-2 hover:underline">
+              {l.email}
+            </a>
+            {l.role ? (
+              <span className="text-muted-foreground"> (role email)</span>
+            ) : lines.length > 1 && l.who ? (
+              <span className="text-muted-foreground"> ({l.who})</span>
+            ) : null}
+          </span>
+        ))
       )}
-
-      {editing && (
-        <Dialog open onOpenChange={(o) => !o && setEditing(null)}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{editing.id ? "Edit seat" : "Add a seat"}</DialogTitle>
-            </DialogHeader>
-            <div className="max-h-[70vh] space-y-4 overflow-y-auto pr-1">
-              <div className="space-y-2">
-                <Label htmlFor="seat-title">Title</Label>
-                <Input
-                  id="seat-title"
-                  placeholder="President"
-                  value={editing.input.title}
-                  onChange={(e) => set({ title: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="seat-description">Description (optional)</Label>
-                <Input
-                  id="seat-description"
-                  value={editing.input.description}
-                  onChange={(e) => set({ description: e.target.value })}
-                />
-              </div>
-              {canScopeChapters && !editing.id && (
-                <div className="space-y-2">
-                  <Label>Used by</Label>
-                  <Select
-                    value={editing.input.scope}
-                    onValueChange={(v) => set({ scope: v as SeatInput["scope"] })}
-                  >
-                    <SelectTrigger aria-label="Used by">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="self">{org.name} itself</SelectItem>
-                      <SelectItem value="chapters">Every chapter below {org.name}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <div className="flex flex-wrap gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="seat-count">Number of seats</Label>
-                  <Input
-                    id="seat-count"
-                    type="number"
-                    min={1}
-                    max={50}
-                    className="w-24"
-                    value={editing.input.seat_count}
-                    onChange={(e) => set({ seat_count: Number(e.target.value) })}
-                  />
-                </div>
-                <label className="flex items-center gap-2 self-end pb-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={editing.input.required}
-                    onChange={(e) => set({ required: e.target.checked })}
-                  />
-                  Required (shown as vacant when empty)
-                </label>
-              </div>
-              <div className="space-y-2">
-                <Label>Suggested term</Label>
-                <TermFields term={editing.input.term} onChange={(term) => set({ term })} />
-                <p className="text-xs text-muted-foreground">
-                  A starting point. Each organization sets its own term to match its by-laws.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label>Role granted while holding the seat</Label>
-                <Select
-                  value={editing.input.role_id ?? NONE}
-                  onValueChange={(v) => set({ role_id: v === NONE ? null : v })}
-                >
-                  <SelectTrigger aria-label="Role">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE}>No role</SelectItem>
-                    {usableRoles.map((r) => (
-                      <SelectItem key={r.id} value={r.id}>
-                        {r.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button onClick={save} disabled={busy}>
-                {busy ? "Saving…" : "Save seat"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-    </section>
+    </p>
   );
 }

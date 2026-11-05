@@ -12,9 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as AuthenticatedOrgsIndexRouteImport } from './routes/_authenticated/orgs.index'
 import { Route as AuthenticatedOrgsOrgIdRouteImport } from './routes/_authenticated/orgs.$orgId'
 import { Route as AuthenticatedReceiptsReceiptIdRouteImport } from './routes/_authenticated/receipts.$receiptId'
 import { Route as JoinOrgSlugIndexRouteImport } from './routes/join.$orgSlug.index'
@@ -38,10 +42,25 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
@@ -52,6 +71,11 @@ const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
   path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedOrgsIndexRoute = AuthenticatedOrgsIndexRouteImport.update({
+  id: '/orgs/',
+  path: '/orgs/',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOrgsOrgIdRoute = AuthenticatedOrgsOrgIdRouteImport.update({
   id: '/orgs/$orgId',
@@ -101,12 +125,16 @@ const ApiPublicStripeOrgIdRoute = ApiPublicStripeOrgIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terms': typeof TermsRoute
+  '/account': typeof AuthenticatedAccountRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/invite/$token': typeof InviteTokenRoute
   '/orgs/$orgId': typeof AuthenticatedOrgsOrgIdRoute
   '/receipts/$receiptId': typeof AuthenticatedReceiptsReceiptIdRoute
   '/join/$orgSlug/cancelled': typeof JoinOrgSlugCancelledRoute
+  '/orgs/': typeof AuthenticatedOrgsIndexRoute
   '/join/$orgSlug/': typeof JoinOrgSlugIndexRoute
   '/join/$orgSlug/done': typeof AuthenticatedJoinOrgSlugDoneRoute
   '/orgs/$orgId/setup': typeof AuthenticatedOrgsOrgIdSetupRoute
@@ -116,12 +144,16 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terms': typeof TermsRoute
+  '/account': typeof AuthenticatedAccountRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/invite/$token': typeof InviteTokenRoute
   '/orgs/$orgId': typeof AuthenticatedOrgsOrgIdRoute
   '/receipts/$receiptId': typeof AuthenticatedReceiptsReceiptIdRoute
   '/join/$orgSlug/cancelled': typeof JoinOrgSlugCancelledRoute
+  '/orgs': typeof AuthenticatedOrgsIndexRoute
   '/join/$orgSlug': typeof JoinOrgSlugIndexRoute
   '/join/$orgSlug/done': typeof AuthenticatedJoinOrgSlugDoneRoute
   '/orgs/$orgId/setup': typeof AuthenticatedOrgsOrgIdSetupRoute
@@ -133,12 +165,16 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/terms': typeof TermsRoute
+  '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/invite/$token': typeof InviteTokenRoute
   '/_authenticated/orgs/$orgId': typeof AuthenticatedOrgsOrgIdRoute
   '/_authenticated/receipts/$receiptId': typeof AuthenticatedReceiptsReceiptIdRoute
   '/join/$orgSlug/cancelled': typeof JoinOrgSlugCancelledRoute
+  '/_authenticated/orgs/': typeof AuthenticatedOrgsIndexRoute
   '/join/$orgSlug/': typeof JoinOrgSlugIndexRoute
   '/_authenticated/join/$orgSlug/done': typeof AuthenticatedJoinOrgSlugDoneRoute
   '/_authenticated/orgs/$orgId_/setup': typeof AuthenticatedOrgsOrgIdSetupRoute
@@ -150,12 +186,16 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/privacy'
     | '/reset-password'
+    | '/terms'
+    | '/account'
     | '/dashboard'
     | '/invite/$token'
     | '/orgs/$orgId'
     | '/receipts/$receiptId'
     | '/join/$orgSlug/cancelled'
+    | '/orgs/'
     | '/join/$orgSlug/'
     | '/join/$orgSlug/done'
     | '/orgs/$orgId/setup'
@@ -165,12 +205,16 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/privacy'
     | '/reset-password'
+    | '/terms'
+    | '/account'
     | '/dashboard'
     | '/invite/$token'
     | '/orgs/$orgId'
     | '/receipts/$receiptId'
     | '/join/$orgSlug/cancelled'
+    | '/orgs'
     | '/join/$orgSlug'
     | '/join/$orgSlug/done'
     | '/orgs/$orgId/setup'
@@ -181,12 +225,16 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/privacy'
     | '/reset-password'
+    | '/terms'
+    | '/_authenticated/account'
     | '/_authenticated/dashboard'
     | '/invite/$token'
     | '/_authenticated/orgs/$orgId'
     | '/_authenticated/receipts/$receiptId'
     | '/join/$orgSlug/cancelled'
+    | '/_authenticated/orgs/'
     | '/join/$orgSlug/'
     | '/_authenticated/join/$orgSlug/done'
     | '/_authenticated/orgs/$orgId_/setup'
@@ -198,7 +246,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  TermsRoute: typeof TermsRoute
   InviteTokenRoute: typeof InviteTokenRoute
   JoinOrgSlugCancelledRoute: typeof JoinOrgSlugCancelledRoute
   JoinOrgSlugIndexRoute: typeof JoinOrgSlugIndexRoute
@@ -228,12 +278,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/account': {
+      id: '/_authenticated/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AuthenticatedAccountRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
@@ -248,6 +319,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/invite/$token'
       preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/orgs/': {
+      id: '/_authenticated/orgs/'
+      path: '/orgs'
+      fullPath: '/orgs/'
+      preLoaderRoute: typeof AuthenticatedOrgsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/orgs/$orgId': {
       id: '/_authenticated/orgs/$orgId'
@@ -309,18 +387,22 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedOrgsOrgIdRoute: typeof AuthenticatedOrgsOrgIdRoute
   AuthenticatedReceiptsReceiptIdRoute: typeof AuthenticatedReceiptsReceiptIdRoute
+  AuthenticatedOrgsIndexRoute: typeof AuthenticatedOrgsIndexRoute
   AuthenticatedJoinOrgSlugDoneRoute: typeof AuthenticatedJoinOrgSlugDoneRoute
   AuthenticatedOrgsOrgIdSetupRoute: typeof AuthenticatedOrgsOrgIdSetupRoute
   AuthenticatedPayTestPaymentIdRoute: typeof AuthenticatedPayTestPaymentIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedOrgsOrgIdRoute: AuthenticatedOrgsOrgIdRoute,
   AuthenticatedReceiptsReceiptIdRoute: AuthenticatedReceiptsReceiptIdRoute,
+  AuthenticatedOrgsIndexRoute: AuthenticatedOrgsIndexRoute,
   AuthenticatedJoinOrgSlugDoneRoute: AuthenticatedJoinOrgSlugDoneRoute,
   AuthenticatedOrgsOrgIdSetupRoute: AuthenticatedOrgsOrgIdSetupRoute,
   AuthenticatedPayTestPaymentIdRoute: AuthenticatedPayTestPaymentIdRoute,
@@ -333,7 +415,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  TermsRoute: TermsRoute,
   InviteTokenRoute: InviteTokenRoute,
   JoinOrgSlugCancelledRoute: JoinOrgSlugCancelledRoute,
   JoinOrgSlugIndexRoute: JoinOrgSlugIndexRoute,

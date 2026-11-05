@@ -49,16 +49,17 @@ export const EXPIRING_WINDOWS = [30, 60, 90] as const;
 
 export type RosterSort = "name" | "paid_through" | "standing";
 
+/** graceDays is one org's grace period, or one per row when the list spans several orgs. */
 export function toRosterRows(
   members: readonly MemberRow[],
   values: Record<string, Record<string, unknown>>,
-  graceDays: number,
+  graceDays: number | ((m: MemberRow) => number),
   on: string,
 ): RosterRow[] {
   return members.map((m) => ({
     ...m,
     values: values[m.id] ?? {},
-    standing: standing(m.membership, graceDays, on),
+    standing: standing(m.membership, typeof graceDays === "number" ? graceDays : graceDays(m), on),
     days_left: daysToExpiration(m.membership, on),
   }));
 }
@@ -156,6 +157,25 @@ export function exportableRows<T extends Pick<MemberRow, "directory_listed">>(
 ): T[] {
   if (opts.includeOptedOut && opts.overrideAllowed) return [...rows];
   return rows.filter((r) => isListed(r, opts.orgDefault));
+}
+
+/**
+ * Rows an export across several orgs may contain (A7, D-179): each row follows its own org's
+ * directory default, and opted-out members are included only when the exporter chose to and that
+ * org's parent allows it (privacy.admin_override_allowed, resolved per org).
+ */
+export function exportableTreeRows<T extends Pick<MemberRow, "directory_listed" | "org_id">>(
+  rows: readonly T[],
+  rulesFor: (orgId: string | undefined) => {
+    listedByDefault: boolean;
+    adminOverrideAllowed: boolean;
+  },
+  includeOptedOut: boolean,
+): T[] {
+  return rows.filter((r) => {
+    const rules = rulesFor(r.org_id);
+    return isListed(r, rules.listedByDefault) || (includeOptedOut && rules.adminOverrideAllowed);
+  });
 }
 
 // ----- CSV export -----

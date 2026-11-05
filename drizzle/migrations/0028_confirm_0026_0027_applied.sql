@@ -1,0 +1,1 @@
+COMMENT ON TABLE public.seat_templates IS 'Board seat definitions (0026 seat contacts, 0027 board setup scope applied).';

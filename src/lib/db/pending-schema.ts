@@ -7,116 +7,18 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When Lovable applies a migration, delete its section here (the generated types take over).
- * Pending: 0017_purge_audit_summary (no types), 0018_setup_governance, 0019_rollups, 0020_two_level_dues, 0021_pricing_rules, 0022_demo_orgs (see roadmap.md).
+ * Pending: none (see roadmap.md).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database, Json } from "@/integrations/supabase/types";
+import type { Database } from "@/integrations/supabase/types";
 
 type Generated = Database["public"];
 
 // Add types for a migration here while Lovable hasn't applied it yet; delete them once applied.
 export type PendingEnums = Record<never, never>;
-export type PendingTables = {
-  // 0021_pricing_rules
-  pricing_rules: {
-    Row: {
-      active: boolean;
-      conditions: Json;
-      created_at: string;
-      created_by: string | null;
-      discount_pct: number | null;
-      id: string;
-      label: string;
-      org_id: string;
-      price_minor: number | null;
-      sort_order: number;
-      term_id: string;
-    };
-    Insert: never;
-    Update: never;
-    Relationships: [];
-  };
-};
-export type PendingFunctions = {
-  // 0018_setup_governance
-  apply_setup_sections: { Args: Record<string, never>; Returns: string[] };
-  // 0022_demo_orgs
-  is_platform_operator: { Args: Record<string, never>; Returns: boolean };
-  create_demo_organization: {
-    Args: { _name: string; _slug: string; _type: Generated["Enums"]["org_type"] };
-    Returns: string;
-  };
-  delete_demo_organization: { Args: { _org: string; _confirm_name: string }; Returns: string[] };
-  // 0021_pricing_rules
-  quote_price: { Args: { _term: string; _answers?: Json }; Returns: number };
-  save_pricing_rule: {
-    Args: {
-      _term: string;
-      _rule: string;
-      _label: string;
-      _conditions: Json;
-      _price_minor: number;
-      _discount_pct: number;
-      _sort_order: number;
-    };
-    Returns: string;
-  };
-  set_pricing_rule_active: { Args: { _rule: string; _active: boolean }; Returns: undefined };
-  // 0020_two_level_dues
-  join_requirements: { Args: { _org: string }; Returns: Json };
-  // 0019_rollups
-  org_rollup_members: {
-    Args: { _org: string };
-    Returns: {
-      org_id: string;
-      name: string;
-      type: Generated["Enums"]["org_type"];
-      parent_id: string | null;
-      depth: number;
-      profiles: number;
-      good: number;
-      grace: number;
-      lapsed: number;
-      pending: number;
-      ended: number;
-      no_membership: number;
-      joined_30d: number;
-      expiring_30: number;
-      expiring_60: number;
-      expiring_90: number;
-    }[];
-  };
-  org_rollup_revenue: {
-    Args: { _org: string; _from: string; _to: string };
-    Returns: {
-      org_id: string;
-      name: string;
-      depth: number;
-      currency: string;
-      payments: number;
-      gross_minor: number;
-      refunded_minor: number;
-      net_minor: number;
-    }[];
-  };
-  org_rollup_governance: {
-    Args: { _org: string };
-    Returns: {
-      org_id: string;
-      name: string;
-      depth: number;
-      required_seats: number;
-      vacant_required: number;
-      vacant_titles: string[];
-      terms_past_end: number;
-    }[];
-  };
-  log_report_export: {
-    Args: { _org: string; _report: string; _row_count: number; _filter?: Json };
-    Returns: undefined;
-  };
-};
+export type PendingTables = Record<never, never>;
+export type PendingFunctions = Record<never, never>;
 
 export type FullDatabase = Omit<Database, "public"> & {
   public: {

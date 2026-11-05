@@ -44,6 +44,7 @@ bun run test              # unit and component tests
 bun run check:migrations  # Lovable's migration rules (D-125)
 bun run test:db           # database rules (needs TEST_DATABASE_URL, see testing.md)
 bun run build
+bun run test:e2e          # end-to-end in Chromium (needs network; see testing.md)
 ```
 
 *(Script names are the standard set established in E-01. If a script is missing, adding it is part of E-01, not a reason to skip the check.)*
@@ -182,12 +183,14 @@ Every diagram is followed by a "Diagram description" block explaining in plain p
 
 ## 9. Enforcing the rules
 
-Rules that depend on memory will be forgotten, so automate them where possible. This is part of E-01:
+Rules that depend on memory will be forgotten, so automate them where possible. This is part of E-01.
 
-- **Pre-commit hook** (for example Husky with lint-staged): runs lint, typecheck, and the tests related to changed files. Block the commit on failure.
+**Status (2026-11-04):** `ci.yml` runs install, migration rules, lint, formatting, types, unit tests, the database rule tests (including tenant isolation, each migration in one transaction), the performance check, a dependency audit, the build, and the docs check on pull requests; `live.yml` runs the smoke test and the end-to-end tests against the live demo on pushes to `main` and `BoardUpdates`, pull requests to `main`, daily and on demand (D-175, D-197). The pre-commit hook is in `.githooks/pre-commit` (install with `bun run hooks:install`; D-182). **Not yet in place:** the coverage gate (it needs a coverage dependency, so a decision first) and branch protection, which the repository owner sets on GitHub.
+
+- **Pre-commit hook** (`.githooks/pre-commit`, a plain script rather than Husky and lint-staged, so no dependency): runs lint, formatting, typecheck, migration rules and the tests related to staged files. Blocks the commit on failure.
 - **CI pipeline** on every push to any branch and on pull requests: install with `bun install --frozen-lockfile`, migration-rule check, lint, typecheck, full unit and integration tests, tenant-isolation suite, and e2e on the main branch or before merge.
 - **Coverage gate:** fail CI if coverage on changed code drops below the threshold set in E-01.
-- **Docs check in CI** (lightweight): fail the build if source under `src/` changed but no documentation or test file changed in the same pull request, with an explicit override label for genuine exceptions such as pure refactors. This is a prompt for reviewers, not a substitute for them.
+- **Docs check in CI** (lightweight, `scripts/docs-check.sh`): fail the build if source under `src/` (or migrations, smoke tests, scripts) changed but no documentation or test file changed in the same pull request, with an explicit override label for genuine exceptions such as pure refactors. This is a prompt for reviewers, not a substitute for them.
 - **Branch protection:** no direct pushes to the main branch, required passing checks, at least one review.
 - **Never bypass hooks** (`--no-verify`) to get a commit through. If a hook is wrong, fix the hook.
 

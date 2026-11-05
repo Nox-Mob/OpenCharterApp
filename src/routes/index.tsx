@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { LegalLinks } from "@/components/legal/legal-page";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -73,6 +74,9 @@ function Index() {
           ))}
         </div>
       </section>
+      <footer className="mx-auto max-w-6xl px-6 py-8">
+        <LegalLinks />
+      </footer>
     </div>
   );
 }

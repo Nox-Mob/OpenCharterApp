@@ -23,6 +23,13 @@ export type SettingDef = {
    * auto-acceptance decides approval_required). Rule values not listed leave it to the org.
    */
   decidedBy?: { key: string; values: Record<string, boolean | string | number> };
+  /**
+   * In the home-chapter membership model (D-166) members belong to the national, so some rules
+   * don't apply (D-184): "hidden" everywhere, "chapters" only below the national.
+   */
+  homeChapter?: "hidden" | "chapters";
+  /** The Settings page it's shown on: General (default) or Board (D-185). */
+  page?: "general" | "board";
 };
 
 export const SETTINGS: readonly SettingDef[] = [
@@ -41,29 +48,32 @@ export const SETTINGS: readonly SettingDef[] = [
     kind: "boolean",
     default: true,
     appliesTo: "parents",
+    homeChapter: "hidden",
   },
   {
     key: "membership.national_dues_required",
-    label: "Chapter members must also be members of your organization",
+    label: "Chapter members also need a membership with you",
     description:
-      "Joining a chapter then takes two payments: your dues first, then the chapter's. Enforced in the database.",
+      "Turn on if belonging to a chapter requires a membership of your organization too. Joining a chapter then takes two payments: your dues first, then the chapter's. Enforced in the database.",
     kind: "boolean",
     default: false,
     appliesTo: "parents",
+    homeChapter: "hidden",
   },
   {
     key: "membership.chapter_dues",
-    label: "Chapter dues",
+    label: "Do chapters sell their own memberships?",
     description:
-      "None: chapters use your levels. Optional: chapters may charge their own. Required: every chapter should offer its own.",
+      "Whether a chapter charges its own dues for its own membership levels, as well as (or instead of) yours.",
     kind: "choice",
     default: "optional",
     options: [
-      { value: "none", label: "None (chapters use your levels)" },
-      { value: "optional", label: "Optional" },
-      { value: "required", label: "Required" },
+      { value: "none", label: "No: chapters use your levels and dues" },
+      { value: "optional", label: "Each chapter may choose" },
+      { value: "required", label: "Yes: every chapter sells its own" },
     ],
     appliesTo: "parents",
+    homeChapter: "hidden",
   },
   {
     key: "membership.chapter_dues_min_minor",
@@ -72,6 +82,7 @@ export const SETTINGS: readonly SettingDef[] = [
     kind: "number",
     default: 0,
     appliesTo: "parents",
+    homeChapter: "hidden",
   },
   {
     key: "membership.chapter_dues_max_minor",
@@ -80,6 +91,7 @@ export const SETTINGS: readonly SettingDef[] = [
     kind: "number",
     default: 0,
     appliesTo: "parents",
+    homeChapter: "hidden",
   },
   {
     key: "membership.child_approval",
@@ -94,6 +106,7 @@ export const SETTINGS: readonly SettingDef[] = [
       { value: "chapter", label: "Each chapter decides" },
     ],
     appliesTo: "parents",
+    homeChapter: "hidden",
   },
   {
     key: "membership.approval_required",
@@ -102,6 +115,7 @@ export const SETTINGS: readonly SettingDef[] = [
     kind: "boolean",
     default: false,
     decidedBy: { key: "membership.child_approval", values: { auto: false, review: true } },
+    homeChapter: "chapters",
   },
   {
     key: "membership.grace_days",
@@ -109,6 +123,7 @@ export const SETTINGS: readonly SettingDef[] = [
     description: "How long after expiration a member keeps their standing.",
     kind: "number",
     default: 30,
+    homeChapter: "chapters",
   },
   {
     key: "directory.listed_by_default",
@@ -141,6 +156,7 @@ export const SETTINGS: readonly SettingDef[] = [
     kind: "boolean",
     default: true,
     appliesTo: "parents",
+    page: "board",
   },
   {
     key: "governance.chapter_extra_seats_allowed",
@@ -149,6 +165,7 @@ export const SETTINGS: readonly SettingDef[] = [
     kind: "boolean",
     default: true,
     appliesTo: "parents",
+    page: "board",
   },
   {
     key: "governance.officers_good_standing",
@@ -156,6 +173,7 @@ export const SETTINGS: readonly SettingDef[] = [
     description: "Checked when someone is appointed to a board seat.",
     kind: "boolean",
     default: true,
+    page: "board",
   },
   {
     key: "contact.email",
@@ -166,10 +184,24 @@ export const SETTINGS: readonly SettingDef[] = [
   },
 ];
 
-/** Settings shown for an org: rules for sub-orgs only appear on orgs that have them. */
-export function settingsFor(orgType: string): SettingDef[] {
+/**
+ * Settings shown for an org on one Settings page: rules for sub-orgs only appear on orgs that
+ * have them, and rules that don't apply in the home-chapter model are left out (D-184).
+ */
+export function settingsFor(
+  orgType: string,
+  opts: { model?: "separate" | "home_chapter"; page?: "general" | "board" } = {},
+): SettingDef[] {
   const parent = orgType === "national" || orgType === "region";
-  return SETTINGS.filter((s) => (s.appliesTo ?? "all") === "all" || parent);
+  const home = opts.model === "home_chapter";
+  const page = opts.page ?? "general";
+  return SETTINGS.filter(
+    (s) =>
+      ((s.appliesTo ?? "all") === "all" || parent) &&
+      (s.page ?? "general") === page &&
+      !(home && s.homeChapter === "hidden") &&
+      !(home && s.homeChapter === "chapters" && orgType !== "national"),
+  );
 }
 
 /**

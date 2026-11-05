@@ -82,6 +82,6 @@ describe("DeleteDemoOrg", () => {
     );
     expect(remove).toHaveBeenCalledWith(["n/logo.png"]);
     expect(remove.mock.invocationCallOrder[0]!).toBeLessThan(rpc.mock.invocationCallOrder[0]!);
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: "/dashboard" }));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: "/orgs" }));
   });
 });

@@ -43,6 +43,41 @@ beforeAll(async () => {
   memberUserId = (await member.auth.getUser()).data.user!.id;
 });
 
+/** Simple answers for every required join question (e.g. Rank), so joins pass validation. */
+async function requiredAnswers(slug = "demo-national"): Promise<Record<string, unknown>> {
+  const info =
+    (await rpc<Record<string, unknown>>(anon, "public_join_info", { _slug: slug })) ?? {};
+  const fields =
+    ((info["fields"] ?? info["questions"] ?? []) as Array<Record<string, unknown>>) || [];
+  const answers: Record<string, unknown> = {};
+  for (const f of fields) {
+    if (!f["required"]) continue;
+    const id = f["id"] as string;
+    const options = (f["options"] ?? []) as Array<Record<string, unknown>>;
+    switch (f["data_type"]) {
+      case "number":
+        answers[id] = 1;
+        break;
+      case "date":
+        answers[id] = "2024-01-01";
+        break;
+      case "boolean":
+        answers[id] = true;
+        break;
+      case "choice":
+      case "ordered":
+        answers[id] = options[0]?.["value"];
+        break;
+      case "multi_choice":
+        answers[id] = [options[0]?.["value"]];
+        break;
+      default:
+        answers[id] = "smoke";
+    }
+  }
+  return answers;
+}
+
 describe("0. migrations are live (handoff quick checks)", () => {
   for (const table of [
     "memberships",
@@ -260,15 +295,20 @@ describe("2. memberships and check payments (0008)", () => {
       expect(data!.number).not.toBe("hacked");
     });
 
-    it("receipt numbers have no gaps within the org and year", async () => {
+    it("receipt numbers are unique, and this run's follow each other without gaps", async () => {
+      // Earlier smoke runs' receipts are purged afterwards (D-150), so the demo org's numbering
+      // has gaps from them; the rule is checked on the numbers issued during this run.
       const { data } = await orgAdmin
         .from("receipts")
-        .select("seq, year")
+        .select("seq, year, issued_at")
         .eq("org_id", ORG)
         .order("seq");
       const year = new Date().getFullYear();
-      const seqs = data!.filter((r) => r.year === year).map((r) => r.seq);
-      seqs.forEach((s, i) => expect(s).toBe(i + 1));
+      const thisYear = data!.filter((r) => r.year === year);
+      expect(new Set(thisYear.map((r) => r.seq)).size).toBe(thisYear.length);
+      const mine = thisYear.filter((r) => r.issued_at >= runStartedAt).map((r) => r.seq);
+      expect(mine.length).toBeGreaterThan(0);
+      mine.forEach((s, i) => expect(s).toBe(mine[0]! + i));
     });
 
     it("a member can't void someone else's receipt", async () => {
@@ -334,45 +374,10 @@ describe("4. test gateway (0009)", () => {
 });
 
 describe("5. joining online (0010)", () => {
-  async function requiredAnswers(): Promise<Record<string, unknown>> {
-    const info =
-      (await rpc<Record<string, unknown>>(anon, "public_join_info", { _slug: "demo-national" })) ??
-      {};
-    const fields =
-      ((info["fields"] ?? info["questions"] ?? []) as Array<Record<string, unknown>>) || [];
-    const answers: Record<string, unknown> = {};
-    for (const f of fields) {
-      if (!f["required"]) continue;
-      const id = f["id"] as string;
-      const options = (f["options"] ?? []) as Array<Record<string, unknown>>;
-      switch (f["data_type"]) {
-        case "number":
-          answers[id] = 1;
-          break;
-        case "date":
-          answers[id] = "2024-01-01";
-          break;
-        case "boolean":
-          answers[id] = true;
-          break;
-        case "choice":
-        case "ordered":
-          answers[id] = options[0]?.["value"];
-          break;
-        case "multi_choice":
-          answers[id] = [options[0]?.["value"]];
-          break;
-        default:
-          answers[id] = "smoke";
-      }
-    }
-    return answers;
-  }
-
   async function memberMembership() {
     const { data } = await member
       .from("memberships")
-      .select("*, org_member_profiles!inner(user_id)")
+      .select("*, org_member_profiles!memberships_profile_id_fkey!inner(user_id)")
       .eq("org_id", ORG)
       .eq("org_member_profiles.user_id", memberUserId)
       .maybeSingle();
@@ -560,9 +565,11 @@ describe("6. exports (0011)", () => {
 describe("7. directory (0012)", () => {
   it("opting out removes the member from the directory, opting in restores", async () => {
     // The member needs a current membership to be listed at all.
-    const pay = await rpc<string>(member, "begin_join", { _org: ORG, _term: termId }).catch(
-      () => null,
-    );
+    const pay = await rpc<string>(member, "begin_join", {
+      _org: ORG,
+      _term: termId,
+      _answers: await requiredAnswers(),
+    }).catch(() => null);
     if (pay) {
       await rpc(member, "complete_test_payment", { _payment: pay, _outcome: "accepted" });
       const { data: m } = await orgAdmin
@@ -760,7 +767,7 @@ describe("8. board seats (0014)", () => {
 async function membershipAt(org: string) {
   const { data } = await member
     .from("memberships")
-    .select("*, org_member_profiles!inner(user_id)")
+    .select("*, org_member_profiles!memberships_profile_id_fkey!inner(user_id)")
     .eq("org_id", org)
     .eq("org_member_profiles.user_id", memberUserId)
     .maybeSingle();
@@ -939,7 +946,7 @@ describe("12. pricing rules (0021)", () => {
     const join = await rpc<string>(member, "begin_join", {
       _org: NATIONAL,
       _term: termId,
-      _answers: {},
+      _answers: await requiredAnswers(),
     }).catch(async (e: Error) => {
       // required join questions: reuse whatever the join page asks with simple answers
       throw e;
@@ -1039,7 +1046,7 @@ describe("13. two-level dues (0020)", () => {
     const msg = await rpcFails(member, "begin_join", {
       _org: AUSTIN,
       _term: austinTerm,
-      _answers: {},
+      _answers: await requiredAnswers("demo-austin"),
     });
     expect(msg).toContain("national membership required");
   });
@@ -1048,7 +1055,7 @@ describe("13. two-level dues (0020)", () => {
     const pay = await rpc<string>(member, "begin_join", {
       _org: NATIONAL,
       _term: termId,
-      _answers: {},
+      _answers: await requiredAnswers(),
     });
     await rpc(member, "complete_test_payment", { _payment: pay, _outcome: "accepted" });
     expect(["pending", "active"]).toContain((await membershipAt(NATIONAL))!.status);
@@ -1058,7 +1065,7 @@ describe("13. two-level dues (0020)", () => {
     const pay = await rpc<string>(member, "begin_join", {
       _org: AUSTIN,
       _term: austinTerm,
-      _answers: {},
+      _answers: await requiredAnswers("demo-austin"),
     });
     await rpc(member, "complete_test_payment", { _payment: pay, _outcome: "accepted" });
     const austin = await membershipAt(AUSTIN);

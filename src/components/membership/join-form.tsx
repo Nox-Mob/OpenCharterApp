@@ -20,6 +20,21 @@ import { formatPrice, lengthOf, termLabel } from "@/modules/membership/tiers";
 import { startCheckout } from "@/modules/payments/payments.functions";
 import { quotePriceQuery } from "@/modules/membership/pricing";
 import { AttributeValueInput } from "@/components/attributes/attribute-value-input";
+import { useFeatureReady } from "@/lib/db/readiness";
+import {
+  chapterChoices,
+  homeChapterInfoQuery,
+  rememberHomeChapter,
+} from "@/modules/membership/home-chapter";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const NO_CHAPTER = "__none";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -45,8 +60,12 @@ function toDef(f: JoinField): DefWithOptions {
 }
 
 /** The public join form (E-13b): choose a membership, sign in, answer fields, pay. */
-export function JoinForm({ orgSlug }: { orgSlug: string }) {
+export function JoinForm({ orgSlug, chapter }: { orgSlug: string; chapter?: string | undefined }) {
   const info = useQuery(joinInfoQuery(orgSlug));
+  // Home-chapter model (A8, D-166): one national membership, the member picks their chapter.
+  const homeReady = useFeatureReady("home_chapter") === true;
+  const home = useQuery({ ...homeChapterInfoQuery(orgSlug), enabled: homeReady });
+  const [homeChapter, setHomeChapterChoice] = useState<string | null>(null);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [termId, setTermId] = useState("");
   const [draft, setDraft] = useState<Record<string, unknown>>({});
@@ -88,7 +107,14 @@ export function JoinForm({ orgSlug }: { orgSlug: string }) {
   const terms = j.levels.flatMap((l) => l.terms.map((t) => ({ level: l, term: t })));
   const chosen =
     terms.find((x) => x.term.id === termId) ?? (terms.length === 1 ? terms[0] : undefined);
-  const here = `/join/${orgSlug}`;
+  const homeModel = home.data?.model === "home_chapter";
+  const homeChoices = home.data ? chapterChoices(home.data) : [];
+  const chapterPick =
+    homeChapter ??
+    (chapter && homeChoices.some((c) => c.id === chapter) ? chapter : null) ??
+    home.data?.at_large_chapter ??
+    NO_CHAPTER;
+  const here = `/join/${orgSlug}${chapterPick !== NO_CHAPTER ? `?chapter=${chapterPick}` : ""}`;
   const national = j.national_dues?.required ? j.national_dues.national : null;
   const step = joinStep(j, req.data);
 
@@ -106,6 +132,8 @@ export function JoinForm({ orgSlug }: { orgSlug: string }) {
           coerceInput(defs.find((d) => d.id === id)!.data_type, v),
         ]),
       );
+      // Applied after payment, once the membership exists (join.$orgSlug.done).
+      if (homeModel) rememberHomeChapter(orgSlug, chapterPick === NO_CHAPTER ? null : chapterPick);
       const paymentId = await beginJoin(j.org.id, chosen.term.id, answers);
       const { url } = await startCheckout({ data: { paymentId } });
       window.location.assign(url);
@@ -134,7 +162,23 @@ export function JoinForm({ orgSlug }: { orgSlug: string }) {
         )}
       </div>
 
-      {step === "national_first" ? (
+      {homeModel && home.data!.org.type === "chapter" ? (
+        <div className="space-y-3 rounded-md border bg-card p-5">
+          <p>
+            Members join {home.data!.national.name} and choose {j.org.name} as their chapter: one
+            membership, one payment.
+          </p>
+          <Button asChild>
+            <Link
+              to="/join/$orgSlug"
+              params={{ orgSlug: home.data!.national.slug }}
+              search={{ chapter: home.data!.org.id }}
+            >
+              Join {home.data!.national.name} with {j.org.name} as your chapter
+            </Link>
+          </Button>
+        </div>
+      ) : step === "national_first" ? (
         <div className="space-y-3 rounded-md border bg-card p-5">
           <p>
             Members of {j.org.name} are also members of {national!.name}, and pay each
@@ -195,6 +239,28 @@ export function JoinForm({ orgSlug }: { orgSlug: string }) {
               </div>
             ))}
           </fieldset>
+
+          {homeModel && (
+            <fieldset className="space-y-2">
+              <legend className="text-lg font-semibold">Your chapter</legend>
+              <p className="text-sm text-muted-foreground">
+                Pick the chapter you belong to. You can change it later from your overview.
+              </p>
+              <Select value={chapterPick} onValueChange={setHomeChapterChoice}>
+                <SelectTrigger className="w-80" aria-label="Your chapter">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {homeChoices.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={NO_CHAPTER}>None for now</SelectItem>
+                </SelectContent>
+              </Select>
+            </fieldset>
+          )}
 
           {!signedIn ? (
             <div className="space-y-3 rounded-md border bg-card p-5">
@@ -262,7 +328,16 @@ export function JoinForm({ orgSlug }: { orgSlug: string }) {
               </Button>
               <p className="text-xs text-muted-foreground">
                 Payment is handled by {j.gateway === "test" ? "a test checkout" : "Stripe"} on
-                behalf of {j.org.name}. Card details never reach OpenCharterApp.
+                behalf of {j.org.name}. Card details never reach OpenCharterApp. By joining you
+                agree to the{" "}
+                <Link to="/terms" className="underline">
+                  terms of service
+                </Link>{" "}
+                and the{" "}
+                <Link to="/privacy" className="underline">
+                  privacy policy
+                </Link>
+                .
               </p>
             </>
           )}

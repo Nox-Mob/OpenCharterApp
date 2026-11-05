@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliation_history: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          from_org_id: string | null
+          id: string
+          membership_id: string
+          org_id: string
+          to_org_id: string | null
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          from_org_id?: string | null
+          id?: string
+          membership_id: string
+          org_id: string
+          to_org_id?: string | null
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          from_org_id?: string | null
+          id?: string
+          membership_id?: string
+          org_id?: string
+          to_org_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliation_history_from_org_id_fkey"
+            columns: ["from_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliation_history_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliation_history_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliation_history_to_org_id_fkey"
+            columns: ["to_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           appointed_by: string | null
@@ -254,6 +313,7 @@ export type Database = {
           org_id: string | null
           target_id: string | null
           target_type: string
+          tx_id: number | null
         }
         Insert: {
           action: string
@@ -265,6 +325,7 @@ export type Database = {
           org_id?: string | null
           target_id?: string | null
           target_type: string
+          tx_id?: number | null
         }
         Update: {
           action?: string
@@ -276,6 +337,7 @@ export type Database = {
           org_id?: string | null
           target_id?: string | null
           target_type?: string
+          tx_id?: number | null
         }
         Relationships: []
       }
@@ -503,9 +565,14 @@ export type Database = {
           description: string
           id: string
           key: string
+          link_mode: string | null
           name: string
           org_id: string
+          price_rule: string | null
+          price_value: number | null
           sort_order: number
+          source_tier_id: string | null
+          suggested: boolean
           tax_treatment: Database["public"]["Enums"]["tax_treatment"]
         }
         Insert: {
@@ -514,9 +581,14 @@ export type Database = {
           description?: string
           id?: string
           key: string
+          link_mode?: string | null
           name: string
           org_id: string
+          price_rule?: string | null
+          price_value?: number | null
           sort_order?: number
+          source_tier_id?: string | null
+          suggested?: boolean
           tax_treatment?: Database["public"]["Enums"]["tax_treatment"]
         }
         Update: {
@@ -525,9 +597,14 @@ export type Database = {
           description?: string
           id?: string
           key?: string
+          link_mode?: string | null
           name?: string
           org_id?: string
+          price_rule?: string | null
+          price_value?: number | null
           sort_order?: number
+          source_tier_id?: string | null
+          suggested?: boolean
           tax_treatment?: Database["public"]["Enums"]["tax_treatment"]
         }
         Relationships: [
@@ -538,11 +615,19 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "membership_tiers_source_tier_id_fkey"
+            columns: ["source_tier_id"]
+            isOneToOne: false
+            referencedRelation: "membership_tiers"
+            referencedColumns: ["id"]
+          },
         ]
       }
       memberships: {
         Row: {
           created_at: string
+          home_org_id: string | null
           id: string
           joined_on: string | null
           lifetime: boolean
@@ -556,6 +641,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          home_org_id?: string | null
           id?: string
           joined_on?: string | null
           lifetime?: boolean
@@ -569,6 +655,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          home_org_id?: string | null
           id?: string
           joined_on?: string | null
           lifetime?: boolean
@@ -581,6 +668,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "memberships_home_org_id_fkey"
+            columns: ["home_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "memberships_org_id_fkey"
             columns: ["org_id"]
@@ -618,7 +712,9 @@ export type Database = {
           directory_listed: boolean | null
           display_name: string
           email: string
+          home_of: string | null
           id: string
+          left_at: string | null
           org_id: string
           source: string
           user_id: string | null
@@ -629,7 +725,9 @@ export type Database = {
           directory_listed?: boolean | null
           display_name?: string
           email?: string
+          home_of?: string | null
           id?: string
+          left_at?: string | null
           org_id: string
           source?: string
           user_id?: string | null
@@ -640,12 +738,21 @@ export type Database = {
           directory_listed?: boolean | null
           display_name?: string
           email?: string
+          home_of?: string | null
           id?: string
+          left_at?: string | null
           org_id?: string
           source?: string
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "org_member_profiles_home_of_fkey"
+            columns: ["home_of"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "org_member_profiles_org_id_fkey"
             columns: ["org_id"]
@@ -1125,6 +1232,48 @@ export type Database = {
           },
         ]
       }
+      seat_contacts: {
+        Row: {
+          id: string
+          org_id: string
+          role_email: string | null
+          template_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          role_email?: string | null
+          template_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          role_email?: string | null
+          template_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seat_contacts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seat_contacts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "seat_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seat_templates: {
         Row: {
           active: boolean
@@ -1385,6 +1534,7 @@ export type Database = {
           org_id: string
           price_minor: number
           sort_order: number
+          source_term_id: string | null
           tier_id: string
         }
         Insert: {
@@ -1399,6 +1549,7 @@ export type Database = {
           org_id: string
           price_minor: number
           sort_order?: number
+          source_term_id?: string | null
           tier_id: string
         }
         Update: {
@@ -1413,6 +1564,7 @@ export type Database = {
           org_id?: string
           price_minor?: number
           sort_order?: number
+          source_term_id?: string | null
           tier_id?: string
         }
         Relationships: [
@@ -1421,6 +1573,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tier_terms_source_term_id_fkey"
+            columns: ["source_term_id"]
+            isOneToOne: false
+            referencedRelation: "tier_terms"
             referencedColumns: ["id"]
           },
           {
@@ -1487,6 +1646,16 @@ export type Database = {
         Args: { _display_name: string; _email?: string; _org: string }
         Returns: string
       }
+      adopt_suggested_level: {
+        Args: {
+          _mode: string
+          _org: string
+          _rule?: string
+          _source: string
+          _value?: number
+        }
+        Returns: string
+      }
       ancestor_setting: { Args: { _key: string; _org: string }; Returns: Json }
       apply_setup: {
         Args: { _answers: Json; _flow: string; _org: string; _plan: Json }
@@ -1510,6 +1679,22 @@ export type Database = {
       assign_role: {
         Args: { _org: string; _role_key: string; _user: string }
         Returns: string
+      }
+      audit_log: {
+        Args: { _before?: number; _limit?: number; _org: string }
+        Returns: {
+          action: string
+          actor_id: string
+          actor_name: string
+          after: Json
+          before: Json
+          created_at: string
+          id: number
+          refs: Json
+          target_id: string
+          target_type: string
+          tx_id: number
+        }[]
       }
       begin_join: {
         Args: { _answers?: Json; _org: string; _term: string }
@@ -1548,6 +1733,13 @@ export type Database = {
       cancel_membership: {
         Args: { _membership: string; _note?: string }
         Returns: undefined
+      }
+      chapter_national_standing: {
+        Args: { _chapter: string }
+        Returns: {
+          national_standing: string
+          profile_id: string
+        }[]
       }
       check_role_permissions: {
         Args: { _org: string; _perms: string[]; _uid: string }
@@ -1646,6 +1838,34 @@ export type Database = {
         Args: { _appointment: string; _ended_on?: string; _reason?: string }
         Returns: undefined
       }
+      export_payments: {
+        Args: {
+          _from: string
+          _include_below?: boolean
+          _org: string
+          _to: string
+        }
+        Returns: {
+          amount_minor: number
+          currency: string
+          email: string
+          gateway: string
+          level: string
+          member: string
+          method: string
+          net_minor: number
+          org_name: string
+          purpose: string
+          receipt: string
+          received_on: string
+          reference: string
+          refunded_minor: number
+          status: string
+          tax_treatment: string
+          term: string
+          test_payment: boolean
+        }[]
+      }
       fail_gateway_payment: {
         Args: { _event_id: string; _payment: string; _reason: string }
         Returns: string
@@ -1678,6 +1898,10 @@ export type Database = {
         Args: { _org: string; _role: string; _user: string }
         Returns: boolean
       }
+      import_members: {
+        Args: { _apply?: boolean; _org: string; _rows: Json }
+        Returns: Json
+      }
       is_org_member: { Args: { _org: string; _user: string }; Returns: boolean }
       is_platform_operator: { Args: never; Returns: boolean }
       issue_receipt: { Args: { _payment: string }; Returns: string }
@@ -1694,6 +1918,10 @@ export type Database = {
           org_id: string
           value: Json
         }[]
+      }
+      linked_price: {
+        Args: { _org: string; _price: number; _rule: string; _value: number }
+        Returns: number
       }
       listed_in_directory: {
         Args: {
@@ -1719,6 +1947,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      make_level_own: { Args: { _tier: string }; Returns: undefined }
       mark_payment_refunded: {
         Args: {
           _amount_minor: number
@@ -1736,6 +1965,7 @@ export type Database = {
           profile_id: string
         }[]
       }
+      membership_model: { Args: { _org: string }; Returns: string }
       membership_standing: {
         Args: {
           _grace: number
@@ -1745,6 +1975,10 @@ export type Database = {
           _today: string
         }
         Returns: string
+      }
+      move_home_chapter: {
+        Args: { _chapter: string; _membership: string }
+        Returns: undefined
       }
       national_dues_required: { Args: { _org: string }; Returns: boolean }
       national_membership_state: {
@@ -1773,6 +2007,18 @@ export type Database = {
           title: string
         }[]
       }
+      org_board_contacts: {
+        Args: { _org: string }
+        Returns: {
+          display_name: string
+          email: string
+          email_source: string
+          seat_number: number
+          sort_order: number
+          template_id: string
+          title: string
+        }[]
+      }
       org_lineage: {
         Args: { _org: string }
         Returns: {
@@ -1781,6 +2027,20 @@ export type Database = {
           logo_path: string
           name: string
           type: Database["public"]["Enums"]["org_type"]
+        }[]
+      }
+      org_overview_stats: {
+        Args: { _org: string }
+        Returns: {
+          chapter_memberships: number
+          chapters: number
+          current_members: number
+          expiring_30: number
+          joined_30d: number
+          lifetime_members: number
+          orgs_below: number
+          pending_members: number
+          roster: number
         }[]
       }
       org_rollup_governance: {
@@ -1871,7 +2131,12 @@ export type Database = {
         Args: { _org: string }
         Returns: boolean
       }
+      profile_membership_id: {
+        Args: { _p: Database["public"]["Tables"]["org_member_profiles"]["Row"] }
+        Returns: string
+      }
       profile_values: { Args: { _profile: string }; Returns: Json }
+      public_home_chapter_info: { Args: { _slug: string }; Returns: Json }
       public_join_info: { Args: { _slug: string }; Returns: Json }
       purge_smoke_data: { Args: { _since: string }; Returns: Json }
       quote_price: { Args: { _answers?: Json; _term: string }; Returns: number }
@@ -1901,6 +2166,10 @@ export type Database = {
         Args: { _reason: string; _receipt: string }
         Returns: string
       }
+      remove_member_record: {
+        Args: { _profile: string; _reason?: string }
+        Returns: undefined
+      }
       remove_role: { Args: { _assignment: string }; Returns: undefined }
       renewal_start: {
         Args: {
@@ -1913,6 +2182,7 @@ export type Database = {
         Returns: string
       }
       resolve_role: { Args: { _key: string; _org: string }; Returns: string }
+      restore_member_record: { Args: { _profile: string }; Returns: undefined }
       revoke_invitation: { Args: { _id: string }; Returns: undefined }
       role_applies_at: {
         Args: {
@@ -1985,6 +2255,18 @@ export type Database = {
         Args: { _payment: string; _ref: string }
         Returns: undefined
       }
+      set_home_chapter: {
+        Args: { _chapter: string; _national: string }
+        Returns: undefined
+      }
+      set_linked_level_price: {
+        Args: { _rule: string; _tier: string; _value?: number }
+        Returns: undefined
+      }
+      set_member_home_chapter: {
+        Args: { _chapter: string; _membership: string }
+        Returns: undefined
+      }
       set_my_directory_listing: {
         Args: { _listed: boolean; _org: string }
         Returns: undefined
@@ -1999,6 +2281,17 @@ export type Database = {
       }
       set_seat_active: {
         Args: { _active: boolean; _template: string }
+        Returns: undefined
+      }
+      set_seat_contact: {
+        Args: { _org: string; _role_email: string; _template: string }
+        Returns: undefined
+      }
+      set_seat_scope: {
+        Args: {
+          _scope: Database["public"]["Enums"]["seat_scope"]
+          _template: string
+        }
         Returns: undefined
       }
       set_seat_term: {
@@ -2017,6 +2310,8 @@ export type Database = {
         Args: { _org: string; _template: string; _title: string }
         Returns: undefined
       }
+      sync_linked_level: { Args: { _tier: string }; Returns: undefined }
+      sync_my_email: { Args: never; Returns: number }
       term_end: {
         Args: {
           _count: number
@@ -2110,7 +2405,7 @@ export type Database = {
       payment_purpose: "join" | "renew"
       payment_status: "pending" | "paid" | "refunded" | "failed"
       receipt_status: "issued" | "voided" | "superseded"
-      seat_scope: "self" | "chapters"
+      seat_scope: "self" | "chapters" | "self_and_chapters"
       setting_mode: "inherit" | "override" | "locked"
       setup_status: "in_progress" | "applied" | "needs_review"
       tax_treatment: "deductible" | "non_deductible" | "partial"
@@ -2268,7 +2563,7 @@ export const Constants = {
       payment_purpose: ["join", "renew"],
       payment_status: ["pending", "paid", "refunded", "failed"],
       receipt_status: ["issued", "voided", "superseded"],
-      seat_scope: ["self", "chapters"],
+      seat_scope: ["self", "chapters", "self_and_chapters"],
       setting_mode: ["inherit", "override", "locked"],
       setup_status: ["in_progress", "applied", "needs_review"],
       tax_treatment: ["deductible", "non_deductible", "partial"],

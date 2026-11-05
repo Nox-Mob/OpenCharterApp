@@ -78,6 +78,7 @@ flowchart TD
 - A single `organization` concept with a `type` (national, region, chapter, standalone) and a parent. A standalone local org is simply a root org with no children.
 - **Permissions and settings flow downward.** Data visibility flows **upward only where explicitly shared or required** (e.g., national sees members of its chapters, documents shared with national).
 - The **region tier exists in the data model from day one** (D-035). Region-specific features, such as regional approvals, are built later.
+- **Membership model (D-166, D-174, D-176).** Each national chooses once how membership works across its tree: *separate memberships* (the national and each chapter have their own memberships, levels, dues and standing; two-level dues optional, D-146), or *national membership with a home chapter* (one membership at the national; the member picks a chapter, which gets a member record standing for that national membership, so the chapter's members, board, directory and reports read the national standing). The choice is a locked setting at the national that a trigger won't let change.
 - The **platform tier** exists above all orgs. On self-hosted installs it is the installer. On our hosted service it is us, managing customer orgs and hosting billing, which is separate from any org's own payment accounts.
 
 ## 4. Tenancy and request resolution
@@ -88,7 +89,7 @@ flowchart TD
    - Bare national domain → national.
    - Admin and portal routes use the same host, scoped by the signed-in user's permissions.
 2. **Org context** is set per request and is carried into the database session so **Row-Level Security** policies enforce isolation as a second line of defense behind application checks.
-3. **Scope path.** Org hierarchy is stored so "this org and all descendants" queries are cheap (closure table or path column, decided at schema design).
+3. **Scope path.** Org hierarchy is stored so "this org and all descendants" queries are cheap: `organizations.ancestor_ids`, kept by trigger, and `org_subtree`. Every table and how they connect: `docs/tables.md`.
 4. **Custom domains:** DNS verification, then certificate issuance by the reverse proxy (on-demand TLS gated by an "is this a verified domain" check).
 
 ## 5. Authorization model
@@ -166,7 +167,7 @@ Email security scanners and link previewers often **prefetch every link in an em
 
 ## 7. Domain modules
 
-Modules call engines and each other only through public interfaces.
+Modules call engines and each other only through public interfaces. Built today (`src/modules`): attributes, branding, chapters, demo, governance, invitations, members, membership (levels, memberships, joining, pricing, home chapter), payments, receipts, reports, roles, setup. The table lists the target set.
 
 | Module | Notes |
 |---|---|
@@ -193,9 +194,11 @@ Modules call engines and each other only through public interfaces.
 
 - **One gateway interface** (create payment, create subscription, refund, webhook handling, payout reference) with **Stripe** first and **PayPal** later.
 - **Each org connects its own account.** Every transaction stores: receiving org, gateway, gateway reference, gross, fees, any national fee, and the item type it paid for.
-- **Two entities, two payments.** If a member owes both national and chapter dues, checkout produces two independent payments with two receipts. The cart UX presents them together but they are processed separately.
-- **National fee:** optional. Stripe runs in one of two modes (D-049): **Connect**, where national's account is the Connect platform and application fees apply automatically, or **Direct**, where each org uses its own account and the fee is settled by invoice. PayPal mechanism is deferred, with invoicing the chapter as the fallback.
-- **Webhooks** are the source of truth for payment state. Handlers are idempotent.
+- **Two entities, two payments.** If a member owes both national and chapter dues (separate-memberships model with two-level dues), checkout produces two independent payments with two receipts, national first. In the home-chapter model there is one payment, to the national.
+- **National fee:** optional, settled by invoice: a parent org invoices a subordinate org through E-20's invoicing (D-162). Payments are **Direct** only: each org collects into its own Stripe (or later PayPal) account; Stripe Connect is not used (supersedes the two-mode plan in D-049).
+- **Webhooks** are the source of truth for payment state. Handlers are idempotent. While the return page waits, it also asks Stripe how the checkout ended (D-158); both paths apply a payment once.
+- **Return links** use the app's public address (`PUBLIC_APP_URL`, else the browser's), never the server's internal URL (D-158).
+- **Export:** an audited transaction CSV per org or across a national's tree (D-173, implements D-047).
 - Card data never touches our servers (PCI SAQ-A scope).
 
 ## 9. Approval workflow (awards as the reference case)
@@ -261,7 +264,7 @@ flowchart LR
 
 > **Diagram description:** A left-to-right deployment diagram of the self-host target (packaging deferred to F-11). Internet traffic goes to a reverse proxy (wildcard and on-demand TLS), which forwards to the App, a TanStack Start server. The App connects to a PostgreSQL database with row-level security, to object storage, and to a Supabase-compatible auth service. A scheduler calls the App's scheduled routes, which process the jobs table. On the hosted service, Lovable Cloud provides the database, auth, storage and edge hosting instead.
 
-- **Self-host (later, F-11):** a Compose setup brings up the app, Postgres, a Supabase-compatible auth service, object storage (MinIO or S3) and the reverse proxy. Business rules live in SQL functions and `src/lib/policy` so only adapters change (R-20).
+- **Self-host (later, F-11, D-160, D-168):** a lightweight Docker Compose install. The **default** is one app container (the TanStack Start server on Node) plus a hosted Supabase project for Postgres, Auth and Storage, which keeps cloud costs low; a documented alternative self-hosts a minimal Supabase subset (Postgres, Auth, REST, Storage). A reverse proxy (Caddy) provides TLS. Email uses the client's own server (`EMAIL_TRANSPORT=smtp`, D-159). Business rules live in SQL functions and `src/lib/policy` so only adapters change (R-20).
 - **Hosted:** the same code and image, multiple installs or a multi-tenant install, plus the platform-tier admin and billing.
 - Configuration through environment variables. No dependency on a single cloud vendor's proprietary features.
 
@@ -273,9 +276,10 @@ flowchart LR
 | Privacy | Consent tracking, data export and deletion tools, member privacy preferences honored in directories and exports, audited exports |
 | Auditability | Append-only audit log, immutable receipts and certified election results |
 | Observability | Structured logs, error tracking, job queue dashboards, health checks |
-| Accessibility | WCAG 2.1 AA target for public and member-facing UI |
+| Accessibility | WCAG 2.1 AA target for public and member-facing UI; automated name, heading and keyboard checks in the end-to-end suite (D-183) |
 | Internationalization | English and USD first. Keep strings and currency out of hard-coded paths so it can be added |
-| Testing | Unit and integration with Vitest, end-to-end flows with Playwright, with tenant-isolation tests as a first-class category |
+| Performance | Lists past 1,000 rows are read in pages (the API's limit); roll-ups resolve inherited settings once per org; `bun run test:perf` with 5,000, 10,000 and 20,000 members, budget under 1 second per read (D-181, D-209) |
+| Testing | Unit and component tests with Vitest, database rule tests against a throwaway Postgres (`db/tests/`), end-to-end flows with Playwright against the live demo backend (D-175), a live smoke suite, with tenant-isolation tests as a first-class category (`docs/testing.md`) |
 | Backups | Documented backup and restore for self-hosters, automated for hosted |
 
 ## 14. Repository layout
@@ -284,10 +288,13 @@ flowchart LR
 /src
   /routes              TanStack Start routes (public, portal, admin, api)
   /modules             domain modules, each with its own public interface
-    /organizations /members /dues /governance /elections
-    /documents /awards /payments /receipts /events ...
-  /engines             attributes, rules, setup, approvals, forms,
-                       automation, notifications, audit, payments-core
+                       built: attributes, branding, chapters, demo, governance,
+                       invitations, members, membership (tiers, dues, joining),
+                       payments, receipts, reports, roles, setup
+                       planned: documents, elections, awards, events, ...
+  /engines             built: attributes, payments, rules, settings, setup
+                       planned: approvals, forms, automation, notifications
+  /components          UI by area (org, members, membership, governance, ...)
   /lib                 shared utilities, policy layer, db readiness
 /drizzle/migrations    SQL migrations (schema, RLS policies, RPCs)
 /db/tests              database rule tests

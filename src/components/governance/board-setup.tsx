@@ -21,7 +21,7 @@ import {
 } from "@/modules/governance/setup-flow";
 import { today } from "@/modules/membership/standing";
 import { FlowWizard } from "@/components/setup/flow-wizard";
-import { TermFields } from "@/components/governance/board-tab";
+import { TermFields } from "@/components/governance/board-settings-tab";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -183,11 +183,12 @@ function SeatsQuestion({
                     value={s.scope}
                     onValueChange={(v) => update(i, { scope: v as SeatAnswer["scope"] })}
                   >
-                    <SelectTrigger className="w-52" aria-label={`${s.title} used by`}>
+                    <SelectTrigger className="w-64" aria-label={`${s.title} used by`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="chapters">Every chapter</SelectItem>
+                      <SelectItem value="self_and_chapters">{orgName} and every chapter</SelectItem>
                       <SelectItem value="self">{orgName} itself</SelectItem>
                     </SelectContent>
                   </Select>

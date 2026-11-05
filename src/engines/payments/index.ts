@@ -53,6 +53,11 @@ export interface PaymentGateway {
   verify(): Promise<VerifyResult>;
   createCheckout(req: CheckoutRequest): Promise<CheckoutSession>;
   refund(gatewayRef: string, amount?: Money): Promise<{ refundId: string }>;
+  /**
+   * Ask the gateway how a checkout ended, as the event its webhook would send (D-158). Lets the
+   * return page confirm a payment when the webhook is late or not set up. Stripe only.
+   */
+  checkoutResult?(checkoutRef: string): Promise<GatewayEvent>;
 }
 
 export class GatewayError extends Error {

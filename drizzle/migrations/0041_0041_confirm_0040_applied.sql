@@ -1,0 +1,1 @@
+COMMENT ON TABLE public.seat_templates IS 'Marker: confirms migration 0040 (overview counts people once) has been applied.';

@@ -17,12 +17,15 @@ These documents are the shared reference for the whole build. At any point in de
 | [`epic.md`](epic.md) | Phased roadmap, epic map, dependencies, and scrum guidance |
 | [`setup-engine.md`](setup-engine.md) | The guided setup/configuration engine design |
 | [`data-domains.md`](data-domains.md) | Entity inventory by domain, the input to database design |
+| [`tables.md`](tables.md) | Every database table in use: a mind map, diagrams by area, and a reference of what each table holds, links to and how it's written |
 | [`glossary.md`](glossary.md) | Shared vocabulary |
 | [`risks-and-open-questions.md`](risks-and-open-questions.md) | What is still unresolved, and what could hurt us |
+| [`security-review.md`](security-review.md) | The release security, accessibility and performance review: findings, follow-ups and how to re-run it |
 | [`testing.md`](testing.md) | How to run checks locally, how CI works, and how database rule tests are built |
 | [`user-testing.md`](user-testing.md) | What to test by hand in the live app, step by step, with the demo accounts |
-| [`demo-data.md`](demo-data.md) | Temporary demo accounts and organizations, and how to remove them |
-| [`plans/`](plans/) | Agreed plans for upcoming epics, e.g. [`e12-e13-payments-and-joining.md`](plans/e12-e13-payments-and-joining.md) |
+| [`demo-data.md`](demo-data.md) | Demo accounts and organizations, how the demo national is set up, and how to remove them |
+| [`plans/`](plans/) | Current plans: [`phases-1-3-review.md`](plans/phases-1-3-review.md) (where Phases 1–3 stand and the waves for what's left) [`wave-a-mvp.md`](plans/wave-a-mvp.md) (the MVP plan) and [`release-v0.1.0.md`](plans/release-v0.1.0.md) (what's left before tagging v0.1.0, and the pull request description). Finished plans are removed; their outcome lives in `decisions.md` and git history |
+| [`lovable-handoff.md`](lovable-handoff.md) | What Lovable needs to do: migrations to apply, checks, and the record of what's applied |
 
 ## Vision
 
@@ -30,7 +33,7 @@ One platform where:
 
 - A **local association** can run itself: members, dues, events, donations, board, documents.
 - A **national organization** can run many chapters: set the rules, define the board structure, see compliance at a glance, and still let chapters operate independently.
-- **Each level collects its own money** into its own Stripe or PayPal account and issues its own receipts.
+- **Each level collects its own money** into its own Stripe (later also PayPal) account and issues its own receipts. A national can instead offer one national membership with a home chapter (D-166).
 - **Governance is built in**: required board seats, board reports, elections, document compliance, and award approvals routed to the right people automatically.
 - Organizations **configure it to match how they actually work** (custom attributes, custom terms, custom titles) through a guided setup rather than a developer.
 
@@ -47,7 +50,7 @@ One platform where:
 3. **Each tax entity stands alone.** Money, receipts, and records belong to the org that received them.
 4. **Everything important is audited.**
 5. **Automate the chase.** The system, not a person, notices vacancies, overdue reports, pending approvals, and expiring memberships.
-6. **Self-hostable by design.** Configuration is environment-driven and there is no vendor lock-in, so the hosted service runs the same code as self-hosters. Docker and Compose packaging comes later (backlog item F-11), once there is a working app to package.
+6. **Self-hostable by design.** Configuration is environment-driven and there is no vendor lock-in, so the hosted service runs the same code as self-hosters. Packaging comes later (backlog item F-11): a lightweight Docker Compose install whose default is the app container plus a hosted Supabase project (D-160, D-168).
 7. **Build shared engines once** (attributes, rules, approvals, forms, automations, setup) and reuse them across modules.
 
 ## How to use these docs with Scrum
@@ -68,8 +71,4 @@ Every diagram (Mermaid or image) is followed by a **"Diagram description"** bloc
 
 ## Current status
 
-Built so far: sign-in, organization hierarchy, roles with downward-only permissions, org-defined custom roles and a role assignment screen, audit log, invitations, tax profiles, inherited and locked settings, logos, custom member and chapter fields (chapter fields can be locked by the national), membership levels and terms, memberships with standing, renewals and recorded payments, and the guided setup engine with its first Membership flow. See `/roadmap.md` for what's left.
-
-### Previous status
-
-Planning complete through v5 of the plan. **Next milestone:** database design, beginning with the "Foundation" and "Membership" domains in `data-domains.md`.
+Phases 1 and 2 meet their exit criteria, and the MVP release (v0.1.0) is built and live (migrations up to 0039 applied, 0040 waiting); what's left before tagging is in [`plans/release-v0.1.0.md`](plans/release-v0.1.0.md), with the plan in [`plans/wave-a-mvp.md`](plans/wave-a-mvp.md) and the root [`README.md`](../README.md) "Where it stands". Day-to-day progress is in [`/roadmap.md`](../roadmap.md); epic status is in [`epic.md`](epic.md).

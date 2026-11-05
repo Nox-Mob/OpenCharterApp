@@ -43,6 +43,27 @@ export const orgMemberValuesQuery = (orgId: string) =>
     },
   });
 
+/** Member field values across several orgs (the "everyone below" member list, D-154). */
+export const treeMemberValuesQuery = (orgIds: readonly string[]) =>
+  queryOptions({
+    queryKey: ["attribute-values", "tree", ...orgIds],
+    enabled: orgIds.length > 0,
+    queryFn: async (): Promise<Record<string, Record<string, unknown>>> => {
+      const out: Record<string, Record<string, unknown>> = {};
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await supabase
+          .from("attribute_values")
+          .select("entity_id,definition_id,value")
+          .in("org_id", [...orgIds])
+          .order("id")
+          .range(from, from + 999);
+        if (error) throw error;
+        for (const v of data ?? []) (out[v.entity_id] ??= {})[v.definition_id] = v.value as unknown;
+        if ((data ?? []).length < 1000) return out;
+      }
+    },
+  });
+
 /** Attribute values of one entity: a member profile, or a chapter (by org id). */
 export const memberValuesQuery = (profileId: string) =>
   queryOptions({

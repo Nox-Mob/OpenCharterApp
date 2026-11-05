@@ -66,17 +66,40 @@ vi.mock("@/integrations/supabase/client", () => {
   const chain: Record<string, unknown> = {};
   for (const m of ["select", "eq", "order", "in"]) chain[m] = () => chain;
   chain["then"] = (resolve: (v: unknown) => void) => resolve({ data: [], error: null });
+  const contacts: Record<string, unknown> = {};
+  for (const m of ["select", "eq", "order", "in"]) contacts[m] = () => contacts;
+  contacts["then"] = (resolve: (v: unknown) => void) =>
+    resolve({ data: [{ template_id: "t1", role_email: "president@a.org" }], error: null });
   return {
     supabase: {
-      from: () => chain,
+      from: (t: string) => (t === "seat_contacts" ? contacts : chain),
       rpc: vi.fn(async (fn: string) => ({
-        data: fn === "org_board" ? board : fn === "board_history" ? history : null,
+        data:
+          fn === "org_board"
+            ? board
+            : fn === "board_history"
+              ? history
+              : fn === "org_board_contacts"
+                ? [
+                    {
+                      template_id: "t2",
+                      title: "Chaplain",
+                      sort_order: 0,
+                      seat_number: 1,
+                      display_name: "Morgan",
+                      email: "morgan@a.org",
+                      email_source: "officer",
+                    },
+                  ]
+                : null,
         error: null,
       })),
     },
   };
 });
 
+import { fireEvent } from "@testing-library/react";
+import { supabase } from "@/integrations/supabase/client";
 import { BoardTab } from "./board-tab";
 
 const chapterA: Org = {
@@ -90,11 +113,12 @@ const chapterA: Org = {
   logo_path: null,
 };
 
-function renderTab(canManage: boolean) {
+function renderTab(canManage: boolean, contactsReady = false) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  qc.setQueryData(["db-ready", "seat_contacts"], contactsReady);
   return render(
     <QueryClientProvider client={qc}>
-      <BoardTab org={chapterA} grants={[]} canManage={canManage} canDefine={false} />
+      <BoardTab org={chapterA} canManage={canManage} />
     </QueryClientProvider>,
   );
 }
@@ -112,7 +136,9 @@ describe("BoardTab", () => {
     expect(screen.getByText("Morgan")).toBeInTheDocument();
     expect(screen.getByText("1 of 2 filled")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Appoint" })).toHaveLength(2);
-    expect(screen.getByRole("button", { name: "Rename here" })).toBeInTheDocument();
+    // configuring the board is in Settings → Board (D-185)
+    expect(screen.queryByRole("button", { name: "Rename here" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Change term" })).toBeNull();
     expect(await screen.findByText("Pat")).toBeInTheDocument();
   });
 
@@ -122,5 +148,34 @@ describe("BoardTab", () => {
     expect(screen.queryByRole("button", { name: "Appoint" })).toBeNull();
     expect(screen.queryByRole("button", { name: "End term" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Change term" })).toBeNull();
+  });
+
+  it("shows each seat's contact, without the controls to change it", async () => {
+    renderTab(true, true);
+    expect(await screen.findByText("president@a.org")).toBeInTheDocument();
+    expect(screen.getByText("(role email)")).toBeInTheDocument();
+    // a seat without a role email shows its officer's sign-in email (D-201)
+    expect(await screen.findByText("morgan@a.org")).toBeInTheDocument();
+    expect(screen.queryByText(/officer's own email/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Contact email" })).toBeNull();
+  });
+
+  it("links to Settings → Board for those who may configure it", async () => {
+    const open = vi.fn();
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <BoardTab org={chapterA} canManage onOpenSettings={open} />
+      </QueryClientProvider>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Change board settings" }));
+    expect(open).toHaveBeenCalled();
+  });
+
+  it("hides contact controls before migration 0026", async () => {
+    renderTab(true, false);
+    expect(await screen.findByRole("heading", { name: "Commander" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Contact email" })).toBeNull();
+    expect(screen.queryByText(/Contact:/)).toBeNull();
   });
 });
