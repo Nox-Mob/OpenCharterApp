@@ -3,6 +3,7 @@
 Every change must keep all of these green (instructions.md §3). GitHub runs them in two workflows (D-197):
 
 - **`ci.yml`, no live backend needed:** on every push to any branch, every pull request, every Monday (so new dependency advisories surface without a push) and on demand. Jobs: lint, formatting, types, unit tests and migration conventions; database rules; performance; dependency audit; build; and the docs check on pull requests.
+- **`supabase-db.yml`, "Supabase database" (D-211):** on every pull request and on pushes to `main` and `supabase-migration`, the `replay` job rebuilds the database from `supabase/migrations` on a local Supabase stack (CLI 2.122.1) and checks it (below). It is skipped on a branch without `supabase/migrations`. The `deploy` job runs only by hand (Actions → Supabase database → Run workflow), after approval in the `supabase-prod` environment, with "dry run" on by default.
 - **`live.yml`, the live demo backend:** on pushes to `main` and `BoardUpdates`, pull requests to `main`, daily at 06:41 UTC (catching backend changes made in Lovable) and on demand (Actions → Live demo checks → Run workflow). The smoke test runs, then the end-to-end tests, never at the same time as another run, because both write to the demo organizations and clean up afterwards.
 
 Repository settings, all optional: the secret `SMOKE_DEMO_PASSWORD` if the demo accounts' password changes, and the variable `E2E_BASE_URL` (a deployed site) to also run the checkout test. Branch protection, which makes these checks required before merging, is set by the repository owner (Settings → Branches).
@@ -14,7 +15,8 @@ Repository settings, all optional: the secret `SMOKE_DEMO_PASSWORD` if the demo 
 | Types | `bun run typecheck` | `tsc --noEmit`, in strict mode |
 | Unit tests | `bun run test` | Vitest. Pure rules live next to their code (`*.test.ts`) |
 | Database rules | `TEST_DATABASE_URL=… bun run test:db` | Applies every migration to a throwaway Postgres, each in one transaction as Lovable may apply them, and runs `db/tests/*.sql` |
-| Migration conventions | `bun run check:migrations` | Lovable's import rules for migrations from 0004 on: `org_id`, full grants to `authenticated`, RLS with `has_permission` / `is_org_member` policies, no `DROP TABLE` / `DROP COLUMN` (`scripts/migration-rules.ts`) |
+| Migration conventions | `bun run check:migrations` | Lovable's import rules for migrations from 0004 on: `org_id`, full grants to `authenticated`, RLS with `has_permission` / `is_org_member` policies, no `DROP TABLE` / `DROP COLUMN` (`scripts/migration-rules.ts`). Checks `drizzle/migrations` (legacy) and `supabase/migrations`, where it also needs `<14-digit timestamp>_<NNNN>_<name>.sql` names with unique timestamps and numbers in order, and RLS and a policy on every table, Lovable's first ones too |
+| Replay | `supabase db reset --local` and the steps below | `supabase-db.yml`: every migration on a local Supabase stack, then lint, the RLS-and-grants catalog check, `db/tests` and the smoke test against the stack |
 | Build | `bun run build` | Production build |
 | Smoke test | `bun run test:smoke` | The backend flows against the live demo, without a browser (below). In `live.yml` |
 | End to end | `bun run test:e2e` | Playwright against the live demo backend (D-170). In `live.yml`, after the smoke test |
@@ -122,6 +124,20 @@ Current coverage:
 | `9T_no_open_read_rules` | 0042: permission lists, role permissions and logos have no "everyone" read rule; logos need sign-in and access to the organization |
 | `9A_receipts` | Receipt issued for each paid payment and frozen, numbering per org and year with no gaps, can't be changed or deleted, payer and admin access, void / issue again / reissue versions, partial and full refunds |
 | `90_tiers` | Membership levels and terms: isolation, term rules, parent control, retire not delete (deletes remove nothing), identity columns can't change |
+
+## Replay on a local Supabase stack (D-211)
+
+The `replay` job in `supabase-db.yml` builds the database the way the new Supabase project will be built, from `supabase/migrations` alone:
+
+1. Moves the Lovable `.env` aside (the CLI and the smoke client would read it).
+2. `supabase start` with only the database, auth, REST, storage and the gateway, then `supabase db reset --local`.
+3. `supabase db lint --local --level error --fail-on error`.
+4. `supabase/ci/post-replay-check.sql`: every `public` table has RLS on and a SELECT, INSERT, UPDATE or DELETE grant to `authenticated` or `service_role`. It reads the catalog, so tables secured in loops count too, and it names each failing table.
+5. `supabase/ci/db-tests.sh`: the `db/tests/*.sql` files, one at a time, on the real Supabase `auth` and `storage` schemas. Refuses any database that isn't local.
+6. `supabase/ci/fixtures.sql`: the demo accounts and organizations (`supabase/scripts/demo-test-accounts.sql`) with a password generated for the run.
+7. `supabase/ci/smoke-local.sh`: the smoke test (vitest, Node environment) against the stack, one file at a time. Refuses a non-local URL, or a `.env` still in place.
+
+Locally, with Docker and the Supabase CLI 2.122.1: move `.env` aside, then run the same commands from the repository root, and put `.env` back afterwards.
 
 ## Migrations Lovable hasn't applied yet
 

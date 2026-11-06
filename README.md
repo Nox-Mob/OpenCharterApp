@@ -101,6 +101,7 @@ GitHub runs all of these (D-197): `ci.yml` on every push and pull request, and `
 ### Database changes
 
 - Schema changes are SQL migrations in [`drizzle/migrations`](drizzle/migrations). They follow Lovable's import rules: full grants with row-level security and no dropping tables or columns.
+- **Moving off Lovable Cloud (Phase 0, D-211):** [`supabase/migrations`](supabase/migrations) is the single ordered history the new Supabase project is built from (the same files, plus fixes as new migrations). The "Supabase database" workflow rebuilds it on every pull request and deploys it by hand after approval. **`drizzle/` and `drizzle.config.ts` are legacy**: kept only while Lovable still applies `drizzle/migrations`, until the cutover. See [`docs/migration/`](docs/migration/).
 - Lovable applies them to the live database in order (and adds a small "confirm" migration of its own when it does). Until a migration is applied, screens that need it show "needs a database update" or leave the feature out instead of failing.
 - Migrations waiting to be applied are listed at the top of [`roadmap.md`](roadmap.md), with steps in [`docs/lovable-handoff.md`](docs/lovable-handoff.md). An applied migration is never edited; fixes ship as new migrations.
 

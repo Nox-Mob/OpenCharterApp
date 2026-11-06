@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkMigrations } from "./migration-rules";
+import { checkMigrations, checkSupabaseMigrations } from "./migration-rules";
 
 const good = `create table public.widgets (
   id uuid primary key default gen_random_uuid(),
@@ -60,5 +60,49 @@ describe("checkMigrations", () => {
   });
   it("leaves Lovable's earlier migrations alone", () => {
     expect(checkMigrations([file("0003_old.sql", good.replace(/grant[^\n]*\n/, ""))])).toEqual([]);
+  });
+});
+
+describe("checkSupabaseMigrations", () => {
+  it("accepts <timestamp>_<NNNN>_<name>.sql files that follow the conventions", () => {
+    expect(
+      checkSupabaseMigrations([
+        file("20261101140000_0008_widgets.sql", good),
+        file("20261101140001_0009_more.sql", "select 1;"),
+      ]),
+    ).toEqual([]);
+  });
+  it("rejects bad names, repeated timestamps or numbers, and numbers out of order", () => {
+    expect(checkSupabaseMigrations([file("0008_widgets.sql", good)])[0]).toMatch(/name must be/);
+    expect(
+      checkSupabaseMigrations([
+        file("20261101140000_0008_a.sql", "select 1;"),
+        file("20261101140000_0009_b.sql", "select 1;"),
+      ]),
+    ).toEqual([expect.stringContaining("timestamp 20261101140000 also used")]);
+    expect(
+      checkSupabaseMigrations([
+        file("20261101140000_0008_a.sql", "select 1;"),
+        file("20261101140001_0008_b.sql", "select 1;"),
+      ]),
+    ).toEqual([expect.stringContaining("number 0008 also used")]);
+    expect(
+      checkSupabaseMigrations([
+        file("20261101140000_0009_a.sql", "select 1;"),
+        file("20261101140001_0008_b.sql", "select 1;"),
+      ]),
+    ).toEqual([expect.stringContaining("out of order")]);
+  });
+  it("applies Lovable's conventions to the names without their timestamp", () => {
+    expect(
+      checkSupabaseMigrations([file("20261101140000_0008_x.sql", "drop table public.old;")]),
+    ).toEqual(["0008_x.sql: uses DROP TABLE"]);
+  });
+  it("needs RLS and a policy on every table, Lovable's first ones too", () => {
+    const bare = "create table public.early (\n  id uuid primary key\n);";
+    expect(checkSupabaseMigrations([file("20261030134653_0000_m.sql", bare)])).toEqual([
+      "public.early: row-level security is never enabled",
+      "public.early: has no policy",
+    ]);
   });
 });

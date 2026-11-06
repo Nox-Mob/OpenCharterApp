@@ -88,3 +88,60 @@ function hasPolicy(all: string, table: string): boolean {
     /public\.(has_permission|is_org_member)\s*\(/.test(m[1]!),
   );
 }
+
+/** supabase/migrations file names: `<14-digit UTC timestamp>_<legacy tag>.sql` (Phase 0). */
+const SUPABASE_NAME = /^(\d{14})_(\d{4}_[a-z0-9_]+)\.sql$/;
+
+/**
+ * The single migration history in supabase/migrations (Phase 0, docs/migration/):
+ * - every file is `<14-digit timestamp>_<NNNN>_<name>.sql`; timestamps and NNNN numbers are
+ *   unique and in the same order
+ * - Lovable's conventions above, applied to the names without their timestamp
+ * - every table in public, including Lovable's first ones, enables row-level security and has
+ *   at least one policy (tables secured inside `foreach ... execute format(...)` loops can't be
+ *   seen here: the replay job's catalog check, supabase/ci/post-replay-check.sql, covers them)
+ */
+export function checkSupabaseMigrations(files: readonly MigrationFile[]): string[] {
+  const problems: string[] = [];
+  const sorted = [...files].sort((a, b) => a.name.localeCompare(b.name));
+  const stamps = new Map<string, string>();
+  const tags = new Map<string, string>();
+  const legacy: MigrationFile[] = [];
+  let lastTag = "";
+  for (const f of sorted) {
+    const m = SUPABASE_NAME.exec(f.name);
+    if (!m) {
+      problems.push(`${f.name}: name must be <14-digit timestamp>_<NNNN>_<name>.sql`);
+      continue;
+    }
+    const [, stamp, tag] = m as unknown as [string, string, string];
+    const num = tag.slice(0, 4);
+    if (stamps.has(stamp))
+      problems.push(`${f.name}: timestamp ${stamp} also used by ${stamps.get(stamp)}`);
+    if (tags.has(num)) problems.push(`${f.name}: number ${num} also used by ${tags.get(num)}`);
+    if (num < lastTag) problems.push(`${f.name}: number ${num} is out of order`);
+    stamps.set(stamp, f.name);
+    tags.set(num, f.name);
+    lastTag = num;
+    legacy.push({ name: `${tag}.sql`, sql: f.sql });
+  }
+  problems.push(...checkMigrations(legacy));
+
+  const all = sorted
+    .map((f) => stripComments(f.sql))
+    .join("\n")
+    .toLowerCase();
+  const created = /create\s+table\s+(?:if\s+not\s+exists\s+)?public\.(\w+)\s*\(/gi;
+  for (const m of all.matchAll(created)) {
+    const table = m[1]!;
+    if (
+      !new RegExp(`alter\\s+table\\s+public\\.${table}\\s+enable\\s+row\\s+level\\s+security`).test(
+        all,
+      )
+    )
+      problems.push(`public.${table}: row-level security is never enabled`);
+    if (!new RegExp(`create\\s+policy\\s+"[^"]*"\\s+on\\s+public\\.${table}\\b`).test(all))
+      problems.push(`public.${table}: has no policy`);
+  }
+  return [...new Set(problems)];
+}
