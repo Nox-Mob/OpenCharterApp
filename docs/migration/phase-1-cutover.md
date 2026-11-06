@@ -47,15 +47,13 @@ Workers & Pages → your Worker → Settings:
 - **Build:** build command `bun run build`, deploy command `npx wrangler deploy` (Wrangler finds the generated config through `.wrangler/deploy/config.json`). The Worker name and compatibility date come from `wrangler.jsonc` in the repository (`opencharterapp`, matching the Worker); the build merges it into the generated config. Root directory: the repository root. Branch: `main`.
 - **Branch builds (previews):** branches other than `main` deploy with `npx wrangler preview`, which needs the `previews` block in `wrangler.jsonc` (present). Previews keep their own secrets (Worker → Previews, or `wrangler preview secret`); without them a preview's server functions can't reach Supabase. Sign-in on a preview address also needs that address in Supabase's redirect URLs (§2).
 - **Build variables:** none needed; the `VITE_*` values come from `.env`.
-- **Variables and Secrets** (runtime; add each as type **Secret**, because a plain variable set in the dashboard is removed by the next `wrangler deploy`):
+- **Plain variables** are in `wrangler.jsonc` (`vars`), deployed with the Worker: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and `PUBLIC_APP_URL=https://opencharterapp.org`. Don't add them in the dashboard as well: a variable and a secret with the same name make the deploy fail.
+- **Secrets** (Worker → Settings → Variables and Secrets, type **Secret**; they survive deploys). Only these two, both needed for online payments (checkout, refunds and the Stripe webhook use the service role; nothing else does):
 
 | Name | Value |
 |---|---|
-| `SUPABASE_URL` | `https://nxungwtxnctcqolfshcr.supabase.co` |
-| `SUPABASE_PUBLISHABLE_KEY` | the publishable key (same as `.env`) |
-| `SUPABASE_SERVICE_ROLE_KEY` | the new project's **secret** key (Supabase → Project Settings → API Keys). Secret |
-| `GATEWAY_ENCRYPTION_KEY` | a new random value: `openssl rand -base64 32`. Secret. Orgs connect Stripe again on the new project |
-| `PUBLIC_APP_URL` | `https://opencharterapp.org` |
+| `SUPABASE_SERVICE_ROLE_KEY` | the new project's **secret** key, `sb_secret_…` (Supabase → Project Settings → API Keys) |
+| `GATEWAY_ENCRYPTION_KEY` | a new random value: `openssl rand -base64 32`. Orgs connect Stripe again on the new project |
 
 - **Domains & Routes:** `opencharterapp.org` (and `www.` if you want it) as a custom domain of the Worker.
 

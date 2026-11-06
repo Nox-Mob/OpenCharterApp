@@ -9,5 +9,12 @@
   "compatibility_date": "2026-11-06",
   // Cloudflare builds branches other than main with `wrangler preview`, which needs this block
   // (it may stay empty: assets and compatibility settings stay at the top level).
-  "previews": {}
+  "previews": {},
+  // Plain (non-secret) runtime values for the server functions. Secrets
+  // (SUPABASE_SERVICE_ROLE_KEY, GATEWAY_ENCRYPTION_KEY) are set on the Worker, never here.
+  "vars": {
+    "PUBLIC_APP_URL": "https://opencharterapp.org",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_MCrW_dhmcTByXwf8s75dYw_GGV8_Tvw",
+    "SUPABASE_URL": "https://nxungwtxnctcqolfshcr.supabase.co"
+  }
 }
