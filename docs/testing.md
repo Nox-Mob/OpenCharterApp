@@ -133,8 +133,8 @@ The `replay` job in `supabase-db.yml` builds the database the way the new Supaba
 2. `supabase start` with only the database, auth, REST, storage and the gateway, then `supabase db reset --local`.
 3. `supabase db lint --local --level error --fail-on error`.
 4. `supabase/ci/post-replay-check.sql`: every `public` table has RLS on and a SELECT, INSERT, UPDATE or DELETE grant to `authenticated` or `service_role`. It reads the catalog, so tables secured in loops count too, and it names each failing table.
-5. `supabase/ci/db-tests.sh`: the `db/tests/*.sql` files, one at a time, on the real Supabase `auth` and `storage` schemas. Refuses any database that isn't local.
-6. `supabase/ci/fixtures.sql`: the demo accounts and organizations (`supabase/scripts/demo-test-accounts.sql`) with a password generated for the run.
+5. `supabase/ci/db-tests.sh`: the `db/tests/*.sql` files, one at a time, on the real Supabase `auth` and `storage` schemas. Refuses any database that isn't local, and one that already has accounts: the files build their own users and orgs (some with the demo IDs), so they run on the fresh replay, before the fixtures.
+6. `supabase/ci/fixtures.sql`: the demo accounts and organizations, and an empty Test-Demo (`supabase/scripts/demo-test-accounts.sql`), with a password generated for the run.
 7. `supabase/ci/smoke-local.sh`: the smoke test (vitest, Node environment) against the stack, one file at a time. Refuses a non-local URL, or a `.env` still in place.
 
 Locally, with Docker and the Supabase CLI 2.122.1: move `.env` aside, then run the same commands from the repository root, and put `.env` back afterwards.

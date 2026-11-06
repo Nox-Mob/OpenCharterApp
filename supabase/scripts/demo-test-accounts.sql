@@ -1,4 +1,5 @@
--- Demo test accounts and organizations (docs/demo-data.md) for the smoke and end-to-end tests.
+-- Demo test accounts and organizations (docs/demo-data.md) for the smoke and end-to-end tests:
+-- the three demo accounts, Demo National with Austin and Dallas, and an empty Test-Demo.
 -- Used two ways:
 --   * CI (replay job): supabase/ci/fixtures.sql runs it on the local stack.
 --   * The owner, once, on the new Supabase project (SQL Editor or psql), so the live demo checks
@@ -29,6 +30,8 @@ declare
   _nat constant uuid := 'd1000000-0000-4000-8000-000000000001';
   _aus constant uuid := 'd1000000-0000-4000-8000-000000000002';
   _dal constant uuid := 'd1000000-0000-4000-8000-000000000003';
+  -- Test-Demo, the sales demo national in the home-chapter model (docs/demo-data.md, D-199)
+  _tdemo constant uuid := 'd60400ef-9dbb-414a-9a3e-e0cbf2fc15ab';
   _admin uuid; _member uuid; _tier uuid; _rank uuid; _life uuid; _p uuid;
   _i int;
 begin
@@ -38,13 +41,14 @@ begin
 
   -- Refuse to touch real organizations.
   if exists (select 1 from public.organizations
-             where (id in (_nat, _aus, _dal) or slug in ('demo-national', 'demo-austin', 'demo-dallas'))
+             where (id in (_nat, _aus, _dal, _tdemo)
+                    or slug in ('demo-national', 'demo-austin', 'demo-dallas', 'test-demo'))
                and not is_demo) then
     raise exception 'a demo ID or slug belongs to a real organization; nothing was changed';
   end if;
   if exists (select 1 from public.organizations
              where (id = _nat and slug <> 'demo-national') or (id = _aus and slug <> 'demo-austin')
-                or (id = _dal and slug <> 'demo-dallas')) then
+                or (id = _dal and slug <> 'demo-dallas') or (id = _tdemo and slug <> 'test-demo')) then
     raise exception 'a demo ID is used by another organization; nothing was changed';
   end if;
   for _i in 1..3 loop
@@ -82,6 +86,15 @@ begin
     (_dal, _nat, 'chapter', 'Demo Dallas Chapter', 'demo-dallas', _users[1])
     on conflict (id) do nothing;
 
+  -- Test-Demo: an empty home-chapter demo national with Nora National as its admin. The end-to-end
+  -- tests read it; `bun scripts/seed-sales-demo.ts` fills it with chapters and members if wanted.
+  insert into public.organizations (id, type, name, slug, is_demo, created_by)
+    values (_tdemo, 'national', 'Test-Demo', 'test-demo', true, _users[1])
+    on conflict (id) do nothing;
+  insert into public.org_settings (org_id, key, value, mode)
+    values (_tdemo, 'membership.model', '"home_chapter"', 'override')
+    on conflict (org_id, key) do nothing;
+
   -- ----- people and roles -----
   select id into _admin from public.roles where key = 'org_admin' and org_id is null;
   select id into _member from public.roles where key = 'member' and org_id is null;
@@ -90,14 +103,16 @@ begin
       (_nat, _users[1], _emails[1], _names[1]),
       (_aus, _users[1], _emails[1], _names[1]),
       (_aus, _users[2], _emails[2], _names[2]),
-      (_aus, _users[3], _emails[3], _names[3])) v(o, u, e, n)
+      (_aus, _users[3], _emails[3], _names[3]),
+      (_tdemo, _users[1], _emails[1], _names[1])) v(o, u, e, n)
     where not exists (select 1 from public.org_member_profiles p where p.org_id = v.o and p.user_id = v.u);
   insert into public.role_assignments (user_id, role_id, org_id)
     select u, r, o from (values
       (_users[1], _admin, _nat),
       (_users[1], _member, _aus),
       (_users[2], _admin, _aus),
-      (_users[3], _member, _aus)) v(u, r, o)
+      (_users[3], _member, _aus),
+      (_users[1], _admin, _tdemo)) v(u, r, o)
     where not exists (select 1 from public.role_assignments a
                       where a.user_id = v.u and a.role_id = v.r and a.org_id = v.o);
 
