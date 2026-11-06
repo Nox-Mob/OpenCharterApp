@@ -36,6 +36,8 @@ Smoke and end-to-end runs add and then remove their own records (D-150), so coun
 
 ## The sales demo: Test-Demo (D-199)
 
+On the new Supabase project (D-212), `supabase/scripts/demo-test-accounts.sql` creates Test-Demo empty, with Nora National as admin; the seed script below fills it.
+
 **Test-Demo** (`test-demo`, d60400ef-…) is a demo national set up to look like a real association, for sales demos and for checking screens that need judgement with realistic numbers. It uses the **home-chapter model** (members belong to the national and pick a chapter). Filled on 2026-11-03 by `bun scripts/seed-sales-demo.ts`:
 
 - **15 chapters** in the Southwest and Colorado (Los Alamos is the at-large chapter), each with a charter date.

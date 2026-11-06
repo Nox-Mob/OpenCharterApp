@@ -1,5 +1,15 @@
 import { expect, test } from "./fixtures";
+import { rpc, signIn as apiSignIn, type Db } from "../smoke/client";
 import { DEMO, openOrg, openOrganizations, orgMenu, signIn } from "./helpers";
+
+/** Delete a throwaway demo national; warn instead of failing the test over cleanup. */
+async function removeDemo(admin: Db, id: string, name: string) {
+  try {
+    await rpc(admin, "delete_demo_organization", { _org: id, _confirm_name: name });
+  } catch (e) {
+    console.warn(`Couldn't delete demo organization "${name}" (${id}): ${(e as Error).message}`);
+  }
+}
 
 // Steps from docs/user-testing.md that a browser can check without changing anything (D-198).
 // Each test names the guide section it covers.
@@ -105,16 +115,38 @@ test("§14.0 members see the board but nothing to configure it", async ({ page }
 test("§6.2 a home-chapter national manages its own levels, even after opening Members", async ({
   page,
 }) => {
-  // Test-Demo (the sales demo, home-chapter model); read-only here
-  const TEST_DEMO = "d60400ef-9dbb-414a-9a3e-e0cbf2fc15ab";
-  await signIn(page, "national");
-  await page.goto(`/orgs/${TEST_DEMO}?tab=members`);
-  await expect(page.getByRole("heading", { level: 1, name: "Test-Demo" })).toBeVisible();
-  await page.waitForLoadState("networkidle");
-  // through the menu, so what the Members page loaded is still cached
-  await orgMenu(page).getByRole("button", { name: "Settings", exact: true }).click();
-  await orgMenu(page).getByRole("button", { name: "Membership levels" }).click();
-  await expect(page.getByRole("heading", { name: "How membership works here" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Add level" })).toBeVisible();
-  await expect(page.getByText(/doesn.t sell memberships of its own/)).toHaveCount(0);
+  // A throwaway home-chapter demo national, made through the same functions as the app's
+  // create dialog and deleted afterwards, so the test needs no data beyond the demo accounts.
+  const admin = await apiSignIn(DEMO.national);
+  const stale = await admin
+    .from("organizations")
+    .select("id,name")
+    .like("name", "E2E Home %")
+    .eq("is_demo", true)
+    .is("parent_id", null);
+  for (const o of stale.data ?? []) await removeDemo(admin, o.id as string, o.name as string);
+  const name = `E2E Home ${Date.now().toString(36)}`;
+  const id = await rpc<string>(admin, "create_demo_organization", {
+    _name: name,
+    _slug: name.toLowerCase().replace(/\s+/g, "-"),
+    _type: "national",
+  });
+  try {
+    const { error } = await admin
+      .from("org_settings")
+      .insert({ org_id: id, key: "membership.model", value: "home_chapter", mode: "locked" });
+    if (error) throw new Error(error.message);
+    await signIn(page, "national");
+    await page.goto(`/orgs/${id}?tab=members`);
+    await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    // through the menu, so what the Members page loaded is still cached
+    await orgMenu(page).getByRole("button", { name: "Settings", exact: true }).click();
+    await orgMenu(page).getByRole("button", { name: "Membership levels" }).click();
+    await expect(page.getByRole("heading", { name: "How membership works here" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Add level" })).toBeVisible();
+    await expect(page.getByText(/doesn.t sell memberships of its own/)).toHaveCount(0);
+  } finally {
+    await removeDemo(admin, id, name);
+  }
 });

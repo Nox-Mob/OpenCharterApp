@@ -4,9 +4,9 @@ Every change must keep all of these green (instructions.md §3). GitHub runs the
 
 - **`ci.yml`, no live backend needed:** on every push to any branch, every pull request, every Monday (so new dependency advisories surface without a push) and on demand. Jobs: lint, formatting, types, unit tests and migration conventions; database rules; performance; dependency audit; build; and the docs check on pull requests.
 - **`supabase-db.yml`, "Supabase database" (D-211):** on every pull request and on pushes to `main` and `supabase-migration`, the `replay` job rebuilds the database from `supabase/migrations` on a local Supabase stack (CLI 2.122.1) and checks it (below). It is skipped on a branch without `supabase/migrations`. The `deploy` job runs only by hand (Actions → Supabase database → Run workflow), after approval in the `supabase-prod` environment, with "dry run" on by default.
-- **`live.yml`, the live demo backend:** on pushes to `main` and `BoardUpdates`, pull requests to `main`, daily at 06:41 UTC (catching backend changes made in Lovable) and on demand (Actions → Live demo checks → Run workflow). The smoke test runs, then the end-to-end tests, never at the same time as another run, because both write to the demo organizations and clean up afterwards.
+- **`live.yml`, the live demo backend** (the project `.env` points at: the new Supabase project since Phase 1, D-212, which needs the demo accounts from `supabase/scripts/demo-test-accounts.sql`): on pushes to `main` and `BoardUpdates`, pull requests to `main`, daily at 06:41 UTC (catching backend changes made in Lovable) and on demand (Actions → Live demo checks → Run workflow). The smoke test runs, then the end-to-end tests, never at the same time as another run, because both write to the demo organizations and clean up afterwards.
 
-Repository settings, all optional: the secret `SMOKE_DEMO_PASSWORD` if the demo accounts' password changes, and the variable `E2E_BASE_URL` (a deployed site) to also run the checkout test. Branch protection, which makes these checks required before merging, is set by the repository owner (Settings → Branches).
+Repository settings, all optional: the secret `SMOKE_DEMO_PASSWORD` if the demo accounts' password changes, and the variable `E2E_BASE_URL` (a deployed site, e.g. `https://opencharterapp.org`) to also run the checkout test on pushes to `main`, the daily run and manual runs. Branch protection, which makes these checks required before merging, is set by the repository owner (Settings → Branches).
 
 | Check | Command | What it covers |
 |---|---|---|
@@ -58,13 +58,15 @@ Notes:
   - Chromium's sandbox is on. It can't run as root: in a root-only sandbox, set `E2E_NO_SANDBOX=1`.
   - `E2E_BROWSER_CHANNEL=chrome` uses the installed Google Chrome instead of Playwright's bundled Chromium; CI does this.
   - Where Playwright's own Chromium build can't be installed, set `E2E_CHROMIUM_PATH` to an existing Chromium. In the Claude cloud sandbox: `E2E_NO_SANDBOX=1 E2E_CHROMIUM_PATH=/opt/pw-browsers/chromium bun run test:e2e`.
-- In CI the job installs Google Chrome stable (`playwright install --with-deps chrome`) and runs as a non-root user with the sandbox on. It uses the repository variable `E2E_BASE_URL` when set, and uploads traces when a test fails.
+- In CI the job installs Google Chrome stable (`playwright install --with-deps chrome`) and runs as a non-root user with the sandbox on. It uses the repository variable `E2E_BASE_URL` when set, except on pull requests: the deployed site runs `main`, not the pull request's code, so a pull request always tests a local dev server built from its own code (D-212). It uploads traces when a test fails.
 
 ## Live smoke test
 
 In CI it runs in `live.yml` (see the top of this page). A receipt-numbering check looks only at the receipts issued during the run, because earlier runs' receipts are purged and leave gaps in the demo org's numbering.
 
 `bun run test:smoke` signs in as the demo accounts (docs/demo-data.md) and checks the applied migrations against the real backend, with no clicking: levels and parent control, check payments and standing, receipts and voiding, the test gateway, joining (declined, accepted, idempotent, approval, renewal, decline with refund; required join questions such as Rank are answered automatically), audited exports, saved views, the directory opt-out, board seats, terms and appointments, board setup applied twice (0018), national/region reports (0019), two-level dues with an Austin level (0020), pricing rules (0021), and creating/deleting a demo organization (0022). The dues section saves and restores the national's dues settings itself. Each run creates uniquely named records in the demo orgs only; when it finishes it calls `purge_smoke_data` (D-150) to delete everything created in the demo orgs since the run started, while the original demo data stays. Don't edit the demo orgs while a smoke run is in progress, or those edits are removed too. It is not part of `bun run test` or CI because it needs network access and changes demo data. Set `SMOKE_DEMO_PASSWORD` if the demo password changes. Checks for 0024 onwards (seat scope, contact emails, payments export, home chapter) are covered by the database tests and end-to-end specs instead.
+
+End-to-end specs that need a home-chapter national (`guide-checks` §6.2, `lifecycle`) create a throwaway demo national and delete it afterwards, so they need only the demo accounts and orgs (D-212).
 
 Because the demo national manages membership levels, the money flows run at Demo National; Austin is used for the parent-control, sibling-isolation and chapter-seat checks.
 
@@ -133,8 +135,8 @@ The `replay` job in `supabase-db.yml` builds the database the way the new Supaba
 2. `supabase start` with only the database, auth, REST, storage and the gateway, then `supabase db reset --local`.
 3. `supabase db lint --local --level error --fail-on error`.
 4. `supabase/ci/post-replay-check.sql`: every `public` table has RLS on and a SELECT, INSERT, UPDATE or DELETE grant to `authenticated` or `service_role`. It reads the catalog, so tables secured in loops count too, and it names each failing table.
-5. `supabase/ci/db-tests.sh`: the `db/tests/*.sql` files, one at a time, on the real Supabase `auth` and `storage` schemas. Refuses any database that isn't local.
-6. `supabase/ci/fixtures.sql`: the demo accounts and organizations (`supabase/scripts/demo-test-accounts.sql`) with a password generated for the run.
+5. `supabase/ci/db-tests.sh`: the `db/tests/*.sql` files, one at a time, on the real Supabase `auth` and `storage` schemas. Refuses any database that isn't local, and one that already has accounts: the files build their own users and orgs (some with the demo IDs), so they run on the fresh replay, before the fixtures.
+6. `supabase/ci/fixtures.sql`: the demo accounts and organizations, and an empty Test-Demo (`supabase/scripts/demo-test-accounts.sql`), with a password generated for the run.
 7. `supabase/ci/smoke-local.sh`: the smoke test (vitest, Node environment) against the stack, one file at a time. Refuses a non-local URL, or a `.env` still in place.
 
 Locally, with Docker and the Supabase CLI 2.122.1: move `.env` aside, then run the same commands from the repository root, and put `.env` back afterwards.

@@ -13,6 +13,7 @@
 
 Read `docs/instructions.md` before changing code; planning docs live in `docs/`. Track work in `roadmap.md`.
 
+- Phase 1 (D-212): the app runs on its own Supabase project (`.env`) and a Cloudflare Worker built from `main`; Google sign-in goes through `supabase.auth.signInWithOAuth`, not Lovable. The database is built only from `supabase/migrations` by the "Supabase database" workflow; after the cutover, new migrations go there (`docs/migration/`).
 - Stack is TanStack Start + Lovable Cloud (see docs/decisions.md D-100..D-104), superseding the Next.js/pg-boss/Better Auth defaults — the Lovable toolchain requires it.
 - Every tenant table has `org_id`, explicit GRANTs and RLS using `public.has_permission` / `public.is_org_member` — RLS is the safety net for tenant isolation.
 - Authorization goes through `src/lib/policy` (UI) and `has_permission` (DB); never ad hoc checks — keeps downward-only inheritance (D-032) in one place.

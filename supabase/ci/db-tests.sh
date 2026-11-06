@@ -19,6 +19,14 @@ esac
 
 run() { psql "$URL" -v ON_ERROR_STOP=1 -q -X "$@"; }
 
+# The test files build their own users and orgs (some with the demo IDs) and expect an empty
+# database: run them on a fresh replay, before the demo fixtures are loaded.
+users=$(psql "$URL" -X -At -c "select count(*) from auth.users")
+if [ "$users" != "0" ]; then
+  echo "db-tests: the database already has $users accounts; run on a fresh replay (supabase db reset --local), before supabase/ci/fixtures.sql" >&2
+  exit 2
+fi
+
 # The helpers create schema "tests"; start from a clean copy so the script can run twice.
 run -c "drop schema if exists tests cascade"
 run -f "$ROOT/db/tests/00_helpers.sql"

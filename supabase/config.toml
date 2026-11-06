@@ -3,7 +3,7 @@
 # Supabase CLI 2.122.1. Reference: https://supabase.com/docs/guides/local-development/cli/config
 # Hosted-project settings that aren't pushed from here are listed in
 # docs/migration/settings-to-reenter.md.
-project_id = "opencharterapp"
+project_id = "nxungwtxnctcqolfshcr"
 
 [api]
 enabled = true
@@ -129,9 +129,10 @@ verify_enabled = false
 enroll_enabled = false
 verify_enabled = false
 
-# Google sign-in today goes through Lovable's broker (src/integrations/lovable). Phase 1 moves it
-# to Supabase Auth; until then it is present but off. Values come from the environment, never
-# from this file.
+# Google sign-in goes through Supabase Auth (D-212). On the hosted project it is set up in the
+# dashboard (docs/migration/phase-1-cutover.md §2a). Off on the local stack; to try it locally,
+# set the two variables below and enabled = true. Values come from the environment, never from
+# this file.
 [auth.external.google]
 enabled = false
 client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"

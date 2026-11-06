@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- OpenCharterApp mark: ink-green tile, paper "C", brass rule (app colours, src/styles.css) -->
+  <rect width="32" height="32" rx="7" fill="#104832"/>
+  <path d="M21.2 9.82 A7 7 0 1 0 21.2 19.18" fill="none" stroke="#f6f1e7" stroke-width="3.6" stroke-linecap="round"/>
+  <rect x="8.5" y="23.6" width="15" height="2.4" rx="1.2" fill="#c18e35"/>
+</svg>

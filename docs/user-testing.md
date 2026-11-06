@@ -53,12 +53,13 @@ Still for a person: anything about looks, wording, phones, printing and screen r
 
 ## 1. Sign-in, password reset, invitations
 **Where:** `/auth`, the sign-in link on the home page.
+0. The browser tab shows the OpenCharterApp icon (an ink-green tile with a light "C" over a brass line), not Lovable's.
 1. Sign in as **Chapter**. Expect your default organization (Account → Default organization), or your only one, or else the list of your organizations.
 2. Sign out, then sign in with a wrong password. Expect "Email or password is incorrect." Nothing should say whether the email exists.
 3. "Forgot password?" → enter an email → "Send reset link". Expect a neutral message, whether or not the account exists.
 4. As **Chapter**: Demo Austin Chapter → Members → "Invite someone" → "Create invite link". Copy the link and open it in a private window. Expect the invitation page; accepting needs a button press.
 
-5. **Account** (sidebar → Account), as **Member**: your name, email and organizations are shown. **Default organization**: pick an organization, sign out and back in, and expect it to open; pick "The list of my organizations" to put it back. Change your name and save: it shows on your member record at Austin. "Change email" sends a confirmation link to the new address (use a mailbox you control; don't change the demo accounts' emails); the page says so until it's opened. Change the password twice to put it back (`OpenCharterDemo!2026`). A Google sign-in shows no password section.
+5. **Account** (sidebar → Account), as **Member**: your name, email and organizations are shown. **Default organization**: pick an organization, sign out and back in, and expect it to open; pick "The list of my organizations" to put it back. Change your name and save: it shows on your member record at Austin. "Change email" sends a confirmation link to the new address (use a mailbox you control; don't change the demo accounts' emails); the page says so until it's opened. Change the password twice to put it back (`OpenCharterDemo!2026`). A Google sign-in shows no password section. **Google sign-in** (D-212): "Continue with Google" on the sign-in page goes to Google and back to the app signed in, through the app's own Supabase project.
 6. **Privacy policy and terms**: the sign-in page, the landing page and the app's footer link to them; "Create an account" says "By creating an account you agree to…", and the join page says "By joining you agree to…". Both pages show the effective date, last-updated date and "Operating organization: OpenAppHub", numbered sections (22 in the terms, 19 in the privacy policy, with 3.1–3.5 under "Information We Collect"), and no placeholder banner. Only the two contact emails are still in [brackets].
 
 **Also try:** opening the same invite link a second time after accepting (it should say it's used).
