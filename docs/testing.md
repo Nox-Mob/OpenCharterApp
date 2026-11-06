@@ -6,7 +6,7 @@ Every change must keep all of these green (instructions.md §3). GitHub runs the
 - **`supabase-db.yml`, "Supabase database" (D-211):** on every pull request and on pushes to `main` and `supabase-migration`, the `replay` job rebuilds the database from `supabase/migrations` on a local Supabase stack (CLI 2.122.1) and checks it (below). It is skipped on a branch without `supabase/migrations`. The `deploy` job runs only by hand (Actions → Supabase database → Run workflow), after approval in the `supabase-prod` environment, with "dry run" on by default.
 - **`live.yml`, the live demo backend** (the project `.env` points at: the new Supabase project since Phase 1, D-212, which needs the demo accounts from `supabase/scripts/demo-test-accounts.sql`): on pushes to `main` and `BoardUpdates`, pull requests to `main`, daily at 06:41 UTC (catching backend changes made in Lovable) and on demand (Actions → Live demo checks → Run workflow). The smoke test runs, then the end-to-end tests, never at the same time as another run, because both write to the demo organizations and clean up afterwards.
 
-Repository settings, all optional: the secret `SMOKE_DEMO_PASSWORD` if the demo accounts' password changes, and the variable `E2E_BASE_URL` (a deployed site) to also run the checkout test. Branch protection, which makes these checks required before merging, is set by the repository owner (Settings → Branches).
+Repository settings, all optional: the secret `SMOKE_DEMO_PASSWORD` if the demo accounts' password changes, and the variable `E2E_BASE_URL` (a deployed site, e.g. `https://opencharterapp.org`) to also run the checkout test on pushes to `main`, the daily run and manual runs. Branch protection, which makes these checks required before merging, is set by the repository owner (Settings → Branches).
 
 | Check | Command | What it covers |
 |---|---|---|
@@ -58,7 +58,7 @@ Notes:
   - Chromium's sandbox is on. It can't run as root: in a root-only sandbox, set `E2E_NO_SANDBOX=1`.
   - `E2E_BROWSER_CHANNEL=chrome` uses the installed Google Chrome instead of Playwright's bundled Chromium; CI does this.
   - Where Playwright's own Chromium build can't be installed, set `E2E_CHROMIUM_PATH` to an existing Chromium. In the Claude cloud sandbox: `E2E_NO_SANDBOX=1 E2E_CHROMIUM_PATH=/opt/pw-browsers/chromium bun run test:e2e`.
-- In CI the job installs Google Chrome stable (`playwright install --with-deps chrome`) and runs as a non-root user with the sandbox on. It uses the repository variable `E2E_BASE_URL` when set, and uploads traces when a test fails.
+- In CI the job installs Google Chrome stable (`playwright install --with-deps chrome`) and runs as a non-root user with the sandbox on. It uses the repository variable `E2E_BASE_URL` when set, except on pull requests: the deployed site runs `main`, not the pull request's code, so a pull request always tests a local dev server built from its own code (D-212). It uploads traces when a test fails.
 
 ## Live smoke test
 

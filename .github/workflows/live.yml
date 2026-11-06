@@ -7,7 +7,9 @@ name: Live demo checks
 #
 # Repository settings (all optional):
 # - secret SMOKE_DEMO_PASSWORD: the demo accounts' password, if it's changed from the default
-# - variable E2E_BASE_URL: a deployed site (preview or published) to also run the checkout test
+# - variable E2E_BASE_URL: a deployed site (preview or published) to also run the checkout test.
+#   Used on pushes to main, the daily run and manual runs only: a pull request tests its own code
+#   on a local dev server, because the deployed site still runs main until the merge (D-212).
 on:
   push:
     branches: [main, BoardUpdates]
@@ -54,7 +56,7 @@ jobs:
         env:
           CI: "true"
           E2E_BROWSER_CHANNEL: chrome
-          E2E_BASE_URL: ${{ vars.E2E_BASE_URL }}
+          E2E_BASE_URL: ${{ github.event_name != 'pull_request' && vars.E2E_BASE_URL || '' }}
           SMOKE_DEMO_PASSWORD: ${{ secrets.SMOKE_DEMO_PASSWORD }}
       - uses: actions/upload-artifact@v4
         if: failure()
