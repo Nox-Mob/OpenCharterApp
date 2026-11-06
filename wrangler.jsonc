@@ -1,0 +1,10 @@
+// Cloudflare Worker settings (D-212). `bun run build` (nitro, cloudflare-module preset) merges
+// this into .output/server/wrangler.json, and `npx wrangler deploy` finds that file through
+// .wrangler/deploy/config.json. The name must match the Worker in the Cloudflare dashboard.
+// Secrets are set on the Worker, never here (docs/migration/phase-1-cutover.md §4).
+{
+  "name": "opencharterapp",
+  // Pinned so a build doesn't change runtime behaviour by date; nodejs_compat is on by default
+  // from 2026-08-04.
+  "compatibility_date": "2026-11-06"
+}

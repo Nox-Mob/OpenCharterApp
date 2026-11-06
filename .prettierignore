@@ -13,3 +13,4 @@ src/integrations
 supabase
 roadmap.md
 AGENTS.md
+wrangler.jsonc

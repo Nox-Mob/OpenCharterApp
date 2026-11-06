@@ -44,7 +44,7 @@ Optional: the sales demo national Test-Demo existed only on Lovable. To have it 
 
 Workers & Pages → your Worker → Settings:
 
-- **Build:** build command `bun run build`, deploy command `npx wrangler deploy` (Wrangler finds the generated config through `.wrangler/deploy/config.json`). The generated Worker name is `nox-mob-opencharterapp`; if your Worker has another name, use `npx wrangler deploy --name <your worker name>`. Root directory: the repository root. Branch: `main`.
+- **Build:** build command `bun run build`, deploy command `npx wrangler deploy` (Wrangler finds the generated config through `.wrangler/deploy/config.json`). The Worker name and compatibility date come from `wrangler.jsonc` in the repository (`opencharterapp`, matching the Worker); the build merges it into the generated config. Root directory: the repository root. Branch: `main`.
 - **Build variables:** none needed; the `VITE_*` values come from `.env`.
 - **Variables and Secrets** (runtime; add each as type **Secret**, because a plain variable set in the dashboard is removed by the next `wrangler deploy`):
 
