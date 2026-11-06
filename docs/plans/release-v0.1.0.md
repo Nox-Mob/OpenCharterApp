@@ -20,7 +20,7 @@ Status on 2026-11-05. The MVP on branch `BoardUpdates` is built and live on Lova
 | 1 | ~~Apply the waiting migrations~~ | Lovable | Done: `0000`–`0045` applied |
 | 2 | Live Stripe test-mode run on a non-demo test org (A1) | Owner | Needs a Stripe test account; `docs/user-testing.md` §10 |
 | 3 | Receipt tax wording looked at by a CPA (R4, R-07) | Owner | If not done, 0.1.0 ships the placeholder wording; the changelog says so |
-| 4 | Final privacy policy and terms of service text | Owner | Replace the placeholder in `src/content/legal.tsx`, then set `LEGAL_PLACEHOLDER = false` (D-193) |
+| 4 | ~~Final privacy policy and terms of service text~~ | Owner | Done (D-210); still to fill in: the legal/privacy and support emails (`LEGAL_CONTACT_EMAIL`, `SUPPORT_EMAIL` in `src/content/legal.tsx`) |
 | 5 | Add the AGPL-3.0 `LICENSE` file and `"license": "AGPL-3.0-only"` in `package.json` (R-24) | Owner / maintainer | GitHub: Add file → Create new file → `LICENSE` → Choose a license template → GNU AGPL v3 |
 | 6 | A person's pass through `docs/user-testing.md` | Owner | The guide marks what the browser tests already check; the rest needs judgement (looks, wording, phones, printing, screen readers) or real money. Use Test-Demo for screens that need realistic numbers |
 | 7 | Branch protection on `main` (required checks: CI and Live demo checks) | Owner | GitHub → Settings → Branches |
