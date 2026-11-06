@@ -5,20 +5,24 @@ import { Link } from "@tanstack/react-router";
 export type LegalSection = { heading: string; body: ReactNode };
 
 /**
- * Privacy policy and terms of service (U5, D-193). The text is a placeholder the owner replaces
- * before launch; until then a banner says so. Edit `src/content/legal.tsx`.
+ * Privacy policy and terms of service (U5, D-193, D-210). The text lives in
+ * `src/content/legal.tsx`; while `placeholder` is set a banner says the wording isn't final.
  */
 export function LegalPage({
   title,
+  effective,
   updated,
+  operator,
   placeholder,
   intro,
   sections,
 }: {
   title: string;
+  effective: string;
   updated: string;
+  operator: string;
   placeholder: boolean;
-  intro: ReactNode;
+  intro?: ReactNode;
   sections: readonly LegalSection[];
 }) {
   return (
@@ -29,7 +33,14 @@ export function LegalPage({
         </Link>
       </p>
       <h1 className="text-3xl font-semibold">{title}</h1>
-      <p className="text-sm text-muted-foreground">Last updated: {updated}</p>
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm text-muted-foreground">
+        <dt>Effective date:</dt>
+        <dd>{effective}</dd>
+        <dt>Last updated:</dt>
+        <dd>{updated}</dd>
+        <dt>Operating organization:</dt>
+        <dd>{operator}</dd>
+      </dl>
       {placeholder && (
         <p
           role="note"
@@ -39,7 +50,7 @@ export function LegalPage({
           is used with real members. Words in [brackets] are still to be filled in.
         </p>
       )}
-      <div className="space-y-3 leading-relaxed">{intro}</div>
+      {intro && <div className="space-y-3 leading-relaxed">{intro}</div>}
       {sections.map((s, i) => (
         <section key={s.heading} className="space-y-2">
           <h2 className="text-xl font-semibold">
