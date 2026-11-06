@@ -3,7 +3,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { safeRedirect } from "@/modules/invitations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,11 +83,13 @@ function AuthPage() {
 
   async function google() {
     sessionStorage.setItem("postAuthRedirect", dest);
-    const r = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/auth",
+    // Supabase Auth with the project's own Google OAuth client (D-212). The browser leaves for
+    // Google and comes back to /auth signed in; the effect above continues to the destination.
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/auth" },
     });
-    if (r.error) return void toast.error("Google sign-in failed");
-    if (!r.redirected) navigate({ href: dest });
+    if (error) return void toast.error("Google sign-in failed");
   }
 
   return (

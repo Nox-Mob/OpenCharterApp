@@ -59,7 +59,7 @@ Every migration (up to `0045`) is applied to the live database; none is waiting 
 - [Bun](https://bun.sh) 1.x. The project uses Bun as its package manager (decision D-104), so don't use npm, Yarn or pnpm.
 - Git.
 - PostgreSQL 16 or newer, only for running the database rule tests locally.
-- For the end-to-end tests: Playwright 1.64.1 (pinned) with Chromium (`bunx playwright install chromium`) or Google Chrome (`E2E_BROWSER_CHANNEL=chrome`), and network access to the Lovable Cloud backend. The test browser runs with its sandbox on and may only reach the app and its backend (`docs/testing.md`).
+- For the end-to-end tests: Playwright 1.64.1 (pinned) with Chromium (`bunx playwright install chromium`) or Google Chrome (`E2E_BROWSER_CHANNEL=chrome`), and network access to the Supabase backend in `.env`. The test browser runs with its sandbox on and may only reach the app and its backend (`docs/testing.md`).
 
 ### Set up
 
@@ -104,6 +104,10 @@ GitHub runs all of these (D-197): `ci.yml` on every push and pull request, and `
 - **Moving off Lovable Cloud (Phase 0, D-211):** [`supabase/migrations`](supabase/migrations) is the single ordered history the new Supabase project is built from (the same files, plus fixes as new migrations). The "Supabase database" workflow rebuilds it on every pull request and deploys it by hand after approval. **`drizzle/` and `drizzle.config.ts` are legacy**: kept only while Lovable still applies `drizzle/migrations`, until the cutover. See [`docs/migration/`](docs/migration/).
 - Lovable applies them to the live database in order (and adds a small "confirm" migration of its own when it does). Until a migration is applied, screens that need it show "needs a database update" or leave the feature out instead of failing.
 - Migrations waiting to be applied are listed at the top of [`roadmap.md`](roadmap.md), with steps in [`docs/lovable-handoff.md`](docs/lovable-handoff.md). An applied migration is never edited; fixes ship as new migrations.
+
+### Hosting (Phase 1, D-212)
+
+- The app runs as a Cloudflare Worker built from `main` (`opencharterapp.org`), on its own Supabase project. Google sign-in goes through Supabase Auth. Server secrets are set on the Worker. Checklist: [`docs/migration/phase-1-cutover.md`](docs/migration/phase-1-cutover.md).
 
 ### Working with Lovable
 

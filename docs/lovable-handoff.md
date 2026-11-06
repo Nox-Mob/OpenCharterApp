@@ -6,6 +6,8 @@ Status on 2026-11-05.
 
 **Waiting:** nothing.
 
+**Phase 1 (D-212):** the app moves to its own Supabase project and Cloudflare (`docs/migration/phase-1-cutover.md`). After the cutover Lovable no longer applies migrations; new ones go only in `supabase/migrations`.
+
 **Not for Lovable:** `supabase/` (`supabase/migrations`, `config.toml`, `ci/`, `scripts/`) is for the new Supabase project (D-211). Don't apply `supabase/migrations`; the `branding` bucket its `0046` creates already exists on Lovable Cloud.
 
 ## 1. When a migration is waiting

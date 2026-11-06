@@ -89,7 +89,7 @@ Read from the catalog of a replayed local database (`supabase db reset`).
 
 | What | Where |
 |---|---|
-| `@lovable.dev/cloud-auth-js` (Google sign-in broker) | `package.json:31`; `src/integrations/lovable/index.ts:3-4,6,13-16`; used by `src/routes/auth.tsx:6,85-87` |
+| `@lovable.dev/cloud-auth-js` (Google sign-in broker; **removed in Phase 1**, D-212) | `package.json:31`; `src/integrations/lovable/index.ts:3-4,6,13-16`; used by `src/routes/auth.tsx:6,85-87` |
 | `@lovable.dev/vite-tanstack-config` (build config) | `package.json:87`; `vite.config.ts:1,7`; `bunfig.toml:7` (also lists `@lovable.dev/mcp-js`, `ai-gateway`, `email-js`, `webhooks-js` as release-age exceptions; none are installed) |
 | Lovable preview sign-in storage (iframe broker for `*.lovable.app` / `lovableproject.com`) | `src/integrations/supabase/previewAuthStorage.ts` (whole file); `src/integrations/supabase/client.ts:4` |
 | Lovable editor error reporting | `src/lib/lovable-error-reporting.ts`; `src/routes/__root.tsx:14,44` |

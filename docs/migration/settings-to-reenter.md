@@ -15,7 +15,7 @@ Dashboard → Project Settings → Data API (and Database):
 
 - **Email** (email and password): on. Signups on. Check whether Lovable required email confirmation and match it ("Confirm email"). The local stack has it off.
 - Minimum password length: 8 (the reset-password screen asks for 8).
-- **Google:** used today through Lovable's broker (`@lovable.dev/cloud-auth-js`), not Supabase. It moves to Supabase Auth in **Phase 1**. Then: create an OAuth client in Google Cloud, enter its client ID and secret in the dashboard, and add the project's callback URL in Google. `supabase/config.toml` has `[auth.external.google]` present but `enabled = false`, reading `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` and `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET` from the environment.
+- **Google:** through Supabase Auth since Phase 1 (D-212; Lovable's broker is gone). Create an OAuth client in Google Cloud with the redirect URI `https://<project ref>.supabase.co/auth/v1/callback`, and enter its client ID and secret in the dashboard (steps: phase-1-cutover.md §2a). `supabase/config.toml` has `[auth.external.google]` present but `enabled = false`, reading `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` and `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET` from the environment.
 - Anonymous sign-ins, phone, other providers: off.
 
 ## 3. Redirect URLs (Authentication → URL Configuration)
@@ -39,7 +39,7 @@ None. No migration uses `pg_cron` or `pg_net`, and no route uses `src/integratio
 
 ## 7. Secrets and environment variables (names only)
 
-**App server** (Lovable Cloud secrets today; your host's environment after the cutover):
+**App server** (Cloudflare Worker secrets since Phase 1, phase-1-cutover.md §4; set each as type Secret so `wrangler deploy` keeps it):
 
 | Name | What |
 |---|---|
@@ -59,7 +59,7 @@ None. No migration uses `pg_cron` or `pg_net`, and no route uses `src/integratio
 | `SUPABASE_ACCESS_TOKEN` | secret | `supabase-db.yml` deploy: a personal access token with the scopes in §8 |
 | `SUPABASE_DB_PASSWORD` | secret | deploy: the new project's database password |
 | `SUPABASE_PROJECT_ID` | secret | deploy: the new project's ref (the 20-letter ID in its URL) |
-| `SMOKE_DEMO_PASSWORD` | secret | `live.yml`: the demo accounts' password (§9) |
+| `SMOKE_DEMO_PASSWORD` | secret | `live.yml`: the demo accounts' password (§9). A **repository** secret (`live.yml` uses no environment). Only set it if the demo accounts use a password other than the default in docs/demo-data.md: once set, the live checks use it for whichever project `.env` points at |
 | `E2E_BASE_URL` | variable | `live.yml`: a deployed site for the checkout test |
 
 ## 8. The deploy job's access token
