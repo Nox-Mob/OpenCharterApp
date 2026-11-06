@@ -6,6 +6,8 @@ Status on 2026-11-05.
 
 **Waiting:** nothing.
 
+**Not for Lovable:** `supabase/` (`supabase/migrations`, `config.toml`, `ci/`, `scripts/`) is for the new Supabase project (D-211). Don't apply `supabase/migrations`; the `branding` bucket its `0046` creates already exists on Lovable Cloud.
+
 ## 1. When a migration is waiting
 - Apply them strictly in order. They're additive only (D-125, checked in CI by `bun run check:migrations`).
 - If one fails, stop and keep the error message. Don't edit the file to make it pass; we ship a fix as a new migration.

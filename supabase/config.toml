@@ -1,1 +1,147 @@
-project_id = "odqswxftrhtvyadizkgn"
+# Supabase CLI config for OpenCharterApp (Phase 0, docs/migration/phase-0-inventory.md).
+# Used by the local stack and the `replay` job in .github/workflows/supabase-db.yml.
+# Supabase CLI 2.122.1. Reference: https://supabase.com/docs/guides/local-development/cli/config
+# Hosted-project settings that aren't pushed from here are listed in
+# docs/migration/settings-to-reenter.md.
+project_id = "opencharterapp"
+
+[api]
+enabled = true
+port = 54321
+# Only public (and graphql_public) are exposed through the Data API.
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+# The API caps each request at 1,000 rows (readAllPages, D-181).
+max_rows = 1000
+# New tables are not reachable through the Data API without explicit GRANTs in a migration,
+# matching the new project's "Automatically expose new tables" = off.
+auto_expose_new_tables = false
+
+[api.tls]
+enabled = false
+
+[db]
+port = 54322
+shadow_port = 54320
+health_timeout = "2m"
+major_version = 17
+
+[db.pooler]
+enabled = false
+
+[db.migrations]
+enabled = true
+
+[db.seed]
+# Off: the demo data needs real accounts. CI creates its own fixtures (supabase/ci/fixtures.sql).
+enabled = false
+
+[realtime]
+enabled = false
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+
+[local_smtp]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+# Organization logos (src/modules/branding): private, read through signed URLs, 2 MB, images only.
+# The bucket row itself is created by migration 20261106000000_0046_storage_buckets.sql so the
+# hosted project gets it from `db push` too.
+[storage.buckets.branding]
+public = false
+file_size_limit = "2MiB"
+allowed_mime_types = ["image/png", "image/jpeg", "image/svg+xml", "image/webp"]
+
+[storage.s3_protocol]
+enabled = false
+
+[storage.analytics]
+enabled = false
+
+[storage.vector]
+enabled = false
+
+[auth]
+enabled = true
+# Local only. The hosted project's site and redirect URLs are set in its dashboard
+# (docs/migration/settings-to-reenter.md).
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:*", "http://localhost:*/**"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+enable_manual_linking = false
+# The reset-password screen asks for at least 8 characters.
+minimum_password_length = 8
+password_requirements = ""
+
+[auth.rate_limit]
+email_sent = 2
+sms_sent = 30
+anonymous_users = 30
+token_refresh = 150
+# The DB tests and smoke checks sign in several accounts in a row.
+sign_in_sign_ups = 300
+token_verifications = 30
+web3 = 30
+
+# Email and password sign-in.
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+secure_password_change = false
+max_frequency = "1s"
+otp_length = 6
+otp_expiry = 3600
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+template = "Your code is {{ .Code }}"
+max_frequency = "5s"
+
+[auth.sms.twilio]
+enabled = false
+account_sid = ""
+message_service_sid = ""
+auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+
+# The app doesn't use auth.mfa, so MFA stays off.
+[auth.mfa]
+max_enrolled_factors = 10
+
+[auth.mfa.totp]
+enroll_enabled = false
+verify_enabled = false
+
+[auth.mfa.phone]
+enroll_enabled = false
+verify_enabled = false
+
+# Google sign-in today goes through Lovable's broker (src/integrations/lovable). Phase 1 moves it
+# to Supabase Auth; until then it is present but off. Values come from the environment, never
+# from this file.
+[auth.external.google]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+redirect_uri = ""
+url = ""
+skip_nonce_check = false
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false

@@ -75,10 +75,20 @@ jobs:
         run: supabase db lint --local --level error --fail-on error
       - name: Every public table has RLS and grants
         run: psql "$DB_URL" -v ON_ERROR_STOP=1 -X -f supabase/ci/post-replay-check.sql
-      - name: CI-only test accounts and organizations
-        run: psql "$DB_URL" -v ON_ERROR_STOP=1 -X -q -f supabase/ci/fixtures.sql
-      - name: Database tests
+      - name: Database tests (db/tests, SQL)
         run: bash supabase/ci/db-tests.sh "$DB_URL"
+      - name: A password for this run's demo accounts
+        # Generated per run, masked, never stored: the fixtures and the smoke test share it.
+        run: |
+          pw="ci-$(openssl rand -hex 16)"
+          echo "::add-mask::$pw"
+          echo "SMOKE_DEMO_PASSWORD=$pw" >> "$GITHUB_ENV"
+      - name: CI-only test accounts and organizations
+        run: PGOPTIONS="-c fixture.demo_password=$SMOKE_DEMO_PASSWORD" psql "$DB_URL" -v ON_ERROR_STOP=1 -X -q -f supabase/ci/fixtures.sql
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Smoke test against the local stack (vitest, Node)
+        run: bash supabase/ci/smoke-local.sh
       - name: Stop the stack
         if: always()
         run: supabase stop --no-backup

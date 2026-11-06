@@ -5,6 +5,11 @@ Where things stand and what's next. Plans: `docs/plans/` (MVP: `wave-a-mvp.md`; 
 ## Pending migrations for Lovable
 None. `0000`–`0045` are applied (the last: `0044_scale_indexes`, D-209, confirmed by `0045`). When one is waiting it's listed here, with steps and checks in `docs/lovable-handoff.md`.
 
+## Moving off Lovable Cloud (D-211, `docs/migration/`)
+- [x] Phase 0a: the "Supabase database" workflow on `main` (replay on every pull request, manual deploy with approval)
+- [ ] Phase 0b: `supabase/migrations` as the single history (0000–0045 copied byte for byte, plus `0046_storage_buckets`), `supabase/config.toml`, replay green on the pull request; then the owner adds the deploy secrets, runs a dry run, the real deploy, and `supabase/scripts/demo-test-accounts.sql` (`docs/migration/settings-to-reenter.md`). `0046` is for the new project only: Lovable doesn't apply `supabase/migrations`
+- [ ] Phase 1: the cutover (`.env` to the new project, Google sign-in through Supabase Auth, Lovable build and preview code, the live checks pointed at the new project)
+
 ## Now: the MVP release, v0.1.0 (`docs/plans/wave-a-mvp.md`)
 Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D-170, D-175), demo data kept until a second real national joins (D-171), version 0.1.0 with a changelog and tag (D-172).
 
