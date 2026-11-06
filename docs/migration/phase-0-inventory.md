@@ -140,4 +140,6 @@ The demo accounts and orgs the smoke test expects (`smoke/client.ts`: three `@op
 | Missing objects | the `branding` bucket | new migration `0046_storage_buckets` |
 | Timestamps | three pairs of journal entries share a second (0006/0007, 0022/0023, 0024/0025) | the later one moved +1 s (§1) |
 
-Results from the GitHub runs on the Phase 0 pull request are added below as they come in.
+On GitHub (pull request Nox-Mob/OpenCharterApp#9, commit `6eacf1f`), `replay` passed on both the push and the pull request run: start, reset, lint, the catalog check, 35 `db/tests` files and 89 smoke tests on the local stack, with no fix needed beyond the ones above. Every `ci.yml` job and the live smoke test passed too.
+
+Not yet run: the `deploy` dry run and the real deploy against the new project. They need the owner's secrets and approval (settings-to-reenter.md §7–8).
