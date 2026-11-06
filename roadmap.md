@@ -10,6 +10,7 @@ None. `0000`–`0045` are applied (the last: `0044_scale_indexes`, D-209, confir
 - [ ] Phase 0b: `supabase/migrations` as the single history (0000–0045 copied byte for byte, plus `0046_storage_buckets`), `supabase/config.toml`, replay green on the pull request; then the owner adds the deploy secrets, runs a dry run, the real deploy, and `supabase/scripts/demo-test-accounts.sql` (`docs/migration/settings-to-reenter.md`). `0046` is for the new project only: Lovable doesn't apply `supabase/migrations`
 - [x] Phase 0c: the owner deployed `supabase/migrations` to the new project (`nxungwtxnctcqolfshcr`)
 - [ ] Phase 1 (D-212, `docs/migration/phase-1-cutover.md`): code done on the Phase 1 pull request (Google sign-in through Supabase Auth, Lovable sign-in code removed, `.env` and `config.toml` on the new project); owner steps left: Google OAuth client, Supabase URL and provider settings, test accounts, Cloudflare Worker secrets and domain, tests on the new host, Stripe webhook, unpublish Lovable
+- [x] The app's own favicon (ink-green tile, paper "C", brass rule; `public/favicon.svg`, `.ico`, `apple-touch-icon.png`) replaces Lovable's
 - [ ] Later clean-up: Lovable build config, preview sign-in helper, error reporting and hosts in `origin.ts`
 
 ## Now: the MVP release, v0.1.0 (`docs/plans/wave-a-mvp.md`)
