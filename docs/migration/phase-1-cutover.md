@@ -38,7 +38,7 @@ Dashboard → Authentication:
 
 Run `supabase/scripts/demo-test-accounts.sql` as described at its top. Use the **current demo password** (docs/demo-data.md) unless you also set `SMOKE_DEMO_PASSWORD` in GitHub: once this pull request is merged, the live checks (`live.yml`) sign in to the new project with that password. Without these accounts the live checks fail after the merge.
 
-The script also creates an **empty Test-Demo** (the home-chapter demo national, same ID as on Lovable, Nora National as admin), which the end-to-end test §6.2 opens. If you ran the script before it did, run it again: it only adds what's missing. To fill Test-Demo with chapters and members for sales demos, run `bun scripts/seed-sales-demo.ts` (docs/demo-data.md).
+The script also creates an **empty Test-Demo** (the home-chapter demo national, same ID as on Lovable, Nora National as admin), ready for the sales-demo seed. If you ran the script before it did, run it again: it only adds what's missing. (The end-to-end test §6.2 no longer needs it: it makes and deletes its own home-chapter demo national.) To fill Test-Demo with chapters and members for sales demos, run `bun scripts/seed-sales-demo.ts` (docs/demo-data.md).
 
 ## 4. Cloudflare Worker (owner)
 
