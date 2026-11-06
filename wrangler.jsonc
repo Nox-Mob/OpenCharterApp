@@ -6,5 +6,8 @@
   "name": "opencharterapp",
   // Pinned so a build doesn't change runtime behaviour by date; nodejs_compat is on by default
   // from 2026-08-04.
-  "compatibility_date": "2026-11-06"
+  "compatibility_date": "2026-11-06",
+  // Cloudflare builds branches other than main with `wrangler preview`, which needs this block
+  // (it may stay empty: assets and compatibility settings stay at the top level).
+  "previews": {}
 }

@@ -45,6 +45,7 @@ Optional: the sales demo national Test-Demo existed only on Lovable. To have it 
 Workers & Pages → your Worker → Settings:
 
 - **Build:** build command `bun run build`, deploy command `npx wrangler deploy` (Wrangler finds the generated config through `.wrangler/deploy/config.json`). The Worker name and compatibility date come from `wrangler.jsonc` in the repository (`opencharterapp`, matching the Worker); the build merges it into the generated config. Root directory: the repository root. Branch: `main`.
+- **Branch builds (previews):** branches other than `main` deploy with `npx wrangler preview`, which needs the `previews` block in `wrangler.jsonc` (present). Previews keep their own secrets (Worker → Previews, or `wrangler preview secret`); without them a preview's server functions can't reach Supabase. Sign-in on a preview address also needs that address in Supabase's redirect URLs (§2).
 - **Build variables:** none needed; the `VITE_*` values come from `.env`.
 - **Variables and Secrets** (runtime; add each as type **Secret**, because a plain variable set in the dashboard is removed by the next `wrangler deploy`):
 
