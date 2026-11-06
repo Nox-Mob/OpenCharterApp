@@ -85,6 +85,8 @@ jobs:
           echo "SMOKE_DEMO_PASSWORD=$pw" >> "$GITHUB_ENV"
       - name: CI-only test accounts and organizations
         run: PGOPTIONS="-c fixture.demo_password=$SMOKE_DEMO_PASSWORD" psql "$DB_URL" -v ON_ERROR_STOP=1 -X -q -f supabase/ci/fixtures.sql
+      - name: Test-Demo seed (the SQL Editor script still runs)
+        run: psql "$DB_URL" -v ON_ERROR_STOP=1 -X -q -f supabase/scripts/seed-test-demo.sql > /dev/null
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - name: Smoke test against the local stack (vitest, Node)

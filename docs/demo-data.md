@@ -36,7 +36,7 @@ Smoke and end-to-end runs add and then remove their own records (D-150), so coun
 
 ## The sales demo: Test-Demo (D-199)
 
-On the new Supabase project (D-212), `supabase/scripts/demo-test-accounts.sql` creates Test-Demo empty, with Nora National as admin; the seed script below fills it.
+On the new Supabase project (D-212), `supabase/scripts/demo-test-accounts.sql` creates Test-Demo empty, with Nora National as admin. Fill it from the Supabase SQL Editor with **`supabase/scripts/seed-test-demo.sql`** (D-213): paste the whole file and run it once. It takes a few seconds, adds 15 pending applications as well (made-up accounts with no password, waiting for approval), and ends with a list of everyone with their chapter, level and standing. It refuses to run twice. The TypeScript script below does the same from a computer with bun, without the pending applications.
 
 **Test-Demo** (`test-demo`, d60400ef-…) is a demo national set up to look like a real association, for sales demos and for checking screens that need judgement with realistic numbers. It uses the **home-chapter model** (members belong to the national and pick a chapter). Filled on 2026-11-03 by `bun scripts/seed-sales-demo.ts`:
 
