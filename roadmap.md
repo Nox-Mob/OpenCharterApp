@@ -41,7 +41,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 - [x] U2 "Remove from roster" with a reason, and Restore; membership ends, seats end, history kept; `is_org_member` ignores records that left (D-190; 0037)
 - [x] U3 Readable audit log: "time, who did what" with previous → current, one entry per save, filters, only this org's events, setup drafts hidden (D-191; 0037)
 - [x] U4 Account page: name, email (confirmation link; member records follow), password, your organizations (D-192)
-- [x] U5 `/privacy` and `/terms`, linked from sign-up, join pages and the footer; final text from the owner, operated by OpenAppHub (D-193, D-210); **owner:** fill in the two contact emails in `src/content/legal.tsx`
+- [x] U5 `/privacy` and `/terms`, linked from sign-up, join pages and the footer; final text from the owner, operated by OpenAppHub legal@openapphub.org and support@openapphub.org as contacts (D-193, D-210, D-214)
 - [x] U6 "Share your join page" on the admin Overview (D-194)
 - [x] U7 `has_permission` / `is_org_member` closed to anonymous callers (D-195; 0037)
 

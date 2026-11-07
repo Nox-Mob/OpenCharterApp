@@ -12,7 +12,7 @@ The first version a national (with chapters) or a standalone association can run
 - National → region → chapter hierarchy, created only through `create_organization`, with a chapter creation wizard.
 - Roles, including custom roles. Permissions only flow down. Settings can be inherited, overridden or locked for chapters.
 - Every important change goes to an append-only audit log that reads plainly: when, who, what, and each field's previous and current value, one entry per save, for that organization only.
-- An account page for your name, sign-in email, password and default organization (opened after signing in; the sidebar dropdown switches organizations, with no separate dashboard page); privacy policy and terms of service pages, operated by OpenAppHub (the two contact emails are still to be filled in).
+- An account page for your name, sign-in email, password and default organization (opened after signing in; the sidebar dropdown switches organizations, with no separate dashboard page); privacy policy and terms of service pages, operated by OpenAppHub, with legal@openapphub.org and support@openapphub.org as contacts.
 - Demo organizations and accounts for testing (`docs/demo-data.md`), clearly badged and never emailed.
 
 ### How membership works

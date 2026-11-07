@@ -14,6 +14,10 @@ test("privacy policy and terms are linked from sign-in and the app (U5)", async 
   await expect(page.getByRole("heading", { level: 1, name: "Privacy policy" })).toBeVisible();
   await expect(page.getByText("OpenAppHub").first()).toBeVisible();
   await expect(page.getByRole("note")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "legal@openapphub.org" }).first()).toHaveAttribute(
+    "href",
+    "mailto:legal@openapphub.org",
+  );
   await page.goto("/terms");
   await expect(page.getByRole("heading", { level: 1, name: "Terms of service" })).toBeVisible();
   await page.goto("/auth");

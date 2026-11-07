@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  LEGAL_CONTACT_EMAIL,
   LEGAL_EFFECTIVE,
   LEGAL_OPERATOR,
   LEGAL_PLACEHOLDER,
   LEGAL_UPDATED,
   PRIVACY_SECTIONS,
+  SUPPORT_EMAIL,
   TERMS_SECTIONS,
 } from "./legal";
 
@@ -14,6 +16,8 @@ describe("privacy policy and terms (D-210)", () => {
     expect(LEGAL_EFFECTIVE).not.toMatch(/\[/);
     expect(LEGAL_UPDATED).not.toMatch(/\[/);
     expect(LEGAL_PLACEHOLDER).toBe(false);
+    expect(LEGAL_CONTACT_EMAIL).toBe("legal@openapphub.org");
+    expect(SUPPORT_EMAIL).toBe("support@openapphub.org");
   });
 
   it("has every section of the supplied text, each named once", () => {
