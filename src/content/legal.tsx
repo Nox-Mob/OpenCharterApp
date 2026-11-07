@@ -3,15 +3,24 @@ import { List, Paras, Sub } from "@/components/legal/legal-text";
 
 /**
  * The privacy policy and terms of service (U5, D-193, D-210). Text supplied by the owner;
- * operated by OpenAppHub. The two contact emails are still to be filled in: set them below.
+ * operated by OpenAppHub, with its legal and support emails (D-214).
  * Change the dates when the wording changes.
  */
 export const LEGAL_PLACEHOLDER = false;
 export const LEGAL_OPERATOR = "OpenAppHub";
 export const LEGAL_EFFECTIVE = "November 6, 2026";
 export const LEGAL_UPDATED = "November 6, 2026";
-export const LEGAL_CONTACT_EMAIL = "[LEGAL OR PRIVACY CONTACT EMAIL]";
-export const SUPPORT_EMAIL = "[SUPPORT EMAIL]";
+export const LEGAL_CONTACT_EMAIL = "legal@openapphub.org";
+export const SUPPORT_EMAIL = "support@openapphub.org";
+
+/** An email address as a mailto link. */
+function mail(address: string) {
+  return (
+    <a href={`mailto:${address}`} className="underline">
+      {address}
+    </a>
+  );
+}
 
 /** The contact lines at the end of each page. */
 function contacts(privacy: boolean) {
@@ -20,9 +29,9 @@ function contacts(privacy: boolean) {
       items={[
         <>
           {privacy ? "Privacy inquiries and data requests" : "Legal inquiries"}:{" "}
-          {LEGAL_CONTACT_EMAIL}
+          {mail(LEGAL_CONTACT_EMAIL)}
         </>,
-        <>Technical support: {SUPPORT_EMAIL}</>,
+        <>Technical support: {mail(SUPPORT_EMAIL)}</>,
       ]}
     />
   );
@@ -731,7 +740,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
           items={[
             "These rights may be subject to legal exceptions and limitations.",
             "Where a Customer Organization controls the relevant information, Users may need to direct their request to that organization. We will assist the organization as appropriate and as required by applicable law.",
-            `Privacy requests may be submitted to ${LEGAL_CONTACT_EMAIL}.`,
+            <>Privacy requests may be submitted to {mail(LEGAL_CONTACT_EMAIL)}.</>,
             "We may request additional information reasonably necessary to verify the identity and authority of the person making a request.",
             "We will respond to valid requests within the timeframes required by applicable law.",
           ]}
