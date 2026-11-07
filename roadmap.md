@@ -76,7 +76,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 
 ## Done
 ### 2026-11-02
-- [x] Full left sidebar: the OpenCharter name and organization switcher at the top, Dashboard and the organization's menu with icons, Account and Sign out at the bottom; softer colours; phones keep the header and dropdowns (D-205)
+- [x] Full left sidebar: the OpenCharterApp name (D-216) and organization switcher at the top, Dashboard and the organization's menu with icons, Account and Sign out at the bottom; softer colours; phones keep the header and dropdowns (D-205)
 - [x] No separate Dashboard page: the sidebar dropdown switches organizations ("All organizations…" opens the list at `/orgs`), and Account → Default organization picks the one that opens after signing in (D-206)
 - [x] Fix: a home-chapter national's Membership levels page could show the chapter explanation instead of its levels after visiting Members
 - [x] A national's Membership levels page shows how membership works there, as in setup; no "Suggest to chapters" in the home-chapter model (D-203)

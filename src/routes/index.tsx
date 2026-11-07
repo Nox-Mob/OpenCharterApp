@@ -44,7 +44,7 @@ function Index() {
   return (
     <div className="min-h-screen bg-background">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <span className="font-display text-xl font-semibold text-primary">OpenCharter</span>
+        <span className="font-display text-xl font-semibold text-primary">OpenCharterApp</span>
         <Button asChild variant="ghost">
           <Link to="/auth">Sign in</Link>
         </Button>

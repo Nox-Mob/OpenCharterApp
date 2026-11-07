@@ -59,7 +59,7 @@ function InvitePage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rule-brass bg-card p-8 text-center">
         <Link to="/" className="font-display text-xl font-semibold text-primary">
-          OpenCharter
+          OpenCharterApp
         </Link>
         {state.kind === "loading" && (
           <p className="mt-6 text-muted-foreground">Checking your invitation…</p>

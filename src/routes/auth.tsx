@@ -96,7 +96,7 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rule-brass bg-card p-8 shadow-sm">
         <Link to="/" className="font-display text-xl font-semibold text-primary">
-          OpenCharter
+          OpenCharterApp
         </Link>
         <h1 className="mt-4 text-2xl font-semibold">
           {mode === "in" ? "Sign in" : mode === "up" ? "Create your account" : "Reset password"}
