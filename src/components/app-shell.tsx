@@ -77,7 +77,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r bg-sidebar md:flex">
           <div className="space-y-3 border-b px-4 py-4">
             <Link to="/orgs" className="block font-display text-lg font-semibold text-primary">
-              OpenCharter
+              OpenCharterApp
             </Link>
             {orgSwitcher}
           </div>
@@ -89,7 +89,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex items-center gap-3 border-b bg-card px-4 py-3 md:hidden">
             <Link to="/orgs" className="font-display text-lg font-semibold text-primary">
-              OpenCharter
+              OpenCharterApp
             </Link>
             <div className="min-w-0 flex-1">{orgSwitcher}</div>
           </header>

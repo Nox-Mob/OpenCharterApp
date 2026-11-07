@@ -53,7 +53,7 @@ Still for a person: anything about looks, wording, phones, printing and screen r
 
 ## 1. Sign-in, password reset, invitations
 **Where:** `/auth`, the sign-in link on the home page.
-0. The browser tab shows the OpenCharterApp icon (an ink-green tile with a light "C" over a brass line), not Lovable's.
+0. The browser tab shows the OpenCharterApp icon (an ink-green tile with a light "C" over a brass line), not Lovable's. The home page (top left), the sign-in page, the sidebar and the privacy and terms pages name the app "OpenCharterApp", never "OpenCharter" (D-216).
 1. Sign in as **Chapter**. Expect your default organization (Account → Default organization), or your only one, or else the list of your organizations.
 2. Sign out, then sign in with a wrong password. Expect "Email or password is incorrect." Nothing should say whether the email exists.
 3. "Forgot password?" → enter an email → "Send reset link". Expect a neutral message, whether or not the account exists.

@@ -29,7 +29,7 @@ export function LegalPage({
     <main className="mx-auto max-w-3xl space-y-6 px-4 py-12">
       <p className="text-sm">
         <Link to="/" className="text-muted-foreground hover:underline">
-          ← OpenCharter
+          ← OpenCharterApp
         </Link>
       </p>
       <h1 className="text-3xl font-semibold">{title}</h1>
