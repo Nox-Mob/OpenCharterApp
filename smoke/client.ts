@@ -14,7 +14,8 @@ export function env(name: string): string {
 }
 
 export const DEMO = {
-  password: process.env["SMOKE_DEMO_PASSWORD"] || "OpenCharterDemo!2026",
+  // No default: the password is never written in the repo (D-218).
+  password: process.env["SMOKE_DEMO_PASSWORD"] ?? "",
   national: "demo-national@opencharter.test",
   chapter: "demo-chapter@opencharter.test",
   member: "demo-member@opencharter.test",
@@ -35,6 +36,7 @@ export function anonClient(): Db {
 }
 
 export async function signIn(email: string): Promise<Db> {
+  if (!DEMO.password) throw new Error("SMOKE_DEMO_PASSWORD is not set");
   const db = anonClient();
   const { error } = await db.auth.signInWithPassword({ email, password: DEMO.password });
   if (error) throw new Error(`sign-in failed for ${email}: ${error.message}`);

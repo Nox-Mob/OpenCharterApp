@@ -1,6 +1,6 @@
 # OpenAppHub suite migration — notes (OpenCharterApp)
 
-Status on 2026-11-08. This is suite step 1 (inventory) and step 2 (secret scan) from `AGENTS.md`, plus the plan for the remaining steps. **No code, migration or database change** is part of this step. Contract: [`SHARED-SPEC.md`](SHARED-SPEC.md). Decision: D-217.
+Status on 2026-11-08 (owner answers in §8). This is suite step 1 (inventory) and step 2 (secret scan) from `AGENTS.md`, plus the plan for the remaining steps. **No code, migration or database change** is part of this step. Contract: [`SHARED-SPEC.md`](SHARED-SPEC.md). Decision: D-217.
 
 Goal: the current OpenCharterApp Supabase project (`nxungwtxnctcqolfshcr`) becomes the **production database for the whole suite** (OpenAppHub, OpenCharterApp, OpenBoardApp, OpenLedgerApp). The hub owns sign-up, organizations, members and payments (`public`, `billing`, `ops`). Charter moves to its own schema `charter`. Self-hosted, Charter still runs on its own.
 
@@ -38,7 +38,7 @@ Every `public` table has `org_id` (except the global catalogue tables noted), RL
 | `public.org_settings`, `setup_states` | yes | Charter (settings engine, setup flows) | settings |
 | `public.affiliation_history`, `audit_events` | yes | Charter (append-only) | history |
 | `private.gateway_secrets` | yes | Charter (encrypted Stripe keys per org) | money |
-| `private.platform_flags`, `private.platform_operators` | no | **Overlaps the hub's operator concept.** Platform operators can create demo orgs (`is_platform_operator`). Keep Charter-local for now | platform |
+| `private.platform_flags`, `private.platform_operators` | no | **Moves to the hub** (Q6). Platform operators can create demo orgs (`is_platform_operator`) | platform |
 
 ### 1.3 Views
 
@@ -102,7 +102,7 @@ The policies call `public.can_see_org_tree` and `public.has_permission`. Postgre
 
 | Concept | Today (Charter) | Suite (core) | Plan |
 |---|---|---|---|
-| Organization | `public.organizations`, a **tree**: platform → national → region → chapter, or standalone | flat `public.organizations`, one row per paying customer | **Open question Q2** (§8) |
+| Organization | `public.organizations`, a **tree**: platform → national → region → chapter, or standalone | flat `public.organizations`, one row per paying customer | **Decided (Q2):** the top of the tree is the core org; chapters and regions become `charter.units` under it |
 | Who can use an org | `org_member_profiles` row with a `user_id`, `left_at is null` (`is_org_member`) | `public.memberships` (owner/admin/member/viewer) | `charter.member_profiles.user_id` must have a core membership to read; RLS read rule becomes `public.is_member(org_id)` |
 | Roles and permissions | custom roles per org, permission keys (`org.manage`, `members.manage`, …), inherited downwards (D-032) | 4 fixed roles | Keep Charter's permissions *inside* the core gate: a write needs `public.can_write(org_id,'charter')` **and** the Charter permission. Core `owner`/`admin` ⇒ Charter `org_admin` |
 | Profile | `org_member_profiles.display_name` / `email` per org | `public.profiles` (display name, avatar), one per user | Read the person's name from `public.profiles` for signed-in users; roster-only records keep their own fields |
@@ -110,7 +110,7 @@ The policies call `public.can_see_org_tree` and `public.has_permission`. Postgre
 | Creating an org | `create_organization(_name,_slug,_type,_parent)` | `public.create_organization(p_name)` | Charter keeps a `charter.create_org_unit(…)` for its tree (Q2) |
 | App billing | none | `billing.*`, `get_org_billing`, `can_write` | new: banner and read-only mode (step 12) |
 | Member dues | `payments`, `gateway_connections`, Stripe per org | — | stays Charter's, `charter` schema |
-| Platform operators | `private.platform_operators` | not in the spec | stays Charter-local (`charter_private`), Q6 |
+| Platform operators | `private.platform_operators` | not in the spec | **moves to the hub** (Q6); not recreated in `charter` |
 | Audit log | `audit_events` via triggers | — | stays Charter's |
 
 ## 3. Every place the code calls Supabase
@@ -181,7 +181,7 @@ Scanned the working tree and **all 186 commits on every branch** (`git grep` ove
 | Fake Stripe keys in unit tests (`rk_test_1234567890abc…`, `sk_test_1234567890abc`, `whsec_1234567890abcdef`) | `src/modules/payments/stripe.test.ts`, `src/components/payments/payments-tab.test.tsx` | none (made-up placeholders) | none; GitHub push protection may flag them, mark as false positive |
 | Publishable key and URL of the production project | `.env` (committed), `wrangler.jsonc` `vars` | none: publishable values are public by design | none. Hygiene step 3 still stops committing `.env` (spec §7: `.env*` other than `.env.example` must be ignored) |
 | Older `.env` versions in history | commits `7253751`, `629b413` | only publishable values (Lovable project `odqswxftrhtvyadizkgn`) | none |
-| **Shared demo password in plain text**: `OpenCharterDemo!2026` | `docs/demo-data.md:7` (and history) | **Medium.** The demo accounts (`@opencharter.test`) live on the project that becomes the suite's production database. With one login for the suite, anyone who reads the public repo can sign in to the hub and every app as a demo admin or platform operator | **Before step 4:** change the demo accounts' password on the production project (or delete those accounts) and update the `SMOKE_DEMO_PASSWORD` secret. A later PR removes the password from `docs/demo-data.md`, if you agree |
+| **Shared demo password in plain text** (removed from the docs and the smoke-test fallback in this PR; still in history) | `docs/demo-data.md:7` (and history) | **Medium.** The demo accounts (`@opencharter.test`) live on the project that becomes the suite's production database. With one login for the suite, anyone who reads the public repo can sign in to the hub and every app as a demo admin or platform operator | **Owner decided (Q8): delete the demo accounts** on production (§8.2) |
 
 Also recommended (owner settings): enable GitHub secret scanning and push protection on all five repos.
 
@@ -192,13 +192,13 @@ Also recommended (owner settings): enable GitHub secret scanning and push protec
 These need an owner decision or a spec change. **Don't build around them silently** (spec §2.2).
 
 1. **Not a Vite SPA on Cloudflare Pages.** Charter is **TanStack Start with SSR**, deployed as a **Cloudflare Worker** (`wrangler.jsonc`, nitro `cloudflare-module`), with server functions that use the service-role key. So `public/_redirects` (§10) doesn't apply; security headers must be set by the Worker (or `_headers` served as an asset, if the Worker serves static assets). Sessions for the server functions go through `auth-attacher`/`auth-middleware` (a bearer token), which works with the cookie-based `createBrowserClient` as long as `getSession` keeps returning the token.
-2. **Org tree vs flat orgs** (Q2): Charter's orgs are a hierarchy. The suite's billing assumes each `public.organizations` row is a paying customer with its own trial. If every chapter became a core org, each new chapter would get its own trial (or start `expired` under "one trial per user") and its own subscription.
-3. **Members who sign in** (Q3): Charter's member portal (directory, join, renew, pay dues) means ordinary dues-paying members sign in. If each one needs a core `memberships` row, the plan limits (10 members on Starter/Trial, 25 on Suite) would count association members, not staff. Hosted mode also removes Charter's sign-up page, but the public **join** flow signs people up.
-4. **Anon access** (§3.4): `public_join_info` and `public_home_chapter_info` are callable by `anon` for the public join page. Needs the owner's approval to keep.
+2. **Org tree vs flat orgs** (resolved by Q2, §8): Charter's orgs are a hierarchy. The suite's billing assumes each `public.organizations` row is a paying customer with its own trial. If every chapter became a core org, each new chapter would get its own trial (or start `expired` under "one trial per user") and its own subscription.
+3. **Members who sign in** (resolved by Q3 and Q4, §8): Charter's member portal (directory, join, renew, pay dues) means ordinary dues-paying members sign in. If each one needs a core `memberships` row, the plan limits (10 members on Starter/Trial, 25 on Suite) would count association members, not staff. Hosted mode also removes Charter's sign-up page, but the public **join** flow signs people up.
+4. **Anon access** (§3.4): `public_join_info` and `public_home_chapter_info` are callable by `anon` for the public join page. Per Q4 the join page is self-hosted only, so in the suite schema they are granted to `anon` only on self-hosted databases (or not at all, if the hosted build never calls them).
 5. **Charter's own Stripe** (dues) is separate from suite billing. The spec says "sub-apps never call Stripe"; it means suite billing, but please confirm dues collection stays in Charter.
 6. **Read-only when the plan lapses vs member payments**: a lapsed org becomes read-only, but webhooks still have to record dues payments members already made (the service-role path bypasses RLS, so it works; confirm that's wanted).
 7. **The repo's own rules** (`AGENTS.md`): migrations live in `supabase/migrations` and deploy with `supabase db push` ("Supabase database" workflow); `check:migrations` enforces Lovable's rules; the database tests run on plain Postgres with a stub. The suite moves to `db/migrations` + `scripts/migrate.mjs` + `ops.schema_migrations`. Step 5 must switch the checks and workflows together, and disable the `deploy` job in `supabase-db.yml` so the two runners never both write to production.
-8. **Phase 1 cutover (D-212) isn't finished**: owner steps are still open (`roadmap.md`). The suite work can run in parallel, but the hosted Charter app on `opencharterapp.org` stops working from step 4 until step 9 ships (all its tables move out of `public`).
+8. **Phase 1 cutover (D-212) isn't finished**: owner steps are still open (`roadmap.md`). The suite work can run in parallel. The hosted Charter app on `opencharterapp.org` stops working from step 4 until step 9 ships (all its tables move out of `public`); the owner accepts the downtime (Q7).
 9. **`profiles` vs `org_member_profiles`**: no name clash, but two sources for a person's name.
 10. **AGENTS.md D-215** (no session links or "Generated with Claude Code" lines) differs from the default agent footer; the owner's rule is followed here.
 
@@ -222,24 +222,29 @@ The spec wins once the owner confirms (spec header). Until a step replaces a rul
 | Pending-schema shims for Lovable (D-135) | types generated by `gen-types.yml` | step 9 |
 | Lovable note at the top of `AGENTS.md` | remove Lovable leftovers | step 3 |
 
-## 8. Questions for the owner
+## 8. Owner decisions (2026-11-08, D-218)
 
-Steps 1–5 can go ahead without these. **Q2 and Q3 must be answered before step 6** (the Charter baseline), because they decide the table shapes.
+| # | Question | Answer |
+|---|---|---|
+| Q1 | Spec §0 inputs | **Open.** Prices aren't decided: the owner is weighing one price for a single org against a price for an org with many sub-orgs. Domain, design reference and outlier apps, and staging ref still to come. Production ref: the current Charter project, `nxungwtxnctcqolfshcr` |
+| Q2 | What is a core organization? | **The top of the tree** (a national, or a standalone org) is the one `public.organizations` row: the billed organization and billing customer, and the shared org ID for Board and Ledger. Its regions and chapters are **included under its licence** and live in Charter as `charter.units` (parent, type, ancestors, timezone). Every Charter table gets `org_id → public.organizations` (the customer), plus `unit_id → charter.units` where today's `org_id` points at a chapter or region. Core RLS (`is_member`, `can_write`) guards the customer; Charter's permissions guard units inside it. No change to core or billing |
+| Q3 | Who counts as a billed member? | **Only admins, officers and staff.** They get a core `public.memberships` row and count toward the plan's member limit (the hub's `max_members` trigger, unchanged). Ordinary dues-paying members get Charter-only access (`charter.member_profiles.user_id`, checked by a Charter function such as `charter.is_portal_member`), so they can see the directory and pay dues without counting. Charter's read policies become `public.is_member(org_id) or charter.is_portal_member(org_id, unit_id)` where members may read |
+| Q4 | Join page and sign-up in hosted mode | **Charter's join page (`/join/$orgSlug`) is for self-hosting only**; it is left out of routing in hosted mode. Joining members **sign up with OpenAppHub.** The two `anon` RPCs (`public_join_info`, `public_home_chapter_info`) are therefore only needed self-hosted |
+| Q5 | Seed data | **Deferred.** The owner provides seed data later, once all three apps are under OpenAppHub. It should match what a user sees when starting fresh. Step 7 waits; nothing is copied from `charter_legacy` |
+| Q6 | Platform operators and demo accounts | **Move to the hub.** Charter's `private.platform_operators`, `platform_flags` and the demo-org RPCs (`create_demo_organization`, `delete_demo_organization`, `is_platform_operator`) are not recreated in `charter`; the hub owns the concept. Charter's "Create demo" screens are left out of routing until the hub offers it |
+| Q7 | Downtime | **Fine.** There are no production accounts besides demos, so the hosted site can be down between step 4 and step 9. No maintenance page |
+| Q8 | Demo password | **Remove the demo accounts for now.** The password is taken out of the repo's docs and the smoke-test fallback (this PR); the owner deletes the accounts on production (§8.2) |
 
-- **Q1. Spec §0 inputs.** Apex domain; the two design reference apps and the outlier; staging ref. Production ref: the current Charter project, `nxungwtxnctcqolfshcr` (spec §0 says so). Prices confirmed?
-- **Q2. What is a core organization for Charter?**
-  - **(A, recommended)** The **top of each tree** (a national, or a standalone org) is the one `public.organizations` row: the billing customer, the shared org ID for Board and Ledger. Its regions and chapters live in a new `charter.units` table (parent, type, ancestors, timezone). Every Charter table gets `org_id → public.organizations` (the customer) plus `unit_id → charter.units` where today's `org_id` points at a chapter. Core RLS (`is_member`, `can_write`) guards the customer; Charter's permissions guard units inside it. No changes to core or billing.
-  - **(B)** Every national, region and chapter is a core org. Needs a `parent_id` in core and a billing rule that a chapter inherits its root's subscription: a change to the hub's core and billing, so a spec change.
-- **Q3. Do dues-paying members who sign in count as core members?**
-  - **(A, recommended)** Only people who run the org (owners, admins, officers, staff) get a core `memberships` row and count toward the plan limit. Ordinary members get a Charter-only "portal" access (`charter.member_profiles.user_id`), checked by a Charter function, so they can see the directory and pay dues. The read policies become `public.is_member(org_id) or charter.is_portal_member(org_id)`.
-  - **(B)** Every member who signs in is a core `member`, and the plan limits are raised for Charter.
-- **Q4.** In hosted mode, may the public **join** page (`/join/$orgSlug`) keep its own sign-up (it creates the account in the shared Auth), or must joining members sign up at the hub and come back? And may the two `anon` RPCs stay?
-- **Q5. Seed data.** Copy the demo orgs from `charter_legacy` into `db/seed/0001_charter_demo.sql` (Demo National with Austin and Dallas, Test-Demo), or write fresh rows?
-- **Q6.** Keep `private.platform_operators` / demo-org creation in Charter (as `charter_private`), or move "platform operator" to the hub?
-- **Q7.** Is it fine that the hosted Charter site is down between step 4 and step 9 (only demo data), or should it show a maintenance page?
-- **Q8.** Demo password (§4): change it on production now and remove it from `docs/demo-data.md`?
+### 8.1 Follow-up questions these answers raise
 
----
+- **F1 (from Q2/Q3, for pricing):** with the top of the tree as the customer and only staff counting, a plan's natural dimensions are *billed members* (staff seats, already in the spec) and *number of units* (chapters/regions under the licence). Charter can report both: the unit count from `charter.units`, the staff count from core `memberships`. If the price should depend on the unit count, the hub's billing needs to read it, through a `charter.api_unit_count` view (step 14). Decide when prices are set; nothing in steps 3–11 depends on it.
+- **F2 (from Q4):** after a member signs up at the hub, **how do they join a chapter and pay its dues?** Options: (a) the hub's sign-up returns them to a signed-in **Join** screen in Charter (`charter.<apex>/join/<slug>`, no sign-up form, the dues checkout stays in Charter); (b) the hub hosts the whole join flow and calls a Charter RPC (`charter.begin_join`, `security invoker`, spec §3.5). Recommended: (a), since dues payments go to the org's own Stripe account, which only Charter knows. Needed by step 11.
+- **F3 (from Q3):** which Charter roles count as "staff"? Proposed: anyone holding a role with any permission beyond the built-in **Member** role (for example `org_admin`, officer roles from board seats, custom roles with `members.manage`) gets a core membership; core `owner`/`admin` for `org_admin` at the top of the tree, core `member` for the rest. Needed by step 6.
+
+### 8.2 Owner actions from these answers
+
+1. **Delete the demo accounts on production now:** Supabase → Authentication → Users → delete `demo-national@opencharter.test`, `demo-chapter@opencharter.test`, `demo-member@opencharter.test` (and any other `@opencharter.test` account). Their orgs and records stay until step 4 parks them. Then delete the `SMOKE_DEMO_PASSWORD` repository secret: the live checks now skip without it instead of failing.
+2. Rotate nothing else: the scan found no other secret.
 
 ## 9. Plan: the remaining steps
 
@@ -249,15 +254,15 @@ One branch and one pull request per step. **Bold** = runs on production; the own
 |---|---|---|---|
 | 1–2 | Inventory + secret scan (**this PR**) | — | this file; `docs/SHARED-SPEC.md`; the suite instructions in `AGENTS.md` |
 | 3 | Hygiene | — | `.env.example` with every suite variable (§7); stop tracking `.env` (`.gitignore` `.env*` except `.env.example`, and move today's values to Cloudflare/`.env.local`); security headers for the Worker; remove Lovable leftovers (`@lovable.dev/*`, `previewAuthStorage`, Lovable error reporting, Lovable hosts in `origin.ts`, `.lovable/`, the Lovable note in `AGENTS.md`, `drizzle/` once nothing reads it); CI stays green |
-| 4 | **`db/migrations/0000_park_legacy.sql`** | owner backup (`pg_dump` or Supabase backup), Q7, Q8 | `create schema if not exists charter_legacy`; for each of the 31 tables, 17 enums and 147 functions in `public` and the 3 tables in `private`: `alter … set schema charter_legacy`, each guarded by a catalog check so a re-run skips it. Revoke API grants on `charter_legacy`. `drop trigger if exists on_auth_user_created on auth.users` (none today). Nothing dropped. Moves the existing `branding` policies' dependency along (they stay working, pointing at parked functions). PR line 1: "Runs on PRODUCTION project; owner must apply before the hub's core migrations." Tested by replaying `supabase/migrations` locally, running it twice, and checking `public` is empty of Charter objects |
+| 4 | **`db/migrations/0000_park_legacy.sql`** | owner backup (`pg_dump` or Supabase backup); demo accounts deleted (§8.2) | `create schema if not exists charter_legacy`; for each of the 31 tables, 17 enums and 147 functions in `public` and the 3 tables in `private`: `alter … set schema charter_legacy`, each guarded by a catalog check so a re-run skips it. Revoke API grants on `charter_legacy`. `drop trigger if exists on_auth_user_created on auth.users` (none today). Nothing dropped. Moves the existing `branding` policies' dependency along (they stay working, pointing at parked functions). PR line 1: "Runs on PRODUCTION project; owner must apply before the hub's core migrations." Tested by replaying `supabase/migrations` locally, running it twice, and checking `public` is empty of Charter objects |
 | — | (Hub) `db/core/*` + `0001_billing.sql` on production | step 4 applied | in OpenAppHub |
 | 5 | Vendor shared code | OpenAppHub `shared/` v1.0.0 | copy `shared/`, `db/core/`, `scripts/migrate.mjs`; add `migrate.yml` and the `db` job in `ci.yml`; `"oahShared"` in `package.json`; turn off the `deploy` job in `supabase-db.yml`; adapt `check:migrations` to `db/migrations` |
-| 6 | **`db/migrations/0001_charter_baseline.sql`** | Q2, Q3; step 5 | `charter` schema per §3.4; the tables from §1.2 recreated with the answers to Q2/Q3; Charter's RPCs and triggers recreated in `charter` with `search_path = ''`; RLS = core gate + Charter permissions; `branding` bucket policies using `public.is_member` / `public.can_write` on the `<org_id>/` folder; `supabase/migrations/` deleted in the same PR |
-| 7 | `db/seed/0001_charter_demo.sql` | Q5 | idempotent demo orgs, levels, members, seats |
+| 6 | **`db/migrations/0001_charter_baseline.sql`** | F3; step 5 | `charter` schema per §3.4; `charter.units` for the tree under each billed org (Q2); the tables from §1.2 recreated with `org_id` (billed org) and `unit_id`; portal access for members (Q3); no platform-operator or demo-org objects (Q6); Charter's RPCs and triggers recreated in `charter` with `search_path = ''`; RLS = core gate + Charter permissions; `branding` bucket policies using `public.is_member` / `public.can_write` on the `<org_id>/` folder; `supabase/migrations/` deleted in the same PR |
+| 7 | `db/seed/0001_charter_demo.sql` | **deferred** (Q5): the owner's suite seed data | idempotent, matching what a new user sees |
 | 8 | DB tests | step 6 | port `db/tests/*.sql` to the `charter` schema; for every table: org isolation, viewer can't write, read-only when the trial has expired |
 | 9 | Supabase client | step 5–6 | `shared/supabase/client.ts` (`VITE_APP_SCHEMA=charter`), `.schema('public')` for core; server client and auth middleware on the same schema; `gen-types.yml`; drop `pending-schema` shims |
 | 10 | Org scoping | step 9 | `src/lib/orgs.ts` → `shared/supabase/org.ts` (`oah_org` cookie); every query carries the current org |
-| 11 | Hosted vs self-hosted | step 10 | `VITE_HOSTED`: `/` → dashboard, sign-in → hub, invitations and org/member management link to the hub; self-hosted keeps today's screens on core tables |
+| 11 | Hosted vs self-hosted | step 10; F2 | `VITE_HOSTED`: `/` → dashboard, sign-in and sign-up → hub, the public join page and demo-org screens left out of routing (Q4, Q6), invitations and org/member management link to the hub; self-hosted keeps today's screens on core tables |
 | 12 | Billing state | step 11; hub's `get_org_billing` | `BillingBanner`; write controls off when read-only; link to `${VITE_HUB_URL}/billing` |
 | 13 | Export | step 9 | owners/admins export all Charter data (JSON and CSV), also when read-only (builds on the member and payments exports) |
 | 14 | Integration surface | step 6 | `charter.api_orgs`/`api_units`, `api_board_seats` (for Board), `api_payments_summary` (for Ledger), `security_invoker = true`; `docs/INTEGRATION.md` |

@@ -36,7 +36,7 @@ Dashboard → Authentication:
 
 ## 3. Test accounts (owner, Supabase SQL Editor)
 
-Run `supabase/scripts/demo-test-accounts.sql` as described at its top. Use the **current demo password** (docs/demo-data.md) unless you also set `SMOKE_DEMO_PASSWORD` in GitHub: once this pull request is merged, the live checks (`live.yml`) sign in to the new project with that password. Without these accounts the live checks fail after the merge.
+Run `supabase/scripts/demo-test-accounts.sql` as described at its top, with the same password as the `SMOKE_DEMO_PASSWORD` repository secret: the live checks (`live.yml`) sign in to the new project with it. There is no default password since D-218; without the secret the live checks skip. **Since D-218 the demo accounts are removed from production** (they move to OpenAppHub), so skip this step there.
 
 The script also creates an **empty Test-Demo** (the home-chapter demo national, same ID as on Lovable, Nora National as admin), ready for the sales-demo seed. If you ran the script before it did, run it again: it only adds what's missing. (The end-to-end test §6.2 no longer needs it: it makes and deletes its own home-chapter demo national.) To fill Test-Demo with chapters and members for sales demos, paste `supabase/scripts/seed-test-demo.sql` into the SQL Editor and run it once (D-213, docs/demo-data.md).
 

@@ -6,7 +6,9 @@ name: Live demo checks
 # A feature whose migration Lovable hasn't applied yet is skipped until it is.
 #
 # Repository settings (all optional):
-# - secret SMOKE_DEMO_PASSWORD: the demo accounts' password, if it's changed from the default
+# - secret SMOKE_DEMO_PASSWORD: the demo accounts' password. There is no default (D-218): without
+#   it both jobs skip with a notice, which is the state while the demo accounts are removed
+#   from production for the OpenAppHub move
 # - variable E2E_BASE_URL: a deployed site (preview or published) to also run the checkout test.
 #   Used on pushes to main, the daily run and manual runs only: a pull request tests its own code
 #   on a local dev server, because the deployed site still runs main until the merge (D-212).
@@ -28,11 +30,20 @@ jobs:
     name: Smoke test (live backend)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      HAS_DEMO_PASSWORD: ${{ secrets.SMOKE_DEMO_PASSWORD != '' }}
     steps:
+      - name: Skip without the demo password
+        if: env.HAS_DEMO_PASSWORD != 'true'
+        run: echo "::notice::SMOKE_DEMO_PASSWORD is not set, so the live checks are skipped (D-218)."
       - uses: actions/checkout@v4
+        if: env.HAS_DEMO_PASSWORD == 'true'
       - uses: oven-sh/setup-bun@v2
+        if: env.HAS_DEMO_PASSWORD == 'true'
       - run: bun install --frozen-lockfile
+        if: env.HAS_DEMO_PASSWORD == 'true'
       - name: Run the smoke test
+        if: env.HAS_DEMO_PASSWORD == 'true'
         run: bun run test:smoke
         env:
           SMOKE_DEMO_PASSWORD: ${{ secrets.SMOKE_DEMO_PASSWORD }}
@@ -46,12 +57,22 @@ jobs:
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      HAS_DEMO_PASSWORD: ${{ secrets.SMOKE_DEMO_PASSWORD != '' }}
     steps:
+      - name: Skip without the demo password
+        if: env.HAS_DEMO_PASSWORD != 'true'
+        run: echo "::notice::SMOKE_DEMO_PASSWORD is not set, so the live checks are skipped (D-218)."
       - uses: actions/checkout@v4
+        if: env.HAS_DEMO_PASSWORD == 'true'
       - uses: oven-sh/setup-bun@v2
+        if: env.HAS_DEMO_PASSWORD == 'true'
       - run: bun install --frozen-lockfile
+        if: env.HAS_DEMO_PASSWORD == 'true'
       - run: bunx playwright install --with-deps chrome
+        if: env.HAS_DEMO_PASSWORD == 'true'
       - name: Run end-to-end tests
+        if: env.HAS_DEMO_PASSWORD == 'true'
         run: bun run test:e2e
         env:
           CI: "true"

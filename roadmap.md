@@ -17,10 +17,11 @@ None. `0000`–`0045` are applied (the last: `0044_scale_indexes`, D-209, confir
 ## OpenAppHub suite migration (D-217, `docs/MIGRATION-NOTES.md`, `docs/SHARED-SPEC.md`)
 This project becomes the production database for the whole suite (hub, Charter, Board, Ledger); Charter moves to the `charter` schema. One pull request per step (`AGENTS.md`).
 - [x] Step 1–2: inventory and secret scan (`docs/MIGRATION-NOTES.md`); spec and suite instructions in the repo
-- [ ] **Owner:** answer the questions in `MIGRATION-NOTES.md` §8 (Q2 and Q3 before step 6); change the demo accounts' password on the production project (§4)
+- [x] Owner answers to Q2–Q8 recorded (D-218, `MIGRATION-NOTES.md` §8); demo password out of the repo, live checks skip without it
+- [ ] **Owner:** delete the `@opencharter.test` accounts on production and the `SMOKE_DEMO_PASSWORD` secret (§8.2); prices and the spec §0 inputs (Q1); follow-ups F2 (joining after hub sign-up) and F3 (which roles count as staff) before steps 6 and 11
 - [ ] Step 3: hygiene (`.env.example`, stop tracking `.env`, headers, Lovable leftovers)
 - [ ] Step 4: `db/migrations/0000_park_legacy.sql` (production; the owner applies it, after a backup)
-- [ ] Steps 5–8: vendor shared code (needs `Nox-Mob/OpenAppHub`), Charter baseline, seed, DB tests
+- [ ] Steps 5–8: vendor shared code (needs `Nox-Mob/OpenAppHub`), Charter baseline, DB tests; seed deferred until the owner provides suite seed data
 - [ ] Steps 9–14: shared client, org scoping, hosted/self-hosted, billing banner, export, `api_*` views
 - [ ] Steps 15–17: design tokens and AppShell, Help links, docs
 

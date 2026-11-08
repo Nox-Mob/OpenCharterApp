@@ -4,7 +4,7 @@ Test data for trying out the app. **Delete it before launch.** Every demo record
 
 ## Accounts
 
-All accounts share the same password: `OpenCharterDemo!2026` (the smoke and end-to-end tests read `SMOKE_DEMO_PASSWORD` if it changes).
+**Removed from production (D-218).** The demo accounts are being deleted from the project that becomes the suite's production database, and demo accounts move to OpenAppHub. Their password is no longer written in the repo: the local stack sets one per run (`supabase/ci/fixtures.sql`), and the smoke and end-to-end tests read it from `SMOKE_DEMO_PASSWORD`.
 
 | Email | ID | Name | Roles (as of 2026-11-02) |
 |---|---|---|---|
