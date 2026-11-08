@@ -12,16 +12,19 @@ None. `0000`–`0045` are applied (the last: `0044_scale_indexes`, D-209, confir
 - [ ] Phase 1 (D-212, `docs/migration/phase-1-cutover.md`): code done on the Phase 1 pull request (Google sign-in through Supabase Auth, Lovable sign-in code removed, `.env` and `config.toml` on the new project); owner steps left: Google OAuth client, Supabase URL and provider settings, test accounts, Cloudflare Worker secrets and domain, tests on the new host, Stripe webhook, unpublish Lovable
 - [x] The app's own favicon (ink-green tile, paper "C", brass rule; `public/favicon.svg`, `.ico`, `apple-touch-icon.png`) replaces Lovable's
 - [x] Test-Demo seed in plain SQL for the SQL Editor, with pending applications too (`supabase/scripts/seed-test-demo.sql`, D-213)
-- [ ] Later clean-up: Lovable build config, preview sign-in helper, error reporting and hosts in `origin.ts`
+- [x] Later clean-up: Lovable build config, preview sign-in helper, error reporting and hosts in `origin.ts` (step 3, D-219)
 
 ## OpenAppHub suite migration (D-217, `docs/MIGRATION-NOTES.md`, `docs/SHARED-SPEC.md`)
 This project becomes the production database for the whole suite (hub, Charter, Board, Ledger); Charter moves to the `charter` schema. One pull request per step (`AGENTS.md`).
 - [x] Step 1–2: inventory and secret scan (`docs/MIGRATION-NOTES.md`); spec and suite instructions in the repo
 - [x] Owner answers to Q2–Q8 recorded (D-218, `MIGRATION-NOTES.md` §8); demo password out of the repo, live checks skip without it
 - [ ] **Owner:** delete the `@opencharter.test` accounts on production and the `SMOKE_DEMO_PASSWORD` secret (§8.2); prices and the spec §0 inputs (Q1); follow-ups F2 (joining after hub sign-up) and F3 (which roles count as staff) before steps 6 and 11
-- [ ] Step 3: hygiene (`.env.example`, stop tracking `.env`, headers, Lovable leftovers)
+- [x] Spec v2 installed; owner's v2 answers in `MIGRATION-NOTES.md` §8.3 (D-219)
+- [x] Step 3: hygiene (D-219): `.env` untracked, `.env.example`, `wrangler.jsonc` staging/production, `staging.yml` + `release.yml`, security headers in the Worker, Lovable removed
+- [ ] **Owner (step 3):** switch off Cloudflare's Git build of `opencharterapp`; GitHub secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`; custom domains; staging publishable key; `opencharterapp.org` redirect later (`MIGRATION-NOTES.md` §10)
+- [ ] **Owner:** create `Nox-Mob/OpenAppHub`; disconnect Lovable; back up production before step 4
 - [ ] Step 4: `db/migrations/0000_park_legacy.sql` (production; the owner applies it, after a backup)
-- [ ] Steps 5–8: vendor shared code (needs `Nox-Mob/OpenAppHub`), Charter baseline, DB tests; seed deferred until the owner provides suite seed data
+- [ ] Steps 5–8: vendor shared code (needs `Nox-Mob/OpenAppHub`), Charter baseline, minimal staging demo seed, DB tests
 - [ ] Steps 9–14: shared client, org scoping, hosted/self-hosted, billing banner, export, `api_*` views
 - [ ] Steps 15–17: design tokens and AppShell, Help links, docs
 

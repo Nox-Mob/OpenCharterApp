@@ -34,6 +34,8 @@ dist-ssr
 *.sln
 *.sw?
 
-# Local environment overrides (never commit secrets)
-.env.local
-.env.*.local
+# Environment files (spec §7.1): only .env.example is committed. Local values go in .env.local;
+# deployed values live in wrangler.jsonc (public) and the Worker's secrets.
+.env
+.env.*
+!.env.example

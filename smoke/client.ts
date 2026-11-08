@@ -1,11 +1,12 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { readFileSync, existsSync } from "node:fs";
 
-/** Reads VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY from the environment or .env. */
+/** Reads VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY from the environment or .env.local. */
 export function env(name: string): string {
   if (process.env[name]) return process.env[name] as string;
-  if (existsSync(".env")) {
-    const line = readFileSync(".env", "utf8")
+  for (const file of [".env.local", ".env"]) {
+    if (!existsSync(file)) continue;
+    const line = readFileSync(file, "utf8")
       .split("\n")
       .find((l) => l.startsWith(`${name}=`));
     if (line) return line.slice(name.length + 1).replace(/^"|"$/g, "");

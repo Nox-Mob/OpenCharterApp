@@ -51,6 +51,10 @@ Linked levels (A4, D-177) can only be changed while the database session flag `a
 | Test browser | Playwright 1.64.1 bundles Chromium 156.0.8078.4, behind Chrome stable's late-October security fixes; Playwright's sandbox is off by default | Low for us: tests visit only our own app and backend | Pinned at 1.64.1 by the owner and hardened (D-186): sandbox on, CI on Google Chrome stable, an origin guard that blocks every other host |
 | Runtime: form validation | `zod` 3.25.76 (fixed only in 4.6.6) | Low. The advisory is about memory use when validating oversized constrained collections; our schemas cap lists (for example, at most 10 conditions per pricing rule), and the database rechecks everything | **F3 done (2026-11-02):** zod 4.6.7 with `@hookform/resolvers` 7 (D-187) |
 
+### 1.7 Security headers (D-219)
+
+Every rendered page gets `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY` and a Content-Security-Policy from the server entry (`src/lib/security-headers.ts`, spec §10.1). The CSP allows the app, its Supabase project (API, websocket, storage images) and Google Fonts only; `frame-ancestors 'none'`, `object-src 'none'`, `base-uri` and `form-action` `'self'`. It still allows `'unsafe-inline'` scripts and styles (TanStack Start's inline hydration scripts); per-request nonces are a later hardening step.
+
 ## 2. Accessibility (R2)
 - **Automated** in `e2e/a11y.spec.ts`, as National, Chapter and Member, on the dashboard and every main screen (Overview, Members or Directory, Board, Reports, Chapters, Settings, Levels, Payments):
   - every button, link, field, combobox, checkbox, switch, radio, tab and menu item has an accessible name (WCAG 4.1.2, 1.3.1)
@@ -105,7 +109,7 @@ After 0044 every read grows in step with the roster and stays well under the 1 s
 - **JIT compilation.** At 20,000 members the planner's cost estimate for the Overview crossed Postgres's JIT thresholds, and compiling took about 700 ms of the read. JIT is off for the six heavy report functions (overview, both roll-ups, payments export, directory, audit log). Supabase leaves JIT on by default, so this matters on the hosted database too.
 
 ## 5. Monitoring (R7) and owner actions
-- **Errors:** unexpected errors in the browser and on the server go to Lovable's error reporting (`src/lib/lovable-error-reporting.ts`, `src/lib/error-capture.ts`, wired in `src/routes/__root.tsx` and `src/server.ts`). Owner: confirm error reporting is on in the Lovable project settings.
+- **Errors:** since D-219 Lovable's error reporting is gone. Unexpected server errors are logged with `console.error` (`src/lib/error-capture.ts`, `src/server.ts`) and show in the Worker's logs (Cloudflare → Workers → `opencharterapp` → Logs; turn on Workers Logs). Browser errors are logged to the console only. Owner: turn on Workers Logs for both Workers; an error-reporting service can be added later.
 - **Failed payments** show as "Failed" on Settings → Payments.
 - **Webhook rejections** (a wrong signing secret) aren't stored, because we can't trust the request. They show in the Stripe dashboard under the webhook endpoint's deliveries. Owner: after connecting Stripe, send a test event and check for "Succeeded" (`user-testing.md` §10). An admin-visible "last webhook received" line is a candidate for Wave B.
 - **A1, live Stripe test-mode check (owner action):** needs a Stripe test account. On a non-demo test org, connect a test key and webhook, then join, return, refund, and decline with refund, following `user-testing.md` §10.

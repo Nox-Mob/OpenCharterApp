@@ -1,20 +1,69 @@
-// Cloudflare Worker settings (D-212). `bun run build` (nitro, cloudflare-module preset) merges
-// this into .output/server/wrangler.json, and `npx wrangler deploy` finds that file through
-// .wrangler/deploy/config.json. The name must match the Worker in the Cloudflare dashboard.
-// Secrets are set on the Worker, never here (docs/migration/phase-1-cutover.md §4).
+// Cloudflare Worker settings (spec §10, D-219). `bun run build` (nitro, cloudflare-module preset)
+// merges this into .output/server/wrangler.json. Deploys go through GitHub Actions only:
+//   staging     push to main → .github/workflows/staging.yml → `wrangler deploy --env staging`
+//   production  the owner runs .github/workflows/release.yml → `wrangler deploy --env production`
+// Both workflows load the env's VITE_* values below into the build (scripts/worker-env.mjs), so
+// this file is the one place the public settings live. Secrets (SUPABASE_SERVICE_ROLE_KEY,
+// GATEWAY_ENCRYPTION_KEY) are set on each Worker, never here.
+//
+// The top level is the self-hosted default (VITE_HOSTED=false): replace the placeholder values
+// with your own project's before `wrangler deploy`. Its name deliberately differs from the hosted
+// Workers so an old Git-connected build can't overwrite production.
 {
-  "name": "opencharterapp",
+  "name": "opencharterapp-selfhosted",
   // Pinned so a build doesn't change runtime behaviour by date; nodejs_compat is on by default
   // from 2026-08-04.
   "compatibility_date": "2026-11-06",
   // Cloudflare builds branches other than main with `wrangler preview`, which needs this block
   // (it may stay empty: assets and compatibility settings stay at the top level).
   "previews": {},
-  // Plain (non-secret) runtime values for the server functions. Secrets
-  // (SUPABASE_SERVICE_ROLE_KEY, GATEWAY_ENCRYPTION_KEY) are set on the Worker, never here.
   "vars": {
-    "PUBLIC_APP_URL": "https://opencharterapp.org",
-    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_MCrW_dhmcTByXwf8s75dYw_GGV8_Tvw",
-    "SUPABASE_URL": "https://nxungwtxnctcqolfshcr.supabase.co"
+    "VITE_HOSTED": "false",
+    "VITE_APP_ID": "charter",
+    "VITE_APP_SCHEMA": "charter",
+    "VITE_SUPABASE_URL": "https://your-project-ref.supabase.co",
+    "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_your_key",
+    "SUPABASE_URL": "https://your-project-ref.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_your_key",
+    "VITE_DOCS_URL": "https://docs.openapphub.org"
+  },
+  "env": {
+    "staging": {
+      "name": "opencharterapp-staging",
+      "vars": {
+        "VITE_HOSTED": "true",
+        "VITE_APP_ID": "charter",
+        "VITE_APP_SCHEMA": "charter",
+        "VITE_SUPABASE_URL": "https://dnsqxiiexkdokgebysrt.supabase.co",
+        // Owner: paste the staging project's publishable key (a public value). staging.yml skips
+        // until this placeholder is replaced.
+        "VITE_SUPABASE_PUBLISHABLE_KEY": "REPLACE_WITH_STAGING_PUBLISHABLE_KEY",
+        "SUPABASE_URL": "https://dnsqxiiexkdokgebysrt.supabase.co",
+        "SUPABASE_PUBLISHABLE_KEY": "REPLACE_WITH_STAGING_PUBLISHABLE_KEY",
+        "VITE_HUB_URL": "https://staging.openapphub.org",
+        "VITE_COOKIE_DOMAIN": ".openapphub.org",
+        "VITE_SUITE_URLS": "{\"hub\":\"https://staging.openapphub.org\",\"charter\":\"https://charter-staging.openapphub.org\",\"board\":\"https://board-staging.openapphub.org\",\"ledger\":\"https://ledger-staging.openapphub.org\"}",
+        "VITE_DOCS_URL": "https://docs.openapphub.org",
+        "PUBLIC_APP_URL": "https://charter-staging.openapphub.org"
+      }
+    },
+    "production": {
+      // The existing production Worker, so its secrets carry over.
+      "name": "opencharterapp",
+      "vars": {
+        "VITE_HOSTED": "true",
+        "VITE_APP_ID": "charter",
+        "VITE_APP_SCHEMA": "charter",
+        "VITE_SUPABASE_URL": "https://nxungwtxnctcqolfshcr.supabase.co",
+        "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_MCrW_dhmcTByXwf8s75dYw_GGV8_Tvw",
+        "SUPABASE_URL": "https://nxungwtxnctcqolfshcr.supabase.co",
+        "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_MCrW_dhmcTByXwf8s75dYw_GGV8_Tvw",
+        "VITE_HUB_URL": "https://openapphub.org",
+        "VITE_COOKIE_DOMAIN": ".openapphub.org",
+        "VITE_SUITE_URLS": "{\"hub\":\"https://openapphub.org\",\"charter\":\"https://charter.openapphub.org\",\"board\":\"https://board.openapphub.org\",\"ledger\":\"https://ledger.openapphub.org\"}",
+        "VITE_DOCS_URL": "https://docs.openapphub.org",
+        "PUBLIC_APP_URL": "https://charter.openapphub.org"
+      }
+    }
   }
 }

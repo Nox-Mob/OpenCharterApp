@@ -1,0 +1,72 @@
+name: Release (production)
+
+# Spec §10.2 (D-219): the ONLY way production changes. The owner runs it by hand ("Run
+# workflow"), in the protected `production` environment. Production code and production database
+# changes move together:
+#   1. migrations against production (no seed), with the vendored runner scripts/migrate.mjs;
+#      if they fail, nothing is deployed;
+#   2. build with the production values from wrangler.jsonc (scripts/worker-env.mjs);
+#   3. `wrangler deploy --env production` (Worker opencharterapp).
+# Until the runner exists (suite step 5) there is no database step here: the old
+# "Supabase database" workflow still owns production's schema, so this only deploys code.
+# Secrets: PROD_DATABASE_URL (Session pooler string), CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "production" to release to production'
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+env:
+  WRANGLER_VERSION: 4.152.0
+
+jobs:
+  release:
+    name: Migrate and deploy production
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    steps:
+      - name: Confirm
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          if [ "$CONFIRM" != "production" ]; then
+            echo "::error::Type production in the confirm box to release."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Production settings are complete
+        run: node scripts/worker-env.mjs production --check
+      - name: Migrate production (no seed)
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: |
+          if [ -f scripts/migrate.mjs ]; then
+            if [ -z "$DATABASE_URL" ]; then
+              echo "::error::PROD_DATABASE_URL is not set."
+              exit 1
+            fi
+            node scripts/migrate.mjs
+          else
+            echo "::notice::No migration runner yet (suite step 5): production's database was not changed by this release."
+          fi
+      - name: Build with the production settings
+        run: |
+          node scripts/worker-env.mjs production >> "$GITHUB_ENV"
+      - run: bun run build
+      - name: Deploy the production Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bunx "wrangler@${WRANGLER_VERSION}" deploy --config .output/server/wrangler.json --env production
