@@ -14,6 +14,16 @@ None. `0000`–`0045` are applied (the last: `0044_scale_indexes`, D-209, confir
 - [x] Test-Demo seed in plain SQL for the SQL Editor, with pending applications too (`supabase/scripts/seed-test-demo.sql`, D-213)
 - [ ] Later clean-up: Lovable build config, preview sign-in helper, error reporting and hosts in `origin.ts`
 
+## OpenAppHub suite migration (D-217, `docs/MIGRATION-NOTES.md`, `docs/SHARED-SPEC.md`)
+This project becomes the production database for the whole suite (hub, Charter, Board, Ledger); Charter moves to the `charter` schema. One pull request per step (`AGENTS.md`).
+- [x] Step 1–2: inventory and secret scan (`docs/MIGRATION-NOTES.md`); spec and suite instructions in the repo
+- [ ] **Owner:** answer the questions in `MIGRATION-NOTES.md` §8 (Q2 and Q3 before step 6); change the demo accounts' password on the production project (§4)
+- [ ] Step 3: hygiene (`.env.example`, stop tracking `.env`, headers, Lovable leftovers)
+- [ ] Step 4: `db/migrations/0000_park_legacy.sql` (production; the owner applies it, after a backup)
+- [ ] Steps 5–8: vendor shared code (needs `Nox-Mob/OpenAppHub`), Charter baseline, seed, DB tests
+- [ ] Steps 9–14: shared client, org scoping, hosted/self-hosted, billing banner, export, `api_*` views
+- [ ] Steps 15–17: design tokens and AppShell, Help links, docs
+
 ## Now: the MVP release, v0.1.0 (`docs/plans/wave-a-mvp.md`)
 Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D-170, D-175), demo data kept until a second real national joins (D-171), version 0.1.0 with a changelog and tag (D-172).
 
