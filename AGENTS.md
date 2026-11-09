@@ -1,20 +1,93 @@
-<!-- LOVABLE:BEGIN -->
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
-<!-- LOVABLE:END -->
+# Suite migration (OpenAppHub, v2)
+
+**Read `docs/SHARED-SPEC.md` (v2) first.** The step plan, inventory and status: `docs/MIGRATION-NOTES.md` §9. This section gives the owner's answers and the changes v2 makes to that plan.
+
+App ID `charter` · schema `charter` · hosted at `charter.openapphub.org` (staging `charter-staging.openapphub.org`) · package manager **Bun**.
+
+This project (`nxungwtxnctcqolfshcr`) becomes the suite's **production** database. Its first database step must be non-destructive.
+
+The repo's other rules still apply unless this section or the spec replaces them, including **D-215: no "Generated with Claude Code" lines or session links** in commits, PRs, code or comments.
+
+---
+
+### Owner answers to your notes
+
+| Your item | Answer |
+|---|---|
+| Q1 / §5.1 hosting | **Workers** (spec §10). Headers in the Worker. |
+| Q1 inputs | Spec §0.1 is filled in. **Design is a full refresh** for every app (spec §9): Charter isn't a reference app; restyle in Phase 4 once the hub's direction is approved. |
+| Q2–Q3, F3 | As you proposed: top of the tree = core org; `charter.units` for regions and chapters; staff (anyone with a role beyond the built-in Member) get core memberships, `org_admin` at the top unit → core `owner`/`admin`; portal members don't count (spec §3.9, §4.5). |
+| Q4, F2 | **New members sign up at the hub.** Option (a): hosted `/join/<slug>` is a **signed-in** join screen in Charter; signed-out visitors go to the hub's sign-up and come back. The public join page with Charter's own sign-up is self-hosted only (spec §4.5). |
+| Q5 | Seed deferred, but **demo runs on staging** (spec §11): a minimal `db/seed/0001_charter_demo.sql` is now wanted; the owner's full content comes later. |
+| Q6 | Platform operators and demo orgs move to the hub. Don't recreate them. |
+| Q7, Q8 | As decided: downtime fine; delete the demo accounts on production. |
+| §5.5 dues | Dues stay in Charter (spec §6.3). |
+| §5.6 read-only | Keep recording payments, refunds and receipts; refuse **new** joins and renewals while read-only (spec §6.3). |
+| §5.9 profiles | Signed-in people's names come from `public.profiles` (via `org_member_directory`); roster-only records keep their own fields. |
+| Invitations | **Handled by the hub, through core** (spec §4.3). Charter's `create_invitation` / `accept_invitation` are **not recreated**. Charter keeps an `/invite/<token>` page built on `shared/ui/InvitationPage` and adds `charter.on_invitation_accepted(p_invitation_id)` to apply the Charter part (link the roster record in `app_payload`, grant portal access, assign a Charter role). |
+| Ownership | **Core, transferred in the hub** (spec §4.4). Hosted: Charter links to the hub. Self-hosted: Charter's screen calls `public.transfer_ownership`. |
+| Orgs | Top-level orgs through `public.create_organization` (hub when hosted). Units through `charter.create_unit(…)`. |
+
+### Changes to your step plan (MIGRATION-NOTES §9)
+
+- **Step 3 (hygiene):** add `staging.yml` and `release.yml` (spec §10.2) and switch off the Cloudflare build that deploys production from `main`. Add `opencharterapp.org` → `charter.openapphub.org` redirect notes for the owner.
+- **Step 5 (vendor):** also switch off the `deploy` job in `supabase-db.yml` (spec §3.3).
+- **Step 6 (baseline):**
+  - Rename the bucket to **`charter-branding`** (spec §3.7).
+  - Write helper(s) always include `public.can_write(org_id,'charter')`, then Charter permissions (spec §3.5).
+  - `charter.is_portal_member(p_org, p_unit)` for dues members' reads.
+  - `charter.on_invitation_accepted` (above). No Charter invitation tables.
+  - `public_join_info` / `public_home_chapter_info`: created and granted to `anon` only when `instance_settings.billing_enabled` is false (self-hosted).
+  - `begin_join` / `begin_renewal` refuse when `public.has_app_access(org,'charter')` is false; payment recording paths don't check it.
+  - `charter.api_unit_count` (spec §6.1) along with the step-14 views.
+- **Step 7 (seed):** minimal idempotent demo seed for staging, refusing to run if real orgs exist. Demo addresses on `@demo.openapphub.org`; no passwords in the repo.
+- **Step 11 (hosted vs self-hosted):** hosted `/join/<slug>` requires sign-in (`loginRedirect` to the hub's sign-up with `next`); invitations, org creation, ownership and member core roles link to the hub; Charter's own roles, permissions, seats and roster stay in Charter.
+- **Step 14 (integration):** `charter.api_units`, `charter.api_board_seats`, `charter.api_payments_summary`, `charter.api_unit_count`.
+- **Step 15 (design):** adopt the new shared design (not a token swap). Separate PRs, before/after screenshots, behaviour and visible text unchanged unless the owner approves.
+
+### Rules specific to this repo (kept from v1)
+
+- Production-impacting migration files (step 4, step 6) say so in the first line of the PR description. The owner applies them with the Release or Migrate workflow (`target: production`); agents never do.
+- `charter_legacy` stays until the owner confirms everything works. Then a separate migration drops it, and only when asked.
+- Don't touch the `public`, `billing`, `hub` or `ops` schemas except through the vendored `db/core/`.
+
+### Phase 5 — Documentation (steps 16–17)
+
+Docs live in `Nox-Mob/OpenAppHub-docs` under `src/content/docs/charter/` (spec §12). `docs/user-testing.md` is the best source for exact on-screen words.
+
+16. **Help links** (`src/config/help.ts`):
+
+    | Screen | Docs path |
+    |---|---|
+    | User menu → Help | `charter/` |
+    | Settings → Setup, Membership setup | `charter/membership/setup-and-levels/` |
+    | Board setup | `charter/governance/board-setup/` |
+    | Members → Import members | `charter/members/importing/` |
+    | Settings → Payments | `charter/money/payments/` |
+    | Receipts | `charter/money/receipts/` |
+    | Creating a national (membership model step) | `charter/membership/membership-models/` |
+
+17. **Docs PR:**
+    - `charter/start/your-account.md`, `charter/start/finding-your-way.md`, `charter/setup/creating-an-organization.md`, `charter/setup/chapters.md`: hosted sign-in, org creation and invitations in the hub; chapters as units.
+    - `charter/money/joining-and-renewing.md`: hosted members sign up at the hub, then join; refused new joins while read-only.
+    - `charter/setup/roles.md`: core roles versus Charter roles.
+    - `charter/help/demo-organizations.md`: demo is on staging; operator-created demos come from the hub.
+    - `charter/help/known-limits.md`, `faq.md`, `self-hosting.md`: read-only state, export, new self-hosting steps.
+    - Any screen renamed or moved by the restyle.
+
+### Done when
+
+SHARED-SPEC §13 is satisfied; a hosted user signed in at the hub opens `charter.openapphub.org` already signed in, in the same org; a new member can sign up at the hub, join a chapter and pay dues; and a self-hosted build runs on an empty database with only Charter's migrations and `db/core`.
+
+The repo's own rules below stay in force unless this section or the spec replaces them; `docs/MIGRATION-NOTES.md` §7 lists which rule is replaced in which step.
 
 # OpenCharterApp — agent rules
 
 Read `docs/instructions.md` before changing code; planning docs live in `docs/`. Track work in `roadmap.md`.
 
-- Phase 1 (D-212): the app runs on its own Supabase project (`.env`) and a Cloudflare Worker built from `main`; Google sign-in goes through `supabase.auth.signInWithOAuth`, not Lovable. The database is built only from `supabase/migrations` by the "Supabase database" workflow; after the cutover, new migrations go there (`docs/migration/`).
-- Stack is TanStack Start + Lovable Cloud (see docs/decisions.md D-100..D-104), superseding the Next.js/pg-boss/Better Auth defaults — the Lovable toolchain requires it.
+- Phase 1 (D-212): the app runs on its own Supabase project and a Cloudflare Worker; Google sign-in goes through `supabase.auth.signInWithOAuth`, not Lovable. Until suite step 5, the database is built only from `supabase/migrations` by the "Supabase database" workflow (`docs/migration/`).
+- Deploys (D-219, spec §10.2): public settings per environment live in `wrangler.jsonc` (no `.env` is committed; local values go in `.env.local`). Pushes to `main` deploy staging only (`staging.yml`); production changes only through the owner's `release.yml`. Security headers come from `src/server.ts`; keep the CSP in `src/lib/security-headers.ts` to the app, its Supabase project and the hosts it really loads.
+- Stack is TanStack Start + Supabase on a Cloudflare Worker (D-100..D-104, D-212, D-219), with a plain `vite.config.ts` (no Lovable wrapper).
 - Every tenant table has `org_id`, explicit GRANTs and RLS using `public.has_permission` / `public.is_org_member` — RLS is the safety net for tenant isolation.
 - Authorization goes through `src/lib/policy` (UI) and `has_permission` (DB); never ad hoc checks — keeps downward-only inheritance (D-032) in one place.
 - Organizations are created only via the `create_organization` RPC — it enforces hierarchy rules and seeds the creator's admin role.

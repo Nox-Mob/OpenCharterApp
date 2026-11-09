@@ -14,3 +14,8 @@ supabase
 roadmap.md
 AGENTS.md
 wrangler.jsonc
+# Vendored from Nox-Mob/OpenAppHub (checked by scripts/check-shared.mjs)
+shared/
+db/core/
+scripts/migrate.mjs
+scripts/check-shared.mjs
