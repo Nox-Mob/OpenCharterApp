@@ -43,9 +43,18 @@ files here: change them in Nox-Mob/OpenAppHub and sync.
 
 ### 0.2 Next steps
 
-1. **Step 3, hygiene (redo for v2.2).**
+1. ~~Step 3, hygiene (redo for v2.2)~~ **done** (§0.3).
 2. **Step 5, rest of vendoring:** `migrate.yml`, a CI `db` job running `scripts/migrate.mjs` then `db/tests/*.sql`, retire `supabase-db.yml` / drizzle jobs, point `check:migrations` at `db/`.
 3. **Step 6, `db/migrations/0001_charter_baseline.sql`** (then seed, DB tests, client, org scoping, hosted mode, AppShell restyle).
+
+### 0.3 Step 3 (hygiene) as done for v2.2
+
+- Lovable's Vite wrapper is replaced by a plain `vite.config.ts` with the same plugins; `previewAuthStorage`, `cron-auth.ts`, Lovable error reporting and `.lovable/` are removed. `bun.lock` has no Lovable packages.
+- `.env` is untracked (CI fails on a tracked env file); `.env.example` lists every variable.
+- `wrangler.jsonc`: top level = production (`charter.openapphub.org`, `openapphub-prod`), `env.staging` (`charter-staging.openapphub.org`, `openapphub-staging`). `bun run build:hosted` / `build:hosted:staging` load its public `VITE_*` values (`scripts/worker-env.mjs`). No `release.yml` or `staging.yml`.
+- Security headers on every page.
+- **Self-hosting:** `bun run build` uses your own `.env`; `wrangler.selfhosted.example.jsonc` is the starting point for your own Worker.
+- **Owner:** the `opencharterapp` Worker's build command must be `bun run build:hosted` and its deploy command `npx wrangler deploy --config .output/server/wrangler.json`. The hosted app can't work until the baseline (step 6) and client (step 9) are in: the new database has no `charter` schema yet.
 
 ## 1. Database objects in the current project
 

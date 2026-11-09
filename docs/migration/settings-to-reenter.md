@@ -43,7 +43,7 @@ None. No migration uses `pg_cron` or `pg_net`, and no route uses `src/integratio
 
 | Name | What |
 |---|---|
-| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | The project's API URL and publishable key (publishable values, safe in `.env`) |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | The project's API URL and publishable key (publishable values, public; in `wrangler.jsonc` since D-219) |
 | `SUPABASE_SERVICE_ROLE_KEY` | The service-role or secret key, for server functions. **Secret** |
 | `GATEWAY_ENCRYPTION_KEY` | Encrypts each organization's Stripe credentials (32 random bytes, base64). **Secret.** Use the **same** value as on Lovable only if you copy encrypted Stripe credentials over. With no production data, generate a new one and orgs reconnect Stripe |
 | `PUBLIC_APP_URL`, `PUBLIC_APP_ALLOWED_ORIGINS` | Optional: the app's public address and extra allowed origins, for links that leave the app and come back (Stripe) |
