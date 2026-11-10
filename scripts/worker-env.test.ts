@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 // @ts-expect-error plain .mjs script without type declarations
-import { isPlaceholder, viteLines, workerVars } from "./worker-env.mjs";
+import { isPlaceholder, resolveTarget, viteLines, workerVars } from "./worker-env.mjs";
 
 const text = readFileSync("wrangler.jsonc", "utf8");
 
@@ -22,7 +22,9 @@ describe("wrangler.jsonc environments (spec v2.2)", () => {
     const vars = workerVars(text, "staging");
     expect(vars.VITE_SUPABASE_URL).toBe("https://mbloxixlykmbuuoaprnx.supabase.co");
     expect(JSON.stringify(vars)).not.toContain("ymlesgadawnjupnvgokd");
-    expect(JSON.parse(vars.VITE_SUITE_URLS).charter).toBe("https://charter-staging.openapphub.org");
+    expect(JSON.parse(vars.VITE_SUITE_URLS).charter).toBe(
+      "https://staging.charter.staging.openapphub.org",
+    );
   });
 
   it("the self-hosted example is not hosted and holds no real project", () => {
@@ -41,5 +43,15 @@ describe("wrangler.jsonc environments (spec v2.2)", () => {
       /^VITE_SUITE_URLS='\{.*\}'$/,
     );
     expect(text).not.toMatch(/sb_secret_|sk_live_|sk_test_|rk_live_|whsec_|eyJhbGci/);
+  });
+});
+
+describe("resolveTarget", () => {
+  it("builds main and local builds for production, other branches for staging", () => {
+    expect(resolveTarget("auto", {})).toBe("production");
+    expect(resolveTarget("auto", { WORKERS_CI_BRANCH: "main" })).toBe("production");
+    expect(resolveTarget("auto", { WORKERS_CI_BRANCH: "staging" })).toBe("staging");
+    expect(resolveTarget("auto", { WORKERS_CI_BRANCH: "claude/some-fix" })).toBe("staging");
+    expect(resolveTarget("production", { WORKERS_CI_BRANCH: "staging" })).toBe("production");
   });
 });

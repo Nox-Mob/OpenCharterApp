@@ -4,9 +4,14 @@
 // The top level is PRODUCTION (charter.openapphub.org). Cloudflare's Git integration builds
 // `main` with `bun run build:hosted` and deploys with
 // `npx wrangler deploy --config .output/server/wrangler.json` (the build writes that file; a plain
-// `wrangler deploy` refuses it because this config has an env). Staging is
-// `env.staging`: `bun run build:hosted:staging`, then
-// `npx wrangler deploy --config .output/server/wrangler.json --env staging`.
+// `wrangler deploy` refuses it because this config has an env).
+// Staging is this Worker's PREVIEW of the `staging` branch: Cloudflare builds every other branch
+// with the same build command, and `build:hosted` picks `env.staging` below for any branch but
+// `main` (WORKERS_CI_BRANCH). Previews are served at <branch>.charter.staging.openapphub.org; the
+// stable staging site is https://staging.charter.staging.openapphub.org. `env.staging` is used only
+// for those build values: a preview runs with this Worker's production runtime vars and secrets.
+// So on a preview the service-role key and GATEWAY_ENCRYPTION_KEY are production's, and
+// server tasks that need them (Stripe payments) refuse to run (src/integrations/supabase/server-env.ts).
 //
 // `vars` are PUBLIC. The build:hosted scripts load the VITE_* values below into the build
 // (scripts/worker-env.mjs), so this file is the one place the hosted public settings live.
@@ -39,7 +44,6 @@
   "env": {
     "staging": {
       "name": "opencharterapp-staging",
-      "routes": [{ "pattern": "charter-staging.openapphub.org", "custom_domain": true }],
       "vars": {
         "VITE_HOSTED": "true",
         "VITE_APP_ID": "charter",
@@ -50,9 +54,9 @@
         "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_XsbfqXRDX-L_TwmtYGvjDg_qiLKka2X",
         "VITE_HUB_URL": "https://staging.openapphub.org",
         "VITE_COOKIE_DOMAIN": ".openapphub.org",
-        "VITE_SUITE_URLS": "{\"hub\":\"https://staging.openapphub.org\",\"charter\":\"https://charter-staging.openapphub.org\",\"board\":\"https://board-staging.openapphub.org\",\"ledger\":\"https://ledger-staging.openapphub.org\"}",
+        "VITE_SUITE_URLS": "{\"hub\":\"https://staging.openapphub.org\",\"charter\":\"https://staging.charter.staging.openapphub.org\",\"board\":\"https://staging.board.staging.openapphub.org\",\"ledger\":\"https://staging.ledger.staging.openapphub.org\"}",
         "VITE_DOCS_URL": "https://docs.openapphub.org",
-        "PUBLIC_APP_URL": "https://charter-staging.openapphub.org"
+        "PUBLIC_APP_URL": "https://staging.charter.staging.openapphub.org"
       }
     }
   }

@@ -74,7 +74,7 @@ files here: change them in Nox-Mob/OpenAppHub and sync.
 
 - Lovable's Vite wrapper is replaced by a plain `vite.config.ts` with the same plugins; `previewAuthStorage`, `cron-auth.ts`, Lovable error reporting and `.lovable/` are removed. `bun.lock` has no Lovable packages.
 - `.env` is untracked (CI fails on a tracked env file); `.env.example` lists every variable.
-- `wrangler.jsonc`: top level = production (`charter.openapphub.org`, `openapphub-prod`), `env.staging` (`charter-staging.openapphub.org`, `openapphub-staging`). `bun run build:hosted` / `build:hosted:staging` load its public `VITE_*` values (`scripts/worker-env.mjs`). No `release.yml` or `staging.yml`.
+- `wrangler.jsonc`: top level = production (`charter.openapphub.org`, `openapphub-prod`), `env.staging` (`staging.charter.staging.openapphub.org`, `openapphub-staging`). `bun run build:hosted` / `build:hosted:staging` load its public `VITE_*` values (`scripts/worker-env.mjs`). No `release.yml` or `staging.yml`.
 - Security headers on every page.
 - **Self-hosting:** `bun run build` uses your own `.env`; `wrangler.selfhosted.example.jsonc` is the starting point for your own Worker.
 - **Owner:** the `opencharterapp` Worker's build command must be `bun run build:hosted` and its deploy command `npx wrangler deploy --config .output/server/wrangler.json`. The hosted app can't work until the baseline (step 6) and client (step 9) are in: the new database has no `charter` schema yet.
@@ -396,7 +396,7 @@ Order on production (START-HERE): Charter 0000 → Hub core + billing → Charte
 **Owner steps (step 3):**
 1. **Cloudflare:** switch off the Git integration (Workers Builds) that deploys the `opencharterapp` Worker from `main`. From now on only `release.yml` deploys production.
 2. **GitHub secrets:** `CLOUDFLARE_API_TOKEN` (Workers deploy permission) and `CLOUDFLARE_ACCOUNT_ID`; later `PROD_DATABASE_URL`, `STAGING_DATABASE_URL`, `SUPABASE_ACCESS_TOKEN`, `PROD_REF`, `STAGING_REF`. Optionally protect the `production` GitHub environment with yourself as required reviewer.
-3. **Staging Worker:** once staging exists, paste the staging project's **publishable** key into `wrangler.jsonc` → `env.staging` (both `REPLACE_WITH_STAGING_PUBLISHABLE_KEY` values; it's a public value, or ask an agent), set `SUPABASE_SERVICE_ROLE_KEY` and `GATEWAY_ENCRYPTION_KEY` on the `opencharterapp-staging` Worker, and add the custom domain `charter-staging.openapphub.org`.
+3. **Staging Worker:** once staging exists, paste the staging project's **publishable** key into `wrangler.jsonc` → `env.staging` (both `REPLACE_WITH_STAGING_PUBLISHABLE_KEY` values; it's a public value, or ask an agent), (superseded 2026-11-10: staging is the `opencharterapp` Worker's preview of the `staging` branch, on the preview domain `charter.staging.openapphub.org`; previews run with the production Worker's secrets, so Stripe payments refuse to run there).
 4. **Production Worker:** add the custom domain `charter.openapphub.org`. Its secrets are already set.
 5. **Old domain:** once Charter is live on `charter.openapphub.org`, redirect `opencharterapp.org` (and `www.`) there: Cloudflare → `opencharterapp.org` zone → Rules → Redirect Rules → "all incoming requests" → dynamic `concat("https://charter.openapphub.org", http.request.uri.path)`, status 301, preserve query string. Until then leave it; Supabase Auth's redirect URLs need both addresses during the switch.
 6. **Local copies:** anyone with a clone that had the old tracked `.env` should rename it to `.env.local`.

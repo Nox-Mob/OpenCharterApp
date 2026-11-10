@@ -104,7 +104,7 @@ GitHub runs all of these (D-197): `ci.yml` on every push and pull request, and `
 
 ### Hosting and deploys (spec §10, v2.2)
 
-- The hosted app is a Cloudflare Worker. In [`wrangler.jsonc`](wrangler.jsonc), the **top level is production** (`charter.openapphub.org`, Worker `opencharterapp`) and `env.staging` is staging (`charter-staging.openapphub.org`, Worker `opencharterapp-staging`), each with its public settings.
+- The hosted app is a Cloudflare Worker. In [`wrangler.jsonc`](wrangler.jsonc), the **top level is production** (`charter.openapphub.org`, Worker `opencharterapp`) and `env.staging` holds staging's public settings. Staging is the same Worker's preview of the `staging` branch (`staging.charter.staging.openapphub.org`; any other branch builds at `<branch>.charter.staging.openapphub.org`): `bun run build:hosted` builds `main` for production and every other branch for staging.
 - **Merging to `main` deploys production** through Cloudflare's Git integration: build `bun run build:hosted`, deploy `npx wrangler deploy --config .output/server/wrangler.json`. Staging: `bun run build:hosted:staging`, then the same deploy command with `--env staging`. There are no deploy workflows and no Cloudflare secrets in GitHub.
 - Every rendered page gets security headers from the server entry (`src/server.ts`, `src/lib/security-headers.ts`): `nosniff`, `strict-origin-when-cross-origin`, `X-Frame-Options: DENY` and a CSP allowing only the app, its Supabase project and Google Fonts.
 - Server secrets (`SUPABASE_SERVICE_ROLE_KEY`, `GATEWAY_ENCRYPTION_KEY`) are set on each Worker.

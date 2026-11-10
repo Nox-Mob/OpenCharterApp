@@ -51,7 +51,7 @@ function secure(response: Response): Response {
   if (!import.meta.env.PROD) return response;
   return withSecurityHeaders(
     response,
-    process.env["SUPABASE_URL"] || import.meta.env["VITE_SUPABASE_URL"],
+    import.meta.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"],
   );
 }
 

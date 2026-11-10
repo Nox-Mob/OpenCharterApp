@@ -7,6 +7,17 @@
 import { readFileSync } from "node:fs";
 import ts from "typescript";
 
+/**
+ * "auto" picks the environment from the branch Cloudflare's Workers Builds is building
+ * (WORKERS_CI_BRANCH): `main` and local builds are production, any other branch is staging,
+ * so its preview (<branch>.<app>.staging.openapphub.org) uses the staging database.
+ */
+export function resolveTarget(arg, env = process.env) {
+  if (arg !== "auto") return arg;
+  const branch = env.WORKERS_CI_BRANCH;
+  return branch && branch !== "main" ? "staging" : "production";
+}
+
 export function workerVars(text, envName) {
   const { config, error } = ts.parseConfigFileTextToJson("wrangler.jsonc", text);
   if (error)
@@ -32,9 +43,11 @@ export const isPlaceholder = (vars) =>
   );
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const [envName = "", flag] = process.argv.slice(2);
+  const [arg = "", flag] = process.argv.slice(2);
+  const envName = resolveTarget(arg);
+  if (envName) console.error(`build env: ${envName}`);
   if (!envName) {
-    console.error("usage: node scripts/worker-env.mjs <production|staging> [--check]");
+    console.error("usage: node scripts/worker-env.mjs <production|staging|auto> [--check]");
     process.exit(2);
   }
   const vars = workerVars(readFileSync("wrangler.jsonc", "utf8"), envName);
