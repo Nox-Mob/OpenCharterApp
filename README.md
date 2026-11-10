@@ -85,7 +85,7 @@ bun run lint
 bun run format:check
 bun run typecheck
 bun run test                 # unit and component tests (Vitest)
-bun run check:migrations     # Lovable's migration rules
+bun run check:migrations     # migration rules (db/migrations)
 TEST_DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres bun run test:db
 bun run build
 bun run test:e2e             # end-to-end, in Chromium (needs network; see docs/testing.md)
@@ -95,14 +95,12 @@ Install the pre-commit hook once per clone with `bun run hooks:install`; it runs
 
 GitHub runs all of these (D-197): `ci.yml` on every push and pull request, and `live.yml` (the smoke test, then the end-to-end tests against the live demo) on pushes to `main` and `BoardUpdates`, pull requests to `main`, daily and on demand. See [`docs/testing.md`](docs/testing.md).
 
-`test:db` creates and drops its own throwaway database (`oc_rules_test`), applies every migration and runs `db/tests/*.sql`. **Never point it at the real project database.** Details are in [`docs/testing.md`](docs/testing.md). For checking the app by hand, follow [`docs/user-testing.md`](docs/user-testing.md).
+`test:db` creates and drops its own throwaway database (`charter_rules_test`), applies every migration and runs `db/tests/*.sql`. **Never point it at the real project database.** Details are in [`docs/testing.md`](docs/testing.md). For checking the app by hand, follow [`docs/user-testing.md`](docs/user-testing.md).
 
 ### Database changes
 
-- Schema changes are SQL migrations in [`drizzle/migrations`](drizzle/migrations). They follow Lovable's import rules: full grants with row-level security and no dropping tables or columns.
-- **Moving off Lovable Cloud (Phase 0, D-211):** [`supabase/migrations`](supabase/migrations) is the single ordered history the new Supabase project is built from (the same files, plus fixes as new migrations). The "Supabase database" workflow rebuilds it on every pull request and deploys it by hand after approval. **`drizzle/` and `drizzle.config.ts` are legacy**: kept only while Lovable still applies `drizzle/migrations`, until the cutover. See [`docs/migration/`](docs/migration/).
-- Lovable applies them to the live database in order (and adds a small "confirm" migration of its own when it does). Until a migration is applied, screens that need it show "needs a database update" or leave the feature out instead of failing.
-- Migrations waiting to be applied are listed at the top of [`roadmap.md`](roadmap.md), with steps in [`docs/lovable-handoff.md`](docs/lovable-handoff.md). An applied migration is never edited; fixes ship as new migrations.
+- Schema changes are SQL migrations in [`db/migrations`](db/migrations), in schema `charter` on the shared OpenAppHub core (`db/core`, vendored from the hub). `scripts/migrate.mjs` applies them (`DATABASE_URL=… bun run db:migrate`); the owner runs the **Migrate** workflow for staging and production. Migrations are additive: no dropping tables or columns, and an applied migration is never edited.
+- [`supabase/migrations`](supabase/migrations) is the **old public-schema database, frozen**. Today's app code still reads it, so self-hosters use it until the client switches to `charter` (migration step 9). No workflow applies it ([`supabase/README.md`](supabase/README.md)).
 
 ### Hosting and deploys (spec §10, v2.2)
 
@@ -115,6 +113,7 @@ GitHub runs all of these (D-197): `ci.yml` on every push and pull request, and `
 
 - `bun run build` builds the self-hosted app from your own `.env` / `.env.local` (copy `.env.example`); it never uses the hosted values in `wrangler.jsonc`. With `VITE_HOSTED=false` (the default) the app keeps its own sign-in and doesn't link to openapphub.org.
 - To deploy your own Worker: copy [`wrangler.selfhosted.example.jsonc`](wrangler.selfhosted.example.jsonc) over `wrangler.jsonc`, replace the placeholder values with your project's, run `bun run build`, then `npx wrangler deploy --config .output/server/wrangler.json`, and set the two secrets on the Worker.
+- Database, until the client switch (migration step 9): apply `supabase/migrations` to your own Supabase project (`supabase db push`). After it, `DATABASE_URL=… bun run db:migrate` applies the core and the `charter` schema instead.
 
 ### Git history
 

@@ -1,1 +1,0 @@
-COMMENT ON TABLE public.seat_templates IS 'Board seat definitions (confirmed after 0029-0030).';
