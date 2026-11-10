@@ -100,7 +100,7 @@ GitHub runs all of these (D-197): `ci.yml` on every push and pull request, and `
 ### Database changes
 
 - Schema changes are SQL migrations in [`db/migrations`](db/migrations), in schema `charter` on the shared OpenAppHub core (`db/core`, vendored from the hub). `scripts/migrate.mjs` applies them (`DATABASE_URL=… bun run db:migrate`); the owner runs the **Migrate** workflow for staging and production. Migrations are additive: no dropping tables or columns, and an applied migration is never edited.
-- Demo data for staging or development: [`db/seed`](db/seed) (`bun run db:migrate -- --seed`; the demo password comes from `PGOPTIONS="-c fixture.demo_password=…"`). It refuses a database with real organizations, and never runs on production.
+- Demo data for staging or development: [`db/seed`](db/seed) (`bun run db:migrate -- --seed`; the suite demo, `demo@demo.openapphub.org` / `OpenAppHubDemo2026`, see [`docs/demo-data.md`](docs/demo-data.md)). It refuses a database with real organizations, and never runs on production.
 
 ### Hosting and deploys (spec §10, v2.2)
 

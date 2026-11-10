@@ -1,606 +1,227 @@
--- OpenCharterApp demo data for STAGING (and local development) only. Applied by
--- scripts/migrate.mjs --seed (Migrate → staging), recorded under "opencharterapp:seed",
--- so it runs once. Never on production: it refuses a database that isn't marked staging by
--- the hub, or (without the hub) one holding real organizations.
+-- OpenCharterApp's part of the suite demo, STAGING (and local development) only. Applied by
+-- scripts/migrate.mjs --seed (Migrate → staging), recorded under "opencharterapp:seed".
 --
--- Ported from supabase/scripts/demo-test-accounts.sql and seed-test-demo.sql (docs/demo-data.md):
--- the three demo accounts, Demo National with Austin and Dallas, and the sales demo national
--- Test-Demo with about 500 members. Top units create their core organization (and owner) on
--- insert; staff roles add a core membership.
+-- The suite has one demo organization, "Riverside Community Association", owned by the demo
+-- account demo@demo.openapphub.org, and one empty test account test@demo.openapphub.org (both
+-- password OpenAppHubDemo2026). OpenAppHub creates them and resets everything every 12 hours
+-- (hub.reset_suite_demo, the hub's demo-reset workflow), calling charter.demo_fill for the
+-- roster: a neighbourhood association with about 140 households, dues, receipts and its board,
+-- most of it from the last three months, dated from the day it runs.
 --
--- The demo password comes from fixture.demo_password (migrate.yml passes the DEMO_PASSWORD
--- secret as PGOPTIONS="-c fixture.demo_password=…"). Without it the accounts can't sign in.
+-- Without the hub (a self-hosted development database) this file creates the same two
+-- accounts and the organization itself, once.
+
 do $guard$
 begin
   if to_regclass('hub.instance') is not null then
     if coalesce((select environment from hub.instance where id), '') <> 'staging' then
       raise exception 'Refusing to seed: this database is not marked staging.';
     end if;
-  elsif exists (select 1 from public.organizations o
-                where not exists (select 1 from charter.units u where u.id = o.id and u.is_demo)) then
+  elsif exists (select 1 from public.organizations where id <> 'de000000-0000-4000-8000-0000000000a1') then
     raise exception 'Refusing to seed: this database has real organizations.';
   end if;
 end
 $guard$;
 
--- Demo test accounts and organizations (docs/demo-data.md) for the smoke and end-to-end tests:
--- the three demo accounts, Demo National with Austin and Dallas, and an empty Test-Demo.
--- Used two ways:
---   * CI (replay job): supabase/ci/fixtures.sql runs it on the local stack.
---   * The owner, once, on the new Supabase project (SQL Editor or psql), so the live demo checks
---     have their accounts there too (docs/migration/settings-to-reenter.md §9).
---
--- The password is never written in this file. Set it first, in the same session:
---   SQL Editor: add this line above the script, with the password in place of the dots:
---     select set_config('fixture.demo_password', '........', false);
---   psql:       PGOPTIONS="-c fixture.demo_password=..." psql "$DB_URL" -f demo-test-accounts.sql
--- It must match the SMOKE_DEMO_PASSWORD secret the live checks use.
---
--- Safe to run twice: rows that exist are left as they are (an existing account keeps its
--- password). It refuses to run if a demo ID or slug belongs to a real (non-demo) organization,
--- or if a demo email belongs to an account with a different ID. Everything runs in one
--- transaction: on any error nothing is changed.
-
-do $fixture$
+-- Charter's records for the demo organization. Run by the hub's reset as the database owner,
+-- after the organization (owned by p_owner) was created afresh. The roster, dues and board go
+-- through Charter's own functions as the owner, so standing, receipts and the audit log are
+-- exactly what the app makes.
+create or replace function charter.demo_fill(p_org uuid, p_owner uuid)
+returns void
+language plpgsql
+set search_path = ''
+as $$
 declare
-  _pw text := current_setting('fixture.demo_password', true);
-  _users constant uuid[] := array['d0000000-0000-4000-8000-000000000001',
-                                  'd0000000-0000-4000-8000-000000000002',
-                                  'd0000000-0000-4000-8000-000000000003']::uuid[];
-  _emails constant text[] := array['demo-national@opencharter.test',
-                                   'demo-chapter@opencharter.test',
-                                   'demo-member@opencharter.test'];
-  _names constant text[] := array['Nora National', 'Chris Chapter', 'Morgan Member'];
-  _nat constant uuid := 'd1000000-0000-4000-8000-000000000001';
-  _aus constant uuid := 'd1000000-0000-4000-8000-000000000002';
-  _dal constant uuid := 'd1000000-0000-4000-8000-000000000003';
-  -- Test-Demo, the sales demo national in the home-chapter model (docs/demo-data.md, D-199)
-  _tdemo constant uuid := 'd60400ef-9dbb-414a-9a3e-e0cbf2fc15ab';
-  _admin uuid; _member uuid; _tier uuid; _rank uuid; _life uuid; _p uuid;
-  _i int;
+  v_first text[] := array['James','Mary','Robert','Patricia','John','Jennifer','Michael','Linda',
+    'David','Elizabeth','William','Barbara','Richard','Susan','Joseph','Jessica','Thomas','Sarah',
+    'Charles','Karen','Daniel','Nancy','Matthew','Betty','Anthony','Sandra','Mark','Margaret',
+    'Steven','Ashley','Andrew','Emily','Paul','Donna','Joshua','Michelle','Kevin','Amanda','Brian',
+    'Melissa','George','Rebecca','Jason','Laura','Ryan','Amy','Eric','Angela','Nicholas','Rachel',
+    'Aisha','Wei','Mateo','Fatima','Hiroshi','Sofia','Kwame','Ines','Ravi','Leila'];
+  v_last text[] := array['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis',
+    'Rodriguez','Martinez','Hernandez','Lopez','Wilson','Anderson','Thomas','Taylor','Moore',
+    'Jackson','Martin','Thompson','White','Harris','Clark','Ramirez','Lewis','Robinson','Walker',
+    'Young','Allen','King','Wright','Scott','Torres','Nguyen','Hill','Flores','Green','Adams',
+    'Nelson','Baker','Rivera','Campbell','Mitchell','Carter','Roberts','Okafor','Kim','Patel',
+    'Sato','Haddad'];
+  v_streets text[] := array['Maple Ave','River Rd','Oak St','Willow Ln','Elm St','Bluff Dr','Mill St','Park Pl'];
+  v_board text[] := array['Jordan Lee','Sam Chen','Taylor Brooks','Priya Patel','Marcus Johnson'];
+  v_titles text[] := array['President','Vice President','Secretary','Treasurer','Member at Large'];
+  t_household uuid; t_individual uuid; t_senior uuid;
+  r_household uuid; r_individual uuid; r_senior uuid;
+  d_street uuid; d_volunteer uuid;
+  v_seats uuid[] := '{}';
+  v_seat uuid;
+  v_profile uuid; v_membership uuid; v_owner_profile uuid;
+  v_officers uuid[] := '{}';
+  v_term uuid; v_price int; v_start date; v_kind text;
+  v_methods charter.payment_method[] := array['check','card','card','cash','bank_transfer']::charter.payment_method[];
+  v_used text[] := '{}';
+  v_name text; v_i int; v_n int;
+  v_admin_role uuid;
 begin
-  -- Without a password (fixture.demo_password, e.g. PGOPTIONS from migrate.yml's
-  -- DEMO_PASSWORD secret) the accounts are created but can't sign in until one is set.
-  if _pw is not null and (length(_pw) < 8 or _pw ~ '^\.+$') then
-    raise exception 'fixture.demo_password must be 8 characters or more';
-  end if;
+  perform setseed(0.27182);
 
-  -- Refuse to touch real organizations.
-  if exists (select 1 from charter.units
-             where (id in (_nat, _aus, _dal, _tdemo)
-                    or slug in ('demo-national', 'demo-austin', 'demo-dallas', 'test-demo'))
-               and not is_demo) then
-    raise exception 'a demo ID or slug belongs to a real organization; nothing was changed';
-  end if;
-  if exists (select 1 from charter.units
-             where (id = _nat and slug <> 'demo-national') or (id = _aus and slug <> 'demo-austin')
-                or (id = _dal and slug <> 'demo-dallas') or (id = _tdemo and slug <> 'test-demo')) then
-    raise exception 'a demo ID is used by another organization; nothing was changed';
-  end if;
-  for _i in 1..3 loop
-    if exists (select 1 from auth.users where lower(email) = _emails[_i] and id <> _users[_i]) then
-      raise exception '% belongs to another account; nothing was changed', _emails[_i];
+  -- The top unit (same id as the organization), the owner's roster record and admin role,
+  -- as charter.ensure_top_unit does when an owner opens a hub organization in Charter.
+  -- A demo organization (D-148): test payments only, never emails.
+  insert into charter.units (id, name, slug, type, parent_id, created_by, is_demo)
+  select p_org, o.name, 'riverside-community-association', 'standalone', null, p_owner, true
+  from public.organizations o where o.id = p_org;
+  insert into charter.member_profiles (unit_id, user_id, email, display_name)
+  select p_org, p_owner, u.email, 'Alex Morgan' from auth.users u where u.id = p_owner
+  returning id into v_owner_profile;
+  select id into v_admin_role from charter.roles where key = 'org_admin' and unit_id is null;
+  insert into charter.role_assignments (user_id, role_id, unit_id) values (p_owner, v_admin_role, p_org);
+  insert into charter.tax_profiles (unit_id, legal_name, ein, tax_status, address_line1, city, region, postal_code, country)
+  values (p_org, 'Riverside Community Association', '47-1234567', '501(c)(4)', '210 River Rd',
+    'Riverside', 'IL', '60546', 'US');
+
+  -- Levels and their prices.
+  insert into charter.membership_tiers (unit_id, key, name, sort_order) values (p_org, 'household', 'Household', 10) returning id into t_household;
+  insert into charter.membership_tiers (unit_id, key, name, sort_order) values (p_org, 'individual', 'Individual', 20) returning id into t_individual;
+  insert into charter.membership_tiers (unit_id, key, name, sort_order) values (p_org, 'senior', 'Senior (65+)', 30) returning id into t_senior;
+  insert into charter.tier_terms (tier_id, unit_id, key, label, length_count, length_unit, price_minor, sort_order)
+  values (t_household, p_org, '1_year', '1 year', 1, 'year', 4000, 10) returning id into r_household;
+  insert into charter.tier_terms (tier_id, unit_id, key, label, length_count, length_unit, price_minor, sort_order)
+  values (t_individual, p_org, '1_year', '1 year', 1, 'year', 2500, 10) returning id into r_individual;
+  insert into charter.tier_terms (tier_id, unit_id, key, label, length_count, length_unit, price_minor, sort_order)
+  values (t_senior, p_org, '1_year', '1 year', 1, 'year', 1500, 10) returning id into r_senior;
+
+  -- Member fields.
+  insert into charter.attribute_definitions (unit_id, applies_to, key, label, data_type, required,
+      visibility, member_editable, show_in_directory, sort_order)
+  values (p_org, 'member', 'street', 'Street', 'choice', false, 'members', true, true, 10)
+  returning id into d_street;
+  for v_i in 1..array_length(v_streets, 1) loop
+    insert into charter.attribute_options (definition_id, unit_id, value, label, sort_order)
+    values (d_street, p_org, lower(replace(v_streets[v_i], ' ', '_')), v_streets[v_i], v_i * 10);
+  end loop;
+  insert into charter.attribute_definitions (unit_id, applies_to, key, label, data_type, required,
+      visibility, member_editable, show_in_directory, sort_order)
+  values (p_org, 'member', 'volunteer', 'Wants to volunteer', 'boolean', false, 'admins', true, false, 20)
+  returning id into d_volunteer;
+
+  -- From here on, act as the owner (row rules, permissions and the audit trail apply).
+  perform set_config('request.jwt.claim.sub', p_owner::text, true);
+  perform set_config('request.jwt.claims', json_build_object('sub', p_owner, 'role', 'authenticated')::text, true);
+  execute 'set local role authenticated';
+
+  perform charter.connect_test_gateway(p_org);
+
+  -- The owner and the five other directors: current household members.
+  v_membership := charter.record_membership(v_owner_profile, r_household, current_date - 70, 4000,
+    'card', 'Annual renewal', current_date - 70);
+  v_officers := v_officers || v_owner_profile;
+  for v_i in 1..5 loop
+    v_profile := charter.admin_create_member(p_org, v_board[v_i],
+      lower(replace(v_board[v_i], ' ', '.')) || '@riverside.example.org');
+    v_membership := charter.record_membership(v_profile, r_household, current_date - (20 + v_i * 13), 4000,
+      v_methods[1 + (v_i % 5)], 'Annual renewal', current_date - (20 + v_i * 13));
+    v_officers := v_officers || v_profile;
+    v_used := v_used || v_board[v_i];
+  end loop;
+
+  -- About 135 more households: most joined or renewed in the last three months, some during
+  -- the year, a few in their grace period, lapsed or cancelled.
+  for v_n in 1..135 loop
+    loop
+      v_name := v_first[1 + floor(random() * array_length(v_first, 1))::int] || ' ' ||
+                v_last[1 + floor(random() * array_length(v_last, 1))::int];
+      exit when not v_name = any (v_used);
+    end loop;
+    v_used := v_used || v_name;
+    v_kind := case
+      when v_n <= 70 then 'recent'       -- joined or renewed in the last 90 days
+      when v_n <= 110 then 'current'     -- renewed 4–11 months ago
+      when v_n <= 120 then 'grace'       -- term ended in the last 3 weeks
+      when v_n <= 131 then 'lapsed'      -- ended 1–3 months ago
+      else 'cancelled' end;
+    v_profile := charter.admin_create_member(p_org, v_name,
+      lower(replace(v_name, ' ', '.')) || v_n || '@example.org');
+    perform charter.set_attribute_value(d_street, v_profile,
+      to_jsonb(lower(replace(v_streets[1 + floor(random() * array_length(v_streets, 1))::int], ' ', '_'))));
+    if random() < 0.3 then
+      perform charter.set_attribute_value(d_volunteer, v_profile, 'true'::jsonb);
+    end if;
+    v_term := case when random() < 0.6 then r_household when random() < 0.7 then r_individual else r_senior end;
+    v_price := case v_term when r_household then 4000 when r_individual then 2500 else 1500 end;
+    v_start := current_date - case v_kind
+      when 'recent' then floor(random() * 88)::int + 1
+      when 'current' then 120 + floor(random() * 210)::int
+      when 'grace' then 366 + floor(random() * 20)::int
+      when 'lapsed' then 395 + floor(random() * 60)::int
+      else 200 + floor(random() * 100)::int end;
+    v_membership := charter.record_membership(v_profile, v_term, v_start, v_price,
+      v_methods[1 + floor(random() * 5)::int],
+      case when v_kind = 'recent' and random() < 0.4 then '' else 'Annual renewal' end, v_start);
+    if v_kind = 'cancelled' then
+      perform charter.cancel_membership(v_membership, 'Moved out of the neighbourhood');
     end if;
   end loop;
 
-  -- ----- accounts (email and password, confirmed) -----
-  for _i in 1..3 loop
-    insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-        raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
-        confirmation_token, recovery_token, email_change_token_new, email_change,
-        email_change_token_current, phone_change, phone_change_token, reauthentication_token)
-      values ('00000000-0000-0000-0000-000000000000', _users[_i], 'authenticated', 'authenticated',
-        _emails[_i], extensions.crypt(_pw, extensions.gen_salt('bf')), now(),
-        '{"provider":"email","providers":["email"]}', jsonb_build_object('full_name', _names[_i]),
-        now(), now(), '', '', '', '', '', '', '', '')
-      on conflict (id) do nothing;
-    insert into auth.identities (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
-      values (_users[_i]::text, _users[_i],
-        jsonb_build_object('sub', _users[_i]::text, 'email', _emails[_i], 'email_verified', true),
-        'email', now(), now(), now())
-      on conflict (provider_id, provider) do nothing;
-    -- Platform operators can create and delete demo organizations (0022).
-    insert into charter.platform_operators (user_id) values (_users[_i]) on conflict do nothing;
+  -- The board: five seats, filled by the directors (the same people as in OpenBoardApp).
+  for v_i in 1..5 loop
+    v_seat := charter.define_seat(_org => p_org, _key => replace(lower(v_titles[v_i]), ' ', '_'),
+      _title => v_titles[v_i], _required => v_i <= 4, _scope => 'self',
+      _seat_count => case when v_i = 5 then 2 else 1 end, _term_count => 2, _term_unit => 'year',
+      _sort_order => v_i * 10);
+    v_seats := v_seats || v_seat;
+  end loop;
+  for v_i in 1..6 loop
+    perform charter.appoint_officer(p_org, v_seats[least(v_i, 5)], v_officers[v_i],
+      current_date - case when v_i in (1, 2, 4) then 420 else 150 end,
+      case when v_i = 6 then 2 else 1 end);
   end loop;
 
-  -- ----- organizations (demo; the guard makes chapters demo too) -----
-  insert into charter.units (id, type, name, slug, is_demo, created_by)
-    values (_nat, 'national', 'Demo National Association', 'demo-national', true, _users[1])
-    on conflict (id) do nothing;
-  insert into charter.units (id, parent_id, type, name, slug, created_by) values
-    (_aus, _nat, 'chapter', 'Demo Austin Chapter', 'demo-austin', _users[1]),
-    (_dal, _nat, 'chapter', 'Demo Dallas Chapter', 'demo-dallas', _users[1])
-    on conflict (id) do nothing;
-
-  -- Test-Demo: an empty home-chapter demo national with Nora National as its admin. The end-to-end
-  -- tests read it; `bun scripts/seed-sales-demo.ts` fills it with chapters and members if wanted.
-  insert into charter.units (id, type, name, slug, is_demo, created_by)
-    values (_tdemo, 'national', 'Test-Demo', 'test-demo', true, _users[1])
-    on conflict (id) do nothing;
-  insert into charter.org_settings (unit_id, key, value, mode)
-    values (_tdemo, 'membership.model', '"home_chapter"', 'override')
-    on conflict (unit_id, key) do nothing;
-
-  -- ----- people and roles -----
-  select id into _admin from charter.roles where key = 'org_admin' and unit_id is null;
-  select id into _member from charter.roles where key = 'member' and unit_id is null;
-  insert into charter.member_profiles (unit_id, user_id, email, display_name)
-    select o, u, e, n from (values
-      (_nat, _users[1], _emails[1], _names[1]),
-      (_aus, _users[1], _emails[1], _names[1]),
-      (_aus, _users[2], _emails[2], _names[2]),
-      (_aus, _users[3], _emails[3], _names[3]),
-      (_tdemo, _users[1], _emails[1], _names[1])) v(o, u, e, n)
-    where not exists (select 1 from charter.member_profiles p where p.unit_id = v.o and p.user_id = v.u);
-  insert into charter.role_assignments (user_id, role_id, unit_id)
-    select u, r, o from (values
-      (_users[1], _admin, _nat),
-      (_users[1], _member, _aus),
-      (_users[2], _admin, _aus),
-      (_users[3], _member, _aus),
-      (_users[1], _admin, _tdemo)) v(u, r, o)
-    where not exists (select 1 from charter.role_assignments a
-                      where a.user_id = v.u and a.role_id = v.r and a.unit_id = v.o);
-
-  -- ----- national settings -----
-  insert into charter.org_settings (unit_id, key, value, mode) values
-    (_nat, 'membership.child_levels_allowed', 'false', 'override'),
-    (_nat, 'membership.chapter_dues', '"none"', 'override'),
-    (_nat, 'membership.national_dues_required', 'false', 'override'),
-    (_nat, 'membership.child_approval', '"auto"', 'override'),
-    (_nat, 'membership.approval_required', 'false', 'override'),
-    (_nat, 'membership.grace_days', '45', 'locked')
-    on conflict (unit_id, key) do nothing;
-
-  -- ----- member and chapter fields -----
-  insert into charter.attribute_definitions (unit_id, applies_to, key, label, data_type, required, visibility, member_editable, sort_order)
-    values
-      (_nat, 'member', 'rank', 'Rank', 'text', true, 'members', true, 1),
-      (_nat, 'member', 'join_date', 'Join date', 'date', false, 'admins', false, 2),
-      (_nat, 'member', 'salutation', 'Salutation', 'text', false, 'members', true, 3),
-      (_nat, 'chapter', 'charter_date', 'Charter date', 'date', false, 'members', false, 1),
-      (_nat, 'chapter', 'chapter_number', 'Chapter number', 'text', false, 'members', false, 2)
-    on conflict (unit_id, applies_to, key) do nothing;
-
-  -- ----- levels: Regular, 1 year $150, 3 years $250, lifetime $500 -----
-  insert into charter.membership_tiers (unit_id, key, name) values (_nat, 'regular', 'Regular')
-    on conflict do nothing;
-  select id into _tier from charter.membership_tiers where unit_id = _nat and key = 'regular';
-  insert into charter.tier_terms (tier_id, unit_id, key, label, length_count, length_unit, price_minor)
-    values (_tier, _nat, '1_year', '1 year', 1, 'year', 15000),
-           (_tier, _nat, '3_years', '3 years', 3, 'year', 25000),
-           (_tier, _nat, 'lifetime', 'Lifetime', null, null, 50000)
-    on conflict do nothing;
-
-  -- ----- board: six required seats for every chapter -----
-  insert into charter.seat_templates (unit_id, key, title, required, scope, sort_order)
-    select _nat, k, t, true, 'chapters', s from (values
-      ('president', 'President', 1), ('vice_president', 'Vice-President', 2),
-      ('secretary', 'Secretary', 3), ('treasurer', 'Treasurer', 4),
-      ('vp_awards', 'VP of Awards', 5), ('vp_membership', 'VP of Membership', 6)) v(k, t, s)
-    on conflict (unit_id, key) do nothing;
-end
-$fixture$;
-
--- Steps that go through the app's own functions run as Nora National, the national's admin.
-select set_config('request.jwt.claim.sub', 'd0000000-0000-4000-8000-000000000001', true),
-       set_config('request.jwt.claims', '{"sub":"d0000000-0000-4000-8000-000000000001","role":"authenticated"}', true);
-set local role authenticated;
-
--- Test payments at the national (no real money).
-select charter.connect_test_gateway('d1000000-0000-4000-8000-000000000001')
-where not exists (select 1 from charter.gateway_connections
-                  where unit_id = 'd1000000-0000-4000-8000-000000000001' and gateway = 'test');
-
-reset role;
-
--- ===== Test-Demo (sales demo) =====
--- Test-Demo seed (D-199, D-213): fills the sales demo national "Test-Demo" (home-chapter model) with
--- about 500 people so it looks like a real association. Plain SQL for the Supabase SQL Editor or
--- psql; the same idea as scripts/seed-sales-demo.ts, which needs bun on your own machine.
---
--- What it adds: 15 chapters with charter dates; member fields Rank, Branch and Veteran; levels
--- Regular (1 year $45, 3 years $120), Life Member ($600) and Associate (1 year $25); test payments;
--- and 500 people, each with years of payments and receipts:
---   40 lifetime, 255 current (some renewing within 30 days), 30 on 3-year terms, 35 new in the last
---   30 days, 25 in their grace period, 55 lapsed, 15 cancelled, 15 associates, 15 prospects with no
---   membership, and 15 pending applications waiting for approval.
--- Then four required board seats (President, Vice President, Secretary, Treasurer) for the
--- national and every chapter, filled by members in good standing.
---
--- How it works: everything goes through the app's own database functions, signed in as
--- Nora National (Test-Demo's admin), so permissions, standing, receipts and the audit log apply
--- as usual. The pending applicants are made-up accounts (@example.org, no password, so nobody can
--- sign in as them) that apply online and pay on the test gateway while approval is switched on
--- for the run; the setting is put back afterwards.
---
--- Run it once, as the database owner, after supabase/scripts/demo-test-accounts.sql. It refuses to
--- run if Test-Demo is missing, isn't a demo, doesn't use the home-chapter model, isn't run by Nora
--- National as admin, or already has members. One transaction: on any error nothing is changed.
--- Deterministic: the same people every time (dates are relative to the day it runs).
-
-set local statement_timeout = 0;
-
--- Act as a signed-in user (RLS and auth.uid() apply), and back as the database owner.
-create function pg_temp.act_as(_uid uuid) returns void language plpgsql as $$
-begin
-  perform set_config('request.jwt.claim.sub', _uid::text, true);
-  perform set_config('request.jwt.claims', json_build_object('sub', _uid, 'role', 'authenticated')::text, true);
-  execute 'set local role authenticated';
-end $$;
-create function pg_temp.as_owner() returns void language plpgsql as $$
-begin
   execute 'reset role';
   perform set_config('request.jwt.claim.sub', '', true);
   perform set_config('request.jwt.claims', '', true);
-end $$;
--- A value from a list, by weight.
-create function pg_temp.weighted(_values text[], _weights int[]) returns text language plpgsql as $$
-declare _r float8 := random() * (select sum(w) from unnest(_weights) w); _i int;
-begin
-  for _i in 1..array_length(_values, 1) loop
-    _r := _r - _weights[_i];
-    if _r <= 0 then return _values[_i]; end if;
-  end loop;
-  return _values[array_length(_values, 1)];
-end $$;
-create function pg_temp.rint(_lo int, _hi int) returns int language sql as $$
-  select _lo + floor(random() * (_hi - _lo + 1))::int
+end;
 $$;
-grant execute on function pg_temp.act_as(uuid), pg_temp.as_owner(), pg_temp.weighted(text[], int[]),
-  pg_temp.rint(int, int) to authenticated;
 
-do $seed$
+revoke all on function charter.demo_fill(uuid, uuid) from public, anon, authenticated;
+
+-- Fill now: through the hub's reset when it's there (it recreates the organization and calls
+-- every app), otherwise create the two accounts and the organization here, once.
+do $fill$
 declare
-  _org constant uuid := 'd60400ef-9dbb-414a-9a3e-e0cbf2fc15ab';   -- Test-Demo
-  _nora constant uuid := 'd0000000-0000-4000-8000-000000000001';  -- Nora National
-  _first constant text[] := array[
-    'James', 'Mary', 'Robert', 'Patricia', 'John', 'Jennifer', 'Michael', 'Linda', 'David',
-    'Elizabeth', 'William', 'Barbara', 'Richard', 'Susan', 'Joseph', 'Jessica', 'Thomas',
-    'Sarah', 'Charles', 'Karen', 'Christopher', 'Lisa', 'Daniel', 'Nancy', 'Matthew', 'Betty',
-    'Anthony', 'Sandra', 'Mark', 'Margaret', 'Donald', 'Ashley', 'Steven', 'Kimberly', 'Andrew',
-    'Emily', 'Paul', 'Donna', 'Joshua', 'Michelle', 'Kenneth', 'Carol', 'Kevin', 'Amanda',
-    'Brian', 'Melissa', 'George', 'Deborah', 'Timothy', 'Stephanie', 'Ronald', 'Rebecca',
-    'Jason', 'Sharon', 'Edward', 'Laura', 'Jeffrey', 'Cynthia', 'Ryan', 'Dorothy', 'Jacob',
-    'Amy', 'Gary', 'Kathleen', 'Nicholas', 'Angela', 'Eric', 'Shirley', 'Jonathan', 'Emma',
-    'Stephen', 'Brenda', 'Larry', 'Pamela', 'Justin', 'Nicole', 'Scott', 'Anna', 'Brandon',
-    'Samantha', 'Benjamin', 'Katherine', 'Samuel', 'Christine', 'Gregory', 'Debra', 'Alexander',
-    'Rachel', 'Patrick', 'Carolyn', 'Frank', 'Janet', 'Raymond', 'Maria', 'Jack', 'Olivia',
-    'Dennis', 'Heather', 'Jerry', 'Helen', 'Tyler', 'Catherine', 'Aaron', 'Diane', 'Jose',
-    'Julie', 'Adam', 'Victoria', 'Nathan', 'Joyce', 'Henry', 'Lauren', 'Zachary', 'Kelly',
-    'Douglas', 'Christina', 'Peter', 'Ruth', 'Kyle', 'Joan', 'Noah', 'Virginia', 'Ethan',
-    'Judith', 'Jeremy', 'Evelyn', 'Walter', 'Hannah', 'Christian', 'Andrea', 'Keith', 'Megan',
-    'Roger', 'Cheryl', 'Terry', 'Jacqueline', 'Austin', 'Madison', 'Sean', 'Teresa', 'Gerald',
-    'Abigail', 'Carl', 'Sophia', 'Harold', 'Martha', 'Dylan', 'Sara', 'Arthur', 'Gloria',
-    'Lawrence', 'Janice', 'Jordan', 'Kathryn', 'Jesse', 'Ann', 'Bryan', 'Isabella', 'Billy',
-    'Judy', 'Bruce', 'Charlotte', 'Gabriel', 'Julia', 'Joe', 'Grace', 'Logan', 'Amber', 'Alan',
-    'Alice', 'Juan', 'Jean', 'Albert', 'Denise', 'Willie', 'Frances', 'Elijah', 'Danielle',
-    'Wayne', 'Marilyn', 'Randy', 'Natalie', 'Vincent', 'Beverly', 'Mason', 'Diana', 'Roy',
-    'Brittany', 'Ralph', 'Theresa', 'Bobby', 'Kayla', 'Russell', 'Alexis', 'Bradley', 'Doris',
-    'Philip', 'Lori', 'Eugene', 'Tiffany'];
-  _last constant text[] := array[
-    'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez',
-    'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor',
-    'Moore', 'Jackson', 'Martin', 'Lee', 'Perez', 'Thompson', 'White', 'Harris', 'Sanchez',
-    'Clark', 'Ramirez', 'Lewis', 'Robinson', 'Walker', 'Young', 'Allen', 'King', 'Wright',
-    'Scott', 'Torres', 'Nguyen', 'Hill', 'Flores', 'Green', 'Adams', 'Nelson', 'Baker', 'Hall',
-    'Rivera', 'Campbell', 'Mitchell', 'Carter', 'Roberts', 'Gomez', 'Phillips', 'Evans',
-    'Turner', 'Diaz', 'Parker', 'Cruz', 'Edwards', 'Collins', 'Reyes', 'Stewart', 'Morris',
-    'Morales', 'Murphy', 'Cook', 'Rogers', 'Gutierrez', 'Ortiz', 'Morgan', 'Cooper', 'Peterson',
-    'Bailey', 'Reed', 'Kelly', 'Howard', 'Ramos', 'Kim', 'Cox', 'Ward', 'Richardson', 'Watson',
-    'Brooks', 'Chavez', 'Wood', 'James', 'Bennett', 'Gray', 'Mendoza', 'Ruiz', 'Hughes', 'Price',
-    'Alvarez', 'Castillo', 'Sanders', 'Patel', 'Myers', 'Long', 'Ross', 'Foster', 'Jimenez'];
-
-  _chapter_names constant text[] := array['Albuquerque', 'Santa Fe', 'Las Cruces', 'Roswell',
-    'El Paso', 'Tucson', 'Phoenix', 'Fort Huachuca', 'Fort Bliss', 'White Sands', 'Denver',
-    'Colorado Springs', 'Fort Carson', 'Pueblo', 'Los Alamos'];
-  _ranks constant text[] := array['e-3', 'e-4', 'e-5', 'e-6', 'e-7', 'e-8', 'e-9', 'w-2', 'w-3',
-    'o-1', 'o-2', 'o-3', 'o-4', 'o-5', 'o-6'];
-  _rank_w constant int[] := array[7, 7, 12, 12, 7, 7, 7, 3, 3, 4, 4, 4, 4, 4, 4];
-  _branches constant text[] := array['army', 'navy', 'air_force', 'marines', 'coast_guard',
-    'space_force', 'civilian'];
-  _branch_labels constant text[] := array['Army', 'Navy', 'Air Force', 'Marine Corps', 'Coast Guard',
-    'Space Force', 'Civilian'];
-  _branch_w constant int[] := array[55, 10, 15, 8, 4, 3, 5];
-  _methods constant text[] := array['check', 'card', 'cash', 'bank_transfer'];
-  _method_w constant int[] := array[45, 30, 15, 10];
-  -- kinds and how many of each (500 in all)
-  _kinds constant text[] := array['life', 'long', 'three', 'new', 'grace', 'lapsed', 'cancelled',
-    'associate', 'prospect', 'pending'];
-  _counts constant int[] := array[40, 255, 30, 35, 25, 55, 15, 15, 15, 15];
-  _today constant date := current_date;
-  _slug text; _n int; _k int; _i int; _j int; _y int; _years int;
-  _def_rank uuid; _def_branch uuid; _def_vet uuid; _def_charter uuid; _def uuid;
-  _t_regular uuid; _t_life uuid; _t_assoc uuid;
-  _reg_1y uuid; _reg_3y uuid; _life uuid; _assoc_1y uuid;
-  _chapters uuid[] := '{}'; _chapter uuid; _c uuid;
-  _used text[] := '{}'; _name text; _email text; _kind text;
-  _profile uuid; _membership uuid; _start date; _end date; _term uuid; _price int;
-  _uid uuid; _pay uuid; _approval jsonb; _had_approval boolean;
-  _seat uuid; _seats uuid[] := '{}'; _seat_titles constant text[] := array['President',
-    'Vice President', 'Secretary', 'Treasurer'];
-  _payments int := 0; _people int := 0; _pending int := 0; _officers int := 0;
+  c_org constant uuid := 'de000000-0000-4000-8000-0000000000a1';
+  c_demo constant uuid := 'de000000-0000-4000-8000-000000000001';
+  c_test constant uuid := 'de000000-0000-4000-8000-000000000002';
+  r record;
 begin
-  perform setseed(0.20261103);
-
-  -- ----- checks (as the database owner) -----
-  select slug into _slug from charter.units where id = _org;
-  if _slug is null then
-    raise exception 'Test-Demo doesn''t exist: run supabase/scripts/demo-test-accounts.sql first';
+  if to_regprocedure('hub.reset_suite_demo()') is not null then
+    perform hub.reset_suite_demo();
+    return;
   end if;
-  if not (select is_demo from charter.units where id = _org) then
-    raise exception 'Test-Demo isn''t a demo organization; nothing was changed';
+  if exists (select 1 from public.organizations where id = c_org) then
+    if not exists (select 1 from charter.units where id = c_org) then
+      perform charter.demo_fill(c_org, c_demo);
+    end if;
+    return;
   end if;
-  if charter.membership_model(_org) <> 'home_chapter' then
-    raise exception 'Test-Demo doesn''t use the home-chapter model; nothing was changed';
-  end if;
-  if not charter.has_permission(_nora, 'members.manage', _org) then
-    raise exception 'Nora National isn''t an admin of Test-Demo; nothing was changed';
-  end if;
-  if (select count(*) from charter.member_profiles where unit_id = _org and left_at is null) > 5
-     or exists (select 1 from charter.units where parent_id = _org) then
-    raise exception 'Test-Demo already has members or chapters; not seeding twice';
-  end if;
-
-  -- ----- organization details, test payments, fields and levels (as Nora) -----
-  perform pg_temp.act_as(_nora);
-  insert into charter.tax_profiles (unit_id, legal_name, ein, tax_status, address_line1, city, region,
-      postal_code, country)
-    values (_org, 'Test-Demo Association, Inc.', '12-3456789', '501(c)(19)', '1 Signal Way',
-      'Albuquerque', 'NM', '87101', 'US')
-    on conflict (unit_id) do nothing;
-  if not exists (select 1 from charter.gateway_connections where unit_id = _org and status = 'verified') then
-    perform charter.connect_test_gateway(_org);
-  end if;
-
-  insert into charter.attribute_definitions (unit_id, applies_to, key, label, data_type, required,
-      visibility, member_editable, show_in_directory, sort_order)
-    values (_org, 'member', 'rank', 'Rank', 'ordered', true, 'members', true, true, 10)
-    returning id into _def_rank;
-  for _i in 1..array_length(_ranks, 1) loop
-    insert into charter.attribute_options (definition_id, unit_id, value, label, sort_order)
-      values (_def_rank, _org, _ranks[_i], upper(_ranks[_i]), _i * 10);
+  for r in select * from (values
+      (c_demo, 'demo@demo.openapphub.org', 'Alex Morgan'),
+      (c_test, 'test@demo.openapphub.org', 'Test Account')) v(id, email, name) loop
+    if not exists (select 1 from auth.users where id = r.id) then
+      insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+        raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token,
+        recovery_token, email_change_token_new, email_change, email_change_token_current,
+        reauthentication_token, phone_change, phone_change_token)
+      values ('00000000-0000-0000-0000-000000000000', r.id, 'authenticated', 'authenticated', r.email,
+        extensions.crypt('OpenAppHubDemo2026', extensions.gen_salt('bf')), now(),
+        '{"provider":"email","providers":["email"]}', jsonb_build_object('full_name', r.name),
+        now(), now(), '', '', '', '', '', '', '', '');
+      insert into auth.identities (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+      values (r.id::text, r.id, jsonb_build_object('sub', r.id::text, 'email', r.email, 'email_verified', true),
+        'email', now(), now(), now());
+    end if;
   end loop;
-  insert into charter.attribute_definitions (unit_id, applies_to, key, label, data_type, required,
-      visibility, member_editable, show_in_directory, sort_order)
-    values (_org, 'member', 'branch', 'Branch', 'choice', false, 'members', true, true, 20)
-    returning id into _def_branch;
-  for _i in 1..array_length(_branches, 1) loop
-    insert into charter.attribute_options (definition_id, unit_id, value, label, sort_order)
-      values (_def_branch, _org, _branches[_i], _branch_labels[_i], _i * 10);
-  end loop;
-  insert into charter.attribute_definitions (unit_id, applies_to, key, label, data_type, required,
-      visibility, member_editable, show_in_directory, sort_order)
-    values (_org, 'member', 'veteran', 'Veteran', 'boolean', false, 'members', true, false, 30)
-    returning id into _def_vet;
-  insert into charter.attribute_definitions (unit_id, applies_to, key, label, data_type, required,
-      visibility, member_editable, show_in_directory, sort_order)
-    values (_org, 'chapter', 'charter_date', 'Charter date', 'date', false, 'members', false, false, 10)
-    returning id into _def_charter;
-
-  insert into charter.membership_tiers (unit_id, key, name, sort_order)
-    values (_org, 'regular', 'Regular', 10) returning id into _t_regular;
-  insert into charter.tier_terms (tier_id, unit_id, key, label, length_count, length_unit, price_minor, sort_order)
-    values (_t_regular, _org, '1_year', '1 year', 1, 'year', 4500, 10) returning id into _reg_1y;
-  insert into charter.tier_terms (tier_id, unit_id, key, label, length_count, length_unit, price_minor, sort_order)
-    values (_t_regular, _org, '3_years', '3 years', 3, 'year', 12000, 20) returning id into _reg_3y;
-  insert into charter.membership_tiers (unit_id, key, name, sort_order)
-    values (_org, 'life', 'Life Member', 20) returning id into _t_life;
-  insert into charter.tier_terms (tier_id, unit_id, key, label, length_count, length_unit, price_minor, sort_order)
-    values (_t_life, _org, 'lifetime', 'Lifetime', null, null, 60000, 10) returning id into _life;
-  insert into charter.membership_tiers (unit_id, key, name, sort_order)
-    values (_org, 'associate', 'Associate', 30) returning id into _t_assoc;
-  insert into charter.tier_terms (tier_id, unit_id, key, label, length_count, length_unit, price_minor, sort_order)
-    values (_t_assoc, _org, '1_year', '1 year', 1, 'year', 2500, 10) returning id into _assoc_1y;
-
-  -- ----- chapters -----
-  for _i in 1..array_length(_chapter_names, 1) loop
-    _c := charter.create_organization(_chapter_names[_i] || ' Chapter',
-      _slug || '-' || regexp_replace(lower(_chapter_names[_i]), '[^a-z0-9]+', '-', 'g'), 'chapter', _org);
-    perform charter.set_attribute_value(_def_charter, _c,
-      to_jsonb(make_date(1972 + _i * 3, pg_temp.rint(1, 12), pg_temp.rint(1, 28))::text));
-    _chapters := _chapters || _c;
-  end loop;
-
-  -- ----- people -----
-  for _k in 1..array_length(_kinds, 1) loop
-    _kind := _kinds[_k];
-    for _n in 1.._counts[_k] loop
-      loop
-        _name := _first[pg_temp.rint(1, array_length(_first, 1))] || ' ' || _last[pg_temp.rint(1, array_length(_last, 1))];
-        exit when not (_name = any(_used));
-      end loop;
-      _used := _used || _name;
-      _email := lower(regexp_replace(_name, '[^A-Za-z]+', '.', 'g')) || '@example.org';
-      -- most belong to a chapter, the bigger chapters first; a few to none
-      _chapter := case when random() < 0.05 then null
-        else _chapters[least(array_length(_chapters, 1), 1 + floor(power(random(), 1.4) * array_length(_chapters, 1))::int)] end;
-      _people := _people + 1;
-
-      if _kind = 'pending' then
-        -- a made-up account that applies online (no password: nobody can sign in as it)
-        _uid := md5('test-demo-applicant-' || _n)::uuid;
-        perform pg_temp.as_owner();
-        insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
-            raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token,
-            recovery_token, email_change_token_new, email_change, email_change_token_current,
-            phone_change, phone_change_token, reauthentication_token)
-          values ('00000000-0000-0000-0000-000000000000', _uid, 'authenticated', 'authenticated',
-            _email, '', now(), '{"provider":"email","providers":["email"]}',
-            jsonb_build_object('full_name', _name), now(), now(), '', '', '', '', '', '', '', '')
-          on conflict (id) do nothing;
-        if _n = 1 then
-          -- approval on for these applications only; put back afterwards
-          select value into _approval from charter.org_settings
-            where unit_id = _org and key = 'membership.approval_required';
-          _had_approval := found;
-          insert into charter.org_settings (unit_id, key, value, mode)
-            values (_org, 'membership.approval_required', 'true', 'override')
-            on conflict (unit_id, key) do update set value = 'true';
-        end if;
-        perform pg_temp.act_as(_uid);
-        _pay := charter.begin_join(_org, _reg_1y,
-          jsonb_build_object(_def_rank::text, pg_temp.weighted(_ranks, _rank_w)));
-        perform charter.complete_test_payment(_pay, 'accepted');
-        -- as the app's Account page and join flow do: their own name, and their chapter
-        update charter.member_profiles set display_name = _name where user_id = _uid;
-        if _chapter is not null then perform charter.set_home_chapter(_org, _chapter); end if;
-        _payments := _payments + 1;
-        _pending := _pending + 1;
-        perform pg_temp.act_as(_nora);
-        continue;
-      end if;
-
-      _profile := charter.admin_create_member(_org, _name, _email);
-      perform charter.set_attribute_value(_def_rank, _profile, to_jsonb(pg_temp.weighted(_ranks, _rank_w)));
-      perform charter.set_attribute_value(_def_branch, _profile, to_jsonb(pg_temp.weighted(_branches, _branch_w)));
-      if random() < 0.8 then
-        perform charter.set_attribute_value(_def_vet, _profile, to_jsonb(random() < 0.85));
-      end if;
-      continue when _kind = 'prospect';
-
-      -- the periods paid, oldest first
-      _membership := null;
-      if _kind = 'life' then
-        _years := 1;
-      elsif _kind = 'new' then
-        _years := 1;
-      elsif _kind = 'three' then
-        _end := _today + pg_temp.rint(20, 1000);
-        _years := pg_temp.rint(1, 3);
-      elsif _kind = 'associate' then
-        _end := _today + pg_temp.rint(10, 360);
-        _years := pg_temp.rint(1, 4);
-      else
-        _end := case _kind when 'grace' then _today - pg_temp.rint(1, 25)
-                           when 'lapsed' then _today - pg_temp.rint(40, 1100)
-                           else _today + pg_temp.rint(1, 364) end;
-        _years := case when _kind = 'long'
-          then pg_temp.weighted(array['1','2','3','4','5','6','7','8','9','10'],
-                                array[10, 12, 14, 14, 12, 10, 8, 8, 6, 6])::int
-          else pg_temp.rint(1, 5) end;
-      end if;
-      for _y in reverse (_years - 1)..0 loop
-        if _kind = 'life' then
-          _start := make_date(pg_temp.rint(2004, 2022), pg_temp.rint(1, 12), pg_temp.rint(1, 28));
-          _term := _life; _price := 60000;
-        elsif _kind = 'new' then
-          _start := _today - pg_temp.rint(0, 29); _term := _reg_1y; _price := 4500;
-        elsif _kind = 'three' then
-          _start := ((_end - make_interval(years => 3 * _y)) - interval '3 years')::date + 1;
-          _term := _reg_3y; _price := 12000;
-        elsif _kind = 'associate' then
-          _start := ((_end - make_interval(years => _y)) - interval '1 year')::date + 1;
-          _term := _assoc_1y; _price := 2500;
-        else
-          _start := ((_end - make_interval(years => _y)) - interval '1 year')::date + 1;
-          _term := _reg_1y; _price := 4500;
-        end if;
-        _membership := charter.record_membership(_profile, _term, _start, _price,
-          pg_temp.weighted(_methods, _method_w)::charter.payment_method,
-          case when _y = _years - 1 then '' else 'Annual renewal' end, _start);
-        _payments := _payments + 1;
-        if _y = _years - 1 and _chapter is not null then
-          perform charter.set_member_home_chapter(_membership, _chapter);
-        end if;
-      end loop;
-      if _kind = 'cancelled' then
-        perform charter.cancel_membership(_membership, 'Asked to cancel');
-      end if;
-    end loop;
-  end loop;
-
-  -- put the approval setting back as it was
-  perform pg_temp.as_owner();
-  if _had_approval then
-    update charter.org_settings set value = _approval where unit_id = _org and key = 'membership.approval_required';
-  else
-    update charter.org_settings set value = 'false' where unit_id = _org and key = 'membership.approval_required';
-  end if;
-  perform pg_temp.act_as(_nora);
-
-  -- ----- the board: four required seats for the national and every chapter, all filled -----
-  for _i in 1..4 loop
-    _seat := charter.define_seat(_org => _org, _key => replace(lower(_seat_titles[_i]), ' ', '_'),
-      _title => _seat_titles[_i], _required => true, _scope => 'self_and_chapters', _seat_count => 1,
-      _term_count => 2, _term_unit => 'year', _sort_order => _i * 10);
-    _seats := _seats || _seat;
-  end loop;
-  foreach _c in array (array[_org] || _chapters) loop
-    _i := 0;
-    -- current members in good standing for at least 60 more days; a chapter's records stand
-    -- for the national membership (home_of)
-    for _profile in
-      select p.id from charter.member_profiles p
-        join charter.memberships m on m.id = case when _c = _org then
-          (select x.id from charter.memberships x where x.profile_id = p.id and x.unit_id = _org) else p.home_of end
-      where p.unit_id = _c and p.left_at is null and p.display_name <> '' and m.status = 'active'
-        and (m.lifetime or m.paid_through >= _today + 60)
-      order by random() limit 4
-    loop
-      _i := _i + 1;
-      perform charter.appoint_officer(_c, _seats[_i], _profile, _today - pg_temp.rint(30, 600));
-      _officers := _officers + 1;
-    end loop;
-  end loop;
-
-  perform pg_temp.as_owner();
-  raise notice 'Test-Demo seeded: % chapters, % people (% pending applications), % payments, % officers',
-    array_length(_chapters, 1), _people, _pending, _payments, _officers;
+  insert into public.organizations (id, name, slug, created_by)
+  values (c_org, 'Riverside Community Association', 'riverside-community-association', c_demo);
+  insert into public.memberships (org_id, user_id, role) values (c_org, c_demo, 'owner');
+  perform charter.demo_fill(c_org, c_demo);
 end
-$seed$;
-
-
--- ----- check what was made: names, chapters, levels and standing, all connected -----
--- (the SQL Editor shows the last result; psql shows all three)
-
--- 1. people by standing, and how many have a chapter
-select coalesce(m.standing, 'no membership') as standing, count(*) as people,
-       count(m.chapter) as with_a_chapter
-from charter.member_profiles p
-left join lateral (
-  select charter.membership_standing(x.status, x.paid_through, x.lifetime, charter.grace_days(x.unit_id),
-           current_date) as standing, x.home_org_id as chapter
-  from charter.memberships x where x.profile_id = p.id and x.unit_id = p.unit_id) m on true
-where p.unit_id = 'd60400ef-9dbb-414a-9a3e-e0cbf2fc15ab' and p.left_at is null
-group by 1 order by 2 desc;
-
--- 2. each chapter: its members (through their national membership) and its officers
-select c.name as chapter, count(distinct m.id) as members,
-       count(distinct m.id) filter (where charter.membership_standing(m.status, m.paid_through,
-         m.lifetime, charter.grace_days(m.unit_id), current_date) = 'good') as in_good_standing,
-       count(distinct a.id) filter (where a.ended_on is null) as officers
-from charter.units c
-left join charter.memberships m on m.home_org_id = c.id
-left join charter.appointments a on a.unit_id = c.id
-where c.parent_id = 'd60400ef-9dbb-414a-9a3e-e0cbf2fc15ab'
-group by c.name order by members desc;
-
--- 3. everyone: name, email, chapter, level and term, standing, paid through, rank
-select p.display_name as name, p.email, coalesce(c.name, '(no chapter)') as chapter,
-       t.name as level, tt.label as term, m.status,
-       case when m.id is null then 'no membership' else charter.membership_standing(m.status,
-         m.paid_through, m.lifetime, charter.grace_days(m.unit_id), current_date) end as standing,
-       case when m.lifetime then 'lifetime' else m.paid_through::text end as paid_through,
-       upper(v.value #>> '{}') as rank
-from charter.member_profiles p
-left join charter.memberships m on m.profile_id = p.id and m.unit_id = p.unit_id
-left join charter.units c on c.id = m.home_org_id
-left join charter.membership_tiers t on t.id = m.tier_id
-left join charter.tier_terms tt on tt.id = m.term_id
-left join charter.attribute_definitions d on d.unit_id = p.unit_id and d.key = 'rank' and d.applies_to = 'member'
-left join charter.attribute_values v on v.definition_id = d.id and v.entity_id = p.id
-where p.unit_id = 'd60400ef-9dbb-414a-9a3e-e0cbf2fc15ab' and p.left_at is null
-order by chapter, name;
-
--- On the hub's database, mark the demo nationals as demo organizations (the hub lists them).
-do $demo$
-begin
-  if to_regclass('hub.demo_orgs') is not null then
-    execute $q$insert into hub.demo_orgs (org_id, created_by)
-      select u.id, u.created_by from charter.units u
-      where u.parent_id is null and u.is_demo and u.id = u.org_id
-      on conflict do nothing$q$;
-  end if;
-end
-$demo$;
+$fill$;

@@ -33,10 +33,6 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - name: Migrate ${{ inputs.target }}
-        env:
-          # Staging only: the demo accounts' password (optional secret DEMO_PASSWORD; without it
-          # the seed creates the accounts but they can't sign in).
-          PGOPTIONS: ${{ inputs.target == 'staging' && secrets.DEMO_PASSWORD && format('-c fixture.demo_password={0}', secrets.DEMO_PASSWORD) || '' }}
         run: |
           args=()
           if [ "${{ inputs.dry_run }}" = "true" ]; then args+=(--dry-run); fi
