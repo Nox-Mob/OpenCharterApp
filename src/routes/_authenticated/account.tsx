@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { hubUrl, isHosted } from "@shared/supabase/hosted";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -91,10 +92,24 @@ function AccountPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <h1 className="text-3xl font-semibold">Your account</h1>
-      <NameCard me={m} />
+      {isHosted() ? (
+        // Hosted: name, email, password and deleting the account are OpenAppHub's (one
+        // account for every app).
+        <section className="space-y-2 rounded-md border bg-card p-5 text-sm">
+          <h2 className="text-lg font-semibold">Name, email and password</h2>
+          <p className="text-muted-foreground">
+            Your account covers every OpenAppHub app, so these are changed in OpenAppHub.
+          </p>
+          <a href={hubUrl("/account")} className="font-medium text-primary hover:underline">
+            Account settings
+          </a>
+        </section>
+      ) : (
+        <NameCard me={m} />
+      )}
       <DefaultOrgCard me={m} orgs={orgs.data ?? []} />
-      <EmailCard me={m} />
-      {m.provider === "email" ? (
+      {isHosted() ? null : <EmailCard me={m} />}
+      {isHosted() ? null : m.provider === "email" ? (
         <PasswordCard />
       ) : (
         <section className="rounded-md border bg-card p-5 text-sm text-muted-foreground">

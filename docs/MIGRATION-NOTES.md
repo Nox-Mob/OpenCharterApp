@@ -46,7 +46,20 @@ files here: change them in Nox-Mob/OpenAppHub and sync.
 1. ~~Step 3, hygiene (redo for v2.2)~~ **done** (§0.3).
 2. ~~Step 5, rest of vendoring~~ and ~~step 6, the baseline~~ **done** (§0.4).
 3. ~~Seed, the client switch to schema `charter` (step 9) and org scoping~~ **done** (§0.5).
-4. Next: hosted mode (sign-in, invitations and billing through the hub; the billing banner), then the AppShell restyle.
+4. ~~Hosted mode and the AppShell restyle~~ **done** (§0.6).
+5. Next: integration views for the hub dashboard (`api_unit_count`, summaries), help links.
+
+### 0.6 Hosted vs self-hosted, suite design (2026-11-10)
+
+- **Hosted** (`VITE_HOSTED=true`):
+  - The browser session is a cookie on `.openapphub.org` (`@supabase/ssr`), shared with the hub and the other apps.
+  - `/auth` goes to the hub's sign-in and comes back to where the person was going (for example a chapter's join page); signed-out pages do the same.
+  - New organizations are created in the hub. The organizations page lists the person's hub organizations that don't use Charter yet, with "Set up as an association" / "Set up as a national with chapters" (`charter.ensure_top_unit`). Chapters are still created in Charter.
+  - Account: name, email and password link to the hub's Account page; the default organization stays here.
+  - Charter's own invitations (a unit and a Charter role) stay in Charter; they're core invitations with `app = 'charter'`.
+  - Signing out returns to the hub. The billing banner shows the top organization's plan.
+- **Self-hosted:** unchanged.
+- **Restyle** (behaviour and wording unchanged): suite tokens and Inter (the brass rule is now the app accent); every signed-in page is in the shared `AppShell`; an organization's section menu is portalled into its `sidebar` slot (shared 1.3.1), with the suite's nav look; `<html data-app="charter">`, the suite theme script and toggle, cookie consent and a `/cookies` page.
 
 ### 0.5 The app on schema `charter`, staging seed, org scoping (2026-11-10)
 

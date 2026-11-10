@@ -13,6 +13,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { themeInitScript } from "@shared/theme";
+import { CookieConsent } from "@shared/ui/CookieConsent";
 
 function NotFoundComponent() {
   return (
@@ -85,12 +87,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:wght@400;500;600&display=swap",
-      },
       { rel: "stylesheet", href: appCss },
       // OpenCharterApp's own mark (replaces Lovable's icon): SVG for current browsers, the .ico
       // (16–64 px) for the rest, and a 180 px icon for iOS home screens.
@@ -107,8 +103,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" data-app="charter" suppressHydrationWarning>
       <head>
+        {/* The suite's light / dark / system choice, applied before first paint (shared/theme.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript() }} />
         <HeadContent />
       </head>
       <body>
@@ -137,6 +135,7 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster />
+      <CookieConsent policyHref="/cookies" privacyHref="/privacy" />
     </QueryClientProvider>
   );
 }
