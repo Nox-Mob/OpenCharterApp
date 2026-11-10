@@ -15,7 +15,7 @@ export const attributeDefsQuery = (orgId: string, lineage: readonly string[]) =>
       const { data, error } = await supabase
         .from("attribute_definitions")
         .select("*, attribute_options(id,value,label,sort_order,active)")
-        .in("org_id", [...lineage, orgId])
+        .in("unit_id", [...lineage, orgId])
         .order("sort_order");
       if (error) throw error;
       return (data ?? []).map((d) => ({
@@ -35,7 +35,7 @@ export const orgMemberValuesQuery = (orgId: string) =>
       const { data, error } = await supabase
         .from("attribute_values")
         .select("entity_id,definition_id,value")
-        .eq("org_id", orgId);
+        .eq("unit_id", orgId);
       if (error) throw error;
       const out: Record<string, Record<string, unknown>> = {};
       for (const v of data ?? []) (out[v.entity_id] ??= {})[v.definition_id] = v.value as unknown;
@@ -54,7 +54,7 @@ export const treeMemberValuesQuery = (orgIds: readonly string[]) =>
         const { data, error } = await supabase
           .from("attribute_values")
           .select("entity_id,definition_id,value")
-          .in("org_id", [...orgIds])
+          .in("unit_id", [...orgIds])
           .order("id")
           .range(from, from + 999);
         if (error) throw error;

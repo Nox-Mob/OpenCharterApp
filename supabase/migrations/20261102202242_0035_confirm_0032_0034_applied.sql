@@ -1,1 +1,0 @@
-COMMENT ON TABLE public.seat_templates IS 'Board seat definitions per organization (0032-0034 applied).';

@@ -21,7 +21,7 @@ export const pricingRulesQuery = (orgId: string) =>
       const { data, error } = await db
         .from("pricing_rules")
         .select("id,term_id,label,conditions,price_minor,discount_pct,sort_order,active")
-        .eq("org_id", orgId)
+        .eq("unit_id", orgId)
         .order("sort_order")
         .order("created_at");
       if (error) throw error;

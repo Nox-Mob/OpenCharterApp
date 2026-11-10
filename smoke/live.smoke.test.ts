@@ -97,7 +97,7 @@ describe("0. migrations are live (handoff quick checks)", () => {
   }
 
   it("directory_listed column exists on member profiles", async () => {
-    const { error } = await member.from("org_member_profiles").select("directory_listed").limit(1);
+    const { error } = await member.from("member_profiles").select("directory_listed").limit(1);
     expect(error).toBeNull();
   });
 
@@ -119,14 +119,14 @@ describe("1. levels for this run", () => {
   it("Austin can't add its own levels while the national manages them", async () => {
     const res = await chapterAdmin
       .from("membership_tiers")
-      .insert({ org_id: AUSTIN, key: `smoke_${runId}`, name: `Smoke ${runId}` });
+      .insert({ unit_id: AUSTIN, key: `smoke_${runId}`, name: `Smoke ${runId}` });
     expect(res.error?.message).toContain("parent organization manages membership levels");
   });
 
   it("national admin adds a paid 1-year level", async () => {
     const tier = await orgAdmin
       .from("membership_tiers")
-      .insert({ org_id: ORG, key: `smoke_${runId}`, name: `Smoke ${runId}` })
+      .insert({ unit_id: ORG, key: `smoke_${runId}`, name: `Smoke ${runId}` })
       .select("id")
       .single();
     expect(tier.error).toBeNull();
@@ -134,7 +134,7 @@ describe("1. levels for this run", () => {
     const term = await orgAdmin
       .from("tier_terms")
       .insert({
-        org_id: ORG,
+        unit_id: ORG,
         tier_id: tierId,
         key: "1y",
         label: "1 year",
@@ -152,7 +152,7 @@ describe("1. levels for this run", () => {
     // demo-member is a member of Austin but has no tiers.manage in Dallas
     const res = await member
       .from("membership_tiers")
-      .insert({ org_id: DALLAS, key: `bad_${runId}`, name: "bad" });
+      .insert({ unit_id: DALLAS, key: `bad_${runId}`, name: "bad" });
     expect(res.error).not.toBeNull();
   });
 
@@ -242,7 +242,7 @@ describe("2. memberships and check payments (0008)", () => {
 
   it("clients cannot write payments directly", async () => {
     const res = await orgAdmin.from("payments").insert({
-      org_id: ORG,
+      unit_id: ORG,
       purpose: "join",
       amount_minor: 1,
       status: "paid",
@@ -301,7 +301,7 @@ describe("2. memberships and check payments (0008)", () => {
       const { data } = await orgAdmin
         .from("receipts")
         .select("seq, year, issued_at")
-        .eq("org_id", ORG)
+        .eq("unit_id", ORG)
         .order("seq");
       const year = new Date().getFullYear();
       const thisYear = data!.filter((r) => r.year === year);
@@ -355,7 +355,7 @@ describe("4. test gateway (0009)", () => {
     const { data } = await orgAdmin
       .from("gateway_connections")
       .select("*")
-      .eq("org_id", ORG)
+      .eq("unit_id", ORG)
       .single();
     expect(data!.gateway).toBe("test");
     expect(data!.livemode).toBe(false);
@@ -378,7 +378,7 @@ describe("5. joining online (0010)", () => {
     const { data } = await member
       .from("memberships")
       .select("*, org_member_profiles!memberships_profile_id_fkey!inner(user_id)")
-      .eq("org_id", ORG)
+      .eq("unit_id", ORG)
       .eq("org_member_profiles.user_id", memberUserId)
       .maybeSingle();
     return data;
@@ -530,7 +530,7 @@ describe("6. exports (0011)", () => {
     const { data } = await orgAdmin
       .from("audit_events")
       .select("action, after")
-      .eq("org_id", ORG)
+      .eq("unit_id", ORG)
       .gte("created_at", since)
       .ilike("action", "%export%");
     expect(data!.length).toBeGreaterThan(0);
@@ -551,13 +551,13 @@ describe("6. exports (0011)", () => {
   it("saved views: managers save; a chapter can't save into its sibling", async () => {
     const res = await orgAdmin
       .from("member_segments")
-      .insert({ org_id: ORG, name: `Smoke ${runId}`, filter: { standing: "good" } })
+      .insert({ unit_id: ORG, name: `Smoke ${runId}`, filter: { standing: "good" } })
       .select("id")
       .single();
     expect(res.error).toBeNull();
     const sibling = await chapterAdmin
       .from("member_segments")
-      .insert({ org_id: DALLAS, name: `Smoke ${runId}`, filter: {} });
+      .insert({ unit_id: DALLAS, name: `Smoke ${runId}`, filter: {} });
     expect(sibling.error).not.toBeNull();
   });
 });
@@ -575,14 +575,14 @@ describe("7. directory (0012)", () => {
       const { data: m } = await orgAdmin
         .from("memberships")
         .select("id,status")
-        .eq("org_id", ORG)
+        .eq("unit_id", ORG)
         .eq("status", "pending");
       for (const row of m ?? []) await rpc(orgAdmin, "approve_membership", { _membership: row.id });
     }
     const profile = await member
-      .from("org_member_profiles")
+      .from("member_profiles")
       .select("id")
-      .eq("org_id", ORG)
+      .eq("unit_id", ORG)
       .eq("user_id", memberUserId)
       .single();
     const pid = profile.data!.id;
@@ -768,7 +768,7 @@ async function membershipAt(org: string) {
   const { data } = await member
     .from("memberships")
     .select("*, org_member_profiles!memberships_profile_id_fkey!inner(user_id)")
-    .eq("org_id", org)
+    .eq("unit_id", org)
     .eq("org_member_profiles.user_id", memberUserId)
     .maybeSingle();
   return data;
@@ -849,7 +849,7 @@ describe("10. board setup (0018)", () => {
     const { data: seats } = await nationalAdmin
       .from("seat_templates")
       .select("id, key, scope")
-      .eq("org_id", NATIONAL)
+      .eq("unit_id", NATIONAL)
       .in("key", [chapterKey, selfKey]);
     expect(seats).toHaveLength(2);
     const self = seats!.find((s) => s.key === selfKey)!;
@@ -874,7 +874,7 @@ describe("10. board setup (0018)", () => {
 
 describe("11. reports (0019)", () => {
   type Row = {
-    org_id: string;
+    unit_id: string;
     profiles: number;
     good: number;
     grace: number;
@@ -886,13 +886,13 @@ describe("11. reports (0019)", () => {
 
   it("the national's member report lists the national and both chapters", async () => {
     const rows = await rpc<Row[]>(nationalAdmin, "org_rollup_members", { _org: NATIONAL });
-    const ids = rows.map((r) => r.org_id);
+    const ids = rows.map((r) => r.unit_id);
     expect(ids).toEqual(expect.arrayContaining([NATIONAL, AUSTIN, DALLAS]));
-    const nat = rows.find((r) => r.org_id === NATIONAL)!;
+    const nat = rows.find((r) => r.unit_id === NATIONAL)!;
     const { count } = await nationalAdmin
-      .from("org_member_profiles")
+      .from("member_profiles")
       .select("id", { count: "exact", head: true })
-      .eq("org_id", NATIONAL);
+      .eq("unit_id", NATIONAL);
     expect(nat.profiles).toBe(count);
     for (const r of rows) {
       expect(r.good + r.grace + r.lapsed + r.pending + r.ended + r.no_membership).toBe(r.profiles);
@@ -981,7 +981,7 @@ describe("13. two-level dues (0020)", () => {
     const { data } = await nationalAdmin
       .from("org_settings")
       .select("key, value, mode")
-      .eq("org_id", NATIONAL)
+      .eq("unit_id", NATIONAL)
       .in("key", KEYS);
     saved = data ?? [];
   });
@@ -993,9 +993,9 @@ describe("13. two-level dues (0020)", () => {
     for (const key of KEYS) {
       const old = saved.find((s) => s.key === key);
       if (old) {
-        await nationalAdmin.from("org_settings").upsert({ org_id: NATIONAL, ...old });
+        await nationalAdmin.from("org_settings").upsert({ unit_id: NATIONAL, ...old });
       } else {
-        await nationalAdmin.from("org_settings").delete().eq("org_id", NATIONAL).eq("key", key);
+        await nationalAdmin.from("org_settings").delete().eq("unit_id", NATIONAL).eq("key", key);
       }
     }
   });
@@ -1009,7 +1009,7 @@ describe("13. two-level dues (0020)", () => {
     ] as const) {
       const res = await nationalAdmin
         .from("org_settings")
-        .upsert({ org_id: NATIONAL, key, value, mode });
+        .upsert({ unit_id: NATIONAL, key, value, mode });
       expect(res.error).toBeNull();
     }
     const info = await rpc<{ national_dues: { required: boolean } }>(anon, "public_join_info", {
@@ -1019,14 +1019,14 @@ describe("13. two-level dues (0020)", () => {
 
     const tier = await chapterAdmin
       .from("membership_tiers")
-      .insert({ org_id: AUSTIN, key: `smoke_${runId}`, name: `Smoke Austin ${runId}` })
+      .insert({ unit_id: AUSTIN, key: `smoke_${runId}`, name: `Smoke Austin ${runId}` })
       .select("id")
       .single();
     expect(tier.error).toBeNull();
     const term = await chapterAdmin
       .from("tier_terms")
       .insert({
-        org_id: AUSTIN,
+        unit_id: AUSTIN,
         tier_id: tier.data!.id,
         key: "1y",
         label: "1 year",
@@ -1103,11 +1103,7 @@ describe("14. demo organizations (0022)", () => {
       _slug: `smoke-demo-${runId}`,
       _type: "standalone",
     });
-    const { data } = await nationalAdmin
-      .from("organizations")
-      .select("is_demo")
-      .eq("id", demoId)
-      .single();
+    const { data } = await nationalAdmin.from("units").select("is_demo").eq("id", demoId).single();
     expect(data!.is_demo).toBe(true);
   });
 
@@ -1141,7 +1137,7 @@ describe("14. demo organizations (0022)", () => {
       _confirm_name: name,
     });
     expect(ids).toContain(demoId);
-    const { data } = await nationalAdmin.from("organizations").select("id").eq("id", demoId);
+    const { data } = await nationalAdmin.from("units").select("id").eq("id", demoId);
     expect(data).toHaveLength(0);
     demoId = "";
   });

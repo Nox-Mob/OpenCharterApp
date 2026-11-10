@@ -22,9 +22,9 @@ export const myProfileQuery = (orgId: string) =>
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return null;
       const { data, error } = await supabase
-        .from("org_member_profiles")
+        .from("member_profiles")
         .select("id,display_name,email")
-        .eq("org_id", orgId)
+        .eq("unit_id", orgId)
         .eq("user_id", u.user.id)
         .maybeSingle();
       if (error) throw error;
@@ -44,7 +44,7 @@ export const myRolesQuery = (orgId: string) =>
       const { data, error } = await supabase
         .from("role_assignments")
         .select("id,source,roles(name)")
-        .eq("org_id", orgId)
+        .eq("unit_id", orgId)
         .eq("user_id", u.user.id);
       if (error) throw error;
       return (data ?? []).map((r) => ({

@@ -48,12 +48,12 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
 };
 
 export type OrgNode = { id: string; ancestor_ids: string[] };
-export type Grant = { org_id: string; permissions: readonly string[] };
+export type Grant = { unit_id: string; permissions: readonly string[] };
 
 /** Pure mirror of public.has_permission, used for UI gating and tests. */
 export function hasPermission(grants: readonly Grant[], perm: Permission, org: OrgNode): boolean {
   const scope = new Set([org.id, ...org.ancestor_ids]);
-  return grants.some((g) => scope.has(g.org_id) && g.permissions.includes(perm));
+  return grants.some((g) => scope.has(g.unit_id) && g.permissions.includes(perm));
 }
 
 /** Whether the viewer has any admin permission at this org (so "view as member" makes sense). */

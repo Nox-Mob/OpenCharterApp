@@ -11,7 +11,7 @@ import {
 } from "./rollups";
 
 const row = (over: Partial<MemberRollup>): MemberRollup => ({
-  org_id: "x",
+  unit_id: "x",
   name: "X",
   type: "chapter",
   parent_id: "n",
@@ -51,7 +51,7 @@ describe("roll-up helpers", () => {
   });
 
   it("never adds amounts across currencies", () => {
-    const base = { org_id: "a", name: "A", depth: 1, payments: 1, refunded_minor: 0 };
+    const base = { unit_id: "a", name: "A", depth: 1, payments: 1, refunded_minor: 0 };
     expect(
       revenueTotals([
         { ...base, currency: "USD", gross_minor: 2500, net_minor: 2500 },

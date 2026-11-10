@@ -8,8 +8,8 @@ import {
 } from "./index";
 
 const lineage = ["national", "chapter"];
-const row = (org_id: string, value: unknown, mode: SettingRow["mode"]): SettingRow => ({
-  org_id,
+const row = (unit_id: string, value: unknown, mode: SettingRow["mode"]): SettingRow => ({
+  unit_id,
   key: "k",
   value,
   mode,
@@ -126,12 +126,12 @@ describe("settingsFor", () => {
 
 describe("effectiveApprovalRequired (D-130)", () => {
   const set = (
-    org_id: string,
+    unit_id: string,
     key: string,
     value: unknown,
     mode: SettingRow["mode"] = "override",
   ) => ({
-    org_id,
+    unit_id,
     key,
     value,
     mode,

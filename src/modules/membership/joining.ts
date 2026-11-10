@@ -170,7 +170,7 @@ export const paymentProgressQuery = (paymentId: string) =>
       const { data, error } = await db
         .from("payments")
         .select(
-          "id,status,failure_reason,purpose,amount_minor,currency,gateway,livemode,memberships(status),organizations(name,slug)",
+          "id,status,failure_reason,purpose,amount_minor,currency,gateway,livemode,memberships(status),organizations:units(name,slug)",
         )
         .eq("id", paymentId)
         .maybeSingle();

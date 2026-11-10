@@ -45,8 +45,17 @@ files here: change them in Nox-Mob/OpenAppHub and sync.
 
 1. ~~Step 3, hygiene (redo for v2.2)~~ **done** (§0.3).
 2. ~~Step 5, rest of vendoring~~ and ~~step 6, the baseline~~ **done** (§0.4).
-3. **Owner:** add `STAGING_DATABASE_URL` and `PROD_DATABASE_URL` (repository or `staging` / `production` environment secrets), run **Migrate** on staging (dry run, then for real), then on production; add `charter` to the exposed schemas (Supabase → Settings → API) on both projects.
-4. Next: seed (`db/seed`), the client switch to schema `charter` (step 9), org scoping, hosted mode, AppShell restyle.
+3. ~~Seed, the client switch to schema `charter` (step 9) and org scoping~~ **done** (§0.5).
+4. Next: hosted mode (sign-in, invitations and billing through the hub; the billing banner), then the AppShell restyle.
+
+### 0.5 The app on schema `charter`, staging seed, org scoping (2026-11-10)
+
+- **Client:** every Supabase client (browser, request, service role, `src/lib/db/pending-schema.ts`) uses `db: { schema: "charter" }`; core tables with `.schema("public")`. Types are generated from `db/core` + `db/migrations` with `charter` as the default schema.
+- **Renames in code:** `organizations` → `units`, `org_member_profiles` → `member_profiles`, column `org_id` → `unit_id` (selects, filters, inserts and row types). Embedded selects keep their property names with aliases (`organizations:units(…)`). The audit label for `units` is "General settings". RPC names and parameters are unchanged. Logos are in bucket `charter-branding`.
+- **Invitations:** created and accepted with Charter's wrappers (`charter.create_invitation`, `accept_invitation`, `revoke_invitation`) as before; the list reads core `public.invitations` (`app = 'charter'`, the unit and role in `app_payload`); the invitation page reads core `get_invitation`.
+- **Org scoping:** opening a unit sets the suite cookie `oah_org` to its organization (`units.org_id`); after sign-in a person lands on their default organization, else the organization chosen last anywhere in the suite, else their only one.
+- **Staging seed:** `db/seed/0001_charter_demo.sql`, ported from `supabase/scripts/demo-test-accounts.sql` and `seed-test-demo.sql`: the three demo accounts, Demo National with Austin and Dallas, and Test-Demo with about 500 people. The password comes from `fixture.demo_password` (`migrate.yml` passes the optional `DEMO_PASSWORD` secret, letters and digits). Refuses production and databases with real organizations; CI loads it after the DB tests.
+- **Retired:** `supabase/` (old migrations, scripts, `config.toml`). Self-hosting is `bun run db:migrate` plus exposing `charter` (README).
 
 ### 0.3 Step 3 (hygiene) as done for v2.2
 

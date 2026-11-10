@@ -49,7 +49,7 @@ export const levelLinksQuery = (orgId: string, lineage: readonly string[]) =>
       const { data, error } = await db
         .from("membership_tiers")
         .select("id,suggested,source_tier_id,link_mode,price_rule,price_value")
-        .in("org_id", [...lineage, orgId]);
+        .in("unit_id", [...lineage, orgId]);
       if (error) throw error;
       return new Map((data ?? []).map((r) => [r.id, r as LevelLink]));
     },

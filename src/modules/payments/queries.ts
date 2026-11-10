@@ -17,7 +17,7 @@ export const connectionQuery = (orgId: string) =>
       const { data, error } = await db
         .from("gateway_connections")
         .select("gateway,status,account_label,livemode,connected_at")
-        .eq("org_id", orgId)
+        .eq("unit_id", orgId)
         .maybeSingle();
       if (error) throw error;
       return data;
@@ -47,9 +47,9 @@ export const paymentsQuery = (orgId: string) =>
       const { data, error } = await db
         .from("payments")
         .select(
-          "id,created_at,received_on,purpose,amount_minor,refunded_amount_minor,currency,status,gateway,method,livemode,note,org_member_profiles(display_name,email)",
+          "id,created_at,received_on,purpose,amount_minor,refunded_amount_minor,currency,status,gateway,method,livemode,note,org_member_profiles:member_profiles(display_name,email)",
         )
-        .eq("org_id", orgId)
+        .eq("unit_id", orgId)
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;

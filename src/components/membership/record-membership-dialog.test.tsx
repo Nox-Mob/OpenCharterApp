@@ -9,7 +9,7 @@ const rpc = vi.fn(async (..._args: unknown[]) => ({ data: null, error: null }));
 const tierRows = [
   {
     id: "tier1",
-    org_id: "a",
+    unit_id: "a",
     key: "regular",
     name: "Regular",
     description: "",

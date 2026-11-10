@@ -37,7 +37,7 @@ export type DescribedEvent = {
 export type AuditEntry = DescribedEvent & { more: DescribedEvent[] };
 
 const AREAS: Record<string, string> = {
-  organizations: "General settings",
+  units: "General settings",
   org_settings: "Settings",
   tax_profiles: "Tax profile",
   setup_states: "Setup",
@@ -89,7 +89,7 @@ const VERBS: Record<string, string> = {
 /** Columns that never help a reader (identifiers, bookkeeping). */
 const HIDDEN = new Set([
   "id",
-  "org_id",
+  "unit_id",
   "created_at",
   "updated_at",
   "updated_by",

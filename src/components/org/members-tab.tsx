@@ -119,15 +119,15 @@ export function MembersTab({
     queryFn: async (): Promise<(Assignment & { role_name: string })[]> => {
       const { data, error } = await supabase
         .from("role_assignments")
-        .select("id,user_id,org_id,roles(key,name)")
-        .eq("org_id", orgId);
+        .select("id,user_id,unit_id,roles(key,name)")
+        .eq("unit_id", orgId);
       if (error) throw error;
       return (data ?? []).map((r) => {
         const role = r.roles as { key: string; name: string } | null;
         return {
           id: r.id,
           user_id: r.user_id,
-          org_id: r.org_id,
+          unit_id: r.unit_id,
           role_key: role?.key ?? "",
           role_name: role?.name ?? "",
         };
@@ -225,10 +225,10 @@ export function MembersTab({
   const rows = toRosterRows(
     listData,
     valueData,
-    isTree ? (m) => treeGrace.data?.[m.org_id ?? orgId] ?? graceDays : graceDays,
+    isTree ? (m) => treeGrace.data?.[m.unit_id ?? orgId] ?? graceDays : graceDays,
     on,
   );
-  const isOwn = (m: { org_id?: string }) => !m.org_id || m.org_id === orgId;
+  const isOwn = (m: { unit_id?: string }) => !m.unit_id || m.unit_id === orgId;
   const visible = sortRoster(filterRoster(rows, filter, rosterFields), sort);
   const levels = [
     ...new Map(
@@ -255,8 +255,8 @@ export function MembersTab({
     const i = subtree.findIndex((o) => o.id === (id ?? orgId));
     return treePrivacy[i]?.data ?? { listedByDefault: true, adminOverrideAllowed: true };
   };
-  const listedHere = (m: { directory_listed?: boolean | null; org_id?: string }) =>
-    isTree ? isListed(m, rulesFor(m.org_id).listedByDefault) : isListed(m, listedByDefault);
+  const listedHere = (m: { directory_listed?: boolean | null; unit_id?: string }) =>
+    isTree ? isListed(m, rulesFor(m.unit_id).listedByDefault) : isListed(m, listedByDefault);
   const optedOut = directoryReady ? visible.filter((r) => !listedHere(r)).length : 0;
   const toExport = !directoryReady
     ? visible
@@ -280,7 +280,7 @@ export function MembersTab({
       columns.splice(2, 0, {
         key: "organization",
         label: "Organization",
-        value: (r) => orgName.get(r.org_id ?? orgId) ?? "",
+        value: (r) => orgName.get(r.unit_id ?? orgId) ?? "",
       });
     try {
       // Audited first (D-138); no log, no file.
@@ -329,13 +329,30 @@ export function MembersTab({
     queryKey: ["invites", orgId],
     enabled: canInvite,
     queryFn: async () => {
+      // Invitations are core (public.invitations); Charter's unit and role ride in
+      // app_payload (charter.create_invitation).
       const { data, error } = await supabase
+        .schema("public")
         .from("invitations")
-        .select("id,email,expires_at,accepted_at,revoked_at,roles(name)")
-        .eq("org_id", orgId)
+        .select("id,email,expires_at,accepted_at,revoked_at,app_payload")
+        .eq("app", "charter")
+        .contains("app_payload", { unit_id: orgId })
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data;
+      const roleIds = [
+        ...new Set(
+          (data ?? [])
+            .map((i) => (i.app_payload as { role_id?: string } | null)?.role_id)
+            .filter((x): x is string => !!x),
+        ),
+      ];
+      const { data: roles } = roleIds.length
+        ? await supabase.from("roles").select("id,name").in("id", roleIds)
+        : { data: [] as { id: string; name: string }[] };
+      return (data ?? []).map((i) => {
+        const roleId = (i.app_payload as { role_id?: string } | null)?.role_id;
+        return { ...i, roles: (roles ?? []).find((r) => r.id === roleId) ?? null };
+      });
     },
   });
 
@@ -544,7 +561,9 @@ export function MembersTab({
                   )}
                 </TableCell>
                 {isTree && (
-                  <TableCell className="text-sm">{orgName.get(m.org_id ?? orgId) ?? "—"}</TableCell>
+                  <TableCell className="text-sm">
+                    {orgName.get(m.unit_id ?? orgId) ?? "—"}
+                  </TableCell>
                 )}
                 {showChapter && (
                   <TableCell className="text-sm">
@@ -644,7 +663,7 @@ export function MembersTab({
                     <Button asChild size="sm" variant="ghost">
                       <Link
                         to="/orgs/$orgId"
-                        params={{ orgId: m.org_id! }}
+                        params={{ orgId: m.unit_id! }}
                         search={{ tab: "members" }}
                       >
                         Open

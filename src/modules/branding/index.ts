@@ -25,7 +25,7 @@ export function validateLogo(file: { type: string; size: number }): string | nul
 }
 
 export async function logoUrl(path: string): Promise<string | null> {
-  const { data } = await supabase.storage.from("branding").createSignedUrl(path, 3600);
+  const { data } = await supabase.storage.from("charter-branding").createSignedUrl(path, 3600);
   return data?.signedUrl ?? null;
 }
 
@@ -33,13 +33,10 @@ export async function uploadLogo(orgId: string, file: File): Promise<string> {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
   const path = `${orgId}/logo-${Date.now()}.${ext}`;
   const { error } = await supabase.storage
-    .from("branding")
+    .from("charter-branding")
     .upload(path, file, { contentType: file.type });
   if (error) throw error;
-  const { error: e2 } = await supabase
-    .from("organizations")
-    .update({ logo_path: path })
-    .eq("id", orgId);
+  const { error: e2 } = await supabase.from("units").update({ logo_path: path }).eq("id", orgId);
   if (e2) throw e2;
   return path;
 }

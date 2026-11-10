@@ -32,7 +32,7 @@ export function ChapterFieldsCard({
   useEffect(() => setDraft(values.data ?? {}), [values.data]);
 
   const all = (defs.data ?? []).filter(
-    (d) => d.applies_to === "chapter" && d.active && org.ancestor_ids.includes(d.org_id),
+    (d) => d.applies_to === "chapter" && d.active && org.ancestor_ids.includes(d.unit_id),
   );
   const editable = all.filter((d) => canSetChapterField(d, org, grants));
   const canEditAny = editable.length > 0;
@@ -88,7 +88,7 @@ export function ChapterFieldsCard({
                 onChange={(v) => setDraft({ ...draft, [d.id]: v })}
               />
               {d.locked && !canSet && (
-                <p className="text-xs text-muted-foreground">Set by {ownerName(d.org_id)}</p>
+                <p className="text-xs text-muted-foreground">Set by {ownerName(d.unit_id)}</p>
               )}
             </div>
           );

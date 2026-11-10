@@ -22,7 +22,7 @@ vi.mock("@/integrations/supabase/client", () => {
       data: [
         {
           id: "d1",
-          org_id: "o",
+          unit_id: "o",
           key: "rank",
           label: "Rank",
           data_type: "text",

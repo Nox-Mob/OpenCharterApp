@@ -34,9 +34,9 @@ export const removedMembersQuery = (orgId: string) =>
       readAllPages<RemovedMember>(
         (from, to) =>
           supabase
-            .from("org_member_profiles")
+            .from("member_profiles")
             .select("id,display_name,email,left_at")
-            .eq("org_id", orgId)
+            .eq("unit_id", orgId)
             .not("left_at", "is", null)
             .is("home_of", null)
             .order("left_at", { ascending: false })

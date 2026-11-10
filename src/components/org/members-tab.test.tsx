@@ -7,7 +7,7 @@ import { PERMISSIONS } from "@/lib/policy";
 // and awaiting it resolves to the canned result for the table.
 const results: Record<string, { data?: unknown; error?: unknown }> = {
   memberships: { error: { code: "PGRST205", message: "Could not find the table" } },
-  org_member_profiles: {
+  member_profiles: {
     data: [
       {
         id: "p1",
@@ -37,7 +37,7 @@ function builder(table: string) {
   const b: Record<string, unknown> = {};
   for (const m of ["eq", "order", "limit", "in", "is", "range", "maybeSingle"]) b[m] = () => b;
   b["select"] = (cols: string) => {
-    if (table === "org_member_profiles") selects.push(cols);
+    if (table === "member_profiles") selects.push(cols);
     return b;
   };
   b["then"] = (ok: (v: unknown) => unknown) => ok({ data: null, error: null, ...results[table] });
@@ -77,7 +77,7 @@ describe("MembersTab before migration 0008", () => {
           canInvite={false}
           canAssignAdmin={false}
           canManageMembers
-          grants={[{ org_id: "a", permissions: [...PERMISSIONS] }]}
+          grants={[{ unit_id: "a", permissions: [...PERMISSIONS] }]}
         />
       </QueryClientProvider>,
     );

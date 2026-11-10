@@ -104,8 +104,8 @@ export function createStripeGateway(
         success_url: req.successUrl,
         cancel_url: req.cancelUrl,
         customer_email: req.customerEmail,
-        metadata: { payment_id: req.paymentId, org_id: req.orgId },
-        payment_intent_data: { metadata: { payment_id: req.paymentId, org_id: req.orgId } },
+        metadata: { payment_id: req.paymentId, unit_id: req.orgId },
+        payment_intent_data: { metadata: { payment_id: req.paymentId, unit_id: req.orgId } },
         line_items: {
           0: {
             quantity: 1,

@@ -39,7 +39,7 @@ export type Term = {
 
 export type Tier = {
   id?: string;
-  org_id?: string;
+  unit_id?: string;
   key: string;
   name: string;
   description: string;

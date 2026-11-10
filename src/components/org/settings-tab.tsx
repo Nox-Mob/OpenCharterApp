@@ -147,7 +147,7 @@ function RulesCard({
             orgId={org.id}
             hasChildren={org.type === "national" || org.type === "region"}
             def={def}
-            own={settings.find((s) => s.org_id === org.id && s.key === def.key)}
+            own={settings.find((s) => s.unit_id === org.id && s.key === def.key)}
             resolved={resolveDef(ids, settings, def)}
             nameOf={nameOf}
             onSaved={onSaved}
@@ -165,7 +165,7 @@ function GeneralCard({ org, onSaved }: { org: Org & { timezone?: string }; onSav
     e.preventDefault();
     if (name.trim().length < 2) return void toast.error("Name is too short");
     const { error } = await supabase
-      .from("organizations")
+      .from("units")
       .update({ name: name.trim(), timezone: tz })
       .eq("id", org.id);
     if (error) return void toast.error("Couldn't save");
@@ -313,7 +313,7 @@ function TaxCard({ orgId }: { orgId: string }) {
       const { data, error } = await supabase
         .from("tax_profiles")
         .select("*")
-        .eq("org_id", orgId)
+        .eq("unit_id", orgId)
         .maybeSingle();
       if (error) throw error;
       return data;
@@ -329,7 +329,7 @@ function TaxCard({ orgId }: { orgId: string }) {
       return void toast.error("EIN must look like 12-3456789");
     const { error } = await supabase
       .from("tax_profiles")
-      .upsert({ org_id: orgId, ...form, updated_at: new Date().toISOString() });
+      .upsert({ unit_id: orgId, ...form, updated_at: new Date().toISOString() });
     if (error) return void toast.error("Couldn't save tax profile");
     toast.success("Tax profile saved");
     q.refetch();
@@ -384,7 +384,7 @@ function SettingRowEditor({
   async function save() {
     const { error } = await supabase
       .from("org_settings")
-      .upsert({ org_id: orgId, key: def.key, value: value as never, mode });
+      .upsert({ unit_id: orgId, key: def.key, value: value as never, mode });
     if (error)
       return void toast.error(
         error.message.includes("locked") ? "Locked by a parent organization" : "Couldn't save",

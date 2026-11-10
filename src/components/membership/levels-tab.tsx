@@ -39,7 +39,7 @@ import type { Term } from "@/modules/membership/tiers";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-type SavedTier = Tier & { id: string; org_id: string; active: boolean };
+type SavedTier = Tier & { id: string; unit_id: string; active: boolean };
 
 /** Membership levels tab (E-11): this org's levels, plus its parents' levels read-only. */
 export function LevelsTab({
@@ -87,8 +87,8 @@ export function LevelsTab({
   if (tiers.isLoading || allowed.isLoading)
     return <p className="text-muted-foreground">Loading…</p>;
 
-  const own = (tiers.data ?? []).filter((t) => t.org_id === org.id);
-  const inherited = (tiers.data ?? []).filter((t) => t.org_id !== org.id && t.active);
+  const own = (tiers.data ?? []).filter((t) => t.unit_id === org.id);
+  const inherited = (tiers.data ?? []).filter((t) => t.unit_id !== org.id && t.active);
   const mayCreate = canManage && allowed.data !== false;
   const parentName = orgs.find((o) => o.id === org.parent_id)?.name ?? "Your parent organization";
 
@@ -205,7 +205,7 @@ export function LevelsTab({
               tier={t}
               note={
                 linkedTo
-                  ? `Linked to ${orgName(linkedTo.org_id)}'s ${linkedTo.name}: ${describePriceRule(l!.price_rule, l!.price_value, orgName(linkedTo.org_id))}`
+                  ? `Linked to ${orgName(linkedTo.unit_id)}'s ${linkedTo.name}: ${describePriceRule(l!.price_rule, l!.price_value, orgName(linkedTo.unit_id))}`
                   : l?.suggested
                     ? "Suggested to the organizations below"
                     : undefined
@@ -236,7 +236,7 @@ export function LevelsTab({
                           onClick={() => {
                             if (
                               window.confirm(
-                                `Make ${t.name} your own? It stops following ${orgName(linkedTo.org_id)}'s level, and you can't link it again.`,
+                                `Make ${t.name} your own? It stops following ${orgName(linkedTo.unit_id)}'s level, and you can't link it again.`,
                               )
                             )
                               void runLink(() => makeLevelOwn(t.id), "It's your own level now");
@@ -288,7 +288,7 @@ export function LevelsTab({
           <TierCard
             key={t.id}
             tier={t}
-            badge={orgs.find((o) => o.id === t.org_id)?.name ?? "Parent organization"}
+            badge={orgs.find((o) => o.id === t.unit_id)?.name ?? "Parent organization"}
             note={link(t.id)?.suggested ? "Suggested for you" : undefined}
             actions={
               mayCreate &&
@@ -307,7 +307,7 @@ export function LevelsTab({
         <AdoptLevelDialog
           orgId={org.id}
           level={adopting}
-          sourceName={orgName(adopting.org_id)}
+          sourceName={orgName(adopting.unit_id)}
           range={range}
           onClose={() => setAdopting(null)}
           onDone={refreshLinks}

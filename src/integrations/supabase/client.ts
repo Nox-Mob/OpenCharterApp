@@ -61,7 +61,8 @@ function createSupabaseClient() {
     throw new Error(message);
   }
 
-  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  return createClient<Database, 'charter'>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    db: { schema: 'charter' },
     global: {
       fetch: createSupabaseFetch(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY),
     },

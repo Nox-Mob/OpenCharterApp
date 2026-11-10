@@ -32,7 +32,7 @@ test.beforeAll(async () => {
   admin = await apiSignIn(DEMO.national);
   // leftovers from an earlier run that was stopped before it could delete its national
   const { data: old } = await admin
-    .from("organizations")
+    .from("units")
     .select("id,name")
     .like("name", "E2E Guide %")
     .eq("is_demo", true)

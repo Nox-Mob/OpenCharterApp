@@ -250,7 +250,7 @@ Rank-based approval: when an approver must hold a certain rank, the chapter pres
 
 ## 12. Deployment topology (target state, packaging deferred to F-11)
 
-**Today:** the hosted app is a Cloudflare Worker (TanStack Start) on the shared OpenAppHub Supabase database (Postgres, Auth, Storage). Charter's tables are in schema `charter` on the suite core (`db/core`), built by `db/migrations` and applied with `scripts/migrate.mjs` (the owner's Migrate workflow). Until the client switch (migration step 9) the app still reads the old public-schema tables from the frozen `supabase/migrations`, which self-hosters apply to their own project. **Self-host packaging** (Docker image, Compose file, reverse-proxy configuration) **is not built early** (D-012). The target topology for self-hosting:
+**Today:** the hosted app is a Cloudflare Worker (TanStack Start) on the shared OpenAppHub Supabase database (Postgres, Auth, Storage). Charter's tables are in schema `charter` on the suite core (`db/core`), built by `db/migrations` and applied with `scripts/migrate.mjs` (the owner's Migrate workflow). The app reads schema `charter` (every Supabase client is created with `db: { schema: "charter" }`) and core tables with `.schema("public")`; the organization tree is `charter.units`, each unit's `org_id` is its OpenAppHub organization (the top unit's id). **Self-host packaging** (Docker image, Compose file, reverse-proxy configuration) **is not built early** (D-012). The target topology for self-hosting:
 
 ```mermaid
 flowchart LR
@@ -300,7 +300,7 @@ flowchart LR
 /db/migrations        SQL migrations for schema charter (tables, RLS policies, RPCs)
 /db/tests              database rule tests
 /db/perf               performance check (5,000 to 20,000 members)
-/supabase/migrations   old public schema, frozen (self-hosters, until step 9)
+/db/seed               staging demo data (--seed)
 /docker                (added later, F-11) compose files, proxy config
 /docs                  these planning docs
 ```

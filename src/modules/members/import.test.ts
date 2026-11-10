@@ -5,7 +5,7 @@ import { buildRows, fieldValue, guessTargets, mergeResults, parseCsv, templateCs
 const def = (over: Partial<DefWithOptions>): DefWithOptions =>
   ({
     id: "d1",
-    org_id: "o",
+    unit_id: "o",
     key: "rank",
     label: "Rank",
     data_type: "text",

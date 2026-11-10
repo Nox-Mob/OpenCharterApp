@@ -11,7 +11,7 @@ const receipt = (
   status,
   snapshot: {
     issuer: {
-      org_id: "o",
+      unit_id: "o",
       name: "Austin",
       legal_name: "Austin Chapter Inc.",
       ein: "12-3456789",

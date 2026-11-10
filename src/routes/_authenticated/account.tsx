@@ -50,7 +50,7 @@ const meQuery = {
     if (!u) return null;
     const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
     const { data: profiles } = await supabase
-      .from("org_member_profiles")
+      .from("member_profiles")
       .select("display_name")
       .eq("user_id", u.id)
       .limit(1);

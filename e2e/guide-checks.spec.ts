@@ -119,7 +119,7 @@ test("§6.2 a home-chapter national manages its own levels, even after opening M
   // create dialog and deleted afterwards, so the test needs no data beyond the demo accounts.
   const admin = await apiSignIn(DEMO.national);
   const stale = await admin
-    .from("organizations")
+    .from("units")
     .select("id,name")
     .like("name", "E2E Home %")
     .eq("is_demo", true)
@@ -134,7 +134,7 @@ test("§6.2 a home-chapter national manages its own levels, even after opening M
   try {
     const { error } = await admin
       .from("org_settings")
-      .insert({ org_id: id, key: "membership.model", value: "home_chapter", mode: "locked" });
+      .insert({ unit_id: id, key: "membership.model", value: "home_chapter", mode: "locked" });
     if (error) throw new Error(error.message);
     await signIn(page, "national");
     await page.goto(`/orgs/${id}?tab=members`);

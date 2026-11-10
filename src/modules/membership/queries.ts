@@ -7,13 +7,13 @@ import { tierInputSchema, type Term, type Tier, type TierInput } from "./tiers";
 export const tiersQuery = (orgId: string, lineage: readonly string[]) =>
   queryOptions({
     queryKey: ["tiers", orgId],
-    queryFn: async (): Promise<(Tier & { id: string; org_id: string; active: boolean })[]> => {
+    queryFn: async (): Promise<(Tier & { id: string; unit_id: string; active: boolean })[]> => {
       const { data, error } = await supabase
         .from("membership_tiers")
         .select(
-          "id,org_id,key,name,description,tax_treatment,active,sort_order,tier_terms(id,key,label,length_count,length_unit,price_minor,currency,active,sort_order)",
+          "id,unit_id,key,name,description,tax_treatment,active,sort_order,tier_terms(id,key,label,length_count,length_unit,price_minor,currency,active,sort_order)",
         )
-        .in("org_id", [...lineage, orgId])
+        .in("unit_id", [...lineage, orgId])
         .order("sort_order");
       if (error) throw error;
       return (data ?? []).map(({ tier_terms, sort_order: _s, ...t }) => ({
@@ -103,7 +103,7 @@ export async function saveTier(
     const { data, error } = await supabase
       .from("membership_tiers")
       .insert({
-        org_id: orgId,
+        unit_id: orgId,
         key: t.key,
         name: t.name,
         description: t.description,
@@ -139,7 +139,7 @@ export async function saveTier(
     } else {
       const { error } = await supabase
         .from("tier_terms")
-        .insert({ ...fields, tier_id: tierId!, org_id: orgId, key: term.key });
+        .insert({ ...fields, tier_id: tierId!, unit_id: orgId, key: term.key });
       if (error) throw error;
     }
   }

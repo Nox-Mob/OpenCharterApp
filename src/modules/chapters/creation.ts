@@ -50,7 +50,7 @@ export const requiredChapterSeatsQuery = (lineage: readonly string[]) =>
       const { data, error } = await db
         .from("seat_templates")
         .select("id,key,title,seat_count,sort_order")
-        .in("org_id", [...lineage])
+        .in("unit_id", [...lineage])
         // "chapters" and "self_and_chapters" (0024) both apply to every chapter below
         .neq("scope", "self")
         .eq("required", true)

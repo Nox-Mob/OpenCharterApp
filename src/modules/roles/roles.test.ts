@@ -15,15 +15,15 @@ import {
 } from "./index";
 import { PERMISSIONS } from "@/lib/policy";
 
-const a = (id: string, user_id: string, role_key: string, org_id = "org"): Assignment => ({
+const a = (id: string, user_id: string, role_key: string, unit_id = "org"): Assignment => ({
   id,
   user_id,
-  org_id,
+  unit_id,
   role_key,
 });
-const role = (key: string, org_id: string | null, permissions: string[], active = true): Role => ({
+const role = (key: string, unit_id: string | null, permissions: string[], active = true): Role => ({
   id: key,
-  org_id,
+  unit_id,
   key,
   name: key,
   description: "",
@@ -84,8 +84,8 @@ describe("rolesForOrg", () => {
 });
 
 describe("canGrantRole and availableRoles", () => {
-  const limited = [{ org_id: "a", permissions: ["roles.manage", "members.view"] }];
-  const chapterAdmin = [{ org_id: "a", permissions: ALL }];
+  const limited = [{ unit_id: "a", permissions: ["roles.manage", "members.view"] }];
+  const chapterAdmin = [{ unit_id: "a", permissions: ALL }];
   it("a role can only be granted by someone holding all its permissions", () => {
     expect(canGrantRole(secretary, limited, chapterA)).toBe(true);
     expect(canGrantRole(treasurer, limited, chapterA)).toBe(false);
@@ -115,7 +115,7 @@ describe("canGrantRole and availableRoles", () => {
 describe("grantablePermissions and addedPermissions", () => {
   it("lists only permissions held at this org", () => {
     expect(
-      grantablePermissions([{ org_id: "a", permissions: ["members.view"] }], chapterA),
+      grantablePermissions([{ unit_id: "a", permissions: ["members.view"] }], chapterA),
     ).toEqual(["members.view"]);
   });
   it("only additions need to be held", () => {

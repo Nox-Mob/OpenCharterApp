@@ -6,7 +6,7 @@
  * - otherwise the registry default applies
  */
 export type SettingMode = "inherit" | "override" | "locked";
-export type SettingRow = { org_id: string; key: string; value: unknown; mode: SettingMode };
+export type SettingRow = { unit_id: string; key: string; value: unknown; mode: SettingMode };
 
 export type SettingDef = {
   key: string;
@@ -226,14 +226,14 @@ export function ancestorValue(
   fallback: unknown,
 ): { value: unknown; sourceOrgId: string | null } {
   const ancestors = lineage.slice(0, -1);
-  const byOrg = new Map(rows.filter((r) => r.key === key).map((r) => [r.org_id, r]));
+  const byOrg = new Map(rows.filter((r) => r.key === key).map((r) => [r.unit_id, r]));
   for (const id of ancestors) {
     const r = byOrg.get(id);
     if (r?.mode === "locked") return { value: r.value, sourceOrgId: id };
   }
   for (let i = ancestors.length - 1; i >= 0; i--) {
     const r = byOrg.get(ancestors[i]!);
-    if (r && r.mode !== "inherit") return { value: r.value, sourceOrgId: r.org_id };
+    if (r && r.mode !== "inherit") return { value: r.value, sourceOrgId: r.unit_id };
   }
   return { value: fallback, sourceOrgId: null };
 }
@@ -282,7 +282,7 @@ export function resolveSetting(
   fallback: unknown,
 ): Resolved {
   const self = lineage[lineage.length - 1];
-  const byOrg = new Map(rows.filter((r) => r.key === key).map((r) => [r.org_id, r]));
+  const byOrg = new Map(rows.filter((r) => r.key === key).map((r) => [r.unit_id, r]));
   for (const orgId of lineage) {
     const r = byOrg.get(orgId);
     if (r && r.mode === "locked" && orgId !== self)
@@ -290,7 +290,8 @@ export function resolveSetting(
   }
   for (let i = lineage.length - 1; i >= 0; i--) {
     const r = byOrg.get(lineage[i]!);
-    if (r && r.mode !== "inherit") return { value: r.value, sourceOrgId: r.org_id, lockedBy: null };
+    if (r && r.mode !== "inherit")
+      return { value: r.value, sourceOrgId: r.unit_id, lockedBy: null };
   }
   return { value: fallback, sourceOrgId: null, lockedBy: null };
 }

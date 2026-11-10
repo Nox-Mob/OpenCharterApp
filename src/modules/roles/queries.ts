@@ -9,7 +9,7 @@ export const rolesQuery = () =>
     queryFn: async (): Promise<Role[]> => {
       const { data, error } = await supabase
         .from("roles")
-        .select("id,org_id,key,name,description,active,role_permissions(permission_key)")
+        .select("id,unit_id,key,name,description,active,role_permissions(permission_key)")
         .order("name");
       if (error) throw error;
       return (data ?? []).map(({ role_permissions, ...r }) => ({

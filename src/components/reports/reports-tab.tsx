@@ -186,7 +186,7 @@ export function ReportsTab({
                 </TableHeader>
                 <TableBody>
                   {(members.data ?? []).map((r) => (
-                    <MemberRow key={r.org_id} r={r} label={r.name} style={indent(r.depth)} />
+                    <MemberRow key={r.unit_id} r={r} label={r.name} style={indent(r.depth)} />
                   ))}
                   {(members.data?.length ?? 0) > 1 && (
                     <MemberRow
@@ -274,7 +274,7 @@ export function ReportsTab({
                 </TableHeader>
                 <TableBody>
                   {revenue.data!.map((r) => (
-                    <TableRow key={`${r.org_id}-${r.currency}`}>
+                    <TableRow key={`${r.unit_id}-${r.currency}`}>
                       <TableCell style={indent(r.depth)}>{r.name}</TableCell>
                       <TableCell className="text-right">{r.payments}</TableCell>
                       <TableCell className="text-right">
@@ -357,7 +357,7 @@ export function ReportsTab({
               </TableHeader>
               <TableBody>
                 {(board.data ?? []).map((r) => (
-                  <TableRow key={r.org_id}>
+                  <TableRow key={r.unit_id}>
                     <TableCell style={indent(r.depth)}>{r.name}</TableCell>
                     <TableCell className="text-right">{r.required_seats}</TableCell>
                     <TableCell>
@@ -381,7 +381,7 @@ function MemberRow({
   style,
   className,
 }: {
-  r: Omit<MemberRollup, "org_id" | "name" | "type" | "parent_id" | "depth">;
+  r: Omit<MemberRollup, "unit_id" | "name" | "type" | "parent_id" | "depth">;
   label: string;
   style?: React.CSSProperties;
   className?: string;

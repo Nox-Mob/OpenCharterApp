@@ -21,8 +21,8 @@ describe("describeEvent (D-191)", () => {
   it("says who modified which board seat, with the previous and current title", () => {
     const d = describeEvent(
       ev({
-        before: { id: "t1", org_id: "o", title: "President", updated_at: "x" },
-        after: { id: "t1", org_id: "o", title: "Emperor Elect", updated_at: "y" },
+        before: { id: "t1", unit_id: "o", title: "President", updated_at: "x" },
+        after: { id: "t1", unit_id: "o", title: "Emperor Elect", updated_at: "y" },
       }),
     );
     expect(`${d.who} ${d.what} · ${d.record}`).toBe(

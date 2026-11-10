@@ -4,7 +4,7 @@ import type { Org } from "@/lib/orgs";
 
 const in10 = new Date(Date.now() + 10 * 86_400_000).toISOString().slice(0, 10);
 const tables: Record<string, unknown> = {
-  org_member_profiles: {
+  member_profiles: {
     id: "p1",
     display_name: "Morgan",
     email: "m@test.org",
@@ -25,7 +25,7 @@ const tables: Record<string, unknown> = {
   attribute_definitions: [
     {
       id: "f1",
-      org_id: "nat",
+      unit_id: "nat",
       label: "Phone",
       data_type: "text",
       applies_to: "member",
@@ -37,7 +37,7 @@ const tables: Record<string, unknown> = {
     },
     {
       id: "f2",
-      org_id: "nat",
+      unit_id: "nat",
       label: "Rank",
       data_type: "text",
       applies_to: "member",
@@ -49,7 +49,7 @@ const tables: Record<string, unknown> = {
     },
     {
       id: "f3",
-      org_id: "nat",
+      unit_id: "nat",
       label: "Notes",
       data_type: "text",
       applies_to: "member",
@@ -184,7 +184,7 @@ vi.mock("@/integrations/supabase/client", () => ({
       if (fn === "grace_days") return { data: 30, error: null };
       if (fn === "lineage_settings")
         return {
-          data: [{ org_id: "nat", key: "contact.email", value: "hq@nat.org", mode: "override" }],
+          data: [{ unit_id: "nat", key: "contact.email", value: "hq@nat.org", mode: "override" }],
           error: null,
         };
       return { data: null, error: null };

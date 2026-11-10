@@ -58,9 +58,9 @@ export const myDirectoryChoiceQuery = (orgId: string) =>
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return undefined;
       const { data, error } = await db
-        .from("org_member_profiles")
+        .from("member_profiles")
         .select("directory_listed")
-        .eq("org_id", orgId)
+        .eq("unit_id", orgId)
         .eq("user_id", u.user.id)
         .maybeSingle();
       if (error) throw error;
