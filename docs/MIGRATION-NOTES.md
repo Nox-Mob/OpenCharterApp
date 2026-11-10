@@ -1,6 +1,6 @@
 # OpenAppHub suite migration — notes (OpenCharterApp)
 
-Status on 2026-11-08: steps 1–3 done (§9); owner answers in §8, updated for **spec v2** in §8.3. Steps 1–2 are this inventory and the secret scan; step 3 (hygiene) is described in §10. No database change has been made yet. Contract: [`SHARED-SPEC.md`](SHARED-SPEC.md) v2. Decisions: D-217, D-218, D-219.
+Status on 2026-11-10: steps 1–3, 5 and 6 done (§0.4, §9); owner answers in §8, updated for **spec v2** in §8.3. Steps 1–2 are this inventory and the secret scan; step 3 (hygiene) is described in §10. The baseline is written and tested but not yet applied to staging or production. Contract: [`SHARED-SPEC.md`](SHARED-SPEC.md) v2. Decisions: D-217, D-218, D-219.
 
 Goal: the current OpenCharterApp Supabase project (`nxungwtxnctcqolfshcr`) becomes the **production database for the whole suite** (OpenAppHub, OpenCharterApp, OpenBoardApp, OpenLedgerApp). The hub owns sign-up, organizations, members, invitations, ownership and billing (`public`, `billing`, `hub`, `ops`). Charter moves to its own schema `charter`. Self-hosted, Charter still runs on its own.
 
@@ -44,8 +44,9 @@ files here: change them in Nox-Mob/OpenAppHub and sync.
 ### 0.2 Next steps
 
 1. ~~Step 3, hygiene (redo for v2.2)~~ **done** (§0.3).
-2. **Step 5, rest of vendoring:** `migrate.yml`, a CI `db` job running `scripts/migrate.mjs` then `db/tests/*.sql`, retire `supabase-db.yml` / drizzle jobs, point `check:migrations` at `db/`.
-3. **Step 6, `db/migrations/0001_charter_baseline.sql`** (then seed, DB tests, client, org scoping, hosted mode, AppShell restyle).
+2. ~~Step 5, rest of vendoring~~ and ~~step 6, the baseline~~ **done** (§0.4).
+3. **Owner:** add `STAGING_DATABASE_URL` and `PROD_DATABASE_URL` (repository or `staging` / `production` environment secrets), run **Migrate** on staging (dry run, then for real), then on production; add `charter` to the exposed schemas (Supabase → Settings → API) on both projects.
+4. Next: seed (`db/seed`), the client switch to schema `charter` (step 9), org scoping, hosted mode, AppShell restyle.
 
 ### 0.3 Step 3 (hygiene) as done for v2.2
 
@@ -55,6 +56,23 @@ files here: change them in Nox-Mob/OpenAppHub and sync.
 - Security headers on every page.
 - **Self-hosting:** `bun run build` uses your own `.env`; `wrangler.selfhosted.example.jsonc` is the starting point for your own Worker.
 - **Owner:** the `opencharterapp` Worker's build command must be `bun run build:hosted` and its deploy command `npx wrangler deploy --config .output/server/wrangler.json`. The hosted app can't work until the baseline (step 6) and client (step 9) are in: the new database has no `charter` schema yet.
+
+### 0.4 Steps 5 and 6: schema `charter` on the core (2026-11-10)
+
+- **`db/migrations/0001_charter_baseline.sql`** builds Charter in schema `charter` on the core (`db/core`), equal to `supabase/migrations` 0000–0046 replayed, with these changes (spec §3.9):
+  - Charter's organization tree is **`charter.units`**; the top unit has the **same id as the core organization** (the customer). Every former `org_id` (a unit) is now **`unit_id`**, including RPC parameters (`_org_id` → `_unit_id`) and audit `target_type` (`'units'`). `org_member_profiles` is `charter.member_profiles`.
+  - Every table has a new **`org_id`** (the core organization), set by trigger from the unit, with a foreign key to `public.organizations` (`on delete cascade`, so deleting the organization in the hub removes Charter's data) and an index.
+  - Creating a top unit without a core organization (self-hosted) creates one, with the creator as owner. `charter.ensure_top_unit(org)` opens an organization made in the hub in Charter (owner or admin only).
+  - **Permissions:** a core owner or admin holds `org_admin`'s permissions in the whole tree. Staff roles need a core role of member or higher (a core viewer keeps only member access); assigning a staff role adds a core `member` membership (trigger). Dues members need no core membership (`charter.is_portal_member`).
+  - **Read-only when the plan lapses** (spec §6.3): every write checks `public.can_write(org, 'charter')`; payment paths (gateway completion, failure, refund, webhook claim, receipts) set `charter.payment_recording` and still record.
+  - **Invitations** are core `public.invitations` with `app = 'charter'` and the unit and role in `app_payload`; `charter.create_invitation`, `accept_invitation`, `revoke_invitation` wrap them and `charter.on_invitation_accepted` gives the role.
+  - `private` tables (gateway secrets, platform flags, platform operators) are in `charter`, with no client grants. Platform operators and demo organizations stay for self-hosters until step 11.
+  - Anonymous access (the public join page) is granted only when billing is off (self-hosted).
+  - Row rules check permissions set-based (`unit_id in (select charter.permitted_units(...))`), so they stay fast at scale.
+- **Runner and CI:** `scripts/migrate.mjs` records under `opencharterapp`. CI's database job and the performance job apply the core and the baseline with the runner, then run `db/tests` (36 files, all passing, plus `9V_openapphub_core` for the points above) and the 5,000–20,000 member timings. At 20,000 members, locally: overview 289 ms, members roll-up 247 ms, everyone view 81 ms, payments export 388 ms (the old schema: 281, 254, 399, 244).
+- **`migrate.yml`** (owner, by hand): staging gets `--seed`; production is run on a PR's branch before merging.
+- **Retired:** `supabase-db.yml` (replay and deploy), `supabase/ci`, `drizzle/`, `drizzle.config.ts` and the drizzle packages. `check:migrations` now checks `db/migrations`.
+- **Kept, frozen:** `supabase/migrations`, `supabase/config.toml` and `supabase/scripts`, for self-hosters until the client switch (step 9; `supabase/README.md`).
 
 ## 1. Database objects in the current project
 

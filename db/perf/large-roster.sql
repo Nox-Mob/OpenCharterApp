@@ -16,14 +16,14 @@ select set_config('perf.members', :'members', false);
 \echo '=== Roster of' :members 'members'
 
 -- one chapter per 250 members under the fixture's national
-insert into public.organizations (id, parent_id, type, name, slug)
+insert into charter.units (id, parent_id, type, name, slug)
 select ('aaaaaaaa-0000-4000-8000-' || lpad(i::text, 12, '0'))::uuid,
   '22222222-0000-4000-8000-000000000001', 'chapter', 'Perf chapter ' || i, 'perf-' || i
 from generate_series(1, greatest(1, :members / 250)) i
 on conflict (id) do nothing;
 
 -- member records without sign-in accounts (admin-added), spread over the chapters
-insert into public.org_member_profiles (id, org_id, user_id, display_name, email, source)
+insert into charter.member_profiles (id, unit_id, user_id, display_name, email, source)
 select ('bbbbbbbb-0000-4000-8000-' || lpad(i::text, 12, '0'))::uuid,
   ('aaaaaaaa-0000-4000-8000-' || lpad((1 + i % greatest(1, :members / 250))::text, 12, '0'))::uuid,
   null, 'Member ' || i, 'member' || i || '@perf.test', 'admin'
@@ -31,40 +31,40 @@ from generate_series(1, :members) i
 on conflict (id) do nothing;
 
 -- one membership each for the new records: most active, some lapsed, some pending
-insert into public.memberships (org_id, profile_id, tier_id, term_id, status, joined_on, paid_through)
-select p.org_id, p.id, '55555555-0000-4000-8000-0000000000f1', '66666666-0000-4000-8000-0000000000f1',
-  case when n % 10 = 0 then 'pending' else 'active' end::public.membership_status,
+insert into charter.memberships (unit_id, profile_id, tier_id, term_id, status, joined_on, paid_through)
+select p.unit_id, p.id, '55555555-0000-4000-8000-0000000000f1', '66666666-0000-4000-8000-0000000000f1',
+  case when n % 10 = 0 then 'pending' else 'active' end::charter.membership_status,
   case when n % 10 = 0 then null else current_date - (n % 300) end,
   case when n % 10 = 0 then null when n % 7 = 0 then current_date - 40 else current_date + (n % 300) end
-from (select id, org_id, (substr(id::text, 25))::int n from public.org_member_profiles p
+from (select id, unit_id, (substr(id::text, 25))::int n from charter.member_profiles p
       where email like '%@perf.test'
-        and not exists (select 1 from public.memberships m where m.profile_id = p.id)) p;
+        and not exists (select 1 from charter.memberships m where m.profile_id = p.id)) p;
 
 -- one paid payment per active membership without one
-insert into public.payments (org_id, membership_id, profile_id, purpose, amount_minor, status, gateway, method, livemode, received_on)
-select m.org_id, m.id, m.profile_id, 'join', 2500, 'paid', 'manual', 'check', true, m.joined_on
-from public.memberships m
+insert into charter.payments (unit_id, membership_id, profile_id, purpose, amount_minor, status, gateway, method, livemode, received_on)
+select m.unit_id, m.id, m.profile_id, 'join', 2500, 'paid', 'manual', 'check', true, m.joined_on
+from charter.memberships m
 where m.joined_on is not null
-  and not exists (select 1 from public.payments x where x.membership_id = m.id);
+  and not exists (select 1 from charter.payments x where x.membership_id = m.id);
 analyze;
 
 begin;
 select tests.as_user('11111111-0000-4000-8000-000000000001');
 \timing on
 \echo '--- Overview numbers (org_overview_stats)'
-select roster, current_members from public.org_overview_stats('22222222-0000-4000-8000-000000000001');
+select roster, current_members from charter.org_overview_stats('22222222-0000-4000-8000-000000000001');
 \echo '--- Reports: members by chapter (org_rollup_members)'
-select count(*) from public.org_rollup_members('22222222-0000-4000-8000-000000000001');
+select count(*) from charter.org_rollup_members('22222222-0000-4000-8000-000000000001');
 \echo '--- Reports: revenue by chapter (org_rollup_revenue)'
-select count(*) from public.org_rollup_revenue('22222222-0000-4000-8000-000000000001', current_date - 365, current_date);
+select count(*) from charter.org_rollup_revenue('22222222-0000-4000-8000-000000000001', current_date - 365, current_date);
 \echo '--- Members "everyone" view: profiles with memberships across the tree, under RLS'
-select count(*) from public.org_member_profiles p
-  left join public.memberships m on m.profile_id = p.id
-  where p.org_id in (select id from public.organizations);
+select count(*) from charter.member_profiles p
+  left join charter.memberships m on m.profile_id = p.id
+  where p.unit_id in (select id from charter.units);
 \echo '--- Directory of one chapter (member_directory)'
-select count(*) from public.member_directory('aaaaaaaa-0000-4000-8000-000000000001');
+select count(*) from charter.member_directory('aaaaaaaa-0000-4000-8000-000000000001');
 \echo '--- Export payments across the tree (export_payments)'
-select count(*) from public.export_payments('22222222-0000-4000-8000-000000000001', current_date - 365, current_date, true);
+select count(*) from charter.export_payments('22222222-0000-4000-8000-000000000001', current_date - 365, current_date, true);
 \timing off
 
 -- Budget (D-181): each heavy read must finish within :budget_ms milliseconds (default 1000; CI
@@ -76,23 +76,23 @@ declare _t timestamptz; _ms numeric; _budget numeric := current_setting('perf.bu
   _nat uuid := '22222222-0000-4000-8000-000000000001';
   _ch uuid := 'aaaaaaaa-0000-4000-8000-000000000001';
 begin
-  _t := clock_timestamp(); perform * from public.org_overview_stats(_nat);
+  _t := clock_timestamp(); perform * from charter.org_overview_stats(_nat);
   _ms := extract(epoch from clock_timestamp() - _t) * 1000; raise notice 'overview % ms', round(_ms);
   if _ms > _budget then _slow := _slow || ' overview'; end if;
-  _t := clock_timestamp(); perform * from public.org_rollup_members(_nat);
+  _t := clock_timestamp(); perform * from charter.org_rollup_members(_nat);
   _ms := extract(epoch from clock_timestamp() - _t) * 1000; raise notice 'members roll-up % ms', round(_ms);
   if _ms > _budget then _slow := _slow || ' members-rollup'; end if;
-  _t := clock_timestamp(); perform * from public.org_rollup_revenue(_nat, current_date - 365, current_date);
+  _t := clock_timestamp(); perform * from charter.org_rollup_revenue(_nat, current_date - 365, current_date);
   _ms := extract(epoch from clock_timestamp() - _t) * 1000; raise notice 'revenue roll-up % ms', round(_ms);
   if _ms > _budget then _slow := _slow || ' revenue-rollup'; end if;
-  _t := clock_timestamp(); perform * from public.member_directory(_ch);
+  _t := clock_timestamp(); perform * from charter.member_directory(_ch);
   _ms := extract(epoch from clock_timestamp() - _t) * 1000; raise notice 'directory % ms', round(_ms);
   if _ms > _budget then _slow := _slow || ' directory'; end if;
-  _t := clock_timestamp(); perform * from public.org_member_profiles p
-    left join public.memberships m on m.profile_id = p.id where p.org_id in (select id from public.organizations);
+  _t := clock_timestamp(); perform * from charter.member_profiles p
+    left join charter.memberships m on m.profile_id = p.id where p.unit_id in (select id from charter.units);
   _ms := extract(epoch from clock_timestamp() - _t) * 1000; raise notice 'everyone view % ms', round(_ms);
   if _ms > _budget then _slow := _slow || ' everyone-view'; end if;
-  _t := clock_timestamp(); perform * from public.export_payments(_nat, current_date - 365, current_date, true);
+  _t := clock_timestamp(); perform * from charter.export_payments(_nat, current_date - 365, current_date, true);
   _ms := extract(epoch from clock_timestamp() - _t) * 1000; raise notice 'payments export % ms', round(_ms);
   if _ms > _budget then _slow := _slow || ' payments-export'; end if;
   if _slow <> '' then

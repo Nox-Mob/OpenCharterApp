@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Performance check (R6, D-181, D-209): applies every migration to a throwaway Postgres, then grows
+# Performance check (R6, D-181, D-209): builds a throwaway database with the migration runner
+# (OpenAppHub core, then db/migrations; scripts/migrate.mjs), then grows
 # one roster through PERF_SIZES (default 5,000, 10,000 and 20,000 members; 250 per chapter, each
 # with a membership and a payment; db/perf/large-roster.sql). At each size it prints how long the
 # heavy reads take and fails if one is over PERF_BUDGET_MS (default 1000 ms).
@@ -14,7 +15,7 @@ run() { psql "${TEST_DATABASE_URL%/*}/$DB" -v ON_ERROR_STOP=1 -q -X "$@"; }
 
 admin -c "drop database if exists $DB" -c "create database $DB"
 run -f "$ROOT/db/ci/supabase-stub.sql"
-for f in $(ls "$ROOT"/drizzle/migrations/*.sql | sort); do run -f "$f"; done
+(cd "$ROOT" && DATABASE_URL="${TEST_DATABASE_URL%/*}/$DB" node scripts/migrate.mjs >/dev/null)
 run -f "$ROOT/db/tests/00_helpers.sql"
 run -f "$ROOT/db/perf/setup.sql"
 for n in $SIZES; do

@@ -1,0 +1,40 @@
+name: Migrate
+
+# Owner only. Applies migrations to the shared OpenAppHub database (deploys are
+# Cloudflare's Git integration). The runner applies the vendored core (already applied
+# by the hub, so skipped) and then Charter's db/migrations, recorded under "opencharterapp".
+# Production: run this on the pull request's branch BEFORE merging it, because merging
+# to main deploys the new code right away. Migrations must be additive.
+# Secrets (per environment or repository): STAGING_DATABASE_URL, PROD_DATABASE_URL.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Database
+        type: choice
+        options: [staging, production]
+        required: true
+      dry_run:
+        description: Print the plan only
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target }}
+    env:
+      DATABASE_URL: ${{ inputs.target == 'production' && secrets.PROD_DATABASE_URL || secrets.STAGING_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Migrate ${{ inputs.target }}
+        run: |
+          args=()
+          if [ "${{ inputs.dry_run }}" = "true" ]; then args+=(--dry-run); fi
+          if [ "${{ inputs.target }}" = "staging" ]; then args+=(--seed); fi
+          node scripts/migrate.mjs "${args[@]}"

@@ -4,11 +4,11 @@ select tests.fixture();
 
 -- a member cannot run setup
 select tests.as_user('11111111-0000-4000-8000-000000000003');
-select tests.throws($$select public.apply_setup('22222222-0000-4000-8000-000000000002', 'membership', '{}', '{}')$$, 'not allowed');
+select tests.throws($$select charter.apply_setup('22222222-0000-4000-8000-000000000002', 'membership', '{}', '{}')$$, 'not allowed');
 select tests.reset_role();
 
 select tests.as_user('11111111-0000-4000-8000-000000000001');
-select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{"q":1}', $${
+select charter.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{"q":1}', $${
   "tax": {"legal_name": "Nat Inc", "ein": "12-3456789", "tax_status": "501(c)(19)"},
   "attributes": [
     {"key": "rank", "label": "Rank", "data_type": "ordered", "visibility": "members",
@@ -17,34 +17,34 @@ select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', 
   ],
   "settings": [{"key": "membership.grace_days", "value": 30, "mode": "locked"}]
 }$$);
-select tests.eq((select legal_name from public.tax_profiles where org_id = '22222222-0000-4000-8000-000000000001'), 'Nat Inc', 'tax applied');
-select tests.eq((select count(*) from public.attribute_definitions where org_id = '22222222-0000-4000-8000-000000000001'), 2::bigint, 'attributes applied');
-select tests.eq((select count(*) from public.attribute_options), 2::bigint, 'options applied');
-select tests.eq((select status::text from public.setup_states where flow_id = 'membership'), 'applied', 'state applied');
+select tests.eq((select legal_name from charter.tax_profiles where unit_id = '22222222-0000-4000-8000-000000000001'), 'Nat Inc', 'tax applied');
+select tests.eq((select count(*) from charter.attribute_definitions where unit_id = '22222222-0000-4000-8000-000000000001'), 2::bigint, 'attributes applied');
+select tests.eq((select count(*) from charter.attribute_options), 2::bigint, 'options applied');
+select tests.eq((select status::text from charter.setup_states where flow_id = 'membership'), 'applied', 'state applied');
 
 -- re-running updates in place and never duplicates
-select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+select charter.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
   "attributes": [{"key": "rank", "label": "Pay grade", "data_type": "ordered",
      "options": [{"value": "E1", "label": "E-1"}, {"value": "E2", "label": "E-2"}, {"value": "E3", "label": "E-3"}]}]
 }$$);
-select tests.eq((select label from public.attribute_definitions where key = 'rank'), 'Pay grade', 'relabelled');
-select tests.eq((select count(*) from public.attribute_definitions where org_id = '22222222-0000-4000-8000-000000000001'), 2::bigint, 'no duplicates');
-select tests.eq((select count(*) from public.attribute_options), 3::bigint, 'option added');
+select tests.eq((select label from charter.attribute_definitions where key = 'rank'), 'Pay grade', 'relabelled');
+select tests.eq((select count(*) from charter.attribute_definitions where unit_id = '22222222-0000-4000-8000-000000000001'), 2::bigint, 'no duplicates');
+select tests.eq((select count(*) from charter.attribute_options), 3::bigint, 'option added');
 
 -- a bad plan applies nothing (transactional)
-select tests.throws($$select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', '{
+select tests.throws($$select charter.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', '{
   "tax": {"legal_name": "SHOULD NOT STICK"},
   "attributes": [{"key": "Bad Key", "label": "x", "data_type": "text"}]}')$$, 'check constraint');
-select tests.eq((select legal_name from public.tax_profiles where org_id = '22222222-0000-4000-8000-000000000001'), 'Nat Inc', 'rolled back');
+select tests.eq((select legal_name from charter.tax_profiles where unit_id = '22222222-0000-4000-8000-000000000001'), 'Nat Inc', 'rolled back');
 select tests.reset_role();
 
 -- chapter setup cannot override a national lock
 select tests.as_user('11111111-0000-4000-8000-000000000002');
-select tests.throws($$select public.apply_setup('22222222-0000-4000-8000-000000000002', 'membership', '{}',
+select tests.throws($$select charter.apply_setup('22222222-0000-4000-8000-000000000002', 'membership', '{}',
   '{"settings": [{"key": "membership.grace_days", "value": 5}]}')$$, 'locked');
 -- drafts: chapter admin can save its own draft but not mark it applied directly
-insert into public.setup_states (org_id, flow_id, answers) values ('22222222-0000-4000-8000-000000000002', 'membership', '{"a":1}');
-select tests.throws($$update public.setup_states set status = 'applied' where org_id = '22222222-0000-4000-8000-000000000002'$$, 'permission denied');
+insert into charter.setup_states (unit_id, flow_id, answers) values ('22222222-0000-4000-8000-000000000002', 'membership', '{"a":1}');
+select tests.throws($$update charter.setup_states set status = 'applied' where unit_id = '22222222-0000-4000-8000-000000000002'$$, 'permission denied');
 select tests.reset_role();
 rollback;
 
@@ -52,21 +52,21 @@ rollback;
 begin;
 select tests.fixture();
 select tests.as_user('11111111-0000-4000-8000-000000000001');
-select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+select charter.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
   "attributes": [
     {"key": "charter_date", "label": "Charter date", "data_type": "date", "applies_to": "chapter", "member_editable": true},
     {"key": "charter_date", "label": "Charter date", "data_type": "date", "applies_to": "member"}
   ]}$$);
-select tests.eq((select count(*) from public.attribute_definitions where applies_to = 'chapter'), 1::bigint, 'chapter field applied');
-select tests.eq((select member_editable from public.attribute_definitions where applies_to = 'chapter'), false, 'member switch cleared');
+select tests.eq((select count(*) from charter.attribute_definitions where applies_to = 'chapter'), 1::bigint, 'chapter field applied');
+select tests.eq((select member_editable from charter.attribute_definitions where applies_to = 'chapter'), false, 'member switch cleared');
 -- re-running keeps one chapter field (updates by key)
-select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+select charter.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
   "attributes": [{"key": "charter_date", "label": "Chartered on", "data_type": "date", "applies_to": "chapter"}]}$$);
-select tests.eq((select label from public.attribute_definitions where applies_to = 'chapter'), 'Chartered on', 'chapter field relabelled');
-select tests.eq((select count(*) from public.attribute_definitions where applies_to = 'chapter'), 1::bigint, 'no duplicate chapter field');
+select tests.eq((select label from charter.attribute_definitions where applies_to = 'chapter'), 'Chartered on', 'chapter field relabelled');
+select tests.eq((select count(*) from charter.attribute_definitions where applies_to = 'chapter'), 1::bigint, 'no duplicate chapter field');
 select tests.reset_role();
 select tests.as_user('11111111-0000-4000-8000-000000000002');
-select tests.throws($$select public.apply_setup('22222222-0000-4000-8000-000000000002', 'membership', '{}',
+select tests.throws($$select charter.apply_setup('22222222-0000-4000-8000-000000000002', 'membership', '{}',
   '{"attributes": [{"key": "x", "label": "X", "data_type": "text", "applies_to": "chapter"}]}')$$, 'only national or regional');
 select tests.reset_role();
 rollback;
@@ -75,18 +75,18 @@ rollback;
 begin;
 select tests.fixture();
 select tests.as_user('11111111-0000-4000-8000-000000000001');
-select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+select charter.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
   "attributes": [
     {"key": "rank", "label": "Rank", "data_type": "ordered",
      "options": [{"value": "a"}, {"value": "b"}, {"value": "c"}]},
     {"key": "phone", "label": "Phone", "data_type": "text"},
     {"key": "charter_date", "label": "Charter date", "data_type": "date", "applies_to": "chapter", "locked": true}
   ]}$$);
-select tests.eq((select locked from public.attribute_definitions where key = 'charter_date'), true, 'lock applied');
-select tests.eq((select sort_order from public.attribute_definitions where key = 'phone'), 20, 'second field keeps its order');
-select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+select tests.eq((select locked from charter.attribute_definitions where key = 'charter_date'), true, 'lock applied');
+select tests.eq((select sort_order from charter.attribute_definitions where key = 'phone'), 20, 'second field keeps its order');
+select charter.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
   "attributes": [{"key": "charter_date", "label": "Charter date", "data_type": "date", "applies_to": "chapter", "locked": false}]}$$);
-select tests.eq((select locked from public.attribute_definitions where key = 'charter_date'), false, 'lock removed on re-run');
+select tests.eq((select locked from charter.attribute_definitions where key = 'charter_date'), false, 'lock removed on re-run');
 select tests.reset_role();
 rollback;
 
@@ -94,7 +94,7 @@ rollback;
 begin;
 select tests.fixture();
 select tests.as_user('11111111-0000-4000-8000-000000000001');
-select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+select charter.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
   "tiers": [
     {"key": "regular", "name": "Regular", "tax_treatment": "non_deductible", "terms": [
       {"key": "1_year", "label": "1 year", "length_count": 1, "length_unit": "year", "price_minor": 2500},
@@ -102,26 +102,26 @@ select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', 
     {"key": "student", "name": "Student", "terms": [
       {"key": "90_days", "label": "90 days", "length_count": 90, "length_unit": "day", "price_minor": 500}]}
   ]}$$);
-select tests.eq((select count(*) from public.membership_tiers), 2::bigint, 'levels applied');
-select tests.eq((select count(*) from public.tier_terms), 3::bigint, 'terms applied');
-select tests.eq((select sort_order from public.membership_tiers where key = 'student'), 20, 'level order kept');
-select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
+select tests.eq((select count(*) from charter.membership_tiers), 2::bigint, 'levels applied');
+select tests.eq((select count(*) from charter.tier_terms), 3::bigint, 'terms applied');
+select tests.eq((select sort_order from charter.membership_tiers where key = 'student'), 20, 'level order kept');
+select charter.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', $${
   "tiers": [{"key": "regular", "name": "Standard", "terms": [
       {"key": "1_year", "label": "1 year", "length_count": 1, "length_unit": "year", "price_minor": 3000}]}]}$$);
-select tests.eq((select name from public.membership_tiers where key = 'regular'), 'Standard', 'level renamed');
-select tests.eq((select price_minor from public.tier_terms where key = '1_year'), 3000, 'price updated');
-select tests.eq((select count(*) from public.tier_terms), 3::bigint, 'no duplicate terms');
+select tests.eq((select name from charter.membership_tiers where key = 'regular'), 'Standard', 'level renamed');
+select tests.eq((select price_minor from charter.tier_terms where key = '1_year'), 3000, 'price updated');
+select tests.eq((select count(*) from charter.tier_terms), 3::bigint, 'no duplicate terms');
 -- a bad term rolls back the whole apply
-select tests.throws($$select public.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', '{
+select tests.throws($$select charter.apply_setup('22222222-0000-4000-8000-000000000001', 'membership', '{}', '{
   "tiers": [{"key": "regular", "name": "SHOULD NOT STICK", "terms": [
     {"key": "x", "label": "X", "length_count": 2, "length_unit": null, "price_minor": 1}]}]}')$$, 'check constraint');
-select tests.eq((select name from public.membership_tiers where key = 'regular'), 'Standard', 'rolled back');
+select tests.eq((select name from charter.membership_tiers where key = 'regular'), 'Standard', 'rolled back');
 select tests.reset_role();
 -- a chapter whose national disallows levels can't add them through setup either
-insert into public.org_settings (org_id, key, value, mode) values
+insert into charter.org_settings (unit_id, key, value, mode) values
   ('22222222-0000-4000-8000-000000000001', 'membership.child_levels_allowed', 'false', 'locked');
 select tests.as_user('11111111-0000-4000-8000-000000000002');
-select tests.throws($$select public.apply_setup('22222222-0000-4000-8000-000000000002', 'membership', '{}',
+select tests.throws($$select charter.apply_setup('22222222-0000-4000-8000-000000000002', 'membership', '{}',
   '{"tiers": [{"key": "local", "name": "Local", "terms": []}]}')$$, 'parent organization manages');
 select tests.reset_role();
 rollback;

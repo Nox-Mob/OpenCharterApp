@@ -5,19 +5,19 @@ begin;
 select tests.eq((
   select count(*)::int
   from pg_constraint c
-  where c.contype = 'f' and c.connamespace = 'public'::regnamespace
-    and c.conrelid in ('public.memberships'::regclass, 'public.org_member_profiles'::regclass,
-      'public.payments'::regclass, 'public.receipts'::regclass, 'public.membership_events'::regclass,
-      'public.affiliation_history'::regclass, 'public.webhook_events'::regclass,
-      'public.role_assignments'::regclass, 'public.appointments'::regclass)
+  where c.contype = 'f' and c.connamespace = 'charter'::regnamespace
+    and c.conrelid in ('charter.memberships'::regclass, 'charter.member_profiles'::regclass,
+      'charter.payments'::regclass, 'charter.receipts'::regclass, 'charter.membership_events'::regclass,
+      'charter.affiliation_history'::regclass, 'charter.webhook_events'::regclass,
+      'charter.role_assignments'::regclass, 'charter.appointments'::regclass)
     and not exists (select 1 from pg_index i
       where i.indrelid = c.conrelid and i.indkey[0] = c.conkey[1])
 ), 0, 'foreign keys on member-scale tables are indexed');
-select tests.eq(exists (select 1 from pg_indexes where schemaname = 'public'
+select tests.eq(exists (select 1 from pg_indexes where schemaname = 'charter'
   and indexname = 'memberships_profile_id_idx'), true, 'memberships are found by member record');
 select tests.eq((
   select count(*)::int from pg_proc p
-  where p.pronamespace = 'public'::regnamespace
+  where p.pronamespace = 'charter'::regnamespace
     and p.proname in ('org_overview_stats', 'org_rollup_members', 'org_rollup_revenue',
       'export_payments', 'member_directory', 'audit_log')
     and 'jit=off' = any(p.proconfig)
@@ -25,9 +25,9 @@ select tests.eq((
 -- still answers, and still refuses outsiders
 select tests.fixture();
 select tests.as_user('11111111-0000-4000-8000-000000000001');
-select tests.eq((select roster from public.org_overview_stats('22222222-0000-4000-8000-000000000001')) >= 0, true, 'overview still answers');
+select tests.eq((select roster from charter.org_overview_stats('22222222-0000-4000-8000-000000000001')) >= 0, true, 'overview still answers');
 select tests.reset_role();
 select tests.as_user('11111111-0000-4000-8000-000000000003');
-select tests.throws($$select public.org_overview_stats('22222222-0000-4000-8000-000000000001')$$, 'not allowed'); -- still refused without members.view
+select tests.throws($$select charter.org_overview_stats('22222222-0000-4000-8000-000000000001')$$, 'not allowed'); -- still refused without members.view
 select tests.reset_role();
 rollback;

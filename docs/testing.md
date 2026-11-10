@@ -3,7 +3,7 @@
 Every change must keep all of these green (instructions.md §3). GitHub runs them in two workflows (D-197):
 
 - **`ci.yml`, no live backend needed:** on every push to any branch, every pull request, every Monday (so new dependency advisories surface without a push) and on demand. Jobs: lint, formatting, types, unit tests and migration conventions; database rules; performance; dependency audit; build; and the docs check on pull requests.
-- **`supabase-db.yml`, "Supabase database" (D-211):** on every pull request and on pushes to `main` and `supabase-migration`, the `replay` job rebuilds the database from `supabase/migrations` on a local Supabase stack (CLI 2.122.1) and checks it (below). It is skipped on a branch without `supabase/migrations`. The `deploy` job runs only by hand (Actions → Supabase database → Run workflow), after approval in the `supabase-prod` environment, with "dry run" on by default.
+- **`migrate.yml`, "Migrate" (owner only, by hand):** applies the vendored core and `db/migrations` to staging or production through `scripts/migrate.mjs` (dry run by default; secrets `STAGING_DATABASE_URL`, `PROD_DATABASE_URL`). The old `supabase-db.yml` replay and deploy are retired: `supabase/migrations` is frozen (legacy, for self-hosters until the client switch) and nothing applies it.
 - **Deploys (spec §10.2, v2.2):** merging to `main` deploys production through Cloudflare's Git integration (`bun run build:hosted`). There are no deploy workflows; tests run in `ci.yml`.
 - **`live.yml`, the live demo backend** (the project `.env.local` points at: the new Supabase project since Phase 1, D-212, which needs the demo accounts from `supabase/scripts/demo-test-accounts.sql`): on pushes to `main` and `BoardUpdates`, pull requests to `main`, daily at 06:41 UTC (catching backend changes made in Lovable) and on demand (Actions → Live demo checks → Run workflow). The smoke test runs, then the end-to-end tests, never at the same time as another run, because both write to the demo organizations and clean up afterwards.
 
@@ -15,9 +15,8 @@ Repository settings, all optional: the secret `SMOKE_DEMO_PASSWORD` if the demo 
 | Formatting | `bun run format:check` | Prettier. Planning docs and generated files are excluded (`.prettierignore`) |
 | Types | `bun run typecheck` | `tsc --noEmit`, in strict mode |
 | Unit tests | `bun run test` | Vitest. Pure rules live next to their code (`*.test.ts`) |
-| Database rules | `TEST_DATABASE_URL=… bun run test:db` | Applies every migration to a throwaway Postgres, each in one transaction as Lovable may apply them, and runs `db/tests/*.sql` |
-| Migration conventions | `bun run check:migrations` | Lovable's import rules for migrations from 0004 on: `org_id`, full grants to `authenticated`, RLS with `has_permission` / `is_org_member` policies, no `DROP TABLE` / `DROP COLUMN` (`scripts/migration-rules.ts`). Checks `drizzle/migrations` (legacy) and `supabase/migrations`, where it also needs `<14-digit timestamp>_<NNNN>_<name>.sql` names with unique timestamps and numbers in order, and RLS and a policy on every table, Lovable's first ones too |
-| Replay | `supabase db reset --local` and the steps below | `supabase-db.yml`: every migration on a local Supabase stack, then lint, the RLS-and-grants catalog check, `db/tests` and the smoke test against the stack |
+| Database rules | `TEST_DATABASE_URL=… bun run test:db` | Applies the vendored core (`db/core`) and `db/migrations` (schema `charter`) to a throwaway Postgres with `scripts/migrate.mjs`, each file in one transaction, and runs `db/tests/*.sql` |
+| Migration conventions | `bun run check:migrations` | `db/migrations`: `NNNN_name.sql` names in order, tables only in schema `charter`, RLS on every table, a grant to `authenticated` (or a `-- no access` line for server-only tables) and a policy on every granted table, no `DROP TABLE` / `DROP COLUMN` (`scripts/migration-rules.ts`) |
 | Build | `bun run build` | Production build |
 | No env files | in `ci.yml` | Fails if any `.env*` other than `.env.example` is tracked (spec §7.1, D-219) |
 | Security headers | `bun run test` (`src/lib/security-headers.test.ts`) | The four headers on rendered pages and the CSP's allowed hosts (spec §10.1, D-219) |
@@ -76,10 +75,10 @@ Because the demo national manages membership levels, the money flows run at Demo
 
 ## Database rule tests
 
-`scripts/db-test.sh` creates a fresh database named `oc_rules_test`, then:
+`scripts/db-test.sh` creates a fresh database named `charter_rules_test`, then:
 
 1. Loads `db/ci/supabase-stub.sql`, a small stand-in for the managed `auth`, `storage` and `extensions` schemas and the `anon`, `authenticated` and `service_role` roles.
-2. Applies every migration in `drizzle/migrations`, in order.
+2. Applies `db/core` and `db/migrations` with `scripts/migrate.mjs`, each file in one transaction.
 3. Runs each test file in `db/tests`. Each file runs inside one transaction that is rolled back at the end.
 
 Helpers live in `db/tests/00_helpers.sql`:
@@ -127,24 +126,10 @@ Current coverage:
 | `9R_creator_not_a_chapter_member` | 0038: a new chapter has nobody on its roster and its creator still manages it from the national but isn't a member; a new national makes its creator a member and admin |
 | `9U_scale_indexes` | 0044 (D-209): every foreign key on the tables that grow with the roster has an index; JIT is off for the six heavy report functions; the overview still answers and still refuses someone without `members.view` |
 | `9S_overview_people_once` | 0040: in the home-chapter model the overview counts two members due for renewal as two people, not four records; chapter memberships still count chapter records |
+| `9V_openapphub_core` | On the OpenAppHub core: every row carries the customer (`org_id`); core owner/admin hold `org_admin`'s permissions in the whole tree; a core viewer loses staff permissions; giving a staff role adds a core membership; read-only when the plan lapses, while payment paths still record; organizations from the hub open in Charter (`ensure_top_unit`); core invitations; deleting the core organization removes Charter's data; self-hosted join page open to anon |
 | `9T_no_open_read_rules` | 0042: permission lists, role permissions and logos have no "everyone" read rule; logos need sign-in and access to the organization |
 | `9A_receipts` | Receipt issued for each paid payment and frozen, numbering per org and year with no gaps, can't be changed or deleted, payer and admin access, void / issue again / reissue versions, partial and full refunds |
 | `90_tiers` | Membership levels and terms: isolation, term rules, parent control, retire not delete (deletes remove nothing), identity columns can't change |
-
-## Replay on a local Supabase stack (D-211)
-
-The `replay` job in `supabase-db.yml` builds the database the way the new Supabase project will be built, from `supabase/migrations` alone:
-
-1. Moves the Lovable `.env` aside (the CLI and the smoke client would read it).
-2. `supabase start` with only the database, auth, REST, storage and the gateway, then `supabase db reset --local`.
-3. `supabase db lint --local --level error --fail-on error`.
-4. `supabase/ci/post-replay-check.sql`: every `public` table has RLS on and a SELECT, INSERT, UPDATE or DELETE grant to `authenticated` or `service_role`. It reads the catalog, so tables secured in loops count too, and it names each failing table.
-5. `supabase/ci/db-tests.sh`: the `db/tests/*.sql` files, one at a time, on the real Supabase `auth` and `storage` schemas. Refuses any database that isn't local, and one that already has accounts: the files build their own users and orgs (some with the demo IDs), so they run on the fresh replay, before the fixtures.
-6. `supabase/ci/fixtures.sql`: the demo accounts and organizations, and an empty Test-Demo (`supabase/scripts/demo-test-accounts.sql`), with a password generated for the run.
-7. `supabase/scripts/seed-test-demo.sql`: the Test-Demo seed (D-213) runs on the fixtures, so a migration that breaks it shows up here.
-8. `supabase/ci/smoke-local.sh`: the smoke test (vitest, Node environment) against the stack, one file at a time. Refuses a non-local URL, or a `.env` still in place.
-
-Locally, with Docker and the Supabase CLI 2.122.1: move `.env` aside, then run the same commands from the repository root, and put `.env` back afterwards.
 
 ## Migrations Lovable hasn't applied yet
 

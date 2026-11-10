@@ -5,7 +5,7 @@
 set -euo pipefail
 base="${1:-origin/main}"
 changed=$(git diff --name-only "$base"...HEAD)
-code=$(echo "$changed" | grep -E '^(src/|drizzle/migrations/|supabase/migrations/|smoke/|scripts/)' || true)
+code=$(echo "$changed" | grep -E '^(src/|db/migrations/|db/tests/|smoke/|scripts/)' || true)
 docs=$(echo "$changed" | grep -E '^(docs/|README\.md|roadmap\.md|AGENTS\.md|db/tests/|e2e/)|\.test\.tsx?$' || true)
 if [ -n "$code" ] && [ -z "$docs" ]; then
   echo "Code changed but no documentation or test changed:"

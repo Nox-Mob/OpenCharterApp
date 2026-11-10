@@ -1,5 +1,7 @@
 -- Test helpers. Loaded first, as superuser.
 create schema tests;
+-- Core accepts invitations only from confirmed email addresses: test accounts are confirmed.
+alter table auth.users alter column email_confirmed_at set default now();
 grant usage on schema tests to authenticated, anon, service_role;
 
 -- Act as a signed-in user for the rest of the transaction.
@@ -48,18 +50,24 @@ begin
     ('11111111-0000-4000-8000-000000000002', 'a@test.org'),
     ('11111111-0000-4000-8000-000000000003', 'm@test.org'),
     ('11111111-0000-4000-8000-000000000004', 'x@test.org');
-  insert into public.organizations (id, type, name, slug) values
+  -- The national is the customer: a core organization, whose top unit has the same id.
+  insert into public.organizations (id, name, created_by) values
+    ('22222222-0000-4000-8000-000000000001', 'Nat', '11111111-0000-4000-8000-000000000001');
+  insert into public.memberships (org_id, user_id, role) values
+    ('22222222-0000-4000-8000-000000000001', '11111111-0000-4000-8000-000000000001', 'owner'),
+    ('22222222-0000-4000-8000-000000000001', '11111111-0000-4000-8000-000000000002', 'member');
+  insert into charter.units (id, type, name, slug) values
     ('22222222-0000-4000-8000-000000000001', 'national', 'Nat', 'nat');
-  insert into public.organizations (id, parent_id, type, name, slug) values
+  insert into charter.units (id, parent_id, type, name, slug) values
     ('22222222-0000-4000-8000-000000000002', '22222222-0000-4000-8000-000000000001', 'chapter', 'Chapter A', 'ch-a'),
     ('22222222-0000-4000-8000-000000000003', '22222222-0000-4000-8000-000000000001', 'chapter', 'Chapter B', 'ch-b');
-  insert into public.org_member_profiles (id, org_id, user_id, email) values
+  insert into charter.member_profiles (id, unit_id, user_id, email) values
     ('33333333-0000-4000-8000-000000000001', '22222222-0000-4000-8000-000000000001', '11111111-0000-4000-8000-000000000001', 'n@test.org'),
     ('33333333-0000-4000-8000-000000000002', '22222222-0000-4000-8000-000000000002', '11111111-0000-4000-8000-000000000002', 'a@test.org'),
     ('33333333-0000-4000-8000-000000000003', '22222222-0000-4000-8000-000000000002', '11111111-0000-4000-8000-000000000003', 'm@test.org');
-  select id into _admin from public.roles where key = 'org_admin' and org_id is null;
-  select id into _member from public.roles where key = 'member' and org_id is null;
-  insert into public.role_assignments (user_id, role_id, org_id) values
+  select id into _admin from charter.roles where key = 'org_admin' and unit_id is null;
+  select id into _member from charter.roles where key = 'member' and unit_id is null;
+  insert into charter.role_assignments (user_id, role_id, unit_id) values
     ('11111111-0000-4000-8000-000000000001', _admin, '22222222-0000-4000-8000-000000000001'),
     ('11111111-0000-4000-8000-000000000002', _admin, '22222222-0000-4000-8000-000000000002'),
     ('11111111-0000-4000-8000-000000000003', _member, '22222222-0000-4000-8000-000000000002');

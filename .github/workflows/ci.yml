@@ -37,7 +37,7 @@ jobs:
         run: bun run typecheck
       - name: Unit tests
         run: bun run test
-      - name: Migration conventions (Lovable)
+      - name: Migration conventions
         run: bun run check:migrations
 
   database:
@@ -54,9 +54,11 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
       - name: Install psql
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
-      # Each migration is applied in one transaction, as Lovable may apply them.
+      # The runner applies the vendored core, then db/migrations, each file in one transaction.
       - name: Apply migrations and run rule tests
         env:
           TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
@@ -79,6 +81,8 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
       - name: Install psql
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Seed a large roster and time the heavy reads
