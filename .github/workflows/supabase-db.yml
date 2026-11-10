@@ -14,7 +14,7 @@ name: Supabase database
 # SUPABASE_PROJECT_ID. The access token needs the scopes project_admin_read, projects_read,
 # database_pooling_config_read and branching_production_read.
 #
-# The tracked .env points at the Lovable project and the Supabase CLI reads SUPABASE_PROJECT_ID
+# A local .env (no longer tracked since D-219) could point at a hosted project, and the Supabase CLI reads SUPABASE_PROJECT_ID
 # from it, so every job moves it aside before running the CLI.
 on:
   pull_request:

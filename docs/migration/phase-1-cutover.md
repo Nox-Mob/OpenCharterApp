@@ -2,7 +2,7 @@
 
 Status on 2026-11-06. Decision: D-212. Phase 0 (D-211, [`phase-0-inventory.md`](phase-0-inventory.md)) built the new project's database from `supabase/migrations`; the owner has run the deploy. This page is the checklist for everything else. The code side is in the Phase 1 pull request; the steps marked **owner** happen in Google Cloud, Supabase, Cloudflare, Stripe or GitHub and can't be done from the repository. Secret *values* never go in the repository or a pull request.
 
-New project: `nxungwtxnctcqolfshcr` (`https://nxungwtxnctcqolfshcr.supabase.co`). Host: Cloudflare Workers, domain `opencharterapp.org`, built from `main`.
+New project: `nxungwtxnctcqolfshcr` (`https://nxungwtxnctcqolfshcr.supabase.co`). Host: Cloudflare Workers, domain `opencharterapp.org`, built from `main`. **Since D-219** (suite step 3) Cloudflare no longer builds from `main`: staging deploys from `staging.yml`, production only from the owner's `release.yml`, and the domain moves to `charter.openapphub.org` (`docs/MIGRATION-NOTES.md` §10).
 
 ## 1. Code (the Phase 1 pull request)
 

@@ -2,8 +2,7 @@
 
 An open-source membership platform for associations that have a **national organization and local chapters**, and for single local groups too. Each organization runs its own members, dues, money and governance, and the national sets the rules its chapters work within.
 
-> Built with [Lovable](https://lovable.dev) on TanStack Start and Lovable Cloud (Postgres, Auth, Storage).
-> Continue in the [Lovable editor](https://lovable.dev/projects/a277e9cf-7b39-4b4c-8f66-7fe163d6b7e9) or work locally as described below.
+> Built on TanStack Start (React, SSR) and Supabase (Postgres, Auth, Storage), deployed as a Cloudflare Worker. OpenCharterApp is becoming one of the apps of **OpenAppHub** (one sign-in, organization and billing across the suite, `docs/SHARED-SPEC.md`); it keeps running on its own when self-hosted. Progress: [`docs/MIGRATION-NOTES.md`](docs/MIGRATION-NOTES.md).
 
 ## Purpose
 
@@ -59,7 +58,7 @@ Every migration (up to `0045`) is applied to the live database; none is waiting 
 - [Bun](https://bun.sh) 1.x. The project uses Bun as its package manager (decision D-104), so don't use npm, Yarn or pnpm.
 - Git.
 - PostgreSQL 16 or newer, only for running the database rule tests locally.
-- For the end-to-end tests: Playwright 1.64.1 (pinned) with Chromium (`bunx playwright install chromium`) or Google Chrome (`E2E_BROWSER_CHANNEL=chrome`), and network access to the Supabase backend in `.env`. The test browser runs with its sandbox on and may only reach the app and its backend (`docs/testing.md`).
+- For the end-to-end tests: Playwright 1.64.1 (pinned) with Chromium (`bunx playwright install chromium`) or Google Chrome (`E2E_BROWSER_CHANNEL=chrome`), and network access to the Supabase backend in `.env.local`. The test browser runs with its sandbox on and may only reach the app and its backend (`docs/testing.md`).
 
 ### Set up
 
@@ -69,7 +68,7 @@ cd OpenCharterApp
 bun install
 ```
 
-The committed `.env` holds the Lovable Cloud project's **publishable** settings, which are safe to share. Server-only secrets are never committed. [`.env.example`](.env.example) lists every variable and what it's for.
+Copy [`.env.example`](.env.example) to `.env.local` (git-ignored) and fill in your Supabase project's URL and publishable key; the file lists every variable and what it's for. No `.env` file is committed (spec §7.1): deployed Workers get their public settings from [`wrangler.jsonc`](wrangler.jsonc) and their secrets from the Worker's settings.
 
 ### Run the app
 
@@ -105,15 +104,21 @@ GitHub runs all of these (D-197): `ci.yml` on every push and pull request, and `
 - Lovable applies them to the live database in order (and adds a small "confirm" migration of its own when it does). Until a migration is applied, screens that need it show "needs a database update" or leave the feature out instead of failing.
 - Migrations waiting to be applied are listed at the top of [`roadmap.md`](roadmap.md), with steps in [`docs/lovable-handoff.md`](docs/lovable-handoff.md). An applied migration is never edited; fixes ship as new migrations.
 
-### Hosting (Phase 1, D-212)
+### Hosting and deploys (spec §10, v2.2)
 
-- The app runs as a Cloudflare Worker built from `main` (`opencharterapp.org`), on its own Supabase project. Google sign-in goes through Supabase Auth. Server secrets are set on the Worker. Checklist: [`docs/migration/phase-1-cutover.md`](docs/migration/phase-1-cutover.md).
+- The hosted app is a Cloudflare Worker. In [`wrangler.jsonc`](wrangler.jsonc), the **top level is production** (`charter.openapphub.org`, Worker `opencharterapp`) and `env.staging` is staging (`charter-staging.openapphub.org`, Worker `opencharterapp-staging`), each with its public settings.
+- **Merging to `main` deploys production** through Cloudflare's Git integration: build `bun run build:hosted`, deploy `npx wrangler deploy --config .output/server/wrangler.json`. Staging: `bun run build:hosted:staging`, then the same deploy command with `--env staging`. There are no deploy workflows and no Cloudflare secrets in GitHub.
+- Every rendered page gets security headers from the server entry (`src/server.ts`, `src/lib/security-headers.ts`): `nosniff`, `strict-origin-when-cross-origin`, `X-Frame-Options: DENY` and a CSP allowing only the app, its Supabase project and Google Fonts.
+- Server secrets (`SUPABASE_SERVICE_ROLE_KEY`, `GATEWAY_ENCRYPTION_KEY`) are set on each Worker.
 
-### Working with Lovable
+### Self-hosting
 
-- Changes made in Lovable are committed to this repository, and changes merged into `main` sync back to Lovable.
-- **Don't rewrite published history**: no force pushes and no rebasing or amending pushed commits. Rewriting history breaks Lovable's project history.
-- Keep `main` in a working state, because Lovable builds from it.
+- `bun run build` builds the self-hosted app from your own `.env` / `.env.local` (copy `.env.example`); it never uses the hosted values in `wrangler.jsonc`. With `VITE_HOSTED=false` (the default) the app keeps its own sign-in and doesn't link to openapphub.org.
+- To deploy your own Worker: copy [`wrangler.selfhosted.example.jsonc`](wrangler.selfhosted.example.jsonc) over `wrangler.jsonc`, replace the placeholder values with your project's, run `bun run build`, then `npx wrangler deploy --config .output/server/wrangler.json`, and set the two secrets on the Worker.
+
+### Git history
+
+- **Don't rewrite published history**: no force pushes and no rebasing or amending pushed commits.
 
 ## Contributing
 

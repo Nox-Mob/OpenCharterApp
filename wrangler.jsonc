@@ -1,7 +1,17 @@
-// Cloudflare Worker settings (D-212). `bun run build` (nitro, cloudflare-module preset) merges
-// this into .output/server/wrangler.json, and `npx wrangler deploy` finds that file through
-// .wrangler/deploy/config.json. The name must match the Worker in the Cloudflare dashboard.
-// Secrets are set on the Worker, never here (docs/migration/phase-1-cutover.md §4).
+// Cloudflare Worker settings for the OpenAppHub HOSTED edition (docs/SHARED-SPEC.md §10).
+// Self-hosting on your own Worker? Copy wrangler.selfhosted.example.jsonc over this file.
+//
+// The top level is PRODUCTION (charter.openapphub.org). Cloudflare's Git integration builds
+// `main` with `bun run build:hosted` and deploys with
+// `npx wrangler deploy --config .output/server/wrangler.json` (the build writes that file; a plain
+// `wrangler deploy` refuses it because this config has an env). Staging is
+// `env.staging`: `bun run build:hosted:staging`, then
+// `npx wrangler deploy --config .output/server/wrangler.json --env staging`.
+//
+// `vars` are PUBLIC. The build:hosted scripts load the VITE_* values below into the build
+// (scripts/worker-env.mjs), so this file is the one place the hosted public settings live.
+// Publishable keys are public by design. Secrets (SUPABASE_SERVICE_ROLE_KEY,
+// GATEWAY_ENCRYPTION_KEY) are set on each Worker, never here.
 {
   "name": "opencharterapp",
   // Pinned so a build doesn't change runtime behaviour by date; nodejs_compat is on by default
@@ -10,11 +20,40 @@
   // Cloudflare builds branches other than main with `wrangler preview`, which needs this block
   // (it may stay empty: assets and compatibility settings stay at the top level).
   "previews": {},
-  // Plain (non-secret) runtime values for the server functions. Secrets
-  // (SUPABASE_SERVICE_ROLE_KEY, GATEWAY_ENCRYPTION_KEY) are set on the Worker, never here.
+  "routes": [{ "pattern": "charter.openapphub.org", "custom_domain": true }],
   "vars": {
-    "PUBLIC_APP_URL": "https://opencharterapp.org",
-    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_MCrW_dhmcTByXwf8s75dYw_GGV8_Tvw",
-    "SUPABASE_URL": "https://nxungwtxnctcqolfshcr.supabase.co"
+    "VITE_HOSTED": "true",
+    "VITE_APP_ID": "charter",
+    "VITE_APP_SCHEMA": "charter",
+    "VITE_SUPABASE_URL": "https://ymlesgadawnjupnvgokd.supabase.co",
+    "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_EbrHHQxIvTGPgEgjEkkpDQ_FROfdRln",
+    "SUPABASE_URL": "https://ymlesgadawnjupnvgokd.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_EbrHHQxIvTGPgEgjEkkpDQ_FROfdRln",
+    "VITE_HUB_URL": "https://openapphub.org",
+    "VITE_COOKIE_DOMAIN": ".openapphub.org",
+    "VITE_SUITE_URLS": "{\"hub\":\"https://openapphub.org\",\"charter\":\"https://charter.openapphub.org\",\"board\":\"https://board.openapphub.org\",\"ledger\":\"https://ledger.openapphub.org\"}",
+    "VITE_DOCS_URL": "https://docs.openapphub.org",
+    "PUBLIC_APP_URL": "https://charter.openapphub.org"
+  },
+  // Wrangler doesn't inherit top-level vars into an env, so staging lists everything.
+  "env": {
+    "staging": {
+      "name": "opencharterapp-staging",
+      "routes": [{ "pattern": "charter-staging.openapphub.org", "custom_domain": true }],
+      "vars": {
+        "VITE_HOSTED": "true",
+        "VITE_APP_ID": "charter",
+        "VITE_APP_SCHEMA": "charter",
+        "VITE_SUPABASE_URL": "https://mbloxixlykmbuuoaprnx.supabase.co",
+        "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_XsbfqXRDX-L_TwmtYGvjDg_qiLKka2X",
+        "SUPABASE_URL": "https://mbloxixlykmbuuoaprnx.supabase.co",
+        "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_XsbfqXRDX-L_TwmtYGvjDg_qiLKka2X",
+        "VITE_HUB_URL": "https://staging.openapphub.org",
+        "VITE_COOKIE_DOMAIN": ".openapphub.org",
+        "VITE_SUITE_URLS": "{\"hub\":\"https://staging.openapphub.org\",\"charter\":\"https://charter-staging.openapphub.org\",\"board\":\"https://board-staging.openapphub.org\",\"ledger\":\"https://ledger-staging.openapphub.org\"}",
+        "VITE_DOCS_URL": "https://docs.openapphub.org",
+        "PUBLIC_APP_URL": "https://charter-staging.openapphub.org"
+      }
+    }
   }
 }

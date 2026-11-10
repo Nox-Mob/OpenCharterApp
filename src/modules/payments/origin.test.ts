@@ -6,12 +6,11 @@ const internal = "http://localhost:3000/_serverFn/abc";
 
 describe("public origin for checkout return links (D-158)", () => {
   it("uses the browser's address, not the server's internal localhost URL", () => {
-    expect(publicOrigin(h({ origin: "https://opencharter.lovable.app" }), internal)).toBe(
-      "https://opencharter.lovable.app",
-    );
+    const site = "https://charter.openapphub.org";
+    expect(publicOrigin(h({ origin: site }), internal, undefined, site)).toBe(site);
     expect(
-      publicOrigin(h({ referer: "https://preview.lovable.app/join/demo-national" }), internal),
-    ).toBe("https://preview.lovable.app");
+      publicOrigin(h({ referer: `${site}/join/demo-national` }), internal, undefined, site),
+    ).toBe(site);
     expect(
       publicOrigin(
         h({ "x-forwarded-host": "app.example.org", "x-forwarded-proto": "https" }),
@@ -50,7 +49,10 @@ describe("public origin for checkout return links (D-158)", () => {
     ).toBe("https://ok.example");
   });
 
-  it("refuses origins that aren't on the allowlist", () => {
+  it("refuses origins that aren't on the allowlist, Lovable's old hosts included (D-219)", () => {
+    expect(publicOrigin(h({ origin: "https://opencharter.lovable.app" }), internal)).toBe(
+      "http://localhost:3000",
+    );
     expect(publicOrigin(h({ origin: "https://evil.example" }), internal)).toBe(
       "http://localhost:3000",
     );

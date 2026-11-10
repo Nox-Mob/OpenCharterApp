@@ -1,0 +1,20 @@
+// Self-hosting OpenCharterApp on your own Cloudflare Worker: copy this file over wrangler.jsonc,
+// replace the placeholder values with your own Supabase project's, then:
+//   bun install && bun run build && npx wrangler deploy
+// `bun run build` reads the VITE_* values from your .env (copy .env.example). Set the secrets
+// with `npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY` and `… GATEWAY_ENCRYPTION_KEY`.
+// VITE_HOSTED=false: the app keeps its own sign-in and never links to openapphub.org.
+{
+  "name": "opencharterapp-selfhosted",
+  "compatibility_date": "2026-11-06",
+  "vars": {
+    "VITE_HOSTED": "false",
+    "VITE_APP_ID": "charter",
+    "VITE_APP_SCHEMA": "charter",
+    "VITE_SUPABASE_URL": "https://your-project-ref.supabase.co",
+    "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_your_key",
+    "SUPABASE_URL": "https://your-project-ref.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_your_key",
+    "VITE_DOCS_URL": "https://docs.openapphub.org",
+  },
+}

@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { withSecurityHeaders } from "./lib/security-headers";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -44,18 +45,30 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+// Security headers on every rendered response in production builds (spec §10.1, D-219). The dev
+// server is left alone: Vite's HMR needs its own websocket and inline modules.
+function secure(response: Response): Response {
+  if (!import.meta.env.PROD) return response;
+  return withSecurityHeaders(
+    response,
+    process.env["SUPABASE_URL"] || import.meta.env["VITE_SUPABASE_URL"],
+  );
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return secure(await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
       console.error(error);
-      return new Response(renderErrorPage(), {
-        status: 500,
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
+      return secure(
+        new Response(renderErrorPage(), {
+          status: 500,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        }),
+      );
     }
   },
 };

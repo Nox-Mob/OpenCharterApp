@@ -2,7 +2,7 @@
  * The public address of the app, for links that leave it and come back (checkout success /
  * cancel, the test checkout page). D-158.
  *
- * Behind Lovable's hosting the server sees its own internal URL (e.g. http://localhost:3000), so
+ * Behind a proxy or edge host the server can see its own internal URL (e.g. http://localhost:3000), so
  * `new URL(request.url).origin` sent people to "localhost" after paying. Instead, in order:
  * 1. PUBLIC_APP_URL, when the operator sets it (self-hosting, custom domains);
  * 2. the browser's address: the Origin header of the request, else the Referer;
@@ -28,7 +28,7 @@ const isLocalHost = (h: string) => h === "localhost" || h === "127.0.0.1" || h =
 
 /**
  * Origins the app may send people back to: the configured PUBLIC_APP_URL, any extra origins in
- * PUBLIC_APP_ALLOWED_ORIGINS (comma-separated), Lovable-hosted addresses, the request's own
+ * PUBLIC_APP_ALLOWED_ORIGINS (comma-separated), the request's own
  * origin, and localhost.
  */
 export function isAllowedOrigin(
@@ -40,7 +40,6 @@ export function isAllowedOrigin(
   const host = new URL(origin).hostname;
   if (isLocalHost(host)) return true;
   if (origin === requestOrigin) return true;
-  if (host.endsWith(".lovable.app") || host.endsWith(".lovableproject.com")) return true;
   const list = [configured, ...(extra ?? "").split(",")]
     .map((v) => normalizeOrigin(v?.trim()))
     .filter((v): v is string => !!v);
