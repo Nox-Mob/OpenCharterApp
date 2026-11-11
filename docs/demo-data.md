@@ -11,9 +11,15 @@ or on an app's own sign-in page when self-hosted.
 | `demo@demo.openapphub.org` (Alex Morgan) | `OpenAppHubDemo2026` | Owner of **Riverside Community Association**, a neighbourhood association with about three months of history in every app |
 | `test@demo.openapphub.org` (Test Account) | `OpenAppHubDemo2026` | An active account with no organization and no data, to try everything as a new customer |
 
-In OpenCharterApp (`db/seed/0001_charter_demo.sql`, `charter.demo_fill`), Riverside has:
+In OpenCharterApp (`charter.demo_fill`: `db/seed/0001_charter_demo.sql`, replaced by `0002_charter_demo_levels.sql` with varied levels; applied files never change), Riverside has:
 
-- About 140 households on the roster: Household ($40), Individual ($25) and Senior ($15) levels, one year each.
+- About 140 members on the roster, on varied levels and lengths, with real payment history (cards, checks, cash, bank transfers) and a receipt for every payment:
+  - **Household:** monthly $4, 1 year $40, 2 years $75.
+  - **Individual:** monthly $2.50, 1 year $25, 2 years $45, lifetime $300.
+  - **Senior (65+):** 1 year $15, lifetime $150.
+  - **Student:** 6 months $8, 1 year $12.
+  - **Business Sponsor:** 1 year $250.
+  - Most pay for a year; monthly members have up to six months of dues, many others renewed once, and lifetime members never lapse. Standing: mostly good, about ten each in grace and lapsed, a few cancelled.
 - Dues paid by check, card, cash and bank transfer, each with its receipt; most joined or renewed in the last three months. Standing: about 115 good, 10 in grace, 11 lapsed, 4 cancelled.
 - Member fields Street and "Wants to volunteer".
 - A board of six: Alex Morgan (President), Jordan Lee, Sam Chen, Taylor Brooks, Priya Patel and Marcus Johnson, the same people as in OpenBoardApp.
