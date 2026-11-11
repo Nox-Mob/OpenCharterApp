@@ -2,7 +2,7 @@
 
 **Read `docs/SHARED-SPEC.md` (v2) first.** The step plan, inventory and status: `docs/MIGRATION-NOTES.md` §9. This section gives the owner's answers and the changes v2 makes to that plan.
 
-App ID `charter` · schema `charter` · hosted at `charter.openapphub.org` (staging `charter-staging.openapphub.org`) · package manager **Bun**.
+App ID `charter` · schema `charter` · hosted at `charter.openapphub.org` (staging `staging.charter.staging.openapphub.org`) · package manager **Bun**.
 
 This project (`nxungwtxnctcqolfshcr`) becomes the suite's **production** database. Its first database step must be non-destructive.
 

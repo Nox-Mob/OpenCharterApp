@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { rpc, signIn as apiSignIn, type Db } from "../smoke/client";
+import { rpc, signIn as apiSignIn, type Db } from "./legacy-client";
 import { DEMO, signIn } from "./helpers";
 
 // A4 (D-165, D-177): a chapter links to a level its national suggests. Runs once migration 0032
@@ -40,12 +40,12 @@ test("a chapter links to a suggested level, 20% less", async ({ page }) => {
   });
   const { data: tier } = await admin
     .from("membership_tiers")
-    .insert({ org_id: nationalId, key: "regular", name: "Regular", suggested: true })
+    .insert({ unit_id: nationalId, key: "regular", name: "Regular", suggested: true })
     .select("id")
     .single();
   await admin.from("tier_terms").insert({
     tier_id: tier!.id,
-    org_id: nationalId,
+    unit_id: nationalId,
     key: "1y",
     label: "1 year",
     length_count: 1,

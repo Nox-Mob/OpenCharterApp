@@ -11,11 +11,13 @@ export type Org = {
   ancestor_ids: string[];
   timezone: string;
   logo_path: string | null;
+  /** The OpenAppHub organization (the customer) this unit belongs to: the top unit's id. */
+  org_id?: string;
   /** Test data (D-148): deletable, never emails. Undefined before migration 0022. */
   is_demo?: boolean;
 };
 
-const ORG_COLUMNS = "id,name,slug,type,parent_id,ancestor_ids,timezone,logo_path";
+const ORG_COLUMNS = "id,name,slug,type,parent_id,ancestor_ids,timezone,logo_path,org_id";
 const LEGACY_DEMO_PREFIX = "d1000000-";
 
 /** A demo org (D-148). Before migration 0022, the original demo orgs are known by their ID prefix. */
@@ -33,13 +35,10 @@ export const myOrgsQuery = () =>
     queryFn: async (): Promise<Org[]> => {
       // Untyped: is_demo isn't in the generated types until Lovable applies 0022.
       const orgs = supabase as unknown as SupabaseClient;
-      const withDemo = await orgs
-        .from("organizations")
-        .select(`${ORG_COLUMNS},is_demo`)
-        .order("name");
+      const withDemo = await orgs.from("units").select(`${ORG_COLUMNS},is_demo`).order("name");
       // 42703 = the column doesn't exist yet (migration 0022 not applied): read without it
       if (withDemo.error?.code === "42703") {
-        const { data, error } = await orgs.from("organizations").select(ORG_COLUMNS).order("name");
+        const { data, error } = await orgs.from("units").select(ORG_COLUMNS).order("name");
         if (error) throw error;
         return data as Org[];
       }
@@ -56,11 +55,11 @@ export const myPermissionsQuery = () =>
       if (!u.user) return [];
       const { data, error } = await supabase
         .from("role_assignments")
-        .select("org_id, roles(role_permissions(permission_key))")
+        .select("unit_id, roles(role_permissions(permission_key))")
         .eq("user_id", u.user.id);
       if (error) throw error;
       return (data ?? []).map((r) => ({
-        org_id: r.org_id,
+        unit_id: r.unit_id,
         permissions:
           (
             r.roles as { role_permissions: { permission_key: string }[] } | null

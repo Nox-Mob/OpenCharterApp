@@ -28,5 +28,12 @@ for f in $(ls "$ROOT"/db/tests/[0-9]*.sql | sort); do
   [ "$(basename "$f")" = "00_helpers.sql" ] && continue
   if out=$(run -f "$f" 2>&1); then echo "ok   $(basename "$f")"; else echo "FAIL $(basename "$f")"; echo "$out" | sed 's/^/     /'; fail=1; fi
 done
+# The staging demo seed loads on top of the migrations.
+if (cd "$ROOT" && DATABASE_URL="$URL" node scripts/migrate.mjs --seed >/dev/null) &&
+  [ "$(run -tAc "select (select count(*) from charter.member_profiles) > 100 and (select count(*) from charter.appointments) = 6 and (select count(*) from charter.receipts) > 100")" = "t" ]; then
+  echo "ok   staging seed (db/seed)"
+else
+  echo "FAIL staging seed (db/seed)"; fail=1
+fi
 [ -n "${KEEP_DB:-}" ] || admin -c "drop database if exists $DB"
 exit $fail

@@ -1,13 +1,13 @@
 name: Live demo checks
 
-# The smoke test and the end-to-end tests against the live Lovable Cloud backend, signed in as
-# the demo accounts (D-175, D-197). They create records in the demo organizations and remove them
-# afterwards (purge_smoke_data, D-150), so runs never overlap: one at a time, newest waiting.
-# A feature whose migration Lovable hasn't applied yet is skipped until it is.
+# The smoke test runs against STAGING (openapphub-staging) and the suite demo: it signs in as
+# demo@demo.openapphub.org and test@demo.openapphub.org (password public, reset every 12 hours by
+# OpenAppHub's demo-reset workflow) and checks the demo and the security rules through the API.
+# Settings come from wrangler.jsonc env.staging; no secrets are needed. It fails until staging is
+# seeded (OpenAppHub's staging.yml, then this repo's Migrate -> staging).
 #
-# Repository settings (all optional):
-# - secret SMOKE_DEMO_PASSWORD: the demo accounts' password, if it's changed from the default
-# - variable E2E_BASE_URL: a deployed site (preview or published) to also run the checkout test.
+# The end-to-end tests still target the retired Lovable Cloud demo and need the same rewrite.
+# Repository variable (optional): E2E_BASE_URL, a deployed site to also run the checkout test.
 #   Used on pushes to main, the daily run and manual runs only: a pull request tests its own code
 #   on a local dev server, because the deployed site still runs main until the merge (D-212).
 on:
@@ -29,13 +29,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - name: Run the smoke test
         run: bun run test:smoke
-        env:
-          SMOKE_DEMO_PASSWORD: ${{ secrets.SMOKE_DEMO_PASSWORD }}
 
   e2e:
     # Google Chrome stable rather than Playwright's bundled Chromium, which lags Chrome's security
@@ -47,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bunx playwright install --with-deps chrome
@@ -58,7 +56,7 @@ jobs:
           E2E_BROWSER_CHANNEL: chrome
           E2E_BASE_URL: ${{ github.event_name != 'pull_request' && vars.E2E_BASE_URL || '' }}
           SMOKE_DEMO_PASSWORD: ${{ secrets.SMOKE_DEMO_PASSWORD }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: failure()
         with:
           name: playwright-traces

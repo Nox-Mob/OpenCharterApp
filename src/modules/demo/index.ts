@@ -48,9 +48,9 @@ export async function deleteDemoOrganization(
 ) {
   for (const o of tree) {
     try {
-      const { data } = await db.storage.from("branding").list(o.id);
+      const { data } = await db.storage.from("charter-branding").list(o.id);
       const paths = (data ?? []).map((f) => `${o.id}/${f.name}`);
-      if (paths.length) await db.storage.from("branding").remove(paths);
+      if (paths.length) await db.storage.from("charter-branding").remove(paths);
     } catch {
       // an orphaned logo file is harmless; the org's data is what matters
     }

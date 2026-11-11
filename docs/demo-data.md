@@ -1,8 +1,34 @@
-# Demo data (temporary)
+# Demo data (staging)
 
-Test data for trying out the app. **Delete it before launch.** Every demo record uses an ID prefix so it's easy to find and remove.
+The suite has **one demo and one test account**, the same in OpenAppHub and every app, on staging
+(and local development databases) only. OpenAppHub resets them **every 12 hours** (its
+`demo-reset` workflow, `hub.reset_suite_demo`), so they're always in the same shape for
+screenshots and demonstrations. Sign in through OpenAppHub (hosted, every app sends you there),
+or on an app's own sign-in page when self-hosted.
 
-## Accounts
+| Account | Password | What it is |
+|---|---|---|
+| `demo@demo.openapphub.org` (Alex Morgan) | `OpenAppHubDemo2026` | Owner of **Riverside Community Association**, a neighbourhood association with about three months of history in every app |
+| `test@demo.openapphub.org` (Test Account) | `OpenAppHubDemo2026` | An active account with no organization and no data, to try everything as a new customer |
+
+In OpenCharterApp (`db/seed/0001_charter_demo.sql`, `charter.demo_fill`), Riverside has:
+
+- About 140 households on the roster: Household ($40), Individual ($25) and Senior ($15) levels, one year each.
+- Dues paid by check, card, cash and bank transfer, each with its receipt; most joined or renewed in the last three months. Standing: about 115 good, 10 in grace, 11 lapsed, 4 cancelled.
+- Member fields Street and "Wants to volunteer".
+- A board of six: Alex Morgan (President), Jordan Lee, Sam Chen, Taylor Brooks, Priya Patel and Marcus Johnson, the same people as in OpenBoardApp.
+- Test payments (no real money). It's a demo organization, so it never sends email.
+
+The organization's id is `de000000-0000-4000-8000-0000000000a1`; the accounts are
+`de000000-0000-4000-8000-000000000001` (demo) and `…-000000000002` (test). Anything made by
+either account is removed at the next reset.
+
+The older Charter-only demo below (Demo National, Test-Demo and the `@opencharter.test` accounts)
+is retired: the smoke and end-to-end tests that used it need rewriting for the suite demo.
+
+## Retired: the Charter-only demo
+
+### Accounts
 
 All accounts share the same password: `OpenCharterDemo!2026` (the smoke and end-to-end tests read `SMOKE_DEMO_PASSWORD` if it changes).
 
@@ -36,7 +62,7 @@ Smoke and end-to-end runs add and then remove their own records (D-150), so coun
 
 ## The sales demo: Test-Demo (D-199)
 
-On the new Supabase project (D-212), `supabase/scripts/demo-test-accounts.sql` creates Test-Demo empty, with Nora National as admin. Fill it from the Supabase SQL Editor with **`supabase/scripts/seed-test-demo.sql`** (D-213): paste the whole file and run it once. It takes a few seconds, adds 15 pending applications as well (made-up accounts with no password, waiting for approval), and ends with a list of everyone with their chapter, level and standing. It refuses to run twice. The TypeScript script below does the same from a computer with bun, without the pending applications.
+On staging, **`db/seed/0001_charter_demo.sql`** creates the demo accounts, Demo National with Austin and Dallas, and fills Test-Demo (Nora National as admin) with about 500 people, including 15 pending applications (made-up accounts with no password, waiting for approval). The **Migrate** workflow runs it once with `--seed` on staging; the demo password is the `DEMO_PASSWORD` secret. It refuses production and databases with real organizations. The TypeScript script below does the same from a computer with bun, without the pending applications.
 
 **Test-Demo** (`test-demo`, d60400ef-…) is a demo national set up to look like a real association, for sales demos and for checking screens that need judgement with realistic numbers. It uses the **home-chapter model** (members belong to the national and pick a chapter). Filled on 2026-11-03 by `bun scripts/seed-sales-demo.ts`:
 

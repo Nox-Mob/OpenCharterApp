@@ -35,7 +35,7 @@ export const auditLogQuery = (orgId: string, readable: boolean) =>
       let q = supabase
         .from("audit_events")
         .select("id,created_at,action,target_type,target_id,actor_id,before,after")
-        .eq("org_id", orgId)
+        .eq("unit_id", orgId)
         .order("id", { ascending: false })
         .limit(AUDIT_PAGE);
       if (pageParam) q = q.lt("id", pageParam);

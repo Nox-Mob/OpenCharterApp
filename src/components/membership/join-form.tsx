@@ -43,7 +43,7 @@ import { Label } from "@/components/ui/label";
 function toDef(f: JoinField): DefWithOptions {
   return {
     id: f.id,
-    org_id: "",
+    unit_id: "",
     key: f.id,
     label: f.label,
     data_type: f.data_type,

@@ -3,9 +3,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { Org } from "@/lib/orgs";
 import { PERMISSIONS } from "@/lib/policy";
 
-const profile = (id: string, org_id: string, name: string, email: string) => ({
+const profile = (id: string, unit_id: string, name: string, email: string) => ({
   id,
-  org_id,
+  unit_id,
   user_id: `u-${id}`,
   display_name: name,
   email,
@@ -18,7 +18,7 @@ const own = [profile("p1", "nat", "Nadia National", "nadia@test.org")];
 const everyone = [...own, profile("p2", "a", "Alex Austin", "alex@test.org")];
 const rankDef = {
   id: "rank",
-  org_id: "nat",
+  unit_id: "nat",
   label: "Rank",
   data_type: "choice",
   applies_to: "member",
@@ -27,7 +27,7 @@ const rankDef = {
   attribute_options: [{ id: "o1", value: "e5", label: "E-5", sort_order: 1, active: true }],
 };
 
-// The list query for several orgs uses .in("org_id", …); the org's own list uses .eq.
+// The list query for several orgs uses .in("unit_id", …); the org's own list uses .eq.
 function builder(table: string) {
   const b: Record<string, unknown> = {};
   let tree = false;
@@ -40,7 +40,7 @@ function builder(table: string) {
     ok({
       error: null,
       data:
-        table === "org_member_profiles"
+        table === "member_profiles"
           ? tree
             ? everyone
             : own
@@ -98,7 +98,7 @@ function renderTab(org: Org, orgs: Org[]) {
         canInvite={false}
         canAssignAdmin
         canManageMembers
-        grants={[{ org_id: "nat", permissions: [...PERMISSIONS] }]}
+        grants={[{ unit_id: "nat", permissions: [...PERMISSIONS] }]}
       />
     </QueryClientProvider>,
   );

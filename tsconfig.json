@@ -2,6 +2,7 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
+    "shared/env.d.ts",
     "scripts/migration-rules.ts",
     "scripts/migration-rules.test.ts",
     "vite.config.ts",
@@ -34,7 +35,8 @@
     "exactOptionalPropertyTypes": true,
     "noUncheckedSideEffectImports": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@shared/*": ["./shared/*"]
     }
   }
 }

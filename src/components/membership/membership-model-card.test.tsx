@@ -52,7 +52,7 @@ describe("MembershipModelCard (A8)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Choose this model" }));
     expect(window.confirm).toHaveBeenCalledWith(expect.stringMatching(/can't be changed later/));
     expect(insert).toHaveBeenCalledWith({
-      org_id: "n",
+      unit_id: "n",
       key: "membership.model",
       value: "home_chapter",
       mode: "locked",
@@ -61,7 +61,7 @@ describe("MembershipModelCard (A8)", () => {
 
   it("once chosen, shows it as fixed with the at-large chapter option", () => {
     renderCard(nat, [
-      { org_id: "n", key: "membership.model", value: "home_chapter", mode: "locked" },
+      { unit_id: "n", key: "membership.model", value: "home_chapter", mode: "locked" },
     ]);
     expect(screen.getByText("Chosen; can't be changed")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Choose this model" })).toBeNull();

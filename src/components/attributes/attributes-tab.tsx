@@ -38,7 +38,7 @@ export async function saveAttribute(
     const { data, error } = await supabase
       .from("attribute_definitions")
       .insert({
-        org_id: orgId,
+        unit_id: orgId,
         applies_to: subject,
         key: parsed.key,
         label: parsed.label,
@@ -81,7 +81,7 @@ export async function saveAttribute(
     } else {
       const { error } = await supabase.from("attribute_options").insert({
         definition_id: defId!,
-        org_id: orgId,
+        unit_id: orgId,
         value: o.value,
         label: o.label,
         sort_order: (i + 1) * 10,
@@ -201,7 +201,7 @@ export function AttributesTab({
           </TableHeader>
           <TableBody>
             {memberDefs.map((d) => {
-              const own = d.org_id === org.id;
+              const own = d.unit_id === org.id;
               return (
                 <TableRow key={d.id} className={d.active ? "" : "opacity-60"}>
                   <TableCell className="font-medium">

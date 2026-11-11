@@ -1,1158 +1,145 @@
 /**
- * Live smoke test (docs/lovable-handoff.md §5), run without anyone clicking through the app.
- * Signs in as the demo accounts and drives the same backend actions the screens use.
- * Each run creates its own uniquely named records inside the demo orgs only.
- * Run: bun run test:smoke
+ * Live smoke test against STAGING and the suite demo (OpenAppHub db/seed/0002_suite_demo.sql).
+ *
+ * Signs in to openapphub-staging as the suite's two demo accounts and checks, through the same
+ * API the app uses (PostgREST, schema `charter`, security rules on):
+ *   - demo@demo.openapphub.org owns Riverside Community Association and sees its members,
+ *     dues, receipts and board;
+ *   - test@demo.openapphub.org (no organization) and signed-out visitors see none of it;
+ *   - an admin write works and is undone.
+ *
+ * It writes almost nothing: one member record per run, removed again at the end (it stays in
+ * the roster history until the next 12-hourly demo reset). Payments are append-only, so none are
+ * recorded here; the database tests cover them. Run: bun run test:smoke
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { anonClient, DEMO, rpc, rpcFails, runId, signIn, type Db } from "./client";
+import { anonClient, count, DEMO, rpc, rpcFails, runId, signIn, type Db } from "./client";
 
-const AUSTIN = DEMO.orgs.austin;
-const NATIONAL = DEMO.orgs.national;
-const DALLAS = DEMO.orgs.dallas;
-// Levels are national-managed in the demo (chapters may not add their own), so money flows run at the national.
-const ORG = NATIONAL;
-
-let nationalAdmin: Db;
-let chapterAdmin: Db;
-let member: Db;
+let owner: Db;
+let empty: Db;
 let anon: Db;
-let memberUserId: string;
-
-let tierId: string;
-let orgAdmin: Db;
-let termId: string;
-
-// Everything this run writes is removed afterwards; demo data from before the run stays (D-150).
-const runStartedAt = new Date(Date.now() - 5_000).toISOString();
-
-afterAll(async () => {
-  if (!nationalAdmin) return;
-  const removed = await rpc(nationalAdmin, "purge_smoke_data", { _since: runStartedAt });
-  console.info("smoke cleanup removed", removed);
-});
+let createdProfile: string | undefined;
 
 beforeAll(async () => {
-  [nationalAdmin, chapterAdmin, member] = await Promise.all([
-    signIn(DEMO.national),
-    signIn(DEMO.chapter),
-    signIn(DEMO.member),
-  ]);
+  [owner, empty] = await Promise.all([signIn(DEMO.owner), signIn(DEMO.empty)]);
   anon = anonClient();
-  orgAdmin = nationalAdmin;
-  memberUserId = (await member.auth.getUser()).data.user!.id;
 });
 
-/** Simple answers for every required join question (e.g. Rank), so joins pass validation. */
-async function requiredAnswers(slug = "demo-national"): Promise<Record<string, unknown>> {
-  const info =
-    (await rpc<Record<string, unknown>>(anon, "public_join_info", { _slug: slug })) ?? {};
-  const fields =
-    ((info["fields"] ?? info["questions"] ?? []) as Array<Record<string, unknown>>) || [];
-  const answers: Record<string, unknown> = {};
-  for (const f of fields) {
-    if (!f["required"]) continue;
-    const id = f["id"] as string;
-    const options = (f["options"] ?? []) as Array<Record<string, unknown>>;
-    switch (f["data_type"]) {
-      case "number":
-        answers[id] = 1;
-        break;
-      case "date":
-        answers[id] = "2024-01-01";
-        break;
-      case "boolean":
-        answers[id] = true;
-        break;
-      case "choice":
-      case "ordered":
-        answers[id] = options[0]?.["value"];
-        break;
-      case "multi_choice":
-        answers[id] = [options[0]?.["value"]];
-        break;
-      default:
-        answers[id] = "smoke";
-    }
-  }
-  return answers;
-}
-
-describe("0. migrations are live (handoff quick checks)", () => {
-  for (const table of [
-    "memberships",
-    "payments",
-    "membership_events",
-    "gateway_connections",
-    "member_segments",
-    "receipts",
-    "seat_templates",
-    "seat_terms",
-    "appointments",
-  ]) {
-    it(`table ${table} is reachable`, async () => {
-      const { error } = await chapterAdmin.from(table).select("*", { count: "exact", head: true });
-      expect(error).toBeNull();
+afterAll(async () => {
+  if (owner && createdProfile) {
+    await rpc(owner, "remove_member_record", {
+      _profile: createdProfile,
+      _reason: `smoke ${runId}`,
     });
   }
+});
 
-  it("directory_listed column exists on member profiles", async () => {
-    const { error } = await member.from("org_member_profiles").select("directory_listed").limit(1);
-    expect(error).toBeNull();
+describe("1. the suite demo is loaded", () => {
+  it("both demo accounts sign in with the shared password", async () => {
+    for (const db of [owner, empty]) {
+      const { data } = await db.auth.getUser();
+      expect(data.user?.email).toMatch(/@demo\.openapphub\.org$/);
+    }
   });
 
-  it("gateway secrets are not exposed through the API", async () => {
-    const { error } = await chapterAdmin
-      .schema("private" as never)
-      .from("gateway_secrets")
-      .select("*");
+  it("the public join page works signed out", async () => {
+    const info = await rpc<{ org: { id: string; name: string }; levels: { name: string }[] }>(
+      anon,
+      "public_join_info",
+      { _slug: DEMO.slug },
+    );
+    expect(info.org.id).toBe(DEMO.org);
+    expect(info.org.name).toBe("Riverside Community Association");
+    expect(info.levels.map((l) => l.name)).toEqual(
+      expect.arrayContaining(["Household", "Individual"]),
+    );
+  });
+});
+
+describe("2. the demo owner sees Riverside", () => {
+  it("the association is theirs", async () => {
+    const { data, error } = await owner
+      .from("units")
+      .select("id, name, is_demo")
+      .eq("id", DEMO.org);
+    expect(error).toBeNull();
+    expect(data).toEqual([
+      { id: DEMO.org, name: "Riverside Community Association", is_demo: true },
+    ]);
+  });
+
+  it("about three months of members, dues and receipts", async () => {
+    expect(await count(owner, "member_profiles", ["unit_id", DEMO.org])).toBeGreaterThan(100);
+    expect(await count(owner, "memberships", ["unit_id", DEMO.org])).toBeGreaterThan(100);
+    expect(await count(owner, "payments", ["unit_id", DEMO.org])).toBeGreaterThan(100);
+    expect(await count(owner, "receipts", ["unit_id", DEMO.org])).toBeGreaterThan(100);
+  });
+
+  it("the overview counts current members", async () => {
+    const [stats] = await rpc<{ roster: number; current_members: number }[]>(
+      owner,
+      "org_overview_stats",
+      { _org: DEMO.org },
+    );
+    expect(stats?.roster).toBeGreaterThan(100);
+    expect(stats?.current_members).toBeGreaterThan(50);
+  });
+
+  it("the board has its officers", async () => {
+    const { data, error } = await owner
+      .from("appointments")
+      .select("id")
+      .eq("unit_id", DEMO.org)
+      .is("ended_on", null);
+    expect(error).toBeNull();
+    expect(data?.length).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe("3. an admin write works", () => {
+  it("adds a member record without an email", async () => {
+    createdProfile = await rpc<string>(owner, "admin_create_member", {
+      _org: DEMO.org,
+      _display_name: `Smoke Test ${runId}`,
+    });
+    const { data } = await owner
+      .from("member_profiles")
+      .select("display_name")
+      .eq("id", createdProfile);
+    expect(data).toEqual([{ display_name: `Smoke Test ${runId}` }]);
+  });
+
+  it("clients can't write payments directly", async () => {
+    const { error } = await owner
+      .from("payments")
+      .insert({ unit_id: DEMO.org, amount_minor: 100, status: "paid" });
     expect(error).not.toBeNull();
   });
-
-  it("public join info works signed out", async () => {
-    const info = await rpc(anon, "public_join_info", { _slug: "demo-national" });
-    expect(info).not.toBeNull();
-  });
 });
 
-describe("1. levels for this run", () => {
-  it("Austin can't add its own levels while the national manages them", async () => {
-    const res = await chapterAdmin
-      .from("membership_tiers")
-      .insert({ org_id: AUSTIN, key: `smoke_${runId}`, name: `Smoke ${runId}` });
-    expect(res.error?.message).toContain("parent organization manages membership levels");
+describe("4. nobody else sees it", () => {
+  it("the test account has no organization and sees no Riverside data", async () => {
+    expect(await count(empty, "units", ["id", DEMO.org])).toBe(0);
+    expect(await count(empty, "member_profiles", ["unit_id", DEMO.org])).toBe(0);
+    expect(await count(empty, "payments", ["unit_id", DEMO.org])).toBe(0);
+    expect(await count(empty, "receipts", ["unit_id", DEMO.org])).toBe(0);
   });
 
-  it("national admin adds a paid 1-year level", async () => {
-    const tier = await orgAdmin
-      .from("membership_tiers")
-      .insert({ org_id: ORG, key: `smoke_${runId}`, name: `Smoke ${runId}` })
-      .select("id")
-      .single();
-    expect(tier.error).toBeNull();
-    tierId = tier.data!.id;
-    const term = await orgAdmin
-      .from("tier_terms")
-      .insert({
-        org_id: ORG,
-        tier_id: tierId,
-        key: "1y",
-        label: "1 year",
-        length_count: 1,
-        length_unit: "year",
-        price_minor: 2500,
-      })
-      .select("id")
-      .single();
-    expect(term.error).toBeNull();
-    termId = term.data!.id;
+  it("the test account can't add members to Riverside", async () => {
+    await rpcFails(empty, "admin_create_member", { _org: DEMO.org, _display_name: "Not allowed" });
   });
 
-  it("an outsider org admin cannot add levels to Austin from Dallas's side", async () => {
-    // demo-member is a member of Austin but has no tiers.manage in Dallas
-    const res = await member
-      .from("membership_tiers")
-      .insert({ org_id: DALLAS, key: `bad_${runId}`, name: "bad" });
-    expect(res.error).not.toBeNull();
-  });
-
-  it("levels can't be deleted (retire only)", async () => {
-    await orgAdmin.from("membership_tiers").delete().eq("id", tierId);
-    const { data } = await orgAdmin.from("membership_tiers").select("id").eq("id", tierId);
-    expect(data).toHaveLength(1);
-  });
-});
-
-describe("2. memberships and check payments (0008)", () => {
-  let profileId: string;
-  let membershipId: string;
-
-  it("admin adds a member record without an email", async () => {
-    profileId = await rpc<string>(orgAdmin, "admin_create_member", {
-      _org: ORG,
-      _display_name: `Smoke Check ${runId}`,
-    });
-    expect(profileId).toMatch(/[0-9a-f-]{36}/);
-  });
-
-  it("a plain member cannot add member records in Dallas", async () => {
-    await rpcFails(member, "admin_create_member", { _org: DALLAS, _display_name: "nope" });
-  });
-
-  it("admin records a 1-year membership paid by check", async () => {
-    membershipId = await rpc<string>(orgAdmin, "record_membership", {
-      _profile: profileId,
-      _term: termId,
-      _amount_minor: 2500,
-      _method: "check",
-      _note: "smoke",
-    });
-    const { data } = await orgAdmin.from("memberships").select("*").eq("id", membershipId).single();
-    expect(data.status).toBe("active");
-    expect(data.lifetime).toBe(false);
-    const oneYear = new Date(data.joined_on);
-    oneYear.setFullYear(oneYear.getFullYear() + 1);
-    expect(new Date(data.paid_through).getTime()).toBeGreaterThan(Date.now());
-  });
-
-  it("standing is good", async () => {
-    const { data } = await orgAdmin.from("memberships").select("*").eq("id", membershipId).single();
-    const grace = await rpc<number>(orgAdmin, "grace_days", { _org: ORG });
-    const standing = await rpc<string>(orgAdmin, "membership_standing", {
-      _status: data.status,
-      _paid_through: data.paid_through,
-      _lifetime: data.lifetime,
-      _grace: grace,
-      _today: new Date().toISOString().slice(0, 10),
-    });
-    expect(standing).toBe("good");
-  });
-
-  it("standing rules: grace then lapsed", async () => {
-    const args = { _status: "active", _lifetime: false, _grace: 30, _today: "2026-06-15" };
-    expect(
-      await rpc(orgAdmin, "membership_standing", { ...args, _paid_through: "2026-07-01" }),
-    ).toBe("good");
-    expect(
-      await rpc(orgAdmin, "membership_standing", { ...args, _paid_through: "2026-06-01" }),
-    ).toBe("grace");
-    expect(
-      await rpc(orgAdmin, "membership_standing", { ...args, _paid_through: "2026-04-01" }),
-    ).toBe("lapsed");
-  });
-
-  it("history shows the join with its payment", async () => {
-    const { data } = await orgAdmin
-      .from("membership_events")
-      .select("*")
-      .eq("membership_id", membershipId);
-    expect(data!.length).toBe(1);
-    expect(data![0].kind).toBe("joined");
-    expect(data![0].payment_id).not.toBeNull();
-  });
-
-  it("history is append-only", async () => {
-    await orgAdmin.from("membership_events").delete().eq("membership_id", membershipId);
-    const { data } = await orgAdmin
-      .from("membership_events")
-      .select("id")
-      .eq("membership_id", membershipId);
-    expect(data!.length).toBe(1);
-  });
-
-  it("clients cannot write payments directly", async () => {
-    const res = await orgAdmin.from("payments").insert({
-      org_id: ORG,
-      purpose: "join",
-      amount_minor: 1,
-      status: "paid",
-    });
-    expect(res.error).not.toBeNull();
-  });
-
-  it("a second check stacks the renewal onto the paid-through date", async () => {
-    const before = (
-      await orgAdmin.from("memberships").select("paid_through").eq("id", membershipId).single()
-    ).data!.paid_through as string;
-    await rpc(orgAdmin, "record_membership", {
-      _profile: profileId,
-      _term: termId,
-      _amount_minor: 2500,
-      _method: "cash",
-    });
-    const after = (
-      await orgAdmin.from("memberships").select("paid_through").eq("id", membershipId).single()
-    ).data!.paid_through as string;
-    expect(new Date(after).getFullYear()).toBe(new Date(before).getFullYear() + 1);
-  });
-
-  describe("3. receipts (0013)", () => {
-    let receiptId: string;
-
-    it("the check payment has a numbered receipt", async () => {
-      const pay = await orgAdmin
-        .from("payments")
-        .select("id")
-        .eq("membership_id", membershipId)
-        .eq("method", "check")
-        .single();
-      const { data } = await orgAdmin.from("receipts").select("*").eq("payment_id", pay.data!.id);
-      expect(data).toHaveLength(1);
-      const r = data![0];
-      receiptId = r.id;
-      expect(r.status).toBe("issued");
-      expect(r.number).toMatch(new RegExp(`^${r.year}-\\d{5}$`));
-      expect(r.snapshot).toBeTruthy();
-    });
-
-    it("receipts can't be edited", async () => {
-      await orgAdmin.from("receipts").update({ number: "hacked" }).eq("id", receiptId);
-      const { data } = await orgAdmin
-        .from("receipts")
-        .select("number")
-        .eq("id", receiptId)
-        .single();
-      expect(data!.number).not.toBe("hacked");
-    });
-
-    it("receipt numbers are unique, and this run's follow each other without gaps", async () => {
-      // Earlier smoke runs' receipts are purged afterwards (D-150), so the demo org's numbering
-      // has gaps from them; the rule is checked on the numbers issued during this run.
-      const { data } = await orgAdmin
-        .from("receipts")
-        .select("seq, year, issued_at")
-        .eq("org_id", ORG)
-        .order("seq");
-      const year = new Date().getFullYear();
-      const thisYear = data!.filter((r) => r.year === year);
-      expect(new Set(thisYear.map((r) => r.seq)).size).toBe(thisYear.length);
-      const mine = thisYear.filter((r) => r.issued_at >= runStartedAt).map((r) => r.seq);
-      expect(mine.length).toBeGreaterThan(0);
-      mine.forEach((s, i) => expect(s).toBe(mine[0]! + i));
-    });
-
-    it("a member can't void someone else's receipt", async () => {
-      await rpcFails(anon, "void_receipt", { _receipt: receiptId, _reason: "x" });
-    });
-
-    it("void needs a reason-holder with permission, then shows VOID", async () => {
-      await rpc(orgAdmin, "void_receipt", { _receipt: receiptId, _reason: "smoke test void" });
-      const { data } = await orgAdmin
-        .from("receipts")
-        .select("status, void_reason")
-        .eq("id", receiptId)
-        .single();
-      expect(data!.status).toBe("voided");
-      expect(data!.void_reason).toBe("smoke test void");
-    });
-
-    it("a voided receipt can't be voided again", async () => {
-      await rpcFails(orgAdmin, "void_receipt", { _receipt: receiptId, _reason: "again" });
-    });
-  });
-
-  it("cancelling a membership is recorded in history", async () => {
-    await rpc(orgAdmin, "cancel_membership", { _membership: membershipId, _note: "smoke cleanup" });
-    const { data } = await orgAdmin
-      .from("membership_events")
-      .select("kind")
-      .eq("membership_id", membershipId);
-    expect(data!.map((e) => e.kind)).toContain("cancelled");
-  });
-});
-
-describe("4. test gateway (0009)", () => {
-  it("only payment managers can connect it", async () => {
-    await rpcFails(anon, "connect_test_gateway", { _org: ORG });
-  });
-
-  it("the test gateway is allowed for demo orgs", async () => {
-    expect(await rpc(orgAdmin, "test_gateway_allowed", { _org: ORG })).toBe(true);
-  });
-
-  it("admin turns on test payments; badge reads test mode", async () => {
-    await rpc(orgAdmin, "connect_test_gateway", { _org: ORG });
-    const { data } = await orgAdmin
-      .from("gateway_connections")
-      .select("*")
-      .eq("org_id", ORG)
-      .single();
-    expect(data!.gateway).toBe("test");
-    expect(data!.livemode).toBe(false);
-    expect(data!.status).toBe("verified");
-  });
-
-  it("server-only functions are unreachable by clients", async () => {
-    await rpcFails(orgAdmin, "gateway_sealed_credentials", { _org: ORG });
-    await rpcFails(orgAdmin, "save_stripe_connection", {
-      _org: ORG,
-      _sealed: "x",
-      _account_label: "x",
-      _livemode: false,
-    });
-  });
-});
-
-describe("5. joining online (0010)", () => {
-  async function memberMembership() {
-    const { data } = await member
-      .from("memberships")
-      .select("*, org_member_profiles!memberships_profile_id_fkey!inner(user_id)")
-      .eq("org_id", ORG)
-      .eq("org_member_profiles.user_id", memberUserId)
-      .maybeSingle();
-    return data;
-  }
-
-  it("the join page lists this run's level signed out", async () => {
-    const info = await rpc(anon, "public_join_info", { _slug: "demo-national" });
-    expect(JSON.stringify(info)).toContain(termId);
-  });
-
-  it("signed-out visitors can't start a join", async () => {
-    await rpcFails(anon, "begin_join", { _org: ORG, _term: termId });
-  });
-
-  it("a level from another org is refused", async () => {
-    await rpcFails(member, "begin_join", { _org: AUSTIN, _term: termId });
-  });
-
-  it("get the member to a state where they can join", async () => {
-    const m = await memberMembership();
-    if (m && (m.status === "active" || m.status === "pending")) {
-      await rpc(orgAdmin, "cancel_membership", { _membership: m.id, _note: "smoke reset" });
-    }
-    const after = await memberMembership();
-    expect(after === null || !["active", "pending"].includes(after.status)).toBe(true);
-  });
-
-  let paymentId: string;
-
-  it("declined card: nothing is created", async () => {
-    paymentId = await rpc<string>(member, "begin_join", {
-      _org: ORG,
-      _term: termId,
-      _answers: await requiredAnswers(),
-    });
-    const before = await memberMembership();
-    await rpc(member, "complete_test_payment", { _payment: paymentId, _outcome: "declined" });
-    const { data } = await member.from("payments").select("status").eq("id", paymentId).single();
-    expect(data!.status).toBe("failed");
-    const after = await memberMembership();
-    expect(after?.status ?? null).toBe(before?.status ?? null);
-  });
-
-  it("someone else can't complete the member's payment", async () => {
-    await rpcFails(orgAdmin, "complete_test_payment", {
-      _payment: paymentId,
-      _outcome: "accepted",
-    });
-  });
-
-  it("accepted card: membership waits for approval and a receipt is issued", async () => {
-    await rpc(member, "complete_test_payment", { _payment: paymentId, _outcome: "accepted" });
-    const { data } = await member
-      .from("payments")
-      .select("status, gateway, livemode")
-      .eq("id", paymentId)
-      .single();
-    expect(data).toMatchObject({ status: "paid", gateway: "test", livemode: false });
-    const approval = await rpc<boolean>(member, "effective_approval_required", { _org: ORG });
-    const m = await memberMembership();
-    expect(m!.status).toBe(approval ? "pending" : "active");
-    const receipts = await member.from("receipts").select("status").eq("payment_id", paymentId);
-    expect(receipts.data).toEqual([{ status: "issued" }]);
-  });
-
-  it("completing the same payment twice changes nothing", async () => {
-    const before = await memberMembership();
-    await rpc(member, "complete_test_payment", { _payment: paymentId, _outcome: "accepted" });
-    const after = await memberMembership();
-    expect(after!.paid_through).toBe(before!.paid_through);
-    const receipts = await member.from("receipts").select("id").eq("payment_id", paymentId);
-    expect(receipts.data).toHaveLength(1);
-  });
-
-  it("a second application while pending is refused", async () => {
-    const m = await memberMembership();
-    if (m!.status === "pending") {
-      const msg = await rpcFails(member, "begin_join", { _org: ORG, _term: termId });
-      expect(msg).toContain("waiting for approval");
+  it("signed-out visitors see no members or payments", async () => {
+    for (const table of ["member_profiles", "payments", "receipts"]) {
+      const { data } = await anon.from(table).select("id").eq("unit_id", DEMO.org).limit(1);
+      expect(data ?? []).toEqual([]);
     }
   });
 
-  it("the member can't approve themselves", async () => {
-    const m = await memberMembership();
-    if (m!.status !== "pending") return;
-    // demo-member also holds an admin role in Austin (docs/demo-data.md), so use a signed-out client
-    await rpcFails(anon, "approve_membership", { _membership: m!.id });
-  });
-
-  it("admin approves; the member is active and in good standing", async () => {
-    const m = await memberMembership();
-    if (m!.status === "pending") await rpc(orgAdmin, "approve_membership", { _membership: m!.id });
-    const after = await memberMembership();
-    expect(after!.status).toBe("active");
-    expect(new Date(after!.paid_through).getTime()).toBeGreaterThan(Date.now());
-  });
-
-  it("an active member is told to renew instead of joining", async () => {
-    const msg = await rpcFails(member, "begin_join", { _org: ORG, _term: termId });
-    expect(msg).toContain("renew instead");
-  });
-
-  it("online renewal stacks a year onto paid-through", async () => {
-    const m = await memberMembership();
-    const pay = await rpc<string>(member, "begin_renewal", { _membership: m!.id, _term: termId });
-    await rpc(member, "complete_test_payment", { _payment: pay, _outcome: "accepted" });
-    const after = await memberMembership();
-    expect(new Date(after!.paid_through).getFullYear()).toBe(
-      new Date(m!.paid_through).getFullYear() + 1,
-    );
-  });
-
-  it("decline with refund: a second application is refunded", async () => {
-    await rpc(orgAdmin, "cancel_membership", { _membership: (await memberMembership())!.id });
-    const approval = await rpc<boolean>(member, "effective_approval_required", { _org: ORG });
-    const pay = await rpc<string>(member, "begin_join", {
-      _org: ORG,
-      _term: termId,
-      _answers: await requiredAnswers(),
-    });
-    await rpc(member, "complete_test_payment", { _payment: pay, _outcome: "accepted" });
-    const m = await memberMembership();
-    if (!approval) {
-      expect(m!.status).toBe("active");
-      return;
+  it("gateway secrets are never readable through the API", async () => {
+    for (const db of [owner, anon]) {
+      const { data } = await db.from("gateway_secrets").select("*").limit(1);
+      expect(data ?? []).toEqual([]);
     }
-    const res = await rpc<{ refund: string | null }>(orgAdmin, "decline_application", {
-      _membership: m!.id,
-      _note: "smoke decline",
-    });
-    expect(res.refund).toBe("done");
-    const { data } = await member.from("payments").select("status").eq("id", pay).single();
-    expect(data!.status).toBe("refunded");
-    expect((await memberMembership())!.status).toBe("declined");
-    const receipts = await member.from("receipts").select("status").eq("payment_id", pay);
-    expect(receipts.data!.some((r) => r.status === "issued")).toBe(false);
-  });
-});
-
-describe("6. exports (0011)", () => {
-  it("an export is written to the audit log", async () => {
-    const since = new Date(Date.now() - 1000).toISOString();
-    await rpc(orgAdmin, "log_member_export", {
-      _org: ORG,
-      _row_count: 3,
-      _columns: ["display_name", "standing"],
-      _filter: { standing: "good", smoke: runId },
-    });
-    const { data } = await orgAdmin
-      .from("audit_events")
-      .select("action, after")
-      .eq("org_id", ORG)
-      .gte("created_at", since)
-      .ilike("action", "%export%");
-    expect(data!.length).toBeGreaterThan(0);
-  });
-
-  it("signed-out users can't log exports", async () => {
-    await rpcFails(anon, "log_member_export", { _org: ORG, _row_count: 1, _columns: ["x"] });
-  });
-
-  it("chapter admin can't export a sibling chapter", async () => {
-    await rpcFails(chapterAdmin, "log_member_export", {
-      _org: DALLAS,
-      _row_count: 1,
-      _columns: ["x"],
-    });
-  });
-
-  it("saved views: managers save; a chapter can't save into its sibling", async () => {
-    const res = await orgAdmin
-      .from("member_segments")
-      .insert({ org_id: ORG, name: `Smoke ${runId}`, filter: { standing: "good" } })
-      .select("id")
-      .single();
-    expect(res.error).toBeNull();
-    const sibling = await chapterAdmin
-      .from("member_segments")
-      .insert({ org_id: DALLAS, name: `Smoke ${runId}`, filter: {} });
-    expect(sibling.error).not.toBeNull();
-  });
-});
-
-describe("7. directory (0012)", () => {
-  it("opting out removes the member from the directory, opting in restores", async () => {
-    // The member needs a current membership to be listed at all.
-    const pay = await rpc<string>(member, "begin_join", {
-      _org: ORG,
-      _term: termId,
-      _answers: await requiredAnswers(),
-    }).catch(() => null);
-    if (pay) {
-      await rpc(member, "complete_test_payment", { _payment: pay, _outcome: "accepted" });
-      const { data: m } = await orgAdmin
-        .from("memberships")
-        .select("id,status")
-        .eq("org_id", ORG)
-        .eq("status", "pending");
-      for (const row of m ?? []) await rpc(orgAdmin, "approve_membership", { _membership: row.id });
-    }
-    const profile = await member
-      .from("org_member_profiles")
-      .select("id")
-      .eq("org_id", ORG)
-      .eq("user_id", memberUserId)
-      .single();
-    const pid = profile.data!.id;
-
-    await rpc(member, "set_my_directory_listing", { _org: ORG, _listed: true });
-    let dir = await rpc<Array<{ profile_id: string }>>(orgAdmin, "member_directory", { _org: ORG });
-    expect(dir.map((d) => d.profile_id)).toContain(pid);
-
-    await rpc(member, "set_my_directory_listing", { _org: ORG, _listed: false });
-    dir = await rpc(orgAdmin, "member_directory", { _org: ORG });
-    expect(dir.map((d) => d.profile_id)).not.toContain(pid);
-
-    await rpc(member, "set_my_directory_listing", { _org: ORG, _listed: true });
-  });
-
-  it("outsiders can't read the directory", async () => {
-    await rpcFails(anon, "member_directory", { _org: ORG });
-  });
-});
-
-describe("8. board seats (0014)", () => {
-  let seatId: string;
-  let appointmentId: string;
-
-  it("national defines a required seat used by every chapter", async () => {
-    seatId = await rpc<string>(nationalAdmin, "define_seat", {
-      _org: NATIONAL,
-      _key: `pres_${runId}`,
-      _title: `President ${runId}`,
-      _required: true,
-      _scope: "chapters",
-    });
-    expect(seatId).toBeTruthy();
-  });
-
-  it("a chapter admin can't define seats at the national", async () => {
-    await rpcFails(chapterAdmin, "define_seat", {
-      _org: NATIONAL,
-      _key: `x_${runId}`,
-      _title: "x",
-    });
-  });
-
-  it("the seat shows as vacant in Austin", async () => {
-    const board = await rpc<Array<{ template_id: string; holders: unknown[] }>>(
-      chapterAdmin,
-      "org_board",
-      {
-        _org: AUSTIN,
-      },
-    );
-    const seat = board.find((s) => s.template_id === seatId);
-    expect(seat).toBeTruthy();
-    expect(seat!.holders ?? []).toHaveLength(0);
-  });
-
-  it("Austin sets its own 2-year term with a by-law reference", async () => {
-    await rpc(chapterAdmin, "set_seat_term", {
-      _org: AUSTIN,
-      _template: seatId,
-      _count: 2,
-      _unit: "year",
-      _effective_from: new Date().toISOString().slice(0, 10),
-      _bylaw_reference: "Art. IV §2",
-    });
-    const board = await rpc<Array<Record<string, unknown>>>(chapterAdmin, "org_board", {
-      _org: AUSTIN,
-    });
-    const seat = board.find((s) => s["template_id"] === seatId)!;
-    expect(seat["term_count"]).toBe(2);
-    expect(seat["term_unit"]).toBe("year");
-    expect(seat["bylaw_reference"]).toBe("Art. IV §2");
-  });
-
-  it("term history is append-only", async () => {
-    await chapterAdmin.from("seat_terms").delete().eq("template_id", seatId);
-    const { data } = await chapterAdmin.from("seat_terms").select("id").eq("template_id", seatId);
-    expect(data!.length).toBe(1);
-  });
-
-  let natSeat: string;
-
-  it("national defines its own (self) Treasurer seat with a 2-year term", async () => {
-    natSeat = await rpc<string>(nationalAdmin, "define_seat", {
-      _org: NATIONAL,
-      _key: `treas_${runId}`,
-      _title: `Treasurer ${runId}`,
-      _term_count: 2,
-      _term_unit: "year",
-    });
-    const board = await rpc<Array<{ template_id: string }>>(chapterAdmin, "org_board", {
-      _org: AUSTIN,
-    });
-    expect(board.find((s) => s.template_id === natSeat)).toBeUndefined();
-  });
-
-  it("only a member in good standing can be appointed", async () => {
-    const stranger = await rpc<string>(nationalAdmin, "admin_create_member", {
-      _org: NATIONAL,
-      _display_name: `No Dues ${runId}`,
-    });
-    await rpcFails(nationalAdmin, "appoint_officer", {
-      _org: NATIONAL,
-      _template: natSeat,
-      _profile: stranger,
-    });
-  });
-
-  it("appointing a paid member fills the seat with a 2-year planned end", async () => {
-    const pid = await rpc<string>(nationalAdmin, "admin_create_member", {
-      _org: NATIONAL,
-      _display_name: `Officer ${runId}`,
-    });
-    await rpc(nationalAdmin, "record_membership", {
-      _profile: pid,
-      _term: termId,
-      _method: "cash",
-    });
-    appointmentId = await rpc<string>(nationalAdmin, "appoint_officer", {
-      _org: NATIONAL,
-      _template: natSeat,
-      _profile: pid,
-    });
-    const { data } = await nationalAdmin
-      .from("appointments")
-      .select("*")
-      .eq("id", appointmentId)
-      .single();
-    expect(new Date(data!.planned_end).getFullYear()).toBe(
-      new Date(data!.starts_on).getFullYear() + 2,
-    );
-    const board = await rpc<Array<{ template_id: string; holders: unknown[] }>>(
-      nationalAdmin,
-      "org_board",
-      {
-        _org: NATIONAL,
-      },
-    );
-    expect(board.find((s) => s.template_id === natSeat)!.holders).toHaveLength(1);
-  });
-
-  it("a chapter admin can't appoint at the national", async () => {
-    const pid = await rpc<string>(nationalAdmin, "admin_create_member", {
-      _org: NATIONAL,
-      _display_name: `X ${runId}`,
-    });
-    await rpcFails(chapterAdmin, "appoint_officer", {
-      _org: NATIONAL,
-      _template: natSeat,
-      _profile: pid,
-    });
-  });
-
-  it("ending the term moves them to past officers", async () => {
-    await rpc(nationalAdmin, "end_appointment", { _appointment: appointmentId, _reason: "smoke" });
-    const hist = await rpc<Array<{ appointment_id: string; ended_on: string | null }>>(
-      nationalAdmin,
-      "board_history",
-      { _org: NATIONAL },
-    );
-    expect(hist.find((h) => h.appointment_id === appointmentId)!.ended_on).not.toBeNull();
-  });
-
-  it("an ended appointment can't be ended again", async () => {
-    await rpcFails(nationalAdmin, "end_appointment", { _appointment: appointmentId });
-  });
-
-  it("the national retires the seat (never deleted)", async () => {
-    await rpc(nationalAdmin, "set_seat_active", { _template: seatId, _active: false });
-    await rpc(nationalAdmin, "set_seat_active", { _template: natSeat, _active: false });
-    const { data } = await nationalAdmin
-      .from("seat_templates")
-      .select("active")
-      .eq("id", seatId)
-      .single();
-    expect(data!.active).toBe(false);
-  });
-});
-
-// ---------- 0018–0022 (docs/lovable-handoff.md §5) ----------
-
-async function membershipAt(org: string) {
-  const { data } = await member
-    .from("memberships")
-    .select("*, org_member_profiles!memberships_profile_id_fkey!inner(user_id)")
-    .eq("org_id", org)
-    .eq("org_member_profiles.user_id", memberUserId)
-    .maybeSingle();
-  return data;
-}
-
-/** Ends any current/pending membership the demo member holds at org, using that org's admin. */
-async function resetMembership(org: string, admin: Db) {
-  const m = await membershipAt(org);
-  if (m && ["active", "pending"].includes(m.status)) {
-    await rpc(admin, "cancel_membership", { _membership: m.id, _note: "smoke reset" });
-  }
-}
-
-async function paymentAmount(id: string): Promise<number> {
-  const { data, error } = await member
-    .from("payments")
-    .select("amount_minor")
-    .eq("id", id)
-    .single();
-  if (error) throw new Error(error.message);
-  return data!.amount_minor as number;
-}
-
-describe("10. board setup (0018)", () => {
-  const chapterKey = `smoke_chair_${runId}`;
-  const selfKey = `smoke_pres_${runId}`;
-  const today = new Date().toISOString().slice(0, 10);
-  const plan = {
-    seats: [
-      {
-        key: chapterKey,
-        title: `Smoke chair ${runId}`,
-        scope: "chapters",
-        required: true,
-        seat_count: 1,
-        term_count: 2,
-        term_unit: "year",
-      },
-      {
-        key: selfKey,
-        title: `Smoke president ${runId}`,
-        scope: "self",
-        seat_count: 1,
-        term_count: 2,
-        term_unit: "year",
-      },
-    ],
-    seat_terms: [
-      {
-        owner_org_id: NATIONAL,
-        key: selfKey,
-        length_count: 1,
-        length_unit: "year",
-        effective_from: today,
-        bylaw_reference: `Art. ${runId}`,
-      },
-    ],
-  };
-
-  it("the database understands the board sections", async () => {
-    const secs = await rpc<string[]>(nationalAdmin, "apply_setup_sections");
-    expect(secs).toEqual(expect.arrayContaining(["seats", "seat_terms"]));
-  });
-
-  it("applying board setup twice leaves one of each seat and one term rule", async () => {
-    await rpc(nationalAdmin, "apply_setup", {
-      _org: NATIONAL,
-      _flow: "board",
-      _answers: {},
-      _plan: plan,
-    });
-    await rpc(nationalAdmin, "apply_setup", {
-      _org: NATIONAL,
-      _flow: "board",
-      _answers: {},
-      _plan: plan,
-    });
-    const { data: seats } = await nationalAdmin
-      .from("seat_templates")
-      .select("id, key, scope")
-      .eq("org_id", NATIONAL)
-      .in("key", [chapterKey, selfKey]);
-    expect(seats).toHaveLength(2);
-    const self = seats!.find((s) => s.key === selfKey)!;
-    const { data: terms } = await nationalAdmin
-      .from("seat_terms")
-      .select("id")
-      .eq("template_id", self.id);
-    expect(terms).toHaveLength(1);
-    for (const s of seats!)
-      await rpc(nationalAdmin, "set_seat_active", { _template: s.id, _active: false });
-  });
-
-  it("a chapter admin can't run board setup for the national", async () => {
-    await rpcFails(chapterAdmin, "apply_setup", {
-      _org: NATIONAL,
-      _flow: "board",
-      _answers: {},
-      _plan: plan,
-    });
-  });
-});
-
-describe("11. reports (0019)", () => {
-  type Row = {
-    org_id: string;
-    profiles: number;
-    good: number;
-    grace: number;
-    lapsed: number;
-    pending: number;
-    ended: number;
-    no_membership: number;
-  };
-
-  it("the national's member report lists the national and both chapters", async () => {
-    const rows = await rpc<Row[]>(nationalAdmin, "org_rollup_members", { _org: NATIONAL });
-    const ids = rows.map((r) => r.org_id);
-    expect(ids).toEqual(expect.arrayContaining([NATIONAL, AUSTIN, DALLAS]));
-    const nat = rows.find((r) => r.org_id === NATIONAL)!;
-    const { count } = await nationalAdmin
-      .from("org_member_profiles")
-      .select("id", { count: "exact", head: true })
-      .eq("org_id", NATIONAL);
-    expect(nat.profiles).toBe(count);
-    for (const r of rows) {
-      expect(r.good + r.grace + r.lapsed + r.pending + r.ended + r.no_membership).toBe(r.profiles);
-    }
-  });
-
-  it("revenue and governance reports run for the national", async () => {
-    await rpc(nationalAdmin, "org_rollup_revenue", {
-      _org: NATIONAL,
-      _from: "2020-01-01",
-      _to: new Date().toISOString().slice(0, 10),
-    });
-    await rpc(nationalAdmin, "org_rollup_governance", { _org: NATIONAL });
-  });
-
-  it("the chapter admin is refused for the national", async () => {
-    await rpcFails(chapterAdmin, "org_rollup_members", { _org: NATIONAL });
-  });
-});
-
-describe("12. pricing rules (0021)", () => {
-  let ruleId: string;
-
-  it("national admin adds a 20% off rule; the member's quote is 80%", async () => {
-    ruleId = await rpc<string>(nationalAdmin, "save_pricing_rule", {
-      _term: termId,
-      _rule: null,
-      _label: `Smoke ${runId}`,
-      _conditions: [],
-      _price_minor: null,
-      _discount_pct: 20,
-      _sort_order: 0,
-    });
-    expect(await rpc<number>(member, "quote_price", { _term: termId, _answers: {} })).toBe(2000);
-  });
-
-  it("a chapter admin can't add rules to the national's level", async () => {
-    await rpcFails(chapterAdmin, "save_pricing_rule", {
-      _term: termId,
-      _rule: null,
-      _label: "x",
-      _conditions: [],
-      _price_minor: null,
-      _discount_pct: 50,
-      _sort_order: 0,
-    });
-  });
-
-  it("joining and renewing charge the member's price", async () => {
-    await resetMembership(NATIONAL, nationalAdmin);
-    const join = await rpc<string>(member, "begin_join", {
-      _org: NATIONAL,
-      _term: termId,
-      _answers: await requiredAnswers(),
-    }).catch(async (e: Error) => {
-      // required join questions: reuse whatever the join page asks with simple answers
-      throw e;
-    });
-    expect(await paymentAmount(join)).toBe(2000);
-    await rpc(member, "complete_test_payment", { _payment: join, _outcome: "accepted" });
-    let m = await membershipAt(NATIONAL);
-    if (m!.status === "pending")
-      await rpc(nationalAdmin, "approve_membership", { _membership: m!.id });
-    m = await membershipAt(NATIONAL);
-    const renew = await rpc<string>(member, "begin_renewal", { _membership: m!.id, _term: termId });
-    expect(await paymentAmount(renew)).toBe(2000);
-    await rpc(member, "complete_test_payment", { _payment: renew, _outcome: "declined" });
-  });
-
-  it("retiring the rule restores the full price", async () => {
-    await rpc(nationalAdmin, "set_pricing_rule_active", { _rule: ruleId, _active: false });
-    expect(await rpc<number>(member, "quote_price", { _term: termId, _answers: {} })).toBe(2500);
-  });
-});
-
-describe("13. two-level dues (0020)", () => {
-  const KEYS = [
-    "membership.national_dues_required",
-    "membership.child_levels_allowed",
-    "membership.chapter_dues",
-  ];
-  let saved: Array<{ key: string; value: unknown; mode: string }> = [];
-  let austinTerm: string;
-
-  beforeAll(async () => {
-    const { data } = await nationalAdmin
-      .from("org_settings")
-      .select("key, value, mode")
-      .eq("org_id", NATIONAL)
-      .in("key", KEYS);
-    saved = data ?? [];
-  });
-
-  afterAll(async () => {
-    if (austinTerm) {
-      await chapterAdmin.from("tier_terms").update({ active: false }).eq("id", austinTerm);
-    }
-    for (const key of KEYS) {
-      const old = saved.find((s) => s.key === key);
-      if (old) {
-        await nationalAdmin.from("org_settings").upsert({ org_id: NATIONAL, ...old });
-      } else {
-        await nationalAdmin.from("org_settings").delete().eq("org_id", NATIONAL).eq("key", key);
-      }
-    }
-  });
-
-  it("the national requires national dues (locked) and lets Austin price its own level", async () => {
-    await resetMembership(NATIONAL, nationalAdmin);
-    for (const [key, value, mode] of [
-      ["membership.national_dues_required", true, "locked"],
-      ["membership.child_levels_allowed", true, "override"],
-      ["membership.chapter_dues", "optional", "override"],
-    ] as const) {
-      const res = await nationalAdmin
-        .from("org_settings")
-        .upsert({ org_id: NATIONAL, key, value, mode });
-      expect(res.error).toBeNull();
-    }
-    const info = await rpc<{ national_dues: { required: boolean } }>(anon, "public_join_info", {
-      _slug: "demo-austin",
-    });
-    expect(info.national_dues.required).toBe(true);
-
-    const tier = await chapterAdmin
-      .from("membership_tiers")
-      .insert({ org_id: AUSTIN, key: `smoke_${runId}`, name: `Smoke Austin ${runId}` })
-      .select("id")
-      .single();
-    expect(tier.error).toBeNull();
-    const term = await chapterAdmin
-      .from("tier_terms")
-      .insert({
-        org_id: AUSTIN,
-        tier_id: tier.data!.id,
-        key: "1y",
-        label: "1 year",
-        length_count: 1,
-        length_unit: "year",
-        price_minor: 1000,
-      })
-      .select("id")
-      .single();
-    expect(term.error).toBeNull();
-    austinTerm = term.data!.id;
-    await rpc(chapterAdmin, "connect_test_gateway", { _org: AUSTIN });
-    await resetMembership(AUSTIN, chapterAdmin);
-  });
-
-  it("joining Austin without a national membership is refused", async () => {
-    const msg = await rpcFails(member, "begin_join", {
-      _org: AUSTIN,
-      _term: austinTerm,
-      _answers: await requiredAnswers("demo-austin"),
-    });
-    expect(msg).toContain("national membership required");
-  });
-
-  it("the member joins the national with the test gateway", async () => {
-    const pay = await rpc<string>(member, "begin_join", {
-      _org: NATIONAL,
-      _term: termId,
-      _answers: await requiredAnswers(),
-    });
-    await rpc(member, "complete_test_payment", { _payment: pay, _outcome: "accepted" });
-    expect(["pending", "active"]).toContain((await membershipAt(NATIONAL))!.status);
-  });
-
-  it("the Austin join waits for approval until the national membership is approved", async () => {
-    const pay = await rpc<string>(member, "begin_join", {
-      _org: AUSTIN,
-      _term: austinTerm,
-      _answers: await requiredAnswers("demo-austin"),
-    });
-    await rpc(member, "complete_test_payment", { _payment: pay, _outcome: "accepted" });
-    const austin = await membershipAt(AUSTIN);
-    const national = await membershipAt(NATIONAL);
-    if (national!.status === "pending") {
-      expect(austin!.status).toBe("pending");
-      const msg = await rpcFails(chapterAdmin, "approve_membership", { _membership: austin!.id });
-      expect(msg).toContain("national membership isn't active yet");
-      await rpc(nationalAdmin, "approve_membership", { _membership: national!.id });
-    }
-    const a = await membershipAt(AUSTIN);
-    if (a!.status === "pending")
-      await rpc(chapterAdmin, "approve_membership", { _membership: a!.id });
-    expect((await membershipAt(AUSTIN))!.status).toBe("active");
-  });
-});
-
-describe("14. demo organizations (0022)", () => {
-  const name = `Smoke Demo ${runId}`;
-  let demoId: string;
-
-  afterAll(async () => {
-    if (demoId)
-      await nationalAdmin.rpc("delete_demo_organization", { _org: demoId, _confirm_name: name });
-  });
-
-  it("the demo national admin is a platform operator; signed-out visitors are not", async () => {
-    expect(await rpc(nationalAdmin, "is_platform_operator")).toBe(true);
-    expect(await rpc(anon, "is_platform_operator").catch(() => false)).toBe(false);
-  });
-
-  it("creates a demo organization flagged as a demo", async () => {
-    demoId = await rpc<string>(nationalAdmin, "create_demo_organization", {
-      _name: name,
-      _slug: `smoke-demo-${runId}`,
-      _type: "standalone",
-    });
-    const { data } = await nationalAdmin
-      .from("organizations")
-      .select("is_demo")
-      .eq("id", demoId)
-      .single();
-    expect(data!.is_demo).toBe(true);
-  });
-
-  it("signed-out visitors can't create demo organizations", async () => {
-    await rpcFails(anon, "create_demo_organization", {
-      _name: "x",
-      _slug: `x-${runId}`,
-      _type: "standalone",
-    });
-  });
-
-  it("deleting with the wrong name is refused", async () => {
-    const msg = await rpcFails(nationalAdmin, "delete_demo_organization", {
-      _org: demoId,
-      _confirm_name: "wrong",
-    });
-    expect(msg).toContain("name to confirm");
-  });
-
-  it("Demo Austin can't be deleted on its own because it's a chapter", async () => {
-    const msg = await rpcFails(nationalAdmin, "delete_demo_organization", {
-      _org: AUSTIN,
-      _confirm_name: "Demo Austin",
-    });
-    expect(msg).toMatch(/from its top|not allowed/);
-  });
-
-  it("deleting with the right name removes it", async () => {
-    const ids = await rpc<string[]>(nationalAdmin, "delete_demo_organization", {
-      _org: demoId,
-      _confirm_name: name,
-    });
-    expect(ids).toContain(demoId);
-    const { data } = await nationalAdmin.from("organizations").select("id").eq("id", demoId);
-    expect(data).toHaveLength(0);
-    demoId = "";
-  });
-});
-
-describe("9. cleanup of this run", () => {
-  it("retire this run's level", async () => {
-    const res = await chapterAdmin
-      .from("membership_tiers")
-      .update({ active: false })
-      .eq("id", tierId);
-    expect(res.error).toBeNull();
   });
 });

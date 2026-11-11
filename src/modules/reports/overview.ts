@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { db } from "@/lib/db/pending-schema";
 import type { Database } from "@/integrations/supabase/types";
 
-type Fn = Database["public"]["Functions"];
+type Fn = Database["charter"]["Functions"];
 
 /**
  * The numbers on an organization's Overview page (D-152): for the org and everything below it,

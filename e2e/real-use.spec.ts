@@ -1,4 +1,4 @@
-import { rpc, signIn as apiSignIn } from "../smoke/client";
+import { rpc, signIn as apiSignIn } from "./legacy-client";
 import { expect, test } from "./fixtures";
 import { DEMO, openOrg, orgMenu, signIn } from "./helpers";
 

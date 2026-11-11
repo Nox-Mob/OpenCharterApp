@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { isHosted, loginRedirect, suiteUrls } from "@shared/supabase/hosted";
+import { createFileRoute, redirect, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +14,16 @@ const search = z.object({ redirect: z.string().optional() });
 
 export const Route = createFileRoute("/auth")({
   validateSearch: search,
+  // Hosted: sign-in and sign-up are OpenAppHub's (SHARED-SPEC §1.1); people come back to where
+  // they were going (for example a chapter's join page).
+  beforeLoad: ({ search: s }) => {
+    if (!isHosted()) return;
+    const origin =
+      typeof window !== "undefined" ? window.location.origin : (suiteUrls().charter ?? "");
+    const next =
+      typeof s.redirect === "string" && s.redirect.startsWith("/") ? s.redirect : "/dashboard";
+    throw redirect({ href: loginRedirect(`${origin}${next}`) });
+  },
   head: () => ({
     meta: [
       { title: "Sign in — OpenCharterApp" },

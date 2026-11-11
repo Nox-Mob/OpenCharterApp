@@ -1,6 +1,9 @@
 // Browser and SSR Supabase client. Replaced by shared/supabase/client.ts in suite step 9.
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
+import { createBrowserClient } from '@supabase/ssr';
+import { isHosted } from '../../../shared/supabase/hosted';
+import { cookieOptions } from '../../../shared/supabase/client';
 
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith('sb_publishable_') || value.startsWith('sb_secret_');
@@ -61,7 +64,17 @@ function createSupabaseClient() {
     throw new Error(message);
   }
 
-  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  // Hosted (SHARED-SPEC §4.1): the session is a cookie on .openapphub.org, shared with the
+  // hub and the other apps, so one sign-in covers the suite. Self-hosted: as before.
+  if (isHosted() && typeof window !== 'undefined') {
+    return createBrowserClient<Database, 'charter'>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      db: { schema: 'charter' },
+      cookieOptions: cookieOptions(),
+    });
+  }
+
+  return createClient<Database, 'charter'>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    db: { schema: 'charter' },
     global: {
       fetch: createSupabaseFetch(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY),
     },

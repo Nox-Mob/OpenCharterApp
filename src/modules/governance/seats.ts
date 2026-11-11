@@ -69,7 +69,7 @@ export type TermRule = {
 
 export type SeatTemplate = {
   id: string;
-  org_id: string;
+  unit_id: string;
   key: string;
   title: string;
   description: string;
@@ -121,7 +121,7 @@ export const termRulesQuery = (orgId: string) =>
         .select(
           "id,template_id,length_count,length_unit,effective_from,bylaw_reference,note,created_at",
         )
-        .eq("org_id", orgId)
+        .eq("unit_id", orgId)
         .order("effective_from", { ascending: false })
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -140,9 +140,9 @@ export const ownSeatsQuery = (orgId: string) =>
       const { data, error } = await db
         .from("seat_templates")
         .select(
-          "id,org_id,key,title,description,required,seat_count,default_term_count,default_term_unit,role_id,scope,sort_order,active",
+          "id,unit_id,key,title,description,required,seat_count,default_term_count,default_term_unit,role_id,scope,sort_order,active",
         )
-        .eq("org_id", orgId)
+        .eq("unit_id", orgId)
         .order("sort_order")
         .order("title");
       if (error) throw error;
@@ -191,7 +191,7 @@ export const seatContactsQuery = (orgId: string) =>
       const { data, error } = await db
         .from("seat_contacts")
         .select("template_id,role_email")
-        .eq("org_id", orgId);
+        .eq("unit_id", orgId);
       if (error) throw error;
       return Object.fromEntries(
         (data ?? []).filter((r) => r.role_email).map((r) => [r.template_id, r.role_email!]),

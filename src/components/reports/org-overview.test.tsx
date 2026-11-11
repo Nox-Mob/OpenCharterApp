@@ -25,7 +25,7 @@ const { rpc } = vi.hoisted(() => ({
       return {
         data: [
           {
-            org_id: "n",
+            unit_id: "n",
             name: "Nat",
             depth: 0,
             currency: "USD",
@@ -41,7 +41,7 @@ const { rpc } = vi.hoisted(() => ({
       return {
         data: [
           {
-            org_id: "a",
+            unit_id: "a",
             name: "A",
             depth: 1,
             required_seats: 2,
@@ -50,7 +50,7 @@ const { rpc } = vi.hoisted(() => ({
             terms_past_end: 0,
           },
           {
-            org_id: "b",
+            unit_id: "b",
             name: "B",
             depth: 1,
             required_seats: 2,

@@ -9,7 +9,7 @@ export const setupStateQuery = (orgId: string, flowId: string) =>
       const { data, error } = await supabase
         .from("setup_states")
         .select("answers,status,applied_at,updated_at")
-        .eq("org_id", orgId)
+        .eq("unit_id", orgId)
         .eq("flow_id", flowId)
         .maybeSingle();
       if (error) throw error;
@@ -33,14 +33,14 @@ export async function saveDraft(orgId: string, flowId: string, answers: Answers)
   const { data, error } = await supabase
     .from("setup_states")
     .update(patch)
-    .eq("org_id", orgId)
+    .eq("unit_id", orgId)
     .eq("flow_id", flowId)
-    .select("org_id");
+    .select("unit_id");
   if (error) throw error;
   if (data && data.length > 0) return;
   const { error: e2 } = await supabase
     .from("setup_states")
-    .insert({ org_id: orgId, flow_id: flowId, ...patch });
+    .insert({ unit_id: orgId, flow_id: flowId, ...patch });
   if (e2) throw e2;
 }
 

@@ -39,7 +39,7 @@ export function MembershipModelCard({
   const qc = useQueryClient();
   const ready = useFeatureReady("home_chapter") === true;
   const info = useQuery({ ...homeChapterInfoQuery(org.slug), enabled: ready });
-  const own = (key: string) => settings.find((s) => s.org_id === org.id && s.key === key)?.value;
+  const own = (key: string) => settings.find((s) => s.unit_id === org.id && s.key === key)?.value;
   const chosen = own("membership.model") as MembershipModel | undefined;
   const [pick, setPick] = useState<MembershipModel>("separate");
   const atLarge = (own("membership.at_large_chapter") as string | undefined) || "";

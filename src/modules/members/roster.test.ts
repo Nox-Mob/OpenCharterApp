@@ -218,10 +218,10 @@ describe("exports across a national's tree (A7)", () => {
   it("each row follows its own org's directory default and export rule", async () => {
     const { exportableTreeRows } = await import("./roster");
     const rows = [
-      { id: "1", org_id: "nat", directory_listed: null },
-      { id: "2", org_id: "a", directory_listed: null },
-      { id: "3", org_id: "a", directory_listed: false },
-      { id: "4", org_id: "b", directory_listed: false },
+      { id: "1", unit_id: "nat", directory_listed: null },
+      { id: "2", unit_id: "a", directory_listed: null },
+      { id: "3", unit_id: "a", directory_listed: false },
+      { id: "4", unit_id: "b", directory_listed: false },
     ];
     const rules = (o: string | undefined) =>
       o === "a"

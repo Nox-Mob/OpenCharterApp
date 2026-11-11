@@ -1,4 +1,4 @@
-import { anonClient, rpc, signIn as apiSignIn, type Db } from "../smoke/client";
+import { anonClient, rpc, signIn as apiSignIn, type Db } from "./legacy-client";
 import { expect, guardedPage, test, type Page } from "./fixtures";
 import { DEMO, signIn } from "./helpers";
 
@@ -24,7 +24,7 @@ test.beforeAll(async () => {
   member = await apiSignIn(DEMO.member);
   // leftovers from an earlier run that was stopped before it could clean up
   const { data: old } = await admin
-    .from("organizations")
+    .from("units")
     .select("id,name")
     .like("name", "E2E Admin %")
     .eq("is_demo", true)
@@ -48,14 +48,14 @@ test.beforeAll(async () => {
   // a level to join at, and test payments
   const { data: tier } = await admin
     .from("membership_tiers")
-    .insert({ org_id: nationalId, key: "regular", name: "Regular" })
+    .insert({ unit_id: nationalId, key: "regular", name: "Regular" })
     .select("id")
     .single();
   const { data: term } = await admin
     .from("tier_terms")
     .insert({
       tier_id: tier!.id,
-      org_id: nationalId,
+      unit_id: nationalId,
       key: "1_year",
       label: "1 year",
       length_count: 1,
@@ -128,9 +128,9 @@ test("§13.5 the receipt footer appears on receipts issued afterwards", async ({
 
   // a payment recorded by hand after the footer was set
   const { data: profile } = await admin
-    .from("org_member_profiles")
+    .from("member_profiles")
     .select("id")
-    .eq("org_id", nationalId)
+    .eq("unit_id", nationalId)
     .eq("email", DEMO.member)
     .single();
   await rpc(admin, "record_membership", {
@@ -272,12 +272,12 @@ test("§12b two-level dues: the chapter's join page asks for the national's dues
   // a chapter level to join at
   const { data: tier } = await admin
     .from("membership_tiers")
-    .insert({ org_id: chapterId, key: "local", name: "Local" })
+    .insert({ unit_id: chapterId, key: "local", name: "Local" })
     .select("id")
     .single();
   await admin.from("tier_terms").insert({
     tier_id: tier!.id,
-    org_id: chapterId,
+    unit_id: chapterId,
     key: "1_year",
     label: "1 year",
     length_count: 1,

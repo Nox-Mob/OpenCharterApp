@@ -91,7 +91,7 @@ bun run build
 bun run test:e2e             # end-to-end, in Chromium (needs network; see docs/testing.md)
 ```
 
-Install the pre-commit hook once per clone with `bun run hooks:install`; it runs the fast checks on every commit. `bun run test:perf` (with `TEST_DATABASE_URL`) times the heavy reads with 5,000, 10,000 and 20,000 members and fails over budget; `bun run test:smoke` checks the backend flows against the live demo.
+Install the pre-commit hook once per clone with `bun run hooks:install`; it runs the fast checks on every commit. `bun run test:perf` (with `TEST_DATABASE_URL`) times the heavy reads with 5,000, 10,000 and 20,000 members and fails over budget; `bun run test:smoke` checks the suite demo and the security rules on staging.
 
 GitHub runs all of these (D-197): `ci.yml` on every push and pull request, and `live.yml` (the smoke test, then the end-to-end tests against the live demo) on pushes to `main` and `BoardUpdates`, pull requests to `main`, daily and on demand. See [`docs/testing.md`](docs/testing.md).
 
@@ -100,11 +100,11 @@ GitHub runs all of these (D-197): `ci.yml` on every push and pull request, and `
 ### Database changes
 
 - Schema changes are SQL migrations in [`db/migrations`](db/migrations), in schema `charter` on the shared OpenAppHub core (`db/core`, vendored from the hub). `scripts/migrate.mjs` applies them (`DATABASE_URL=… bun run db:migrate`); the owner runs the **Migrate** workflow for staging and production. Migrations are additive: no dropping tables or columns, and an applied migration is never edited.
-- [`supabase/migrations`](supabase/migrations) is the **old public-schema database, frozen**. Today's app code still reads it, so self-hosters use it until the client switches to `charter` (migration step 9). No workflow applies it ([`supabase/README.md`](supabase/README.md)).
+- Demo data for staging or development: [`db/seed`](db/seed) (`bun run db:migrate -- --seed`; the suite demo, `demo@demo.openapphub.org` / `OpenAppHubDemo2026`, see [`docs/demo-data.md`](docs/demo-data.md)). It refuses a database with real organizations, and never runs on production.
 
 ### Hosting and deploys (spec §10, v2.2)
 
-- The hosted app is a Cloudflare Worker. In [`wrangler.jsonc`](wrangler.jsonc), the **top level is production** (`charter.openapphub.org`, Worker `opencharterapp`) and `env.staging` is staging (`charter-staging.openapphub.org`, Worker `opencharterapp-staging`), each with its public settings.
+- The hosted app is a Cloudflare Worker. In [`wrangler.jsonc`](wrangler.jsonc), the **top level is production** (`charter.openapphub.org`, Worker `opencharterapp`) and `env.staging` holds staging's public settings. Staging is the same Worker's preview of the `staging` branch (`staging.charter.staging.openapphub.org`; any other branch builds at `<branch>.charter.staging.openapphub.org`): `bun run build:hosted` builds `main` for production and every other branch for staging.
 - **Merging to `main` deploys production** through Cloudflare's Git integration: build `bun run build:hosted`, deploy `npx wrangler deploy --config .output/server/wrangler.json`. Staging: `bun run build:hosted:staging`, then the same deploy command with `--env staging`. There are no deploy workflows and no Cloudflare secrets in GitHub.
 - Every rendered page gets security headers from the server entry (`src/server.ts`, `src/lib/security-headers.ts`): `nosniff`, `strict-origin-when-cross-origin`, `X-Frame-Options: DENY` and a CSP allowing only the app, its Supabase project and Google Fonts.
 - Server secrets (`SUPABASE_SERVICE_ROLE_KEY`, `GATEWAY_ENCRYPTION_KEY`) are set on each Worker.
@@ -113,7 +113,7 @@ GitHub runs all of these (D-197): `ci.yml` on every push and pull request, and `
 
 - `bun run build` builds the self-hosted app from your own `.env` / `.env.local` (copy `.env.example`); it never uses the hosted values in `wrangler.jsonc`. With `VITE_HOSTED=false` (the default) the app keeps its own sign-in and doesn't link to openapphub.org.
 - To deploy your own Worker: copy [`wrangler.selfhosted.example.jsonc`](wrangler.selfhosted.example.jsonc) over `wrangler.jsonc`, replace the placeholder values with your project's, run `bun run build`, then `npx wrangler deploy --config .output/server/wrangler.json`, and set the two secrets on the Worker.
-- Database, until the client switch (migration step 9): apply `supabase/migrations` to your own Supabase project (`supabase db push`). After it, `DATABASE_URL=… bun run db:migrate` applies the core and the `charter` schema instead.
+- Database: `DATABASE_URL=… bun run db:migrate` applies the core (`db/core`) and the `charter` schema (`db/migrations`), and only what's new on later runs. Then add `charter` to the exposed schemas (Supabase: Project Settings → Data API; Docker: `PGRST_DB_SCHEMAS`). Self-hosted, there's no hub and no billing: everything stays writable, and the public join page works without signing in.
 
 ### Git history
 

@@ -11,12 +11,12 @@ export type ReceiptStatus = "issued" | "voided" | "superseded";
 
 export type ReceiptSnapshot = {
   issuer: {
-    org_id: string;
+    unit_id: string;
     name: string;
     legal_name: string;
     ein: string;
     tax_status: string;
-    logo: { path: string; org_id: string } | null;
+    logo: { path: string; unit_id: string } | null;
   };
   payer: { name: string; email: string };
   items: { description: string; amount_minor: number }[];
@@ -35,7 +35,7 @@ export type ReceiptSnapshot = {
 
 export type Receipt = {
   id: string;
-  org_id: string;
+  unit_id: string;
   payment_id: string;
   number: string;
   status: ReceiptStatus;
@@ -47,7 +47,7 @@ export type Receipt = {
 };
 
 const COLUMNS =
-  "id,org_id,payment_id,number,status,supersedes_id,issued_at,voided_at,void_reason,snapshot" as const;
+  "id,unit_id,payment_id,number,status,supersedes_id,issued_at,voided_at,void_reason,snapshot" as const;
 const toReceipt = (r: Record<string, unknown>) => r as unknown as Receipt;
 
 export const receiptQuery = (id: string) =>
@@ -83,7 +83,7 @@ export const orgReceiptsQuery = (orgId: string) =>
       const { data, error } = await db
         .from("receipts")
         .select("id,number,payment_id")
-        .eq("org_id", orgId)
+        .eq("unit_id", orgId)
         .eq("status", "issued");
       if (error) throw error;
       return Object.fromEntries(
@@ -100,9 +100,9 @@ export const myReceiptsQuery = (orgId: string) =>
       const { data: u } = await db.auth.getUser();
       if (!u.user) return [];
       const { data: me } = await db
-        .from("org_member_profiles")
+        .from("member_profiles")
         .select("id")
-        .eq("org_id", orgId)
+        .eq("unit_id", orgId)
         .eq("user_id", u.user.id)
         .maybeSingle();
       if (!me) return [];
@@ -110,7 +110,7 @@ export const myReceiptsQuery = (orgId: string) =>
       const { data, error } = await db
         .from("receipts")
         .select(`${COLUMNS},payments!inner(profile_id)`)
-        .eq("org_id", orgId)
+        .eq("unit_id", orgId)
         .eq("payments.profile_id", profileId)
         .order("issued_at", { ascending: false });
       if (error) throw error;

@@ -1,8 +1,8 @@
 import { defineConfig } from "vitest/config";
 import path from "node:path";
 
-// Live smoke tests: they sign in as the demo accounts and exercise the real backend.
-// Kept out of `bun run test` because they need network access and change demo data.
+// Live smoke tests: they sign in to staging as the suite demo accounts and use the real API.
+// Kept out of `bun run test` because they need network access and a seeded staging database.
 export default defineConfig({
   test: {
     environment: "node",

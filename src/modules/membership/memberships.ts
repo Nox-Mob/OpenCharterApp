@@ -22,7 +22,7 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 export type MemberRow = {
   id: string;
   /** The org the record belongs to; set by treeMembersQuery (several orgs in one list). */
-  org_id?: string;
+  unit_id?: string;
   user_id: string | null;
   display_name: string;
   email: string;
@@ -85,9 +85,9 @@ export const membersQuery = (
         const data = await readAllPages(
           (from, to) =>
             supabase
-              .from("org_member_profiles")
+              .from("member_profiles")
               .select("id,user_id,display_name,email,created_at")
-              .eq("org_id", orgId)
+              .eq("unit_id", orgId)
               .order("created_at")
               .order("id")
               .range(from, to) as unknown as PromiseLike<{
@@ -110,7 +110,7 @@ export const membersQuery = (
         .join(",");
       // Paged: the API returns at most 1000 rows per request (R6, large chapters).
       const rows = await readAllPages<EmbedRow>((from, to) => {
-        let q = supabase.from("org_member_profiles").select(cols).eq("org_id", orgId);
+        let q = supabase.from("member_profiles").select(cols).eq("unit_id", orgId);
         // members who moved to another chapter aren't listed here any more
         if (withHome) q = q.is("left_at", null);
         return q.order("created_at").order("id").range(from, to) as unknown as PromiseLike<{
@@ -187,11 +187,11 @@ export const treeMembersQuery = (orgIds: readonly string[]) =>
       const rows = await readAllPages<EmbedRow>(
         (from, to) =>
           supabase
-            .from("org_member_profiles")
+            .from("member_profiles")
             .select(
-              "id,org_id,user_id,display_name,email,source,created_at,directory_listed,memberships!memberships_profile_id_fkey(id,status,paid_through,lifetime,joined_on,tier_id,term_id,membership_tiers(name),tier_terms(label))",
+              "id,unit_id,user_id,display_name,email,source,created_at,directory_listed,memberships!memberships_profile_id_fkey(id,status,paid_through,lifetime,joined_on,tier_id,term_id,membership_tiers(name),tier_terms(label))",
             )
-            .in("org_id", [...orgIds])
+            .in("unit_id", [...orgIds])
             .order("created_at")
             .order("id")
             .range(from, to) as unknown as PromiseLike<{ data: EmbedRow[] | null; error: unknown }>,
@@ -378,9 +378,9 @@ export const myMembershipQuery = (orgId: string) =>
       if (!u.user) return null;
       const read = (cols: string) =>
         supabase
-          .from("org_member_profiles")
+          .from("member_profiles")
           .select(cols)
-          .eq("org_id", orgId)
+          .eq("unit_id", orgId)
           .eq("user_id", u.user!.id)
           .maybeSingle();
       // With 0030 a chapter record may stand for the national membership (A8); before it, the

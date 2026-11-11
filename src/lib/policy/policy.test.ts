@@ -7,23 +7,23 @@ const chapterB = { id: "b", ancestor_ids: ["n"] };
 
 describe("hasPermission (D-032 downward-only inheritance)", () => {
   it("national admin grant applies to its chapters", () => {
-    expect(hasPermission([{ org_id: "n", permissions: ["org.view"] }], "org.view", chapterA)).toBe(
+    expect(hasPermission([{ unit_id: "n", permissions: ["org.view"] }], "org.view", chapterA)).toBe(
       true,
     );
   });
   it("chapter admin grant does not apply to the national", () => {
-    expect(hasPermission([{ org_id: "a", permissions: ["org.view"] }], "org.view", national)).toBe(
+    expect(hasPermission([{ unit_id: "a", permissions: ["org.view"] }], "org.view", national)).toBe(
       false,
     );
   });
   it("chapter admin grant does not apply to a sibling chapter", () => {
-    expect(hasPermission([{ org_id: "a", permissions: ["org.view"] }], "org.view", chapterB)).toBe(
+    expect(hasPermission([{ unit_id: "a", permissions: ["org.view"] }], "org.view", chapterB)).toBe(
       false,
     );
   });
   it("a grant without the permission does not authorize", () => {
     expect(
-      hasPermission([{ org_id: "a", permissions: ["org.view"] }], "audit.view", chapterA),
+      hasPermission([{ unit_id: "a", permissions: ["org.view"] }], "audit.view", chapterA),
     ).toBe(false);
   });
 });
@@ -56,12 +56,12 @@ describe("createOrgSchema", () => {
 describe("view as member (D-155)", () => {
   const nat = { id: "n", ancestor_ids: [] as string[] };
   const ch = { id: "c", ancestor_ids: ["n"] };
-  const grants = [{ org_id: "n", permissions: ["members.view", "org.manage"] }];
+  const grants = [{ unit_id: "n", permissions: ["members.view", "org.manage"] }];
   it("offers the preview only to someone with an admin permission here", () => {
     expect(hasAdminAccess(grants, nat)).toBe(true);
     expect(hasAdminAccess(grants, ch)).toBe(true);
     expect(hasAdminAccess([], nat)).toBe(false);
-    expect(hasAdminAccess([{ org_id: "c", permissions: ["members.view"] }], nat)).toBe(false);
+    expect(hasAdminAccess([{ unit_id: "c", permissions: ["members.view"] }], nat)).toBe(false);
   });
   it("drops every grant while previewing", () => {
     expect(grantsForView(grants, false)).toBe(grants);

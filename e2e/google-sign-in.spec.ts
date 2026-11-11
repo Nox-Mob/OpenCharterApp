@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { env } from "../smoke/client";
+import { env } from "./legacy-client";
 
 // D-212: "Continue with Google" goes through Supabase Auth on the app's own project (no Lovable
 // broker). The browser is sent to the project's /auth/v1/authorize for Google, asking to come

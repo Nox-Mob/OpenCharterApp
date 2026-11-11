@@ -4,7 +4,7 @@ import type { Org } from "@/lib/orgs";
 
 const members = [
   {
-    org_id: "n",
+    unit_id: "n",
     name: "Nat",
     type: "national",
     parent_id: null,
@@ -22,7 +22,7 @@ const members = [
     expiring_90: 0,
   },
   {
-    org_id: "a",
+    unit_id: "a",
     name: "Chapter A",
     type: "chapter",
     parent_id: "n",
@@ -42,7 +42,7 @@ const members = [
 ];
 const revenue = [
   {
-    org_id: "a",
+    unit_id: "a",
     name: "Chapter A",
     depth: 1,
     currency: "USD",
@@ -54,7 +54,7 @@ const revenue = [
 ];
 const boards = [
   {
-    org_id: "a",
+    unit_id: "a",
     name: "Chapter A",
     depth: 1,
     required_seats: 2,

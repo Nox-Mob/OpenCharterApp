@@ -10,14 +10,14 @@ import {
 /**
  * Roles (E-05). Mirrors public.create_role / update_role / assign_role /
  * remove_role so the UI only offers actions the database will accept.
- * Platform roles have org_id null and can't be edited. Org roles apply to the
+ * Platform roles have unit_id null and can't be edited. Org roles apply to the
  * org that defined them and its descendants (D-032).
  */
 export const PLATFORM_ROLE_KEYS = ["org_admin", "member"] as const;
 
 export type Role = {
   id: string;
-  org_id: string | null;
+  unit_id: string | null;
   key: string;
   name: string;
   description: string;
@@ -25,7 +25,7 @@ export type Role = {
   permissions: string[];
 };
 
-export type Assignment = { id: string; user_id: string; org_id: string; role_key: string };
+export type Assignment = { id: string; user_id: string; unit_id: string; role_key: string };
 
 /** A top-level org (no parent) must always keep at least one admin. */
 export function canRemove(
@@ -34,15 +34,15 @@ export function canRemove(
   orgHasParent: boolean,
 ): boolean {
   if (a.role_key !== "org_admin" || orgHasParent) return true;
-  return all.filter((x) => x.org_id === a.org_id && x.role_key === "org_admin").length > 1;
+  return all.filter((x) => x.unit_id === a.unit_id && x.role_key === "org_admin").length > 1;
 }
 
 /** Active roles usable at an org: platform roles first, then ancestors' and its own. */
 export function rolesForOrg(roles: readonly Role[], org: OrgNode): Role[] {
   const lineage = [...org.ancestor_ids, org.id];
-  const rank = (r: Role) => (r.org_id === null ? -1 : lineage.indexOf(r.org_id));
+  const rank = (r: Role) => (r.unit_id === null ? -1 : lineage.indexOf(r.unit_id));
   return roles
-    .filter((r) => r.active && (r.org_id === null || lineage.includes(r.org_id)))
+    .filter((r) => r.active && (r.unit_id === null || lineage.includes(r.unit_id)))
     .sort((x, y) => rank(x) - rank(y) || x.name.localeCompare(y.name));
 }
 
@@ -68,7 +68,7 @@ export function availableRoles(
   org: OrgNode,
 ): Role[] {
   const held = new Set(
-    all.filter((x) => x.user_id === userId && x.org_id === orgId).map((x) => x.role_key),
+    all.filter((x) => x.user_id === userId && x.unit_id === orgId).map((x) => x.role_key),
   );
   return usable.filter((r) => !held.has(r.key) && canGrantRole(r, grants, org));
 }

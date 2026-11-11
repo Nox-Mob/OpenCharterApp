@@ -164,7 +164,7 @@ export function exportableRows<T extends Pick<MemberRow, "directory_listed">>(
  * directory default, and opted-out members are included only when the exporter chose to and that
  * org's parent allows it (privacy.admin_override_allowed, resolved per org).
  */
-export function exportableTreeRows<T extends Pick<MemberRow, "directory_listed" | "org_id">>(
+export function exportableTreeRows<T extends Pick<MemberRow, "directory_listed" | "unit_id">>(
   rows: readonly T[],
   rulesFor: (orgId: string | undefined) => {
     listedByDefault: boolean;
@@ -173,7 +173,7 @@ export function exportableTreeRows<T extends Pick<MemberRow, "directory_listed" 
   includeOptedOut: boolean,
 ): T[] {
   return rows.filter((r) => {
-    const rules = rulesFor(r.org_id);
+    const rules = rulesFor(r.unit_id);
     return isListed(r, rules.listedByDefault) || (includeOptedOut && rules.adminOverrideAllowed);
   });
 }
@@ -250,7 +250,7 @@ export const segmentsQuery = (orgId: string) =>
       const { data, error } = await db
         .from("member_segments")
         .select("id,name,filter")
-        .eq("org_id", orgId)
+        .eq("unit_id", orgId)
         .order("name");
       if (error) throw error;
       return (data ?? []).map((s) => ({
@@ -265,8 +265,8 @@ export async function saveSegment(orgId: string, name: string, filter: RosterFil
   const { error } = await db
     .from("member_segments")
     .upsert(
-      { org_id: orgId, name: name.trim(), filter: filter as never },
-      { onConflict: "org_id,name" },
+      { unit_id: orgId, name: name.trim(), filter: filter as never },
+      { onConflict: "unit_id,name" },
     );
   if (error) throw error;
 }

@@ -7,7 +7,7 @@ vi.mock("@/integrations/supabase/client", () => {
   const tiers = [
     {
       id: "t1",
-      org_id: "n",
+      unit_id: "n",
       key: "regular",
       name: "Regular",
       description: "",

@@ -49,7 +49,7 @@ function ReceiptPage() {
   if (!r) return <p className="text-muted-foreground">Receipt not found.</p>;
   const s = r.snapshot;
   const view = receiptSummary(r);
-  const org = orgs.data?.find((o) => o.id === r.org_id);
+  const org = orgs.data?.find((o) => o.id === r.unit_id);
   const canManage = !!org && hasPermission(grants.data ?? [], "payments.manage", org);
 
   async function act(kind: "void" | "reissue") {

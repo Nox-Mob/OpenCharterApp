@@ -128,7 +128,7 @@ function MembershipSetup({ org }: { org: Org }) {
   const existingTiers = useMemo(
     () =>
       (tiers.data ?? [])
-        .filter((t) => t.org_id === org.id && t.active)
+        .filter((t) => t.unit_id === org.id && t.active)
         .map((t) => ({ ...t, terms: t.terms.filter((x) => x.active !== false) })),
     [tiers.data, org.id],
   );
@@ -217,7 +217,7 @@ function ownFields(
   subject: AttributeSubject,
 ): OwnField[] {
   return (defs ?? [])
-    .filter((d) => d.org_id === orgId && d.applies_to === subject && d.active)
+    .filter((d) => d.unit_id === orgId && d.applies_to === subject && d.active)
     .map((d) => ({
       ...d,
       options: d.options.filter((o) => o.active).map((o) => ({ value: o.value, label: o.label })),
@@ -226,7 +226,7 @@ function ownFields(
 
 function toInput({
   id: _id,
-  org_id: _o,
+  unit_id: _o,
   sort_order: _s,
   active: _a,
   applies_to: _t,

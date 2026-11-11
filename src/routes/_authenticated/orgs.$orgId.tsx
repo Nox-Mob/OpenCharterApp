@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { setCurrentOrg } from "../../../shared/supabase/org";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { isDemoOrg, myOrgsQuery, myPermissionsQuery, TYPE_LABEL } from "@/lib/orgs";
@@ -57,6 +59,12 @@ function OrgPage() {
   const { data: orgs } = useSuspenseQuery(myOrgsQuery());
   const { data: realGrants } = useSuspenseQuery(myPermissionsQuery());
   const org = orgs.find((o) => o.id === orgId);
+  // Opening a unit makes its organization the suite's current one (oah_org), so the hub and
+  // the other apps follow.
+  const suiteOrg = org?.org_id ?? org?.id;
+  useEffect(() => {
+    if (suiteOrg) setCurrentOrg(suiteOrg);
+  }, [suiteOrg]);
   if (!org) throw notFound();
   const canPreview = hasAdminAccess(realGrants, org);
   const asMember = canPreview && as === "member";

@@ -116,7 +116,7 @@ export const myHomeChapterQuery = (nationalId: string) =>
         .select(
           "id,home_org_id,status,org_member_profiles!memberships_profile_id_fkey!inner(user_id)",
         )
-        .eq("org_id", nationalId)
+        .eq("unit_id", nationalId)
         .eq("org_member_profiles.user_id", u.user.id)
         .maybeSingle();
       if (error) throw error;
@@ -141,13 +141,13 @@ export function chapterChoices(info: Pick<HomeChapterInfo, "chapters" | "at_larg
 export async function chooseMembershipModel(orgId: string, model: MembershipModel) {
   const { error } = await db
     .from("org_settings")
-    .insert({ org_id: orgId, key: "membership.model", value: model, mode: "locked" });
+    .insert({ unit_id: orgId, key: "membership.model", value: model, mode: "locked" });
   if (error) throw error;
 }
 
 export async function setAtLargeChapter(orgId: string, chapterId: string | null) {
   const { error } = await db.from("org_settings").upsert({
-    org_id: orgId,
+    unit_id: orgId,
     key: "membership.at_large_chapter",
     value: chapterId ?? "",
     mode: "locked",

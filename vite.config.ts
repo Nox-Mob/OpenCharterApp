@@ -11,7 +11,7 @@ import { nitro } from "nitro/vite";
 export default defineConfig(({ command }) => ({
   css: { transformer: "lightningcss" },
   resolve: {
-    alias: { "@": `${process.cwd()}/src` },
+    alias: { "@": `${process.cwd()}/src`, "@shared": `${process.cwd()}/shared` },
     dedupe: [
       "react",
       "react-dom",

@@ -1,5 +1,5 @@
 import { expect, type Page } from "./fixtures";
-import { DEMO } from "../smoke/client";
+import { DEMO } from "./legacy-client";
 
 export { DEMO };
 export type Role = "national" | "chapter" | "member";

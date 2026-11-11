@@ -2,15 +2,18 @@ import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Where a signed-in person lands (D-206): their default organization if they set one and still
- * belong to it, otherwise their only organization, otherwise the list of their organizations.
- * The default is kept in the sign-in account's metadata (`default_org_id`), so it follows the
- * person and needs no table.
+ * belong to it, otherwise the organization last chosen anywhere in the suite (the `oah_org`
+ * cookie, SHARED-SPEC §4.1, whose id is that organization's top unit), otherwise their only
+ * organization, otherwise the list of their organizations. The default is kept in the sign-in
+ * account's metadata (`default_org_id`), so it follows the person and needs no table.
  */
 export function landingOrgId(
   orgs: readonly { id: string }[],
   defaultOrgId: string | null,
+  suiteOrgId: string | null = null,
 ): string | null {
   if (defaultOrgId && orgs.some((o) => o.id === defaultOrgId)) return defaultOrgId;
+  if (suiteOrgId && orgs.some((o) => o.id === suiteOrgId)) return suiteOrgId;
   return orgs.length === 1 ? orgs[0]!.id : null;
 }
 

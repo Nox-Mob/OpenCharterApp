@@ -1,4 +1,4 @@
-import { rpc, signIn as apiSignIn, type Db } from "../smoke/client";
+import { rpc, signIn as apiSignIn, type Db } from "./legacy-client";
 import { expect, guardedPage, test, type Page } from "./fixtures";
 import { DEMO, signIn } from "./helpers";
 
@@ -32,7 +32,7 @@ test.beforeAll(async () => {
   admin = await apiSignIn(DEMO.national);
   // leftovers from an earlier run that was stopped before it could delete its national
   const { data: old } = await admin
-    .from("organizations")
+    .from("units")
     .select("id,name")
     .like("name", "E2E Guide %")
     .eq("is_demo", true)

@@ -45,14 +45,36 @@ files here: change them in Nox-Mob/OpenAppHub and sync.
 
 1. ~~Step 3, hygiene (redo for v2.2)~~ **done** (§0.3).
 2. ~~Step 5, rest of vendoring~~ and ~~step 6, the baseline~~ **done** (§0.4).
-3. **Owner:** add `STAGING_DATABASE_URL` and `PROD_DATABASE_URL` (repository or `staging` / `production` environment secrets), run **Migrate** on staging (dry run, then for real), then on production; add `charter` to the exposed schemas (Supabase → Settings → API) on both projects.
-4. Next: seed (`db/seed`), the client switch to schema `charter` (step 9), org scoping, hosted mode, AppShell restyle.
+3. ~~Seed, the client switch to schema `charter` (step 9) and org scoping~~ **done** (§0.5).
+4. ~~Hosted mode and the AppShell restyle~~ **done** (§0.6).
+5. Next: integration views for the hub dashboard (`api_unit_count`, summaries), help links.
+
+### 0.6 Hosted vs self-hosted, suite design (2026-11-10)
+
+- **Hosted** (`VITE_HOSTED=true`):
+  - The browser session is a cookie on `.openapphub.org` (`@supabase/ssr`), shared with the hub and the other apps.
+  - `/auth` goes to the hub's sign-in and comes back to where the person was going (for example a chapter's join page); signed-out pages do the same.
+  - New organizations are created in the hub. The organizations page lists the person's hub organizations that don't use Charter yet, with "Set up as an association" / "Set up as a national with chapters" (`charter.ensure_top_unit`). Chapters are still created in Charter.
+  - Account: name, email and password link to the hub's Account page; the default organization stays here.
+  - Charter's own invitations (a unit and a Charter role) stay in Charter; they're core invitations with `app = 'charter'`.
+  - Signing out returns to the hub. The billing banner shows the top organization's plan.
+- **Self-hosted:** unchanged.
+- **Restyle** (behaviour and wording unchanged): suite tokens and Inter (the brass rule is now the app accent); every signed-in page is in the shared `AppShell`; an organization's section menu is portalled into its `sidebar` slot (shared 1.3.1), with the suite's nav look; `<html data-app="charter">`, the suite theme script and toggle, cookie consent and a `/cookies` page.
+
+### 0.5 The app on schema `charter`, staging seed, org scoping (2026-11-10)
+
+- **Client:** every Supabase client (browser, request, service role, `src/lib/db/pending-schema.ts`) uses `db: { schema: "charter" }`; core tables with `.schema("public")`. Types are generated from `db/core` + `db/migrations` with `charter` as the default schema.
+- **Renames in code:** `organizations` → `units`, `org_member_profiles` → `member_profiles`, column `org_id` → `unit_id` (selects, filters, inserts and row types). Embedded selects keep their property names with aliases (`organizations:units(…)`). The audit label for `units` is "General settings". RPC names and parameters are unchanged. Logos are in bucket `charter-branding`.
+- **Invitations:** created and accepted with Charter's wrappers (`charter.create_invitation`, `accept_invitation`, `revoke_invitation`) as before; the list reads core `public.invitations` (`app = 'charter'`, the unit and role in `app_payload`); the invitation page reads core `get_invitation`.
+- **Org scoping:** opening a unit sets the suite cookie `oah_org` to its organization (`units.org_id`); after sign-in a person lands on their default organization, else the organization chosen last anywhere in the suite, else their only one.
+- **Staging seed:** `db/seed/0001_charter_demo.sql`, ported from `supabase/scripts/demo-test-accounts.sql` and `seed-test-demo.sql`: the three demo accounts, Demo National with Austin and Dallas, and Test-Demo with about 500 people. The password comes from `fixture.demo_password` (`migrate.yml` passes the optional `DEMO_PASSWORD` secret, letters and digits). Refuses production and databases with real organizations; CI loads it after the DB tests.
+- **Retired:** `supabase/` (old migrations, scripts, `config.toml`). Self-hosting is `bun run db:migrate` plus exposing `charter` (README).
 
 ### 0.3 Step 3 (hygiene) as done for v2.2
 
 - Lovable's Vite wrapper is replaced by a plain `vite.config.ts` with the same plugins; `previewAuthStorage`, `cron-auth.ts`, Lovable error reporting and `.lovable/` are removed. `bun.lock` has no Lovable packages.
 - `.env` is untracked (CI fails on a tracked env file); `.env.example` lists every variable.
-- `wrangler.jsonc`: top level = production (`charter.openapphub.org`, `openapphub-prod`), `env.staging` (`charter-staging.openapphub.org`, `openapphub-staging`). `bun run build:hosted` / `build:hosted:staging` load its public `VITE_*` values (`scripts/worker-env.mjs`). No `release.yml` or `staging.yml`.
+- `wrangler.jsonc`: top level = production (`charter.openapphub.org`, `openapphub-prod`), `env.staging` (`staging.charter.staging.openapphub.org`, `openapphub-staging`). `bun run build:hosted` / `build:hosted:staging` load its public `VITE_*` values (`scripts/worker-env.mjs`). No `release.yml` or `staging.yml`.
 - Security headers on every page.
 - **Self-hosting:** `bun run build` uses your own `.env`; `wrangler.selfhosted.example.jsonc` is the starting point for your own Worker.
 - **Owner:** the `opencharterapp` Worker's build command must be `bun run build:hosted` and its deploy command `npx wrangler deploy --config .output/server/wrangler.json`. The hosted app can't work until the baseline (step 6) and client (step 9) are in: the new database has no `charter` schema yet.
@@ -374,7 +396,7 @@ Order on production (START-HERE): Charter 0000 → Hub core + billing → Charte
 **Owner steps (step 3):**
 1. **Cloudflare:** switch off the Git integration (Workers Builds) that deploys the `opencharterapp` Worker from `main`. From now on only `release.yml` deploys production.
 2. **GitHub secrets:** `CLOUDFLARE_API_TOKEN` (Workers deploy permission) and `CLOUDFLARE_ACCOUNT_ID`; later `PROD_DATABASE_URL`, `STAGING_DATABASE_URL`, `SUPABASE_ACCESS_TOKEN`, `PROD_REF`, `STAGING_REF`. Optionally protect the `production` GitHub environment with yourself as required reviewer.
-3. **Staging Worker:** once staging exists, paste the staging project's **publishable** key into `wrangler.jsonc` → `env.staging` (both `REPLACE_WITH_STAGING_PUBLISHABLE_KEY` values; it's a public value, or ask an agent), set `SUPABASE_SERVICE_ROLE_KEY` and `GATEWAY_ENCRYPTION_KEY` on the `opencharterapp-staging` Worker, and add the custom domain `charter-staging.openapphub.org`.
+3. **Staging Worker:** once staging exists, paste the staging project's **publishable** key into `wrangler.jsonc` → `env.staging` (both `REPLACE_WITH_STAGING_PUBLISHABLE_KEY` values; it's a public value, or ask an agent), (superseded 2026-11-10: staging is the `opencharterapp` Worker's preview of the `staging` branch, on the preview domain `charter.staging.openapphub.org`; previews get no production settings or secrets: their vars are the `previews` block in `wrangler.jsonc`, and Stripe payments there need `SUPABASE_SERVICE_ROLE_KEY` and `GATEWAY_ENCRYPTION_KEY` (staging values) in the Workers Builds Preview base config).
 4. **Production Worker:** add the custom domain `charter.openapphub.org`. Its secrets are already set.
 5. **Old domain:** once Charter is live on `charter.openapphub.org`, redirect `opencharterapp.org` (and `www.`) there: Cloudflare → `opencharterapp.org` zone → Rules → Redirect Rules → "all incoming requests" → dynamic `concat("https://charter.openapphub.org", http.request.uri.path)`, status 301, preserve query string. Until then leave it; Supabase Auth's redirect URLs need both addresses during the switch.
 6. **Local copies:** anyone with a clone that had the old tracked `.env` should rename it to `.env.local`.

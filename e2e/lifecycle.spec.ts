@@ -1,5 +1,5 @@
 import { expect, guardedPage, test, type Page } from "./fixtures";
-import { rpc, signIn as apiSignIn, type Db } from "../smoke/client";
+import { rpc, signIn as apiSignIn, type Db } from "./legacy-client";
 import { DEMO, openOrganizations, orgMenu, signIn } from "./helpers";
 
 // A throwaway demo national, built through the real screens and always deleted afterwards
@@ -29,7 +29,7 @@ test.beforeAll(async () => {
   admin = await apiSignIn(DEMO.national);
   // leftovers from earlier runs that couldn't be deleted
   const { data } = await admin
-    .from("organizations")
+    .from("units")
     .select("id,name")
     .like("name", "E2E National %")
     .eq("is_demo", true)
@@ -86,7 +86,7 @@ test("add a chapter with the wizard", async ({ page }) => {
   await page.keyboard.press("Escape");
   await openSection(page, nationalId, "chapters");
   await expect(page.getByRole("link", { name: new RegExp(CHAPTER_A) })).toBeVisible();
-  const { data } = await admin.from("organizations").select("id").eq("name", CHAPTER_A).single();
+  const { data } = await admin.from("units").select("id").eq("name", CHAPTER_A).single();
   chapterA = data!.id as string;
 });
 
@@ -105,14 +105,14 @@ test("a member picks a home chapter, changes it, and the chapter lists them", as
   });
   const { data: tier } = await admin
     .from("membership_tiers")
-    .insert({ org_id: nationalId, key: "regular", name: "Regular" })
+    .insert({ unit_id: nationalId, key: "regular", name: "Regular" })
     .select("id")
     .single();
   const { data: term } = await admin
     .from("tier_terms")
     .insert({
       tier_id: tier!.id,
-      org_id: nationalId,
+      unit_id: nationalId,
       key: "1y",
       label: "1 year",
       length_count: 1,
@@ -129,9 +129,9 @@ test("a member picks a home chapter, changes it, and the chapter lists them", as
   const member = await apiSignIn(DEMO.member);
   await rpc(member, "accept_invitation", { _token: token });
   const { data: profile } = await admin
-    .from("org_member_profiles")
+    .from("member_profiles")
     .select("id")
-    .eq("org_id", nationalId)
+    .eq("unit_id", nationalId)
     .eq("email", DEMO.member)
     .single();
   await rpc(admin, "record_membership", {

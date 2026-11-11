@@ -10,7 +10,7 @@ import { createStripeGateway } from "./stripe";
 import { createTestGateway } from "./test-gateway";
 import { processStripeWebhook } from "./webhook-handler";
 
-const admin = () => supabaseAdmin as unknown as SupabaseClient<FullDatabase>;
+const admin = () => supabaseAdmin as unknown as SupabaseClient<FullDatabase, "charter">;
 const encryptionKey = () => process.env["GATEWAY_ENCRYPTION_KEY"];
 
 /** The org's own gateway, ready to use, or null when it has no verified connection. */
@@ -22,7 +22,7 @@ export async function loadOrgGateway(
   const { data: conn, error } = await db
     .from("gateway_connections")
     .select("gateway,status")
-    .eq("org_id", orgId)
+    .eq("unit_id", orgId)
     .maybeSingle();
   if (error) throw error;
   if (!conn || conn.status !== "verified") return null;

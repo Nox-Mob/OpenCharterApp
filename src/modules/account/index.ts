@@ -27,7 +27,7 @@ export async function saveMyName(userId: string, name: string) {
   const { error: authError } = await supabase.auth.updateUser({ data: { full_name: name } });
   if (authError) throw authError;
   const { error } = await supabase
-    .from("org_member_profiles")
+    .from("member_profiles")
     .update({ display_name: name })
     .eq("user_id", userId);
   if (error) throw error;

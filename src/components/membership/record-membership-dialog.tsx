@@ -64,7 +64,7 @@ export function RecordMembershipDialog({
   const options = useMemo(
     () =>
       (tiers.data ?? [])
-        .filter((t) => t.org_id === org.id && t.active)
+        .filter((t) => t.unit_id === org.id && t.active)
         .flatMap((t) =>
           t.terms
             .filter((x) => x.active !== false && x.id)

@@ -57,7 +57,7 @@ export function forSubject(input: AttributeInput, subject: AttributeSubject): At
 
 export type AttributeDef = {
   id: string;
-  org_id: string;
+  unit_id: string;
   key: string;
   label: string;
   data_type: AttributeType;

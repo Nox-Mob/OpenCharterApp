@@ -47,19 +47,19 @@ export function RolesTab({ org, orgs, grants }: { org: Org; orgs: Org[]; grants:
   const grantable = new Set<string>(grantablePermissions(grants, org));
   const lineage = [...org.ancestor_ids, org.id];
   const shown = roles
-    .filter((r) => r.org_id === null || lineage.includes(r.org_id))
-    .filter((r) => r.active || r.org_id === org.id)
+    .filter((r) => r.unit_id === null || lineage.includes(r.unit_id))
+    .filter((r) => r.active || r.unit_id === org.id)
     .sort(
       (x, y) =>
-        (x.org_id === null ? -1 : lineage.indexOf(x.org_id)) -
-          (y.org_id === null ? -1 : lineage.indexOf(y.org_id)) || x.name.localeCompare(y.name),
+        (x.unit_id === null ? -1 : lineage.indexOf(x.unit_id)) -
+          (y.unit_id === null ? -1 : lineage.indexOf(y.unit_id)) || x.name.localeCompare(y.name),
     );
   const source = (r: Role) =>
-    r.org_id === null
+    r.unit_id === null
       ? "Built in"
-      : r.org_id === org.id
+      : r.unit_id === org.id
         ? "This organization"
-        : `From ${orgs.find((o) => o.id === r.org_id)?.name ?? "a parent organization"}`;
+        : `From ${orgs.find((o) => o.id === r.unit_id)?.name ?? "a parent organization"}`;
 
   async function save() {
     if (!editing) return;
@@ -138,7 +138,7 @@ export function RolesTab({ org, orgs, grants }: { org: Org; orgs: Org[]; grants:
         </TableHeader>
         <TableBody>
           {shown.map((r) => {
-            const own = r.org_id === org.id;
+            const own = r.unit_id === org.id;
             return (
               <TableRow key={r.id} className={r.active ? "" : "opacity-60"}>
                 <TableCell className="font-medium">

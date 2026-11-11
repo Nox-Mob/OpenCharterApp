@@ -1,105 +1,104 @@
 import { useState, type ReactNode } from "react";
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LogOut, UserCircle } from "lucide-react";
+import { LayoutGrid, UserCircle } from "lucide-react";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { AppShell as SuiteShell } from "@shared/ui/AppShell";
+import { getOrgBilling } from "@shared/supabase/billing";
+import { hubUrl, isHosted } from "@shared/supabase/hosted";
+import { docsUrl } from "@shared/docs";
 import { supabase } from "@/integrations/supabase/client";
-import { myOrgsQuery } from "@/lib/orgs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { myOrgsQuery, myPermissionsQuery } from "@/lib/orgs";
+import { hasPermission, type Grant } from "@/lib/policy";
 import { LegalLinks } from "@/components/legal/legal-page";
-import { SidebarSlot, sidebarItemClass } from "@/components/sidebar-slot";
+import { SidebarSlot } from "@/components/sidebar-slot";
+import { RouterLink } from "@/lib/router-link";
 
-/** The dropdown's entry for the list of your organizations (and Create organization). */
-const ALL_ORGS = "__all__";
-
+/**
+ * Every signed-in page sits in the suite's AppShell (shared/ui, SHARED-SPEC §9): sidebar, top bar
+ * with the suite and organization switchers, Help and the user menu (theme, sign out), and the
+ * billing banner. An organization's own section menu (org-nav.tsx) is portalled into the
+ * sidebar slot under the main nav, as before (D-205).
+ */
 export function AppShell({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const params = useParams({ strict: false }) as { orgId?: string };
+  const pathname = useRouterState({ select: (r) => r.location.pathname });
   const { data: orgs = [] } = useQuery(myOrgsQuery());
+  const { data: grants = [] } = useQuery(myPermissionsQuery());
   const [slot, setSlot] = useState<HTMLElement | null>(null);
+
+  const current = orgs.find((o) => o.id === params.orgId) ?? null;
+  // The billing state belongs to the OpenAppHub organization (the top unit).
+  const suiteOrgId = current?.org_id ?? current?.id ?? null;
+
+  const user = useQuery({
+    queryKey: ["auth-user"],
+    queryFn: async () => {
+      const { data } = await supabase.auth.getUser();
+      const meta = (data.user?.user_metadata ?? {}) as Record<string, unknown>;
+      return {
+        name: (meta["full_name"] ?? meta["display_name"] ?? null) as string | null,
+        email: data.user?.email ?? null,
+      };
+    },
+  });
+  const billing = useQuery({
+    queryKey: ["billing", suiteOrgId],
+    enabled: !!suiteOrgId,
+    queryFn: () =>
+      getOrgBilling(supabase.schema("public") as unknown as SupabaseClient, suiteOrgId ?? ""),
+  });
 
   async function signOut() {
     await qc.cancelQueries();
     qc.clear();
     await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
+    if (isHosted()) window.location.assign(hubUrl("/"));
+    else navigate({ to: "/auth", replace: true });
   }
 
-  const orgSwitcher = orgs.length > 0 && (
-    <Select
-      value={params.orgId ?? ""}
-      onValueChange={(id) =>
-        id === ALL_ORGS
-          ? navigate({ to: "/orgs" })
-          : navigate({ to: "/orgs/$orgId", params: { orgId: id } })
-      }
-    >
-      <SelectTrigger className="w-full bg-background" aria-label="Switch organization">
-        <SelectValue placeholder="Switch organization" />
-      </SelectTrigger>
-      <SelectContent>
-        {orgs.map((o) => (
-          <SelectItem key={o.id} value={o.id}>
-            {o.name}
-          </SelectItem>
-        ))}
-        <SelectItem value={ALL_ORGS}>All organizations…</SelectItem>
-      </SelectContent>
-    </Select>
-  );
-
-  const accountLinks = (
-    <>
-      <Link
-        to="/account"
-        className={sidebarItemClass(false)}
-        activeProps={{ className: sidebarItemClass(true) }}
-      >
-        <UserCircle className="h-4 w-4 shrink-0" />
-        Account
-      </Link>
-      <button type="button" onClick={signOut} className={sidebarItemClass(false)}>
-        <LogOut className="h-4 w-4 shrink-0" />
-        Sign out
-      </button>
-    </>
-  );
+  const canManageBilling = !!current && hasPermission(grants as Grant[], "org.manage", current);
 
   return (
     <SidebarSlot.Provider value={slot}>
-      <div className="flex min-h-screen w-full bg-background">
-        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r bg-sidebar md:flex">
-          <div className="space-y-3 border-b px-4 py-4">
-            <Link to="/orgs" className="block font-display text-lg font-semibold text-primary">
-              OpenCharterApp
-            </Link>
-            {orgSwitcher}
-          </div>
-          <div className="flex-1 overflow-y-auto px-3 py-4">
-            <div ref={setSlot} />
-          </div>
-          <div className="space-y-1 border-t px-3 py-3">{accountLinks}</div>
-        </aside>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex items-center gap-3 border-b bg-card px-4 py-3 md:hidden">
-            <Link to="/orgs" className="font-display text-lg font-semibold text-primary">
-              OpenCharterApp
-            </Link>
-            <div className="min-w-0 flex-1">{orgSwitcher}</div>
-          </header>
-          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">{children}</main>
-          <div className="space-y-1 border-t px-3 py-3 md:hidden">{accountLinks}</div>
-          <footer className="mx-auto w-full max-w-6xl border-t px-4 py-6">
-            <LegalLinks />
-          </footer>
-        </div>
-      </div>
+      <SuiteShell
+        app="charter"
+        nav={[
+          {
+            label: "Organizations",
+            href: "/orgs",
+            icon: <LayoutGrid aria-hidden="true" />,
+            current: pathname === "/orgs",
+          },
+        ]}
+        navFooter={[
+          {
+            label: "Account",
+            href: "/account",
+            icon: <UserCircle aria-hidden="true" />,
+            current: pathname === "/account",
+          },
+        ]}
+        sidebar={<div ref={setSlot} />}
+        user={user.data ?? null}
+        orgs={orgs.map((o) => ({ id: o.id, name: o.name }))}
+        currentOrgId={current?.id ?? null}
+        onSelectOrg={(id) => navigate({ to: "/orgs/$orgId", params: { orgId: id } })}
+        orgCreateHref={isHosted() ? hubUrl("/orgs/new") : "/orgs"}
+        billing={billing.data ?? null}
+        canManageBilling={canManageBilling}
+        billingHref={hubUrl("/billing")}
+        helpHref={docsUrl("charter/")}
+        onSignOut={() => void signOut()}
+        LinkComponent={RouterLink}
+      >
+        {children}
+        <footer className="mt-12 border-t pt-6">
+          <LegalLinks />
+        </footer>
+      </SuiteShell>
     </SidebarSlot.Provider>
   );
 }

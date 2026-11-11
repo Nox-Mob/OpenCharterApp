@@ -13,15 +13,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
-type Generated = Database["public"];
+type Generated = Database["charter"];
 
 // Add types for a migration here while Lovable hasn't applied it yet; delete them once applied.
 export type PendingEnums = Record<never, never>;
 export type PendingTables = Record<never, never>;
 export type PendingFunctions = Record<never, never>;
 
-export type FullDatabase = Omit<Database, "public"> & {
-  public: {
+export type FullDatabase = Omit<Database, "charter"> & {
+  charter: {
     Tables: Omit<Generated["Tables"], keyof PendingTables> & PendingTables;
     Views: Generated["Views"];
     Functions: Omit<Generated["Functions"], keyof PendingFunctions> & PendingFunctions;
@@ -31,4 +31,4 @@ export type FullDatabase = Omit<Database, "public"> & {
 };
 
 /** The Supabase client, typed with pending migrations included. */
-export const db = supabase as unknown as SupabaseClient<FullDatabase>;
+export const db = supabase as unknown as SupabaseClient<FullDatabase, "charter">;

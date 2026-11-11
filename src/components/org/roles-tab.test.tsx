@@ -6,7 +6,7 @@ import type { Org } from "@/lib/orgs";
 const roleRows = [
   {
     id: "1",
-    org_id: null,
+    unit_id: null,
     key: "org_admin",
     name: "Organization admin",
     description: "",
@@ -15,7 +15,7 @@ const roleRows = [
   },
   {
     id: "2",
-    org_id: null,
+    unit_id: null,
     key: "member",
     name: "Member",
     description: "",
@@ -24,7 +24,7 @@ const roleRows = [
   },
   {
     id: "3",
-    org_id: "nat",
+    unit_id: "nat",
     key: "treasurer",
     name: "Treasurer",
     description: "",
@@ -33,7 +33,7 @@ const roleRows = [
   },
   {
     id: "4",
-    org_id: "a",
+    unit_id: "a",
     key: "secretary",
     name: "Secretary",
     description: "Minutes",
@@ -42,7 +42,7 @@ const roleRows = [
   },
   {
     id: "5",
-    org_id: "b",
+    unit_id: "b",
     key: "sibling",
     name: "Sibling role",
     description: "",
@@ -73,7 +73,7 @@ const org = (id: string, name: string, ancestor_ids: string[]): Org => ({
 const nat = org("nat", "Nat", []);
 const chapterA = org("a", "Chapter A", ["nat"]);
 
-function renderTab(grants: { org_id: string; permissions: string[] }[]) {
+function renderTab(grants: { unit_id: string; permissions: string[] }[]) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
@@ -84,7 +84,7 @@ function renderTab(grants: { org_id: string; permissions: string[] }[]) {
 
 describe("RolesTab", () => {
   it("shows built-in, inherited and own roles, but never a sibling's", async () => {
-    renderTab([{ org_id: "a", permissions: [...PERMISSIONS] }]);
+    renderTab([{ unit_id: "a", permissions: [...PERMISSIONS] }]);
     expect(await screen.findByText("Secretary")).toBeInTheDocument();
     expect(screen.getByText("Treasurer")).toBeInTheDocument();
     expect(screen.getByText("From Nat")).toBeInTheDocument();
@@ -96,7 +96,7 @@ describe("RolesTab", () => {
   });
 
   it("only offers permissions the editor holds", async () => {
-    renderTab([{ org_id: "a", permissions: ["roles.manage", "members.view"] }]);
+    renderTab([{ unit_id: "a", permissions: ["roles.manage", "members.view"] }]);
     fireEvent.click(await screen.findByRole("button", { name: "Add role" }));
     expect(screen.getByRole("checkbox", { name: "See member profiles" })).not.toBeDisabled();
     expect(screen.getByRole("checkbox", { name: "See the audit log" })).toBeDisabled();

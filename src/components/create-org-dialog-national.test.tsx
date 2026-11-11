@@ -57,7 +57,7 @@ describe("creating a national: how membership works (A8, D-166)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create" }));
     await waitFor(() =>
       expect(insert).toHaveBeenCalledWith({
-        org_id: "nat-id",
+        unit_id: "nat-id",
         key: "membership.model",
         value: "home_chapter",
         mode: "locked",

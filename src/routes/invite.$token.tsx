@@ -35,9 +35,14 @@ function InvitePage() {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return setState({ kind: "signed-out" });
-      const { data } = await supabase.rpc("get_invitation", { _token: token });
+      // Invitations are core: get_invitation shows what the link is for, before accepting.
+      const { data } = await supabase.schema("public").rpc("get_invitation", { p_token: token });
       const row = data?.[0];
-      setState(row?.usable ? { kind: "ready", org: row.org_name } : { kind: "invalid" });
+      setState(
+        row?.status === "pending" && row.app === "charter"
+          ? { kind: "ready", org: row.org_name }
+          : { kind: "invalid" },
+      );
     })();
   }, [token]);
 

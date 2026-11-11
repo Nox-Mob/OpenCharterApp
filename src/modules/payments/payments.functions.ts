@@ -41,7 +41,7 @@ export const connectStripe = createServerFn({ method: "POST" })
       JSON.stringify({ secretKey: data.secretKey, webhookSecret: data.webhookSecret }),
       key,
     );
-    const client = context.supabase as unknown as SupabaseClient<FullDatabase>;
+    const client = context.supabase as unknown as SupabaseClient<FullDatabase, "charter">;
     const { error } = await client.rpc("save_stripe_connection", {
       _org: data.orgId,
       _sealed: sealed,
@@ -66,11 +66,11 @@ export const startCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => startCheckoutSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const client = context.supabase as unknown as SupabaseClient<FullDatabase>;
+    const client = context.supabase as unknown as SupabaseClient<FullDatabase, "charter">;
     const { data: pay, error } = await client
       .from("payments")
       .select(
-        "id,org_id,amount_minor,currency,status,purpose,organizations(name,slug),tier_terms(label,membership_tiers(name))",
+        "id,unit_id,amount_minor,currency,status,purpose,organizations:units(name,slug),tier_terms(label,membership_tiers(name))",
       )
       .eq("id", data.paymentId)
       .maybeSingle();
@@ -85,12 +85,12 @@ export const startCheckout = createServerFn({ method: "POST" })
     } | null;
     const origin = appOrigin();
     const { loadOrgGateway } = await import("./payments.server");
-    const gateway = await loadOrgGateway(pay.org_id, origin);
+    const gateway = await loadOrgGateway(pay.unit_id, origin);
     if (!gateway) throw new Error("Online payments aren't open for this organization");
     const slug = org?.slug ?? "";
     const session = await gateway.createCheckout({
       paymentId: pay.id,
-      orgId: pay.org_id,
+      orgId: pay.unit_id,
       amount: { amount_minor: pay.amount_minor, currency: pay.currency },
       description:
         `${org?.name ?? "Membership"}: ${term?.membership_tiers?.name ?? "Membership"} · ${term?.label ?? ""}`.trim(),
@@ -116,7 +116,7 @@ export const declineApplication = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => declineSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const client = context.supabase as unknown as SupabaseClient<FullDatabase>;
+    const client = context.supabase as unknown as SupabaseClient<FullDatabase, "charter">;
     const { data: result, error } = await client.rpc("decline_application", {
       _membership: data.membershipId,
       _note: data.note,
@@ -126,7 +126,7 @@ export const declineApplication = createServerFn({ method: "POST" })
     const r = (result ?? {}) as {
       refund: "done" | "stripe" | null;
       gateway_ref?: string;
-      org_id?: string;
+      unit_id?: string;
       amount_minor?: number;
       currency?: string;
     };
@@ -134,7 +134,7 @@ export const declineApplication = createServerFn({ method: "POST" })
     try {
       const origin = appOrigin();
       const { loadOrgGateway } = await import("./payments.server");
-      const gateway = await loadOrgGateway(r.org_id!, origin);
+      const gateway = await loadOrgGateway(r.unit_id!, origin);
       if (!gateway) throw new Error("no gateway");
       await gateway.refund(r.gateway_ref!, {
         amount_minor: r.amount_minor!,
@@ -159,10 +159,10 @@ export const confirmCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => confirmSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const client = context.supabase as unknown as SupabaseClient<FullDatabase>;
+    const client = context.supabase as unknown as SupabaseClient<FullDatabase, "charter">;
     const { data: pay, error } = await client
       .from("payments")
-      .select("id,org_id,status,gateway,checkout_ref")
+      .select("id,unit_id,status,gateway,checkout_ref")
       .eq("id", data.paymentId)
       .maybeSingle();
     if (error) throw new Error("Couldn't load the payment");
@@ -170,7 +170,7 @@ export const confirmCheckout = createServerFn({ method: "POST" })
     if (pay.gateway !== "stripe" || !pay.checkout_ref || pay.status !== "pending")
       return { result: "nothing to do" };
     const { loadOrgGateway, applyGatewayEvent } = await import("./payments.server");
-    const gateway = await loadOrgGateway(pay.org_id, appOrigin());
+    const gateway = await loadOrgGateway(pay.unit_id, appOrigin());
     if (!gateway?.checkoutResult) return { result: "nothing to do" };
     const event = await gateway.checkoutResult(pay.checkout_ref);
     if (event.type === "ignored") return { result: event.reason };
