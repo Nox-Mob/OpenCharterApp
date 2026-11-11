@@ -1,4 +1,4 @@
-import { anonClient, rpc, signIn as apiSignIn, type Db } from "../smoke/client";
+import { anonClient, rpc, signIn as apiSignIn, type Db } from "./legacy-client";
 import { expect, guardedPage, test, type Page } from "./fixtures";
 import { DEMO, signIn } from "./helpers";
 

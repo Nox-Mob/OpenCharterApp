@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { rpc, signIn as apiSignIn, type Db } from "../smoke/client";
+import { rpc, signIn as apiSignIn, type Db } from "./legacy-client";
 import { DEMO, signIn } from "./helpers";
 
 // A4 (D-165, D-177): a chapter links to a level its national suggests. Runs once migration 0032

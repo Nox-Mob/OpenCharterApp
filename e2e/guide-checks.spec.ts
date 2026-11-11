@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { rpc, signIn as apiSignIn, type Db } from "../smoke/client";
+import { rpc, signIn as apiSignIn, type Db } from "./legacy-client";
 import { DEMO, openOrg, openOrganizations, orgMenu, signIn } from "./helpers";
 
 /** Delete a throwaway demo national; warn instead of failing the test over cleanup. */

@@ -91,7 +91,7 @@ bun run build
 bun run test:e2e             # end-to-end, in Chromium (needs network; see docs/testing.md)
 ```
 
-Install the pre-commit hook once per clone with `bun run hooks:install`; it runs the fast checks on every commit. `bun run test:perf` (with `TEST_DATABASE_URL`) times the heavy reads with 5,000, 10,000 and 20,000 members and fails over budget; `bun run test:smoke` checks the backend flows against the live demo.
+Install the pre-commit hook once per clone with `bun run hooks:install`; it runs the fast checks on every commit. `bun run test:perf` (with `TEST_DATABASE_URL`) times the heavy reads with 5,000, 10,000 and 20,000 members and fails over budget; `bun run test:smoke` checks the suite demo and the security rules on staging.
 
 GitHub runs all of these (D-197): `ci.yml` on every push and pull request, and `live.yml` (the smoke test, then the end-to-end tests against the live demo) on pushes to `main` and `BoardUpdates`, pull requests to `main`, daily and on demand. See [`docs/testing.md`](docs/testing.md).
 

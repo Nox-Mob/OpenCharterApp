@@ -1,5 +1,5 @@
 import { expect, guardedPage, test, type Page } from "./fixtures";
-import { rpc, signIn as apiSignIn, type Db } from "../smoke/client";
+import { rpc, signIn as apiSignIn, type Db } from "./legacy-client";
 import { DEMO, openOrganizations, orgMenu, signIn } from "./helpers";
 
 // A throwaway demo national, built through the real screens and always deleted afterwards

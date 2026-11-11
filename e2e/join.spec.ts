@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "./fixtures";
-import { rpc, signIn as apiSignIn } from "../smoke/client";
+import { rpc, signIn as apiSignIn } from "./legacy-client";
 import { DEMO, signIn } from "./helpers";
 
 // E-13b + D-158: join online with the test gateway and come back to the app's own address.

@@ -5,7 +5,7 @@ import {
   type BrowserContext,
   type Page,
 } from "@playwright/test";
-import { env } from "../smoke/client";
+import { env } from "./legacy-client";
 
 /**
  * Origin guard for end-to-end tests (D-186). The test browser may only load the app itself, its
