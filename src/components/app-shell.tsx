@@ -5,8 +5,8 @@ import { LayoutGrid, UserCircle } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { AppShell as SuiteShell } from "@shared/ui/AppShell";
 import { getOrgBilling } from "@shared/supabase/billing";
+import { helpHrefFor } from "@/config/help";
 import { hubUrl, isHosted } from "@shared/supabase/hosted";
-import { docsUrl } from "@shared/docs";
 import { supabase } from "@/integrations/supabase/client";
 import { myOrgsQuery, myPermissionsQuery } from "@/lib/orgs";
 import { hasPermission, type Grant } from "@/lib/policy";
@@ -25,6 +25,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const params = useParams({ strict: false }) as { orgId?: string };
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const search = useRouterState({ select: (r) => r.location.search as Record<string, unknown> });
   const { data: orgs = [] } = useQuery(myOrgsQuery());
   const { data: grants = [] } = useQuery(myPermissionsQuery());
   const [slot, setSlot] = useState<HTMLElement | null>(null);
@@ -90,7 +91,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         billing={billing.data ?? null}
         canManageBilling={canManageBilling}
         billingHref={hubUrl("/billing")}
-        helpHref={docsUrl("charter/")}
+        helpHref={helpHrefFor(pathname, search)}
         onSignOut={() => void signOut()}
         LinkComponent={RouterLink}
       >
