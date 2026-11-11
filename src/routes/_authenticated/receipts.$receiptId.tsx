@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useReadOnly } from "@/lib/use-billing";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -43,6 +44,9 @@ function ReceiptPage() {
   useEffect(() => {
     if (path) void logoUrl(path).then(setLogo);
   }, [path]);
+  // S-05: voiding and reissuing are writes, off while Charter is read-only.
+  const unit = orgs.data?.find((o) => o.id === receipt.data?.unit_id);
+  const readOnly = useReadOnly(unit?.org_id ?? unit?.id);
 
   if (receipt.isLoading) return <p className="text-muted-foreground">Loading…</p>;
   const r = receipt.data;
@@ -50,7 +54,7 @@ function ReceiptPage() {
   const s = r.snapshot;
   const view = receiptSummary(r);
   const org = orgs.data?.find((o) => o.id === r.unit_id);
-  const canManage = !!org && hasPermission(grants.data ?? [], "payments.manage", org);
+  const canManage = !!org && !readOnly && hasPermission(grants.data ?? [], "payments.manage", org);
 
   async function act(kind: "void" | "reissue") {
     const reason = window.prompt(kind === "void" ? "Why is this receipt void?" : "Why reissue it?");

@@ -3,7 +3,16 @@ import { setCurrentOrg } from "../../../shared/supabase/org";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { isDemoOrg, myOrgsQuery, myPermissionsQuery, TYPE_LABEL } from "@/lib/orgs";
-import { grantsForView, hasAdminAccess, hasPermission, type Grant } from "@/lib/policy";
+import {
+  grantsForView,
+  hasAdminAccess,
+  hasPermission,
+  withoutWrites,
+  type Grant,
+  type Permission,
+} from "@/lib/policy";
+import { useReadOnly } from "@/lib/use-billing";
+import { ExportEverything } from "@/components/org/export-everything";
 import { MemberOverview } from "@/components/members/member-overview";
 import { CreateOrgDialog } from "@/components/create-org-dialog";
 import { MembersTab } from "@/components/org/members-tab";
@@ -65,10 +74,15 @@ function OrgPage() {
   useEffect(() => {
     if (suiteOrg) setCurrentOrg(suiteOrg);
   }, [suiteOrg]);
+  // S-05: while the plan makes Charter read-only, the page renders with write permissions removed
+  // (forms and buttons off; seeing and exporting stay). The menu still follows the role.
+  const readOnly = useReadOnly(suiteOrg);
   if (!org) throw notFound();
   const canPreview = hasAdminAccess(realGrants, org);
   const asMember = canPreview && as === "member";
-  const grants = grantsForView(realGrants, asMember) as Grant[];
+  const roleGrants = grantsForView(realGrants, asMember) as Grant[];
+  const grants = readOnly ? withoutWrites(roleGrants) : roleGrants;
+  const navCan = (p: Permission) => hasPermission(roleGrants, p, org);
   const children = orgs.filter((o) => o.parent_id === org.id);
   const parent = orgs.find((o) => o.id === org.parent_id);
   const canAddChild =
@@ -86,7 +100,6 @@ function OrgPage() {
   // (the roll-ups cover the org asked for and what's below it). Each section has its own
   // permission (D-145).
   const canSeeReports = canSeeMembers || canSeeRevenue || canSeeBoards;
-  const canSeePayments = canSeeRevenue || hasPermission(grants, "payments.manage", org);
   const canManageBoard = hasPermission(grants, "governance.manage", org);
   const canDefineSeats = hasPermission(grants, "governance.define", org);
   // Home-chapter model (D-184): a chapter's members belong to the national, so it has no levels
@@ -97,14 +110,15 @@ function OrgPage() {
     canSeeReports,
     hasChapters,
     isChapter: org.type === "chapter",
-    canManage,
-    canRunSetup: hasPermission(grants, "setup.run", org),
-    canManageLevels: (canManage || hasPermission(grants, "tiers.manage", org)) && !homeChapter,
-    canManageFields: canManage || canManageFields,
-    canManageRoles,
-    canConfigureBoard: canManageBoard || canDefineSeats || canManage,
-    canSeePayments,
-    canAudit: hasPermission(grants, "audit.view", org),
+    canManage: navCan("org.manage"),
+    canRunSetup: navCan("setup.run"),
+    canManageLevels: (navCan("org.manage") || navCan("tiers.manage")) && !homeChapter,
+    canManageFields: navCan("org.manage") || navCan("attributes.manage"),
+    canManageRoles: navCan("roles.manage"),
+    canConfigureBoard:
+      navCan("governance.manage") || navCan("governance.define") || navCan("org.manage"),
+    canSeePayments: canSeeRevenue || navCan("payments.manage"),
+    canAudit: navCan("audit.view"),
   });
   const section = resolveSection(nav, tab);
   const go = (t: string) =>
@@ -274,8 +288,20 @@ function OrgPage() {
           )}
           {section === "settings" && (
             <>
-              <SettingsTab key={org.id} org={org} />
-              <DeleteDemoOrg org={org} orgs={orgs} />
+              {readOnly ? (
+                <p
+                  role="note"
+                  className="mb-4 rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground"
+                >
+                  Charter is read-only for this organization, so settings can't be changed. You can
+                  still view and export everything.
+                </p>
+              ) : null}
+              <fieldset disabled={readOnly} className="contents">
+                <SettingsTab key={org.id} org={org} />
+                <DeleteDemoOrg org={org} orgs={orgs} />
+              </fieldset>
+              {navCan("org.manage") ? <ExportEverything org={org} orgs={orgs} /> : null}
             </>
           )}
           {section === "setup" && (

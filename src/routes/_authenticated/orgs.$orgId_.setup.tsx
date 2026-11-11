@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useReadOnly } from "@/lib/use-billing";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { membershipModelQuery } from "@/modules/membership/home-chapter";
@@ -81,7 +82,16 @@ function SetupPage() {
   const { data: orgs } = useSuspenseQuery(myOrgsQuery());
   const { data: grants } = useSuspenseQuery(myPermissionsQuery());
   const org = orgs.find((o) => o.id === orgId);
+  // S-05: guided setup changes the organization, so it's off while Charter is read-only.
+  const readOnly = useReadOnly(org?.org_id ?? org?.id);
   if (!org) throw notFound();
+  if (readOnly)
+    return (
+      <p className="text-muted-foreground">
+        Charter is read-only for this organization, so setup is switched off. You can still view and
+        export everything.
+      </p>
+    );
   if (!hasPermission(grants, "setup.run", org))
     return (
       <p className="text-muted-foreground">You don't have access to setup for this organization.</p>

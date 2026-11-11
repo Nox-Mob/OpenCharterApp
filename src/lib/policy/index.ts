@@ -56,6 +56,26 @@ export function hasPermission(grants: readonly Grant[], perm: Permission, org: O
   return grants.some((g) => scope.has(g.unit_id) && g.permissions.includes(perm));
 }
 
+/**
+ * What still works while billing makes Charter read-only (S-05): seeing the organization, its
+ * members, payments and audit log, and exporting. The database refuses every other write.
+ */
+export const READ_ONLY_SAFE: readonly Permission[] = [
+  "org.view",
+  "members.view",
+  "payments.view",
+  "audit.view",
+  "members.export",
+];
+
+/** Grants with every write permission removed, for rendering while Charter is read-only. */
+export function withoutWrites(grants: readonly Grant[]): Grant[] {
+  return grants.map((g) => ({
+    ...g,
+    permissions: g.permissions.filter((p) => (READ_ONLY_SAFE as readonly string[]).includes(p)),
+  }));
+}
+
 /** Whether the viewer has any admin permission at this org (so "view as member" makes sense). */
 export function hasAdminAccess(grants: readonly Grant[], org: OrgNode): boolean {
   return PERMISSIONS.some((p) => hasPermission(grants, p, org));

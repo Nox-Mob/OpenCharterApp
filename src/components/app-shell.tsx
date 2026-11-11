@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { LayoutGrid, UserCircle } from "lucide-react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { AppShell as SuiteShell } from "@shared/ui/AppShell";
-import { getOrgBilling } from "@shared/supabase/billing";
+import { useBilling } from "@/lib/use-billing";
 import { helpHrefFor } from "@/config/help";
 import { hubUrl, isHosted } from "@shared/supabase/hosted";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,12 +45,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       };
     },
   });
-  const billing = useQuery({
-    queryKey: ["billing", suiteOrgId],
-    enabled: !!suiteOrgId,
-    queryFn: () =>
-      getOrgBilling(supabase.schema("public") as unknown as SupabaseClient, suiteOrgId ?? ""),
-  });
+  const billing = useBilling(suiteOrgId);
 
   async function signOut() {
     await qc.cancelQueries();
