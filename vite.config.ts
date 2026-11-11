@@ -1,5 +1,4 @@
-// Plain Vite config (suite step 3, D-219): replaces Lovable's @lovable.dev/vite-tanstack-config
-// wrapper with the same plugins, listed explicitly. Order matters: Tailwind and tsconfig paths
+// Plain Vite config (suite step 3, D-219) with every plugin listed explicitly. Order matters: Tailwind and tsconfig paths
 // first, then TanStack Start, nitro (build only, Cloudflare Worker module), then React.
 import { defineConfig } from "vite";
 import tailwindcss from "@tailwindcss/vite";

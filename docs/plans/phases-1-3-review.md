@@ -80,7 +80,7 @@ Work in waves. Each item follows the commit rules (tests, docs, migration conven
 
 | # | Item | Epic | Notes |
 |---|---|---|---|
-| B1 | **Un-defer E-08:** jobs table and scheduled server routes (D-103); email through `EMAIL_TRANSPORT` = `lovable` or `smtp` with Settings → Email (server, login, test send, send-from address) (D-159); templates; signed-action links to a signed-in confirmation page (D-164) | E-08 | Design notes in §5. Respect `emails_allowed` for demo orgs (D-148). Then work the email list in `roadmap.md` (Deferred) |
+| B1 | **Un-defer E-08:** jobs table and scheduled server routes (D-103); email through `EMAIL_TRANSPORT` = `platform` or `smtp` with Settings → Email (server, login, test send, send-from address) (D-159); templates; signed-action links to a signed-in confirmation page (D-164) | E-08 | Design notes in §5. Respect `emails_allowed` for demo orgs (D-148). Then work the email list in `roadmap.md` (Deferred) |
 | B2 | Lapse job and renewal reminders | E-13 | First consumer of B1 |
 
 ### Wave C: money features (≈ 3–4 sprints, can run in parallel with Wave D)
@@ -109,7 +109,7 @@ Settled on 2026-11-02:
 
 | For | Decision |
 |---|---|
-| B1 | Email: `EMAIL_TRANSPORT` = Lovable's email or the client's own server; server settings and login on Settings → Email; send-from address per org (D-159) |
+| B1 | Email: `EMAIL_TRANSPORT` = the platform's email or the client's own server; server settings and login on Settings → Email; send-from address per org (D-159) |
 | B1, D1 | Approval links open a confirmation page that requires sign-in; the decision happens on submit (D-164) |
 | C1 | Postpaid options are inheritable settings: the parent sets them, subordinates where allowed (D-161) |
 | C2 | Direct payments only; parents invoice subordinate orgs; hosting is billed outside the app (D-162) |
@@ -130,8 +130,8 @@ Each item updates its docs in the same change (`instructions.md` §6). The docum
 ## 5. Design notes from the 2026-11-02 decisions
 
 ### E-08 email (D-159)
-- **One interface, two transports.** `sendEmail({ orgId, to, subject, html, text, replyTo })` in a new `src/engines/notifications`, with a `lovable` adapter (Lovable Cloud email) and an `smtp` adapter. `EMAIL_TRANSPORT` picks one per deployment; if it's unset, nothing is sent and the app says email isn't configured.
-- **Where it runs.** Lovable's hosting runs on edge workers, where `lovable` is the natural choice. A self-hosted install (D-160) runs the Node server, where an SMTP client library works. A provider with an HTTP API can be added later as a third adapter behind the same interface.
+- **One interface, two transports.** `sendEmail({ orgId, to, subject, html, text, replyTo })` in a new `src/engines/notifications`, with a `platform` adapter (the hosting platform's email) and an `smtp` adapter. `EMAIL_TRANSPORT` picks one per deployment; if it's unset, nothing is sent and the app says email isn't configured.
+- **Where it runs.** The hosted service runs on edge workers, where `platform` is the natural choice. A self-hosted install (D-160) runs the Node server, where an SMTP client library works. A provider with an HTTP API can be added later as a third adapter behind the same interface.
 - **Settings → Email** (top-level org admins, `org.manage`):
   - `smtp` only: host, port, security (TLS / STARTTLS), username, password, sealed like Stripe keys (D-127) in the `private` schema and never shown again
   - send-from address and display name per org; chapters inherit unless the parent allows their own (D-108)
@@ -146,7 +146,6 @@ Each item updates its docs in the same change (`instructions.md` §6). The docum
   2. app + a minimal self-hosted Supabase subset (Postgres, Auth, REST, Storage): fully self-contained, needs more memory
 - **Already in our favour:** configuration is environment-driven (D-011); migrations and RLS already run on plain Postgres (`db/ci/supabase-stub.sql`).
 - **To check when F-11 starts:**
-  - the Lovable-specific pieces (auth helper, error reporting) need a non-Lovable fallback
   - scheduled routes need a cron runner in Compose
   - storage signed URLs work against the self-hosted Storage API
 

@@ -16,7 +16,7 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 | ~~Q-04~~ | ~~P1~~ | **Attribute storage approach** (typed columns, JSONB, EAV) | JSONB driven by definitions, validated with Zod, with indexes. Prototype before committing |
 | Q-18 | P2 | **Branding limits.** Allowed logo formats and sizes, whether chapters may also override colors, and whether a chapter can hide national's logo entirely | SVG, PNG, and JPEG within a size limit. Logo and colors overridable independently, national controls the mode |
 | Q-19 | P2 | **Join-with-existing-account flow.** Proof of ownership when someone signs up for a second org with an email that already has an account | Require sign-in or email verification, never confirm account existence to an unauthenticated visitor |
-| ~~Q-05~~ | ~~P2~~ | **Email sending identity.** Do orgs send from their own domain, or from a platform domain with reply-to? | **Resolved by D-159:** `EMAIL_TRANSPORT` = Lovable email or the client's own server; each org picks its send-from address |
+| ~~Q-05~~ | ~~P2~~ | **Email sending identity.** Do orgs send from their own domain, or from a platform domain with reply-to? | **Resolved by D-159:** `EMAIL_TRANSPORT` = the platform's email or the client's own server; each org picks its send-from address |
 | ~~Q-06~~ | ~~P2~~ | *Resolved 2026-10-31 as D-116.* **Do all members get accounts?** Or can some exist as records only (for example, added by CSV, with no login until invited)? | Records first, accounts on invite or on self-signup claim |
 | ~~Q-07~~ | ~~P2~~ | **Approval link confirmation.** Plain GET approval is unsafe because email scanners prefetch links. Is a confirmation page (one extra click, with the comment box) acceptable? | **Resolved by D-164:** confirmation page that requires sign-in; decision on submit |
 | Q-08 | P2 | **Award appeals mechanics.** Appeal to whom, how many times, and within what window? Set by the owning org, but what options do we offer? | Appeal to a chosen higher level, one appeal, configurable window |
@@ -73,12 +73,12 @@ Priority: **P1** = settle before database design. **P2** = settle before the own
 4. **Wildcard subdomain and on-demand TLS** with Caddy locally (supports E-07 and E-22). Wildcard resolution can be spiked with `*.localhost` first. The TLS part ties to F-11.
 
 ## Added 2026-10-30
-- **R-20 Self-hosting (principle 6):** building on Lovable Cloud ties auth and jobs to managed services. Mitigation: keep business rules in SQL functions and `src/lib/policy`, so a self-host port replaces only adapters.
+- **R-20 Self-hosting (principle 6):** building on a managed backend ties auth and jobs to managed services. Mitigation: keep business rules in SQL functions and `src/lib/policy`, so a self-host port replaces only adapters.
 - **R-21 Logo lock enforcement:** today the "chapters may use their own logo" rule only hides the upload control. Resolution respects the lock, so the national logo still shows, but a chapter admin could still store a logo file. Revisit if this matters.
 - **R-22 Demo data:** demo accounts and orgs exist in the live database (docs/demo-data.md). They must be removed before launch.
 
 ## Added 2026-11-01
-- **R-23 Migrations blocked by hosting limits:** Lovable applies migrations to the live database and can be unavailable (for example a credit cap), while merged code already expects the new schema. Mitigation (D-135): migrations are prepared and tested locally, types for them live outside the generated file, and a readiness guard shows "needs a database update" instead of failing. The pending list in `roadmap.md` says what to apply, in order.
+- **R-23 Migrations blocked by hosting limits:** the live database gets migrations later than the code (the owner applies them), while merged code already expects the new schema. Mitigation (D-135): migrations are prepared and tested locally, types for them live outside the generated file, and a readiness guard shows "needs a database update" instead of failing. The pending list in `roadmap.md` says what to apply, in order.
 - **R-24 License file:** AGPL-3.0 is decided (D-020), but the repository has no `LICENSE` file yet. Add the official AGPL-3.0 text before the first public release.
 
 ## Added 2026-11-02

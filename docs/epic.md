@@ -14,10 +14,10 @@ What's left for the OpenAppHub suite migration to be "done". The same items (S-x
 | S-04 | Help links | A per-page help map (`src/config/help.ts`) pointing at the docs site; today the shell has one Help link for the whole app. | ⬜ one app-wide Help link |
 | S-05 | Read-only when billing lapses | The database already refuses writes when an organization's trial or plan has lapsed; the screens should show it (billing banner) and switch write controls off. | 🟠 banner shown; write controls not yet switched off |
 | S-06 | Export everything | Owners and admins can export all of the app's data (CSV and JSON or the app's own format), also while read-only. | 🟠 members and payments CSV only; no full export yet |
-| S-07 | Lovable leftovers | Remove what only Lovable needed: the Vite config wrapper (`@lovable.dev/vite-tanstack-config`), `previewAuthStorage`, Lovable error reporting, `.lovable/`, the old `supabase/` folder. | ✅ removed |
+| S-07 | Old build tooling | Remove what only the old editor needed: its Vite config wrapper, preview sign-in storage, error reporting, its project folder and the old `supabase/` folder. | ✅ removed |
 | S-08 | Worker secrets | Secrets the hosted app needs, on the production Worker and in the Preview base config for staging (owner; never in the repository). | ⬜ `SUPABASE_SERVICE_ROLE_KEY` and `GATEWAY_ENCRYPTION_KEY` for payments, production and previews |
 | S-09 | End-to-end tests | Playwright on a local dev server against staging and the suite demo, in CI on every pull request and daily. | ✅ 2026-11-11 (`live.yml`, 17 tests and the API smoke test) |
-| S-10 | Retire the old projects | The Lovable projects and the old Supabase projects, once the app has run on the shared projects for a while (owner). | ⬜ owner; `charter_legacy` dropped only when the owner asks |
+| S-10 | Retire the old projects | The old editor and Supabase projects, once the app has run on the shared projects for a while (owner). | ⬜ owner; `charter_legacy` dropped only when the owner asks |
 | S-11 | One look across the suite | Same shell, menus and settings pattern as the other apps; differences found are listed under Known issues. | ✅ shared AppShell; see Known issues |
 
 Charter-only follow-ups (2026-11-11):
@@ -63,7 +63,7 @@ Status for Phases 0–3 (✅ cleared, 🟡 cleared with follow-ups, 🟠 partly 
 | E-05 | RBAC and permissions | Roles, permissions, scoped assignments with downward inheritance, policy layer | ✅ Cleared |
 | E-06 | Audit log | Append-only log and viewer, hooks for all modules | ✅ Cleared |
 | E-07 | Host-based tenant resolution | Wildcard subdomain mapping (tested locally with `*.localhost`), org context per request, RLS wiring, tenant-isolation tests. **Deferred** (D-111): RLS and tenant-isolation tests are done; per-org web addresses wait | ⬜ Deferred (D-111); RLS and isolation tests done |
-| E-08 | Jobs, email, and notifications infrastructure | Postgres jobs table and scheduled server routes (D-103, replacing pg-boss), email through Lovable's email or the client's own server chosen by `EMAIL_TRANSPORT`, server settings and send-from address per org (D-159), template system, signed-action links that open a signed-in confirmation page (D-164). **Deferred** (D-111); its email follow-up list is in `roadmap.md` | ⬜ Deferred (D-111); first update after the MVP (D-169) |
+| E-08 | Jobs, email, and notifications infrastructure | Postgres jobs table and scheduled server routes (D-103, replacing pg-boss), email through the platform's email or the client's own server chosen by `EMAIL_TRANSPORT`, server settings and send-from address per org (D-159), template system, signed-action links that open a signed-in confirmation page (D-164). **Deferred** (D-111); its email follow-up list is in `roadmap.md` | ⬜ Deferred (D-111); first update after the MVP (D-169) |
 
 **Exit:** a national and a chapter can exist, users can sign in on the right subdomain, a chapter admin sees only their chapter, and every action is audited.
 

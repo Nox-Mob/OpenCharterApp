@@ -4,7 +4,7 @@ All notable changes to OpenCharterApp. Versions follow [semantic versioning](htt
 
 ## [0.1.0] (MVP, unreleased)
 
-The first version a national (with chapters) or a standalone association can run on, hosted on Lovable Cloud. The release checklist is in `docs/plans/wave-a-mvp.md` §6. The tag `v0.1.0` is created on `main` after the `BoardUpdates` pull request is merged.
+The first version a national (with chapters) or a standalone association can run on, hosted on Supabase. The release checklist is in `docs/plans/wave-a-mvp.md` §6. The tag `v0.1.0` is created on `main` after the `BoardUpdates` pull request is merged.
 
 ### Organizations and access
 

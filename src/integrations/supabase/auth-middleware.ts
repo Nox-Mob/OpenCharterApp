@@ -1,4 +1,4 @@
-// Lovable generated this file; it is maintained here until suite step 9 (shared/supabase).
+// Generated originally; maintained here by hand.
 import { createMiddleware } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { createClient } from '@supabase/supabase-js'

@@ -1,4 +1,4 @@
-// Lovable generated this file; it is maintained here until suite step 9 (shared/supabase).
+// Generated originally; maintained here by hand.
 // Server-side Supabase client with service role key - bypasses RLS.
 // Use this for admin operations in server functions and server routes only.
 // For user-authenticated queries (with RLS), use the auth middleware instead.

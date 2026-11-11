@@ -16,7 +16,7 @@ select tests.throws($$insert into charter.tier_terms (tier_id, unit_id, key, lab
   values ('55555555-0000-4000-8000-000000000001', '22222222-0000-4000-8000-000000000001', 'zero', 'Zero', 0, 'month', 100)$$, 'check constraint');
 select tests.throws($$insert into charter.tier_terms (tier_id, unit_id, key, label, length_count, length_unit, price_minor)
   values ('55555555-0000-4000-8000-000000000001', '22222222-0000-4000-8000-000000000001', 'neg', 'Neg', 1, 'day', -1)$$, 'check constraint');
--- retire, never delete: DELETE is granted (Lovable convention, D-125) but no policy allows it
+-- retire, never delete: DELETE is granted (migration convention, D-125) but no policy allows it
 delete from charter.tier_terms where key = 'lifetime';
 delete from charter.membership_tiers where key = 'regular';
 update charter.tier_terms set active = false where key = 'lifetime';

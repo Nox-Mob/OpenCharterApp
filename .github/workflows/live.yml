@@ -13,9 +13,9 @@ name: Live demo checks
 #   on a local dev server, because the deployed site still runs main until the merge (D-212).
 on:
   push:
-    branches: [main, BoardUpdates]
+    branches: [staging]
   pull_request:
-    branches: [main]
+    branches: [main, staging]
   schedule:
     - cron: "41 6 * * *" # daily 06:41 UTC: catches backend changes made outside this repository
   workflow_dispatch:

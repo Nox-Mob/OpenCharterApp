@@ -2,17 +2,14 @@
 
 Where things stand and what's next. Plans: `docs/plans/` (MVP: `wave-a-mvp.md`; Phases 1–3 and later waves: `phases-1-3-review.md`). Epics: `docs/epic.md`. Decisions: `docs/decisions.md`. Testing by hand: `docs/user-testing.md`.
 
-## Pending migrations for Lovable
-None. `0000`–`0045` are applied (the last: `0044_scale_indexes`, D-209, confirmed by `0045`). When one is waiting it's listed here, with steps and checks in `docs/lovable-handoff.md`.
+## Pending migrations
+None waiting. Each database records what's applied in `ops.schema_migrations`; when a migration is waiting it's listed here, and the owner applies it with `migrate.yml`.
 
-## Moving off Lovable Cloud (D-211, `docs/migration/`)
-- [x] Phase 0a: the "Supabase database" workflow on `main` (replay on every pull request, manual deploy with approval)
-- [ ] Phase 0b: `supabase/migrations` as the single history (0000–0045 copied byte for byte, plus `0046_storage_buckets`), `supabase/config.toml`, replay green on the pull request; then the owner adds the deploy secrets, runs a dry run, the real deploy, and `supabase/scripts/demo-test-accounts.sql` (`docs/migration/settings-to-reenter.md`). `0046` is for the new project only: Lovable doesn't apply `supabase/migrations`
-- [x] Phase 0c: the owner deployed `supabase/migrations` to the new project (`nxungwtxnctcqolfshcr`)
-- [ ] Phase 1 (D-212, `docs/migration/phase-1-cutover.md`): code done on the Phase 1 pull request (Google sign-in through Supabase Auth, Lovable sign-in code removed, `.env` and `config.toml` on the new project); owner steps left: Google OAuth client, Supabase URL and provider settings, test accounts, Cloudflare Worker secrets and domain, tests on the new host, Stripe webhook, unpublish Lovable
-- [x] The app's own favicon (ink-green tile, paper "C", brass rule; `public/favicon.svg`, `.ico`, `apple-touch-icon.png`) replaces Lovable's
-- [x] Test-Demo seed in plain SQL for the SQL Editor, with pending applications too (`supabase/scripts/seed-test-demo.sql`, D-213)
-- [ ] Later clean-up: Lovable build config, preview sign-in helper, error reporting and hosts in `origin.ts`
+## Moving to the OpenAppHub suite
+- [x] Own Supabase project and Cloudflare Worker (D-211, D-212), then schema `charter` in the shared project (`docs/MIGRATION-NOTES.md`)
+- [x] The app's own favicon (`public/favicon.svg`, `.ico`, `apple-touch-icon.png`)
+- [x] Old build config, preview sign-in helper, error reporting and old hosts in `origin.ts` removed (D-219)
+- What's left: `docs/epic.md` §1
 
 ## Now: the MVP release, v0.1.0 (`docs/plans/wave-a-mvp.md`)
 Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D-170, D-175), demo data kept until a second real national joins (D-171), version 0.1.0 with a changelog and tag (D-172).
@@ -51,7 +48,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 
 ## After the MVP (`docs/plans/phases-1-3-review.md` §3)
 **Wave B: infrastructure**
-- [ ] B1 E-08: jobs, scheduled routes, email via `EMAIL_TRANSPORT` (Lovable's email or the client's own server, Settings → Email, send-from address) (D-159), signed-in confirmation page for links (D-164)
+- [ ] B1 E-08: jobs, scheduled routes, email via `EMAIL_TRANSPORT` (the platform's email or the client's own server, Settings → Email, send-from address) (D-159), signed-in confirmation page for links (D-164)
 - [ ] B2 Lapse handling and renewal reminders (E-13)
 
 **Wave C: money**
@@ -85,7 +82,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 - [x] Sales demo: Test-Demo filled with 15 chapters, 500 people with years of history, every standing and every board seat filled (D-199); found and fixed double counting on the Overview (D-200; 0040)
 - [x] Performance checked at 10,000 and 20,000 members; a missing index and JIT compiling fixed (D-209; 0044, applied)
 - [x] The browser tests take over about 30 steps of the user-testing guide (sign-in messages, invitations, levels, memberships and dates, receipts, the board, locks, the audit log, deleting a demo org), in a throwaway demo national (D-198)
-- [x] Migrations 0036–0038 applied by Lovable; their hand-written types and readiness checks retired
+- [x] Migrations 0036–0038 applied to the live database; their hand-written types and readiness checks retired
 - [x] GitHub runs the smoke test and end-to-end tests against the live demo on pushes to `main` and `BoardUpdates`, pull requests, daily and on demand; CI adds a performance budget, a dependency audit and one-transaction migrations (D-197)
 - [x] Reports count members by current membership, not records; the home-chapter total counts each member once; chapter creators aren't added to the chapter's roster (D-196; 0038)
 - [x] Sprint 4, ready for real use: import, remove from roster, readable audit log, account page, privacy and terms pages, share the join page, helpers closed to anonymous callers (D-189..D-195; 0037)
@@ -93,7 +90,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 - [x] Dependencies refreshed, majors included (D-187); Playwright pinned at 1.64.1 and the test browser hardened: sandbox on, Chrome stable in CI, origin guard (D-186); `bun audit` 29 → 2 moderate (dev tooling)
 - [x] Home-chapter model shows only what applies: no chapter acceptance, chapter levels, "must also join" or chapter dues settings and setup questions; chapters have no levels (D-184; 0036 waiting); dues settings reworded for the separate model; no real organization named as an example
 - [x] Configuration only in Settings (D-185): Settings → Board settings holds seat terms, contact emails, seat titles, the seats an org defines and the board rules; the Board page shows the board and appoints officers
-- [x] Migrations 0032–0034 applied by Lovable; their hand-written types and readiness checks retired
+- [x] Migrations 0032–0034 applied to the live database; their hand-written types and readiness checks retired
 - [x] Sprints 2 and 3 of the MVP: A4, A5, A6, A7, release hardening R1–R3, R5–R7 (above); fixes 0033, 0034
 - [x] Choosing the membership model when a national is created, with both models compared (D-176)
 - [x] Sprint 1 of the MVP: A8, A3, A2 (above)
@@ -116,9 +113,9 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 - [x] E-14: search, filters, "expiring within 30 / 60 / 90 days", sorting, audited privacy-aware CSV export, saved views, member directory with each member's own listing choice (D-138, D-139)
 - [x] E-15: automatic, numbered, immutable receipts with void / reissue versions, refunds, printable receipt page, receipt links, footer setting (D-140)
 - [x] E-17: Board tab, seats from the org and its parents, custom titles, Vacant badges, appoint / end with good-standing and no-escalation checks, seat roles granted and revoked, each org's own seat terms with by-law history (D-141, D-142)
-- [x] Live smoke test against the real backend (`bun run test:smoke`, added by Lovable) with automatic cleanup (D-150)
+- [x] Live smoke test against the real backend (`bun run test:smoke`) with automatic cleanup (D-150)
 - [x] User testing guide for checking the app by hand (docs/user-testing.md)
-- [x] Step 0: planning docs in /docs, decisions for the Lovable stack recorded (D-100+)
+- [x] Step 0: planning docs in /docs, decisions for the TanStack Start + Supabase stack recorded (D-100+)
 - [x] Demo organization and accounts for testing (docs/demo-data.md). Delete before launch
 - [x] E-03: email/password + Google sign-in, password reset, R-15 neutral messages
 - [x] E-03: invitations (single-use, 14-day expiry, bound to an email, accepted only on button press), joining an org with an existing account, sign-in redirect back to the invite
@@ -133,7 +130,7 @@ Decisions: no automatic email in the MVP (D-169), Playwright end-to-end tests (D
 - [x] E-09: chapter fields (national/region defines them in a tab and in Membership setup; chapters fill them in on their overview and when created)
 - [x] E-09: locked chapter fields (only the national sets them, e.g. Charter date)
 - [x] CI runs on every branch and on pull requests
-- [x] Migrations 0004–0006 follow Lovable's import rules (full grants + RLS, no drops), checked in CI by `bun run check:migrations`
+- [x] Migrations 0004–0006 follow Charter's migration rules (full grants + RLS, no drops), checked in CI by `bun run check:migrations`
 - [x] E-10: setup card scrolls with long steps (title and Back / Save and continue stay visible)
 - [x] E-13b (part): a parent decides how its chapters' new members are accepted (automatically / always reviewed / each chapter decides), Membership setup v3 (D-130)
 - [x] E-13a: memberships and standing (good / grace / lapsed, derived on read), admin-recorded joins, renewals and cash/check payments with stacked renewals, applications approve/decline, cancel and rejoin, members without a login that an invitation claims, "Your membership" card (D-131..D-134)

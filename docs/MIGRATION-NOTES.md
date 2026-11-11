@@ -20,7 +20,7 @@ section and the rest of the file disagree, this section wins.
   (`mbloxixlykmbuuoaprnx`). Nothing is copied or parked; there is no legacy schema. The hub's
   `db/core` is already applied to both (2026-11-09).
 - **Step 4 (`0000_park_legacy.sql`) is dropped.** There is no old database to park: the baseline (`0001_charter_baseline.sql`) is Charter's first migration on the new projects.
-- Step 3 (hygiene) was done on the closed PR but for spec v2 (`release.yml`, a separate `production` environment). **Redo it against v2.2**: top-level `wrangler.jsonc` = production, `env.staging`, `env.development`; no `release.yml`; Lovable removal as listed in §7.
+- Step 3 (hygiene) was done on the closed PR but for spec v2 (`release.yml`, a separate `production` environment). **Redo it against v2.2**: top-level `wrangler.jsonc` = production, `env.staging`, `env.development`; no `release.yml`; old build tooling removed as listed in §7.
 - **Deploys.** Cloudflare's Git integration builds `main` and deploys production (`bun run build`, then
   `npx wrangler deploy`). The **top level of `wrangler.jsonc` is production**; `env.staging` and
   `env.development` are the others. No `release.yml`, no `CLOUDFLARE_*` GitHub secrets. Run
@@ -77,7 +77,7 @@ The suite demo has members on varied levels and lengths (`db/seed/0002_charter_d
 
 ### 0.3 Step 3 (hygiene) as done for v2.2
 
-- Lovable's Vite wrapper is replaced by a plain `vite.config.ts` with the same plugins; `previewAuthStorage`, `cron-auth.ts`, Lovable error reporting and `.lovable/` are removed. `bun.lock` has no Lovable packages.
+- The old Vite wrapper is replaced by a plain `vite.config.ts` with the same plugins; the preview sign-in storage, `cron-auth.ts`, the old error reporting and the old editor's folder are removed. `bun.lock` has none of its packages.
 - `.env` is untracked (CI fails on a tracked env file); `.env.example` lists every variable.
 - `wrangler.jsonc`: top level = production (`charter.openapphub.org`, `openapphub-prod`), `env.staging` (`staging.charter.staging.openapphub.org`, `openapphub-staging`). `bun run build:hosted` / `build:hosted:staging` load its public `VITE_*` values (`scripts/worker-env.mjs`). No `release.yml` or `staging.yml`.
 - Security headers on every page.
@@ -209,7 +209,7 @@ The policies call `public.can_see_org_tree` and `public.has_permission`. Postgre
 
 ## 3. Every place the code calls Supabase
 
-64 files outside tests. Clients: `src/integrations/supabase/client.ts` (browser and SSR, `createClient`, Lovable preview storage), `client.server.ts` (service role, server only), `auth-attacher.ts` / `auth-middleware.ts` (bearer token from the browser to server functions, `getClaims`). In step 9 all of them move to the shared client; every `.from()` below gets the `charter` schema by default (`VITE_APP_SCHEMA=charter`), and core tables need `.schema('public')`.
+64 files outside tests. Clients: `src/integrations/supabase/client.ts` (browser and SSR, `createClient`, preview sign-in storage), `client.server.ts` (service role, server only), `auth-attacher.ts` / `auth-middleware.ts` (bearer token from the browser to server functions, `getClaims`). In step 9 all of them move to the shared client; every `.from()` below gets the `charter` schema by default (`VITE_APP_SCHEMA=charter`), and core tables need `.schema('public')`.
 
 | File | Tables (`.from`) | RPCs (`.rpc`) | Auth / storage |
 |---|---|---|---|
@@ -274,7 +274,7 @@ Scanned the working tree and **all 186 commits on every branch** (`git grep` ove
 | No service-role key, `sb_secret_`, live or real test Stripe key, webhook secret or DB password, now or in history | — | — | none |
 | Fake Stripe keys in unit tests (`rk_test_1234567890abc…`, `sk_test_1234567890abc`, `whsec_1234567890abcdef`) | `src/modules/payments/stripe.test.ts`, `src/components/payments/payments-tab.test.tsx` | none (made-up placeholders) | none; GitHub push protection may flag them, mark as false positive |
 | Publishable key and URL of the production project | `.env` (committed), `wrangler.jsonc` `vars` | none: publishable values are public by design | none. Hygiene step 3 still stops committing `.env` (spec §7: `.env*` other than `.env.example` must be ignored) |
-| Older `.env` versions in history | commits `7253751`, `629b413` | only publishable values (Lovable project `odqswxftrhtvyadizkgn`) | none |
+| Older `.env` versions in history | commits `7253751`, `629b413` | only publishable values (old project `odqswxftrhtvyadizkgn`) | none |
 | **Shared demo password in plain text** (removed from the docs and the smoke-test fallback in this PR; still in history) | `docs/demo-data.md:7` (and history) | **Medium.** The demo accounts (`@opencharter.test`) live on the project that becomes the suite's production database. With one login for the suite, anyone who reads the public repo can sign in to the hub and every app as a demo admin or platform operator | **Owner decided (Q8): delete the demo accounts** on production (§8.2) |
 
 Also recommended (owner settings): enable GitHub secret scanning and push protection on all five repos.
@@ -299,7 +299,7 @@ Also recommended (owner settings): enable GitHub secret scanning and push protec
 ## 6. Dependencies outside this repo
 
 - **`Nox-Mob/OpenAppHub` doesn't exist yet** (checked 2026-11-08). It holds the canonical `shared/`, `db/core/` and `scripts/migrate.mjs`. Steps 5, 6 and 8–15 here need them. START-HERE v2: create it first; everything else is blocked on its Phase 1–2.
-- **Lovable must be disconnected** from this repo (owner step) before Phase 2 database work reaches `main` (v2 §2).
+- ~~Disconnect the old editor from this repo~~ (done).
 - `Nox-Mob/OpenAppHub-docs` exists (Phase 5 docs PRs).
 - `Nox-Mob/openboardapp` and `Nox-Mob/OpenLedgerApp` follow Charter; Board's old project becomes staging only after Board is migrated.
 
@@ -309,16 +309,16 @@ Until a step replaces a rule, the old rule stands.
 
 | Repo rule (`AGENTS.md`) | Suite rule (spec v2) | Replaced in |
 |---|---|---|
-| Lovable note at the top of `AGENTS.md`; Lovable toolchain and config wrapper | Lovable removed (§2) | **step 3 (done)** |
+| Old editor note at the top of `AGENTS.md`; its toolchain and config wrapper | old build tooling removed (§2) | **step 3 (done)** |
 | Committed `.env`; Worker built from `main` by Cloudflare's Git integration | `.env` untracked; `wrangler.jsonc` envs; `staging.yml` on `main`, owner-run `release.yml` (§7.1, §10.2) | **step 3 (done)**; owner switches off the Git build |
-| Migrations in `supabase/migrations`, deployed by the "Supabase database" workflow; `check:migrations` on Lovable's rules | `db/migrations` + vendored runner; old `deploy` job off; lint pointed at `db/` (§3.3) | step 5 |
+| Migrations in `supabase/migrations`, deployed by the "Supabase database" workflow; `check:migrations` on the old import rules | `db/migrations` + vendored runner; old `deploy` job off; lint pointed at `db/` (§3.3) | step 5 |
 | Tenant tables in `public`, RLS with `has_permission` / `is_org_member` | `charter` schema; reads `public.is_member` (or portal access), writes through Charter helpers that always include `public.can_write(org_id,'charter')` (§3.4, §3.5) | step 6 |
 | Orgs only via Charter's `create_organization` | top-level orgs via `public.create_organization` (hub when hosted); units via `charter.create_unit` | step 6 |
 | Invitations via Charter's `create_invitation` / `accept_invitation` | core invitations (§4.3); Charter keeps an `/invite/<token>` page and `charter.on_invitation_accepted` | steps 6, 11 |
 | Logos in the private `branding` bucket | `charter-branding` (§3.7) | step 6 |
 | Demo orgs and platform operators in Charter | hub (§11) | step 6 (not recreated), step 11 (screens out of routing) |
 | No `DROP TABLE`/`DROP COLUMN` in migrations | same idea: park first, drop `charter_legacy` only when the owner asks | unchanged |
-| Pending-schema shims for Lovable (D-135) | types from `gen-types.yml` (§3.8) | step 9 |
+| Pending-schema shims (D-135) | types from `gen-types.yml` (§3.8) | step 9 |
 | e2e and smoke tests against the live demo on production | demo on staging only (§11) | step 7 (seed), then `live.yml` points at staging |
 
 ## 8. Owner decisions (2026-11-08, D-218)
@@ -370,8 +370,8 @@ One branch and one PR per step. **Bold** = changes production's database; the ow
 | # | Step | Status / needs first | What it does |
 |---|---|---|---|
 | 1–2 | Inventory + secret scan | **done** | this file; the spec; the suite section of `AGENTS.md` |
-| 3 | Hygiene | **done** (§10) | `.env` untracked, `.env.example` with every variable, `wrangler.jsonc` staging/production, `staging.yml` + `release.yml`, security headers in the Worker, Lovable removed |
-| 4 | **`db/migrations/0000_park_legacy.sql`** | next; owner backup first; demo accounts deleted; Lovable disconnected | `create schema if not exists charter_legacy`; every Charter table (31 in `public`, 3 in `private`), enum (17) and function (147) moved with `alter … set schema charter_legacy`, each guarded by a catalog check so a re-run skips it; API grants revoked on `charter_legacy`; `drop trigger if exists on_auth_user_created on auth.users` (none today). The `branding` bucket and its policies stay (they follow the parked functions). Nothing dropped. PR line 1: "Runs on PRODUCTION project; owner must apply before the hub's core migrations." Tested by replaying `supabase/migrations` locally, applying it twice and checking `public` holds no Charter objects |
+| 3 | Hygiene | **done** (§10) | `.env` untracked, `.env.example` with every variable, `wrangler.jsonc` staging/production, `staging.yml` + `release.yml`, security headers in the Worker, old build tooling removed |
+| 4 | **`db/migrations/0000_park_legacy.sql`** | next; owner backup first; demo accounts deleted; old editor disconnected | `create schema if not exists charter_legacy`; every Charter table (31 in `public`, 3 in `private`), enum (17) and function (147) moved with `alter … set schema charter_legacy`, each guarded by a catalog check so a re-run skips it; API grants revoked on `charter_legacy`; `drop trigger if exists on_auth_user_created on auth.users` (none today). The `branding` bucket and its policies stay (they follow the parked functions). Nothing dropped. PR line 1: "Runs on PRODUCTION project; owner must apply before the hub's core migrations." Tested by replaying `supabase/migrations` locally, applying it twice and checking `public` holds no Charter objects |
 | — | (Hub) `db/core/*` + `0001_billing.sql` on production | step 4 applied | in OpenAppHub |
 | 5 | Vendor shared code | OpenAppHub `shared/` | copy `shared/`, `db/core/`, `scripts/migrate.mjs`; `migrate.yml`; the `db` CI job; `"oahShared"` in `package.json`; **switch off the `deploy` job in `supabase-db.yml`**; point `check:migrations` at `db/` (§3.3). `staging.yml` and `release.yml` pick up the runner automatically |
 | 6 | **`db/migrations/0001_charter_baseline.sql`** | step 5 | `charter` schema per §3.4: `charter.units` (§3.9); every table with `org_id` (billed org) and `unit_id`; `charter.member_profiles`; write helpers always `public.can_write(org_id,'charter')` then the Charter permission; `charter.is_portal_member(p_org, p_unit)` for dues members' reads; `charter.create_unit`; `charter.on_invitation_accepted`; no Charter invitation tables, no platform-operator or demo-org objects; `public_join_info` / `public_home_chapter_info` created and granted to `anon` only when `billing_enabled` is false; `begin_join` / `begin_renewal` refuse when `public.has_app_access(org,'charter')` is false, payment recording doesn't check it; `charter.org_settings`; bucket **`charter-branding`** with `public.is_member` read and the write helper for writes on `<org_id>/`; `supabase/migrations/` deleted in the same PR |
@@ -396,7 +396,7 @@ Order on production (START-HERE): Charter 0000 → Hub core + billing → Charte
 - **Worker config:** `wrangler.jsonc` has `env.staging` (Worker `opencharterapp-staging`, staging project, `*-staging.openapphub.org`) and `env.production` (the existing Worker `opencharterapp`, so its secrets carry over; `charter.openapphub.org`). The top level is the self-hosted default with placeholders, and a different Worker name, so an old Git-connected build can't overwrite production. `scripts/worker-env.mjs` feeds an environment's public `VITE_*` values into the build.
 - **Deploys:** `staging.yml` (push to `main`: migrate with seed once the runner exists, build, `wrangler deploy --env staging`; skips with a notice until staging is set up) and `release.yml` (owner only, type "production" to confirm, runs only from `main`: migrate, then build and deploy production; nothing deploys if migrations fail). Wrangler is pinned at 4.152.0 in both.
 - **Security headers** on every rendered response (spec §10.1), in `src/server.ts` via `src/lib/security-headers.ts`: `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, and a CSP allowing only the app, its Supabase project (API, websocket, storage images) and Google Fonts. `'unsafe-inline'` stays for scripts and styles, because TanStack Start's SSR writes inline hydration scripts; moving to per-request nonces is a later hardening step. Checked on a local Worker build: pages, the 404 page and client navigation work with no CSP violations. Static assets keep nitro's cache rule.
-- **Lovable removed:** `@lovable.dev/vite-tanstack-config` replaced by a plain `vite.config.ts` with the same plugins (Tailwind, tsconfig paths, TanStack Start with import protection, nitro `cloudflare-module`, React) and `lightningcss` as a direct dependency; the build's CSS is byte-identical. Removed: the preview sign-in broker (`previewAuthStorage.ts`), Lovable error reporting, the unused Lovable cron helper, Lovable's hosts in the checkout origin allowlist, `.lovable/`, the Lovable entries in `bunfig.toml`, and the Lovable note in `AGENTS.md`. `drizzle/` and the pending-schema shims stay until steps 5 and 9 (the database tests and `check:migrations` still read them).
+- **Old build tooling removed:** the old Vite config wrapper replaced by a plain `vite.config.ts` with the same plugins (Tailwind, tsconfig paths, TanStack Start with import protection, nitro `cloudflare-module`, React) and `lightningcss` as a direct dependency; the build's CSS is byte-identical. Removed: the preview sign-in broker (`previewAuthStorage.ts`), the old error reporting, the unused cron helper, the old hosts in the checkout origin allowlist, the old editor's folder, its entries in `bunfig.toml`, and its note in `AGENTS.md`. `drizzle/` and the pending-schema shims stay until steps 5 and 9 (the database tests and `check:migrations` still read them).
 
 **Owner steps (step 3):**
 1. **Cloudflare:** switch off the Git integration (Workers Builds) that deploys the `opencharterapp` Worker from `main`. From now on only `release.yml` deploys production.

@@ -2,7 +2,7 @@
 
 High-level only. This describes the shape of the system and the shared engines. Schemas, APIs, and screens come later.
 
-> **Current stack (D-100..D-104, D-111).** The original plan named Next.js, pg-boss, Better Auth and Caddy. The Lovable toolchain replaced those. The app is **TanStack Start (React 19, Vite) running on edge workers**, with **Lovable Cloud** for Postgres (with row-level security), Auth (email/password and Google) and Storage. Background work is planned as a **Postgres jobs table plus scheduled server routes** (E-08, deferred). Bun is the package manager. Per-org web addresses and the reverse proxy (E-07, E-22, F-11) are deferred. The structure below (modules, engines, tenancy, RLS) still applies; where a section names the old tools, read it with this substitution.
+> **Current stack (D-100..D-104, D-111).** The original plan named Next.js, pg-boss, Better Auth and Caddy. They were replaced. The app is **TanStack Start (React 19, Vite) running on edge workers**, with **Supabase** for Postgres (with row-level security), Auth (email/password and Google) and Storage. Background work is planned as a **Postgres jobs table plus scheduled server routes** (E-08, deferred). Bun is the package manager. Per-org web addresses and the reverse proxy (E-07, E-22, F-11) are deferred. The structure below (modules, engines, tenancy, RLS) still applies; where a section names the old tools, read it with this substitution.
 
 ## 1. Architectural style
 
@@ -28,8 +28,8 @@ flowchart LR
         JOBS[Scheduled routes over a jobs table]
     end
 
-    DB[(Lovable Cloud Postgres with RLS)]
-    S3[(Lovable Cloud Storage)]
+    DB[(Supabase Postgres with RLS)]
+    S3[(Supabase Storage)]
     PROXY[Edge hosting<br/>custom domains later via reverse proxy]
     STRIPE[Stripe]
     PAYPAL[PayPal]
@@ -56,7 +56,7 @@ flowchart LR
     EMAIL -- bounces/events --> API
 ```
 
-> **Diagram description:** A left-to-right system context diagram. On the left are five user groups: Members, Chapter admins and officers, National admins and committees, Platform admin, and Public visitors. All five connect to the edge hosting layer (custom domains come later through a reverse proxy). The hosting layer passes traffic to the Web UI (public sites and portal), which sits inside a box labeled Membership Platform (TanStack Start modular monolith on edge workers). That box contains five parts: Web UI, Server functions and server routes (the API), Shared engines, Domain modules, and Scheduled routes over a jobs table. Inside the box, the Web UI calls the API, the API calls the Domain modules, and the Domain modules call the Shared engines. The Domain modules and the Shared engines both read and write Lovable Cloud Postgres, where row-level security isolates tenants. The scheduled routes also use Postgres and send mail through the email provider. The Domain modules additionally connect to Lovable Cloud Storage, Stripe, and PayPal. Stripe and PayPal send webhooks back to the API (one webhook address per organization), and the email provider sends bounce and delivery events back to the API. Email, scheduled jobs and PayPal are planned but not built yet. Demo organizations (D-148) never send email: the email sender must check `public.emails_allowed(org)` first.
+> **Diagram description:** A left-to-right system context diagram. On the left are five user groups: Members, Chapter admins and officers, National admins and committees, Platform admin, and Public visitors. All five connect to the edge hosting layer (custom domains come later through a reverse proxy). The hosting layer passes traffic to the Web UI (public sites and portal), which sits inside a box labeled Membership Platform (TanStack Start modular monolith on edge workers). That box contains five parts: Web UI, Server functions and server routes (the API), Shared engines, Domain modules, and Scheduled routes over a jobs table. Inside the box, the Web UI calls the API, the API calls the Domain modules, and the Domain modules call the Shared engines. The Domain modules and the Shared engines both read and write Supabase Postgres, where row-level security isolates tenants. The scheduled routes also use Postgres and send mail through the email provider. The Domain modules additionally connect to Supabase Storage, Stripe, and PayPal. Stripe and PayPal send webhooks back to the API (one webhook address per organization), and the email provider sends bounce and delivery events back to the API. Email, scheduled jobs and PayPal are planned but not built yet. Demo organizations (D-148) never send email: the email sender must check `public.emails_allowed(org)` first.
 
 ## 3. Organization hierarchy
 
@@ -262,7 +262,7 @@ flowchart LR
     A --> AU[Auth service<br/>Supabase-compatible]
 ```
 
-> **Diagram description:** A left-to-right deployment diagram of the self-host target (packaging deferred to F-11). Internet traffic goes to a reverse proxy (wildcard and on-demand TLS), which forwards to the App, a TanStack Start server. The App connects to a PostgreSQL database with row-level security, to object storage, and to a Supabase-compatible auth service. A scheduler calls the App's scheduled routes, which process the jobs table. On the hosted service, Lovable Cloud provides the database, auth, storage and edge hosting instead.
+> **Diagram description:** A left-to-right deployment diagram of the self-host target (packaging deferred to F-11). Internet traffic goes to a reverse proxy (wildcard and on-demand TLS), which forwards to the App, a TanStack Start server. The App connects to a PostgreSQL database with row-level security, to object storage, and to a Supabase-compatible auth service. A scheduler calls the App's scheduled routes, which process the jobs table. On the hosted service, Supabase provides the database, auth and storage, and Cloudflare Workers the hosting.
 
 - **Self-host (later, F-11, D-160, D-168):** a lightweight Docker Compose install. The **default** is one app container (the TanStack Start server on Node) plus a hosted Supabase project for Postgres, Auth and Storage, which keeps cloud costs low; a documented alternative self-hosts a minimal Supabase subset (Postgres, Auth, REST, Storage). A reverse proxy (Caddy) provides TLS. Email uses the client's own server (`EMAIL_TRANSPORT=smtp`, D-159). Business rules live in SQL functions and `src/lib/policy` so only adapters change (R-20).
 - **Hosted:** the same code and image, multiple installs or a multi-tenant install, plus the platform-tier admin and billing.

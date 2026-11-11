@@ -8,7 +8,6 @@ bun.lock
 routeTree.gen.ts
 docs
 drizzle
-.lovable
 src/integrations
 supabase
 roadmap.md
