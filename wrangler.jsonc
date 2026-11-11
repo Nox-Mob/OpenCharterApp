@@ -8,10 +8,11 @@
 // Staging is this Worker's PREVIEW of the `staging` branch: Cloudflare builds every other branch
 // with the same build command, and `build:hosted` picks `env.staging` below for any branch but
 // `main` (WORKERS_CI_BRANCH). Previews are served at <branch>.charter.staging.openapphub.org; the
-// stable staging site is https://staging.charter.staging.openapphub.org. `env.staging` is used only
-// for those build values: a preview runs with this Worker's production runtime vars and secrets.
-// So on a preview the service-role key and GATEWAY_ENCRYPTION_KEY are production's, and
-// server tasks that need them (Stripe payments) refuse to run (src/integrations/supabase/server-env.ts).
+// stable staging site is https://staging.charter.staging.openapphub.org. Previews don't inherit the
+// production settings: their runtime vars are the `previews` block below, and their secrets are
+// set in Cloudflare's Preview base config (none by default).
+// Without SUPABASE_SERVICE_ROLE_KEY and GATEWAY_ENCRYPTION_KEY in the Preview base config,
+// server tasks that need them (Stripe payments) don't run on previews.
 //
 // `vars` are PUBLIC. The build:hosted scripts load the VITE_* values below into the build
 // (scripts/worker-env.mjs), so this file is the one place the hosted public settings live.
@@ -24,7 +25,25 @@
   "compatibility_date": "2026-11-06",
   // Cloudflare builds branches other than main with `wrangler preview`, which needs this block
   // (it may stay empty: assets and compatibility settings stay at the top level).
-  "previews": {},
+  // Worker Previews (<branch>.<app>.staging.openapphub.org) don't inherit the production
+  // settings above: they get these, the same values as env.staging. Preview secrets are set in
+  // Cloudflare (Workers Builds → Previews → base config), never here.
+  "previews": {
+    "vars": {
+      "VITE_HOSTED": "true",
+      "VITE_APP_ID": "charter",
+      "VITE_APP_SCHEMA": "charter",
+      "VITE_SUPABASE_URL": "https://mbloxixlykmbuuoaprnx.supabase.co",
+      "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_XsbfqXRDX-L_TwmtYGvjDg_qiLKka2X",
+      "SUPABASE_URL": "https://mbloxixlykmbuuoaprnx.supabase.co",
+      "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_XsbfqXRDX-L_TwmtYGvjDg_qiLKka2X",
+      "VITE_HUB_URL": "https://staging.openapphub.org",
+      "VITE_COOKIE_DOMAIN": ".openapphub.org",
+      "VITE_SUITE_URLS": "{\"hub\":\"https://staging.openapphub.org\",\"charter\":\"https://staging.charter.staging.openapphub.org\",\"board\":\"https://staging.board.staging.openapphub.org\",\"ledger\":\"https://staging.ledger.staging.openapphub.org\"}",
+      "VITE_DOCS_URL": "https://docs.openapphub.org"
+    }
+  },
+
   "routes": [{ "pattern": "charter.openapphub.org", "custom_domain": true }],
   "vars": {
     "VITE_HOSTED": "true",
