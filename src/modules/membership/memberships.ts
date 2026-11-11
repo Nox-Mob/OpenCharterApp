@@ -53,7 +53,7 @@ const MEMBERSHIP_FIELDS =
 const OWN_EMBED = `memberships!memberships_profile_id_fkey(${MEMBERSHIP_FIELDS})`;
 /** With 0030: the record's own membership including its home chapter. */
 const OWN_EMBED_HOME = `memberships!memberships_profile_id_fkey(${MEMBERSHIP_FIELDS},home_org_id)`;
-const HOME_EMBED = `home_of,left_at,home:memberships!org_member_profiles_home_of_fkey(${MEMBERSHIP_FIELDS},home_org_id)`;
+const HOME_EMBED = `home_of,left_at,home:memberships!member_profiles_home_of_fkey(${MEMBERSHIP_FIELDS},home_org_id)`;
 
 type MembershipEmbed = {
   id: string;

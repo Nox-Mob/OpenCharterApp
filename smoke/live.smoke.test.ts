@@ -5,7 +5,8 @@
  * API the app uses (PostgREST, schema `charter`, security rules on):
  *   - demo@demo.openapphub.org owns Riverside Community Association and sees its members,
  *     dues, receipts and board;
- *   - test@demo.openapphub.org (no organization) and signed-out visitors see none of it;
+ *   - test@demo.openapphub.org (no organization) sees none of it, and signed-out visitors are
+ *     refused (hosted joining needs an account);
  *   - an admin write works and is undone.
  *
  * It writes almost nothing: one member record per run, removed again at the end (it stays in
@@ -42,16 +43,22 @@ describe("1. the suite demo is loaded", () => {
     }
   });
 
-  it("the public join page works signed out", async () => {
+  it("the join page shows the levels (signed in: hosted joining needs an account)", async () => {
     const info = await rpc<{ org: { id: string; name: string }; levels: { name: string }[] }>(
-      anon,
+      empty,
       "public_join_info",
       { _slug: DEMO.slug },
     );
     expect(info.org.id).toBe(DEMO.org);
     expect(info.org.name).toBe("Riverside Community Association");
     expect(info.levels.map((l) => l.name)).toEqual(
-      expect.arrayContaining(["Household", "Individual"]),
+      expect.arrayContaining(["Household", "Individual", "Senior (65+)"]),
+    );
+  });
+
+  it("signed out, hosted Charter refuses the API (joining goes through sign-in)", async () => {
+    expect(await rpcFails(anon, "public_join_info", { _slug: DEMO.slug })).toMatch(
+      /permission denied/,
     );
   });
 });

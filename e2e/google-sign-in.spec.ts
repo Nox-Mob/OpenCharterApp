@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { env } from "./legacy-client";
+import { stagingSetting } from "../smoke/client";
 
 // D-212: "Continue with Google" goes through Supabase Auth on the app's own project (no Lovable
 // broker). The browser is sent to the project's /auth/v1/authorize for Google, asking to come
@@ -8,7 +8,7 @@ test("Continue with Google sends the browser to Supabase Auth for Google", async
   page,
   baseURL,
 }) => {
-  const backend = new URL(env("VITE_SUPABASE_URL")).origin;
+  const backend = new URL(stagingSetting("VITE_SUPABASE_URL")).origin;
   let authorize: URL | undefined;
   await page.route(`${backend}/auth/v1/authorize**`, (route) => {
     authorize = new URL(route.request().url());

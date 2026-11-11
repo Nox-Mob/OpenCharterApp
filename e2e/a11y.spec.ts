@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "./fixtures";
-import { openOrg, openOrganizations, signIn, type Role } from "./helpers";
+import { openRiverside, signIn } from "./helpers";
 
 // Accessibility pass (R2, WCAG 2.1 AA, Q-16), checked without extra dependencies:
 // - every button, link, form field and combobox on the main screens has an accessible name
@@ -60,49 +60,37 @@ async function checkPage(page: Page, where: string) {
   expect(await unnamedControls(page), `${where}: controls without a name`).toEqual([]);
 }
 
-const SCREENS: { role: Role; org: "national" | "austin"; tabs: string[] }[] = [
-  {
-    role: "national",
-    org: "national",
-    tabs: [
-      "overview",
-      "members",
-      "board",
-      "reports",
-      "chapters",
-      "settings",
-      "board-settings",
-      "levels",
-      "payments",
-      "audit",
-    ],
-  },
-  {
-    role: "chapter",
-    org: "austin",
-    tabs: ["overview", "members", "board", "reports", "board-settings"],
-  },
-  { role: "member", org: "austin", tabs: ["overview", "directory", "board"] },
+const TABS = [
+  "overview",
+  "members",
+  "board",
+  "reports",
+  "settings",
+  "board-settings",
+  "levels",
+  "payments",
+  "audit",
 ];
 
-for (const { role, org, tabs } of SCREENS) {
-  test(`${role}: controls are named on every main screen`, async ({ page }) => {
-    await signIn(page, role);
-    await openOrganizations(page);
-    await checkPage(page, "organizations");
-    for (const tab of tabs) {
-      await openOrg(page, org, tab);
-      await checkPage(page, `${org} ${tab}`);
-    }
-  });
-}
+test("controls are named on every main screen", async ({ page }) => {
+  await signIn(page, "owner");
+  for (const tab of TABS) {
+    await openRiverside(page, tab);
+    await checkPage(page, `riverside ${tab}`);
+  }
+});
+
+test("the empty account's organizations page is named and headed", async ({ page }) => {
+  await signIn(page, "empty");
+  await checkPage(page, "organizations");
+});
 
 test("the account, privacy and terms pages are named and headed", async ({ page }) => {
   for (const path of ["/privacy", "/terms"]) {
     await page.goto(path);
     await checkPage(page, path);
   }
-  await signIn(page, "member");
+  await signIn(page, "owner");
   await page.goto("/account");
   await checkPage(page, "account");
 });
@@ -119,7 +107,7 @@ test("sign-in works by keyboard alone, with visible focus", async ({ page }) => 
     return (s.outlineStyle !== "none" && s.outlineWidth !== "0px") || s.boxShadow !== "none";
   });
   expect(ring, "focused field shows a focus indicator").toBe(true);
-  await page.keyboard.type("demo-member@opencharter.test");
+  await page.keyboard.type("test@demo.openapphub.org");
   await page.keyboard.press("Tab");
   await expect(page.getByLabel("Password")).toBeFocused();
 });
