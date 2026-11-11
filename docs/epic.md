@@ -2,6 +2,30 @@
 
 High-level roadmap. Epics become backlog epics. Stories are written when an epic is pulled into planning. Epic IDs (`E-xx`) are stable. Phases can be reordered when dependencies allow.
 
+## 0. Suite migration: what's left
+
+What's left for the OpenAppHub suite migration to be "done". The same items (S-xx) are tracked in every app's `docs/epic.md`. Status: ✅ done, 🟡 done with follow-ups, 🟠 partly done, ⬜ not started.
+
+| ID | Item | What "done" means | Status (2026-11-11) |
+|---|---|---|---|
+| S-01 | Production check | After each production deploy, open the app on openapphub.org as a real organization and confirm its data loads (the Charter Members tab was empty until 2026-11-11 because of a renamed key). The staging end-to-end tests catch most of this first. | 🟡 Members fix merged with this round; production not yet checked by a person |
+| S-02 | Exposed schemas | `charter`, `board` and `ledger` in Supabase → Data API → Exposed schemas, on staging and production (owner). | ✅ 2026-11-11 |
+| S-03 | Integration views for the hub | Read-only `api_*` views (`security_invoker`) and `docs/INTEGRATION.md`, so OpenAppHub's dashboard can show a summary per app (SHARED-SPEC §6). | ⬜ not started (`api_units`, `api_board_seats`, `api_payments_summary`, `api_unit_count`) |
+| S-04 | Help links | A per-page help map (`src/config/help.ts`) pointing at the docs site; today the shell has one Help link for the whole app. | ⬜ one app-wide Help link |
+| S-05 | Read-only when billing lapses | The database already refuses writes when an organization's trial or plan has lapsed; the screens should show it (billing banner) and switch write controls off. | 🟠 banner shown; write controls not yet switched off |
+| S-06 | Export everything | Owners and admins can export all of the app's data (CSV and JSON or the app's own format), also while read-only. | 🟠 members and payments CSV only; no full export yet |
+| S-07 | Lovable leftovers | Remove what only Lovable needed: the Vite config wrapper (`@lovable.dev/vite-tanstack-config`), `previewAuthStorage`, Lovable error reporting, `.lovable/`, the old `supabase/` folder. | ✅ removed |
+| S-08 | Worker secrets | Secrets the hosted app needs, on the production Worker and in the Preview base config for staging (owner; never in the repository). | ⬜ `SUPABASE_SERVICE_ROLE_KEY` and `GATEWAY_ENCRYPTION_KEY` for payments, production and previews |
+| S-09 | End-to-end tests | Playwright on a local dev server against staging and the suite demo, in CI on every pull request and daily. | ✅ 2026-11-11 (`live.yml`, 17 tests and the API smoke test) |
+| S-10 | Retire the old projects | The Lovable projects and the old Supabase projects, once the app has run on the shared projects for a while (owner). | ⬜ owner; `charter_legacy` dropped only when the owner asks |
+| S-11 | One look across the suite | Same shell, menus and settings pattern as the other apps; differences found are listed under Known issues. | ✅ shared AppShell; see Known issues |
+
+Charter-only follow-ups (2026-11-11):
+
+- `charter.purge_smoke_data` still names the retired Demo National ids; it should follow the suite demo or be removed (a migration).
+- The end-to-end tests for chapters, regions and two-level dues were retired with Demo National; they need a national demo with chapters (a second demo organization in the suite seed).
+- On the Account page the organization switcher reads "No organization": Charter only knows the current organization on an organization's own pages. Board and Ledger show it everywhere.
+
 ## 1. Roadmap at a glance
 
 ```mermaid

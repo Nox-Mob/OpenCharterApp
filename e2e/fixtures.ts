@@ -5,7 +5,7 @@ import {
   type BrowserContext,
   type Page,
 } from "@playwright/test";
-import { env } from "./legacy-client";
+import { stagingSetting } from "../smoke/client";
 
 /**
  * Origin guard for end-to-end tests (D-186). The test browser may only load the app itself, its
@@ -16,7 +16,7 @@ import { env } from "./legacy-client";
 export function allowedHosts(baseURL: string | undefined): Set<string> {
   const hosts = new Set(["127.0.0.1", "localhost", "fonts.googleapis.com", "fonts.gstatic.com"]);
   if (baseURL) hosts.add(new URL(baseURL).hostname);
-  hosts.add(new URL(env("VITE_SUPABASE_URL")).hostname);
+  hosts.add(new URL(stagingSetting("VITE_SUPABASE_URL")).hostname);
   for (const h of (process.env["E2E_ALLOWED_HOSTS"] ?? "").split(","))
     if (h.trim()) hosts.add(h.trim().toLowerCase());
   return hosts;

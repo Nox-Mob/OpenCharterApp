@@ -1,32 +1,34 @@
 import { expect, type Page } from "./fixtures";
-import { DEMO } from "./legacy-client";
+import { DEMO } from "../smoke/client";
 
 export { DEMO };
-export type Role = "national" | "chapter" | "member";
 
-/** Sign in through the real sign-in page as a demo account. */
-export async function signIn(page: Page, role: Role) {
+/**
+ * The suite demo (OpenAppHub db/seed/0002_suite_demo.sql, reset every 12 hours): `owner` is
+ * demo@demo.openapphub.org, who owns Riverside Community Association; `empty` is
+ * test@demo.openapphub.org, an account with no organization.
+ */
+export type Who = "owner" | "empty";
+
+/** Sign in through the app's own sign-in page (the tests run the app self-hosted on staging). */
+export async function signIn(page: Page, who: Who) {
   await page.goto("/auth");
   // wait for the app to hydrate, or React resets fields typed into the server-rendered form
   await page.waitForLoadState("networkidle");
-  await page.getByLabel("Email").fill(DEMO[role]);
+  await page.getByLabel("Email").fill(who === "owner" ? DEMO.owner : DEMO.empty);
   await page.getByLabel("Password").fill(DEMO.password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  // lands on the default or only organization, or the list of organizations (D-206)
+  // the owner lands on Riverside; the empty account on the (empty) list of organizations
   await expect(page).toHaveURL(/\/orgs(\/|$)/);
 }
 
-/** The list of your organizations, with Create organization (D-206). */
-export async function openOrganizations(page: Page) {
-  await page.goto("/orgs");
-  await expect(page.getByRole("heading", { level: 1, name: "Your organizations" })).toBeVisible();
+/** Open Riverside, optionally on a section (?tab=). */
+export async function openRiverside(page: Page, tab?: string) {
+  await page.goto(`/orgs/${DEMO.org}${tab ? `?tab=${tab}` : ""}`);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Riverside Community Association" }),
+  ).toBeVisible();
 }
 
-/** Open a demo org's page, optionally on a section (?tab=). */
-export async function openOrg(page: Page, org: keyof typeof DEMO.orgs, tab?: string) {
-  await page.goto(`/orgs/${DEMO.orgs[org]}${tab ? `?tab=${tab}` : ""}`);
-  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-}
-
-/** The desktop left-hand menu of an org page. */
+/** The organization's menu in the left sidebar. */
 export const orgMenu = (page: Page) => page.getByRole("navigation", { name: "Organization" });

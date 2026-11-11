@@ -1,10 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
+import { stagingSetting } from "./smoke/client";
 
 /**
- * End-to-end tests (A2, D-170): Chromium against the dev server and the live demo backend, like
- * `bun run test:smoke`. Tests sign in as the demo accounts (docs/demo-data.md); anything they
- * create in the demo orgs is removed afterwards with purge_smoke_data (D-150).
- * Run: `bun run test:e2e`. Set E2E_BASE_URL to test a deployed site instead of a local server.
+ * End-to-end tests (A2, D-170): Chromium against the dev server running self-hosted (its own
+ * sign-in page) on STAGING, signed in as the suite demo accounts (docs/demo-data.md); the demo is
+ * reset every 12 hours. Staging's public settings come from wrangler.jsonc env.staging, so no
+ * secrets are needed. Run: `bun run test:e2e`. E2E_BASE_URL tests a deployed site instead.
  */
 const PORT = Number(process.env["E2E_PORT"] ?? 4310);
 const external = process.env["E2E_BASE_URL"] || undefined;
@@ -46,8 +47,15 @@ export default defineConfig({
           command: `bun run dev --host 127.0.0.1 --port ${PORT} --strictPort`,
           url: `http://127.0.0.1:${PORT}`,
           reuseExistingServer: !process.env["CI"],
-          // Server functions call the backend from Node; behind a proxy, Node must use it too.
-          ...(proxy ? { env: { NODE_USE_ENV_PROXY: "1" } } : {}),
+          env: {
+            VITE_HOSTED: "false",
+            VITE_SUPABASE_URL: stagingSetting("VITE_SUPABASE_URL"),
+            VITE_SUPABASE_PUBLISHABLE_KEY: stagingSetting("VITE_SUPABASE_PUBLISHABLE_KEY"),
+            SUPABASE_URL: stagingSetting("VITE_SUPABASE_URL"),
+            SUPABASE_PUBLISHABLE_KEY: stagingSetting("VITE_SUPABASE_PUBLISHABLE_KEY"),
+            // Server functions call the backend from Node; behind a proxy, Node must use it too.
+            ...(proxy ? { NODE_USE_ENV_PROXY: "1" } : {}),
+          },
           timeout: 180_000,
         },
       }),

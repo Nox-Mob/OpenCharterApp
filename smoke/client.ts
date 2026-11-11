@@ -8,7 +8,9 @@ import ts from "typescript";
  * publishable key are public and come from wrangler.jsonc `env.staging`; SMOKE_SUPABASE_URL
  * and SMOKE_SUPABASE_PUBLISHABLE_KEY override them (for example a local Supabase).
  */
-function stagingSetting(name: "VITE_SUPABASE_URL" | "VITE_SUPABASE_PUBLISHABLE_KEY"): string {
+export function stagingSetting(
+  name: "VITE_SUPABASE_URL" | "VITE_SUPABASE_PUBLISHABLE_KEY",
+): string {
   const override = process.env[name.replace("VITE_", "SMOKE_")];
   if (override) return override;
   const config = ts.parseConfigFileTextToJson(

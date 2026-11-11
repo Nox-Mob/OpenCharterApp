@@ -47,7 +47,12 @@ files here: change them in Nox-Mob/OpenAppHub and sync.
 2. ~~Step 5, rest of vendoring~~ and ~~step 6, the baseline~~ **done** (§0.4).
 3. ~~Seed, the client switch to schema `charter` (step 9) and org scoping~~ **done** (§0.5).
 4. ~~Hosted mode and the AppShell restyle~~ **done** (§0.6).
-5. Next: integration views for the hub dashboard (`api_unit_count`, summaries), help links.
+5. Done 2026-11-11 (§0.7): the suite demo, Worker previews, opening from OpenAppHub, end-to-end tests.
+6. **What's left:** [`docs/epic.md`](epic.md) §0 (the suite items S-01 to S-11, the same in every app).
+
+### 0.7 Suite demo, Worker previews, opening from OpenAppHub, end-to-end tests (2026-11-11)
+
+The suite demo has members on varied levels and lengths (`db/seed/0002_charter_demo_levels.sql`); the Members tab works on the `charter` schema (a renamed key had emptied it); `/` has no landing page; Cloudflare previews on `<branch>.charter.staging.openapphub.org` (staging is branch `staging`); the smoke and end-to-end tests run on staging as the suite demo accounts. The remaining migration work is listed in `docs/epic.md`.
 
 ### 0.6 Hosted vs self-hosted, suite design (2026-11-10)
 
