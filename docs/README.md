@@ -25,7 +25,6 @@ These documents are the shared reference for the whole build. At any point in de
 | [`user-testing.md`](user-testing.md) | What to test by hand in the live app, step by step, with the demo accounts |
 | [`demo-data.md`](demo-data.md) | Demo accounts and organizations, how the demo national is set up, and how to remove them |
 | [`plans/`](plans/) | Current plans: [`phases-1-3-review.md`](plans/phases-1-3-review.md) (where Phases 1–3 stand and the waves for what's left) [`wave-a-mvp.md`](plans/wave-a-mvp.md) (the MVP plan) and [`release-v0.1.0.md`](plans/release-v0.1.0.md) (what's left before tagging v0.1.0, and the pull request description). Finished plans are removed; their outcome lives in `decisions.md` and git history |
-| [`lovable-handoff.md`](lovable-handoff.md) | What Lovable needs to do: migrations to apply, checks, and the record of what's applied |
 
 ## Vision
 

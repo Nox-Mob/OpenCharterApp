@@ -88,7 +88,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      // OpenCharterApp's own mark (replaces Lovable's icon): SVG for current browsers, the .ico
+      // OpenCharterApp's own mark: SVG for current browsers, the .ico
       // (16–64 px) for the rest, and a 180 px icon for iOS home screens.
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
       { rel: "icon", href: "/favicon.ico", sizes: "any" },

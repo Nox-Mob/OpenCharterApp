@@ -2,10 +2,10 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 import { db } from "./pending-schema";
 
 /**
- * Readiness guard (D-135). Features that need a migration Lovable hasn't applied yet check
+ * Readiness guard (D-135). Features that need a migration that isn't applied yet check
  * the live database first and show a notice instead of failing. Each feature names the
  * migration that enables it and a cheap probe: a table that migration creates, or a function.
- * Once Lovable applies the migration, mark the feature `applied: true` (no more probing).
+ * Once the migration is applied, mark the feature `applied: true` (no more probing).
  */
 export const FEATURES = {
   memberships: {
@@ -169,7 +169,7 @@ export const FEATURES = {
     table?: string;
     rpc?: string;
     args?: object;
-    /** Lovable applied it to the live database: no probe, always ready. */
+    /** Applied to the live database: no probe, always ready. */
     applied?: boolean;
   }
 >;

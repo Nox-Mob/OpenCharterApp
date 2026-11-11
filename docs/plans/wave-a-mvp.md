@@ -4,7 +4,7 @@ Status, 2026-11-03: **Sprints 1–3 done** except the owner actions (A1 live Str
 
 ## 1. Goal
 
-Release the `BoardUpdates` branch as the **OpenCharterApp MVP (v0.1.0)**: the first version a real national (or a standalone association) can run on, hosted on Lovable Cloud.
+Release the `BoardUpdates` branch as the **OpenCharterApp MVP (v0.1.0)**: the first version a real national (or a standalone association) can run on, hosted on Supabase.
 
 **The MVP is done when** a national can:
 1. set itself up (membership model, levels, fields, board)
@@ -26,7 +26,7 @@ And when we can show it's safe:
 - automatic email: Wave B. Invitations stay copy-a-link, and there are no reminders.
 - postpaid dues and invoices: E-20, Wave C. So in the home-chapter model, **chapters can't bill local dues in the app yet** (D-166 rule 4 arrives with E-20).
 - PayPal, custom domains, approvals, board reports, documents, elections, automation.
-- packaging for self-hosting (F-11). The MVP runs on Lovable Cloud; the Docker / hosted-Supabase install (D-160) follows.
+- packaging for self-hosting (F-11). The MVP runs on the hosted service; the Docker / hosted-Supabase install (D-160) follows.
 
 ## 3. Decisions for the MVP (settled 2026-11-02 as D-169..D-172)
 
@@ -87,25 +87,25 @@ Playwright in Chromium against the live demo backend (D-170, D-175); `bun run te
 | R2 ✅ | Accessibility pass to WCAG 2.1 AA (Q-16): keyboard paths through join, checkout, setup, Members, Board; labels; contrast in both themes | S–M |
 | R3 ✅ | `instructions.md` §9 gaps: add the pre-commit hook (lint-staged: lint, format, related tests) and a lightweight docs check in CI, or mark them as planned in the doc | S |
 | R4 | Receipt wording: CPA review (R-07). If it isn't done by release, ship with the current placeholder wording and say so in the release notes | — (external) |
-| R5 ✅ | Release docs: README (what the MVP does, how to run it), `CHANGELOG.md`, `docs/user-testing.md` pass, Lovable hand-off for any pending migrations | S |
+| R5 ✅ | Release docs: README (what the MVP does, how to run it), `CHANGELOG.md`, `docs/user-testing.md` pass, hand-off for any pending migrations | S |
 | R6 ✅ | Performance check with a large roster (5,000 members across 20 chapters): Members "everyone" view, overview, reports, exports | S |
-| R7 ✅ | Error monitoring: confirm Lovable's error reporting is on, and that failed payments / webhooks are visible to admins | S |
+| R7 ✅ | Error monitoring: confirm server errors are logged, and that failed payments / webhooks are visible to admins | S |
 
 **Outcome:** recorded in `docs/security-review.md` (R1, R2, R3, R6, R7) and decisions D-180..D-183. R4 is an owner action; if it isn't done, 0.1.0 ships with the placeholder wording, as `CHANGELOG.md` says.
 
 ## 6. Release checklist
 
-Current status and owners: [`release-v0.1.0.md`](release-v0.1.0.md). As of 2026-11-03: 1 ✅ (CI and the live demo checks green); 2 waits for Lovable to apply `0040`; 3, 4 (owner sign-off), 7, 8 and 9 are for the owner; 5 and 6 ✅.
+Current status and owners: [`release-v0.1.0.md`](release-v0.1.0.md). As of 2026-11-03: 1 ✅ (CI and the live demo checks green); 2 waits for `0040` to be applied; 3, 4 (owner sign-off), 7, 8 and 9 are for the owner; 5 and 6 ✅.
 
 
 1. All Wave A items merged on `BoardUpdates`; CI green (lint, format, types, unit, database rules, migration conventions, build, end-to-end).
-2. Lovable has applied every pending migration; `bun run test:smoke` passes against the live backend.
+2. Every pending migration is applied; `bun run test:smoke` passes against the live backend.
 3. Full pass of `docs/user-testing.md` as National, Chapter and Member, on desktop and phone width.
 4. Security review (R1) signed off by the owner (`docs/security-review.md`); accessibility: automated checks pass, manual checks in `user-testing.md` §16 done.
 5. Decisions M1–M4 recorded in `decisions.md` (done: D-169..D-172).
 6. ✅ `package.json` version `0.1.0`, `CHANGELOG.md`, README "Where it stands" updated.
 7. Add the AGPL-3.0 `LICENSE` file (R-24) and `"license": "AGPL-3.0-only"` in `package.json` (maintainer: GitHub's "Add file → Create new file → LICENSE → Choose a license template" gives the official text).
-8. Pull request `BoardUpdates` → `main` with the checklist from `instructions.md` §8; reviewed and merged (no force-push; Lovable syncs from `main`).
+8. Pull request `BoardUpdates` → `main` with the checklist from `instructions.md` §8; reviewed and merged (no force-push).
 9. Tag `v0.1.0` and publish release notes, listing what's not in the MVP (§2).
 
 ## 7. Sequence (about 3 sprints of 2 weeks)
@@ -118,7 +118,7 @@ Current status and owners: [`release-v0.1.0.md`](release-v0.1.0.md). As of 2026-
 | 4 ✅ | Ready for real use (§8): U1–U7 (D-189..D-195); then the release checklist and v0.1.0 |
 
 **Risks to the plan:**
-- **End-to-end tests run against the live demo backend** (like `bun run test:smoke`): a feature whose migration Lovable hasn't applied yet can only be tested end to end after it is applied.
+- **End-to-end tests run against the live demo backend** (like `bun run test:smoke`): a feature whose migration isn't applied yet can only be tested end to end after it is applied.
 - **R1 may turn up fixes:** keep Sprint 3 light for that.
 
 ## 8. Release-readiness review (2026-11-03)
@@ -145,5 +145,5 @@ A check of Phases 0–2 against one question: could a real association start usi
 - **Coverage gate** (E-01) waits for a dependency decision.
 
 ### Owner and maintainer actions (unchanged)
-A1 live Stripe test-mode run · R4 CPA look at receipt wording · the AGPL-3.0 `LICENSE` file (R-24) · the privacy policy and terms text (`src/content/legal.tsx`) · Lovable applies 0036 and 0037 · the release checklist (§6).
+A1 live Stripe test-mode run · R4 CPA look at receipt wording · the AGPL-3.0 `LICENSE` file (R-24) · the privacy policy and terms text (`src/content/legal.tsx`) · 0036 and 0037 applied · the release checklist (§6).
 

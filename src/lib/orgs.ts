@@ -33,7 +33,7 @@ export const myOrgsQuery = () =>
   queryOptions({
     queryKey: ["orgs", "mine"],
     queryFn: async (): Promise<Org[]> => {
-      // Untyped: is_demo isn't in the generated types until Lovable applies 0022.
+      // Untyped: is_demo isn't in the generated types until 0022 is applied.
       const orgs = supabase as unknown as SupabaseClient;
       const withDemo = await orgs.from("units").select(`${ORG_COLUMNS},is_demo`).order("name");
       // 42703 = the column doesn't exist yet (migration 0022 not applied): read without it

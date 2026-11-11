@@ -5,7 +5,7 @@ name: CI
 # when nothing is pushed. The live-demo checks (smoke and end-to-end) are in live.yml.
 on:
   push:
-    branches: ["**"]
+    branches: [staging]
   pull_request:
   schedule:
     - cron: "23 5 * * 1" # Mondays 05:23 UTC

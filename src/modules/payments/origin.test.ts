@@ -49,8 +49,8 @@ describe("public origin for checkout return links (D-158)", () => {
     ).toBe("https://ok.example");
   });
 
-  it("refuses origins that aren't on the allowlist, Lovable's old hosts included (D-219)", () => {
-    expect(publicOrigin(h({ origin: "https://opencharter.lovable.app" }), internal)).toBe(
+  it("refuses origins that aren't on the allowlist, old hosts included (D-219)", () => {
+    expect(publicOrigin(h({ origin: "https://opencharter.old-host.example" }), internal)).toBe(
       "http://localhost:3000",
     );
     expect(publicOrigin(h({ origin: "https://evil.example" }), internal)).toBe(

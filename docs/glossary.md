@@ -70,7 +70,7 @@
 | **Branding** | An org's logo, icon, colors, and header image. Chapters can override national's defaults |
 | **Logo override** | A chapter-supplied logo that replaces the inherited national logo for that chapter's site, emails, and receipts |
 | **Direct mode** | Each org collects into its own Stripe (or PayPal) account. The only mode we support (D-162); a parent's fee is invoiced to the subordinate org. *Connect mode was dropped* |
-| **Email transport** | How the app sends email: Lovable's built-in email or the client's own server, set by `EMAIL_TRANSPORT` (D-159) |
+| **Email transport** | How the app sends email: the platform's email or the client's own server, set by `EMAIL_TRANSPORT` (D-159) |
 | **Send-from address** | The address an org's emails come from; chapters inherit their parent's unless allowed their own (D-159) |
 | **Suggested level / Copy / Linked** | A level a national offers its chapters to start from. *Copy*: the chapter's own level, unaffected by later national changes. *Linked*: follows the national's level (name, terms, retirement); the chapter's price is the same, an amount less or a percentage less, kept within the national's range. "Make it our own" turns a linked level into a copy (D-165, D-177) |
 | **National standing** | In the separate model, a chapter member's standing in the national's own membership, shown to chapter admins when the national requires it (D-178) |

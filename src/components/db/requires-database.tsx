@@ -10,7 +10,7 @@ export function DatabaseUpdateNotice({ feature }: { feature: Feature }) {
       className="rounded-md border border-dashed bg-muted/40 p-4 text-sm text-muted-foreground"
     >
       {f.label} need a database update (migration {f.migration}) that hasn't been applied yet. Ask
-      Lovable to apply the pending migrations listed in the roadmap.
+      the administrator to apply the pending migrations listed in the roadmap.
     </p>
   );
 }

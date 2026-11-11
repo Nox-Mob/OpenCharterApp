@@ -1,8 +1,8 @@
 import { expect, test } from "./fixtures";
 import { stagingSetting } from "../smoke/client";
 
-// D-212: "Continue with Google" goes through Supabase Auth on the app's own project (no Lovable
-// broker). The browser is sent to the project's /auth/v1/authorize for Google, asking to come
+// D-212: "Continue with Google" goes through Supabase Auth on the app's own project (no
+// third-party broker). The browser is sent to the project's /auth/v1/authorize for Google, asking to come
 // back to /auth. The request is answered here, so the test never reaches Google.
 test("Continue with Google sends the browser to Supabase Auth for Google", async ({
   page,

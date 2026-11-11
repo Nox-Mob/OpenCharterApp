@@ -2,7 +2,28 @@
 
 An open-source membership platform for associations that have a **national organization and local chapters**, and for single local groups too. Each organization runs its own members, dues, money and governance, and the national sets the rules its chapters work within.
 
-> Built on TanStack Start (React, SSR) and Supabase (Postgres, Auth, Storage), deployed as a Cloudflare Worker. OpenCharterApp is becoming one of the apps of **OpenAppHub** (one sign-in, organization and billing across the suite, `docs/SHARED-SPEC.md`); it keeps running on its own when self-hosted. Progress: [`docs/MIGRATION-NOTES.md`](docs/MIGRATION-NOTES.md).
+OpenCharterApp is one of the apps of **[OpenAppHub](https://openapphub.org)**: one sign-in, organization and billing across OpenCharterApp, OpenBoardApp and OpenLedgerApp. It also runs on its own when self-hosted. Built on TanStack Start (React, SSR) and Supabase (Postgres, Auth, Storage), deployed as a Cloudflare Worker.
+
+## Editions
+
+|                 | Hosted (OpenAppHub)                                   | Self-hosted                                                    |
+| --------------- | ----------------------------------------------------- | -------------------------------------------------------------- |
+| Address         | `charter.openapphub.org`                              | your own                                                       |
+| Sign-in and org | the hub (`openapphub.org`): one account for every app | Charter's own sign-in and organizations                        |
+| Database        | the suite's shared Supabase project, schema `charter` | your own Supabase project, schema `charter`                    |
+| Billing         | the hub's plans; read-only when a plan lapses         | none: always writable, and the join page works without sign-in |
+| Build           | `bun run build:hosted`                                | `bun run build` (`VITE_HOSTED=false`, the default)             |
+
+## Try it
+
+Staging is at **https://staging.charter.staging.openapphub.org**, with the suite demo (reset every 12 hours):
+
+| Account                    | Password             | What you see                                                                                                   |
+| -------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `demo@demo.openapphub.org` | `OpenAppHubDemo2026` | owns Riverside Community Association: about 140 members on varied levels and terms, dues, receipts and a board |
+| `test@demo.openapphub.org` | `OpenAppHubDemo2026` | no organization (a first visit)                                                                                |
+
+These are public on purpose and exist only on staging ([`docs/demo-data.md`](docs/demo-data.md)).
 
 ## Purpose
 
@@ -28,7 +49,7 @@ The full vision, scope and feature map are in [`docs/README.md`](docs/README.md)
 
 ### Where it stands
 
-**Next milestone: the MVP release (v0.1.0)**, the first version a real national or standalone association can run on, hosted on Lovable Cloud. It is built, live and checked automatically on every push (CI and the live demo checks). What's left before tagging, and who does it, is in [`docs/plans/release-v0.1.0.md`](docs/plans/release-v0.1.0.md): Lovable applies one migration, and the owner runs a live Stripe test, adds the licence file and does a final pass of the user-testing guide. What's in it: [`CHANGELOG.md`](CHANGELOG.md). Phases 1 and 2 of the [epic map](docs/epic.md) meet their exit criteria; what's left in Phases 1–3 is in [`docs/plans/phases-1-3-review.md`](docs/plans/phases-1-3-review.md).
+**Next milestone: the MVP release (v0.1.0)**, the first version a real national or standalone association can run on, hosted in the OpenAppHub suite. It is built, live on staging and checked automatically (CI, the smoke test and the end-to-end tests). What's left for the suite move is in [`docs/epic.md`](docs/epic.md) §1. What's left before tagging, and who does it, is in [`docs/plans/release-v0.1.0.md`](docs/plans/release-v0.1.0.md): the owner runs a live Stripe test, adds the licence file and does a final pass of the user-testing guide. What's in it: [`CHANGELOG.md`](CHANGELOG.md). Phases 1 and 2 of the [epic map](docs/epic.md) meet their exit criteria; what's left in Phases 1–3 is in [`docs/plans/phases-1-3-review.md`](docs/plans/phases-1-3-review.md).
 
 Working today:
 
@@ -49,7 +70,7 @@ Working today:
 
 Not in the MVP: automatic email (the first update after it), postpaid dues and invoices, PayPal, custom domains, approvals, board reports, documents, elections. Progress and what's next: [`roadmap.md`](roadmap.md).
 
-Every migration (up to `0045`) is applied to the live database; none is waiting (see [`roadmap.md`](roadmap.md)). For demos, the demo national **Test-Demo** looks like a real association: 15 chapters, about 500 members with years of history, and a full board ([`docs/demo-data.md`](docs/demo-data.md)). The security, accessibility and performance review is in [`docs/security-review.md`](docs/security-review.md), and a map of every table is in [`docs/tables.md`](docs/tables.md).
+The database is built from `db/migrations` (see [Database changes](#database-changes)); waiting migrations are listed in [`roadmap.md`](roadmap.md). For demos, the demo national **Test-Demo** looks like a real association: 15 chapters, about 500 members with years of history, and a full board ([`docs/demo-data.md`](docs/demo-data.md)). The security, accessibility and performance review is in [`docs/security-review.md`](docs/security-review.md), and a map of every table is in [`docs/tables.md`](docs/tables.md).
 
 ## Install and run
 
@@ -76,7 +97,7 @@ Copy [`.env.example`](.env.example) to `.env.local` (git-ignored) and fill in yo
 bun run dev
 ```
 
-Then open the URL Vite prints. To sign in with test accounts, use the demo users in [`docs/demo-data.md`](docs/demo-data.md). They're temporary and are removed before launch.
+Then open the URL Vite prints. To sign in with test accounts, load the suite demo into your development database (see [Database changes](#database-changes)) and use the accounts under [Try it](#try-it).
 
 ### Checks (run before every commit, CI runs the same)
 
@@ -93,7 +114,7 @@ bun run test:e2e             # end-to-end, in Chromium (needs network; see docs/
 
 Install the pre-commit hook once per clone with `bun run hooks:install`; it runs the fast checks on every commit. `bun run test:perf` (with `TEST_DATABASE_URL`) times the heavy reads with 5,000, 10,000 and 20,000 members and fails over budget; `bun run test:smoke` checks the suite demo and the security rules on staging.
 
-GitHub runs all of these (D-197): `ci.yml` on every push and pull request, and `live.yml` (the smoke test, then the end-to-end tests against the live demo) on pushes to `main` and `BoardUpdates`, pull requests to `main`, daily and on demand. See [`docs/testing.md`](docs/testing.md).
+GitHub runs all of these (D-197) on every pull request and on pushes to `staging`: `ci.yml` (also weekly), and `live.yml`, the smoke test and then the end-to-end tests against staging (also daily and on demand). See [`docs/testing.md`](docs/testing.md).
 
 `test:db` creates and drops its own throwaway database (`charter_rules_test`), applies every migration and runs `db/tests/*.sql`. **Never point it at the real project database.** Details are in [`docs/testing.md`](docs/testing.md). For checking the app by hand, follow [`docs/user-testing.md`](docs/user-testing.md).
 
@@ -102,10 +123,12 @@ GitHub runs all of these (D-197): `ci.yml` on every push and pull request, and `
 - Schema changes are SQL migrations in [`db/migrations`](db/migrations), in schema `charter` on the shared OpenAppHub core (`db/core`, vendored from the hub). `scripts/migrate.mjs` applies them (`DATABASE_URL=… bun run db:migrate`); the owner runs the **Migrate** workflow for staging and production. Migrations are additive: no dropping tables or columns, and an applied migration is never edited.
 - Demo data for staging or development: [`db/seed`](db/seed) (`bun run db:migrate -- --seed`; the suite demo, `demo@demo.openapphub.org` / `OpenAppHubDemo2026`, see [`docs/demo-data.md`](docs/demo-data.md)). It refuses a database with real organizations, and never runs on production.
 
-### Hosting and deploys (spec §10, v2.2)
+### Branches and deploys (spec §10, v2.2)
+
+- **Pull requests target `staging`.** Nothing merges into `main` without the owner's approval; `main` is production.
 
 - The hosted app is a Cloudflare Worker. In [`wrangler.jsonc`](wrangler.jsonc), the **top level is production** (`charter.openapphub.org`, Worker `opencharterapp`) and `env.staging` holds staging's public settings. Staging is the same Worker's preview of the `staging` branch (`staging.charter.staging.openapphub.org`; any other branch builds at `<branch>.charter.staging.openapphub.org`): `bun run build:hosted` builds `main` for production and every other branch for staging.
-- **Merging to `main` deploys production** through Cloudflare's Git integration: build `bun run build:hosted`, deploy `npx wrangler deploy --config .output/server/wrangler.json`. Staging: `bun run build:hosted:staging`, then the same deploy command with `--env staging`. There are no deploy workflows and no Cloudflare secrets in GitHub.
+- **A change on `main` deploys production** through Cloudflare's Git integration: build `bun run build:hosted`, deploy `npx wrangler deploy --config .output/server/wrangler.json`. Staging: `bun run build:hosted:staging`, then the same deploy command with `--env staging`. There are no deploy workflows and no Cloudflare secrets in GitHub.
 - Every rendered page gets security headers from the server entry (`src/server.ts`, `src/lib/security-headers.ts`): `nosniff`, `strict-origin-when-cross-origin`, `X-Frame-Options: DENY` and a CSP allowing only the app, its Supabase project and Google Fonts.
 - Server secrets (`SUPABASE_SERVICE_ROLE_KEY`, `GATEWAY_ENCRYPTION_KEY`) are set on each Worker.
 
@@ -117,7 +140,7 @@ GitHub runs all of these (D-197): `ci.yml` on every push and pull request, and `
 
 ### Git history
 
-- **Don't rewrite published history**: no force pushes and no rebasing or amending pushed commits.
+Don't rewrite published history: no force pushes, and no rebasing or amending pushed commits.
 
 ## Contributing
 
@@ -131,4 +154,4 @@ Start with [`docs/instructions.md`](docs/instructions.md). It holds the working 
 
 ## License
 
-AGPL-3.0 (decision D-020): free to self-host. Modified versions offered as a network service must share their source.
+AGPL-3.0 (decision D-020): free to self-host. Modified versions offered as a network service must share their source. The `LICENSE` file is still to be added (owner, R-24).
