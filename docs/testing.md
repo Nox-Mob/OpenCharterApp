@@ -55,7 +55,7 @@ Notes:
   - Chromium's sandbox is on. It can't run as root: in a root-only sandbox, set `E2E_NO_SANDBOX=1`.
   - `E2E_BROWSER_CHANNEL=chrome` uses the installed Google Chrome instead of Playwright's bundled Chromium; CI does this.
   - Where Playwright's own Chromium build can't be installed, set `E2E_CHROMIUM_PATH` to an existing Chromium. In the Claude cloud sandbox: `E2E_NO_SANDBOX=1 E2E_CHROMIUM_PATH=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome bun run test:e2e`.
-- In CI the job installs Google Chrome stable (`playwright install --with-deps chrome`) and runs as a non-root user with the sandbox on. It uses the repository variable `E2E_BASE_URL` when set, except on pull requests: the deployed site runs `main`, not the pull request's code, so a pull request always tests a local dev server built from its own code (D-212). It uploads traces when a test fails.
+- In CI the job uses the Google Chrome stable that GitHub's Ubuntu runners ship (and installs it with `playwright install --with-deps chrome` only when it's missing) and runs as a non-root user with the sandbox on. It uses the repository variable `E2E_BASE_URL` when set, except on pull requests: the deployed site runs `main`, not the pull request's code, so a pull request always tests a local dev server built from its own code (D-212). It uploads traces when a test fails.
 
 ## Live smoke test
 
