@@ -18,7 +18,7 @@ What's left for the OpenAppHub suite migration to be "done". The same items (S-x
 | S-08 | Worker secrets | Secrets the hosted app needs, on the production Worker and in the Preview base config for staging (owner; never in the repository). | ⬜ `SUPABASE_SERVICE_ROLE_KEY` and `GATEWAY_ENCRYPTION_KEY` for payments, production and previews |
 | S-09 | End-to-end tests | Playwright on a local dev server against staging and the suite demo, in CI on every pull request and daily. | ✅ 2026-11-11 (`live.yml`, 17 tests and the API smoke test) |
 | S-10 | Retire the old projects | The old editor and Supabase projects, once the app has run on the shared projects for a while (owner). | ⬜ owner; `charter_legacy` dropped only when the owner asks |
-| S-11 | One look across the suite | Same shell, menus and settings pattern as the other apps; differences found are listed under Known issues. | ✅ shared AppShell; see Known issues |
+| S-11 | One look across the suite | Same shell, menus and settings pattern as the other apps; differences found are listed under Known issues. | ✅ shared AppShell; see Known issues; one logo family (shared 1.5.0) |
 
 Charter-only follow-ups (2026-11-11):
 

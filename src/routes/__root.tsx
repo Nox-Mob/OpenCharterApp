@@ -88,10 +88,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      // OpenCharterApp's own mark: SVG for current browsers, the .ico
-      // (16–64 px) for the rest, and a 180 px icon for iOS home screens.
+      // The app's logo (shared/brand/marks.ts; files from the hub's scripts/brand-assets.ts):
+      // SVG for current browsers, the .ico (16–48 px) and a 32 px PNG for the rest, 180 px for iOS.
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
-      { rel: "icon", href: "/favicon.ico", sizes: "any" },
+      { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
+      { rel: "icon", href: "/brand/charter-logo-32.png", type: "image/png", sizes: "32x32" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
     ],
   }),
