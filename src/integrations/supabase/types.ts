@@ -20,7 +20,6 @@ export type Database = {
           to_org_id: string | null
           unit_id: string
         }
-        ComputedFields: never
         Insert: {
           changed_by?: string | null
           created_at?: string
@@ -45,24 +44,49 @@ export type Database = {
           {
             foreignKeyName: "affiliation_history_from_org_id_fkey"
             columns: ["from_org_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliation_history_from_org_id_fkey"
+            columns: ["from_org_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "affiliation_history_membership_id_fkey"
             columns: ["membership_id"]
+            isOneToOne: false
             referencedRelation: "memberships"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "affiliation_history_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliation_history_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "affiliation_history_to_org_id_fkey"
             columns: ["to_org_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliation_history_to_org_id_fkey"
+            columns: ["to_org_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
@@ -85,7 +109,6 @@ export type Database = {
           template_id: string
           unit_id: string
         }
-        ComputedFields: never
         Insert: {
           appointed_by?: string | null
           created_at?: string
@@ -122,24 +145,35 @@ export type Database = {
           {
             foreignKeyName: "appointments_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "appointments_profile_id_fkey"
             columns: ["profile_id"]
+            isOneToOne: false
             referencedRelation: "member_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "appointments_role_assignment_id_fkey"
             columns: ["role_assignment_id"]
+            isOneToOne: false
             referencedRelation: "role_assignments"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "appointments_template_id_fkey"
             columns: ["template_id"]
+            isOneToOne: false
             referencedRelation: "seat_templates"
             referencedColumns: ["id"]
           },
@@ -164,7 +198,6 @@ export type Database = {
           unit_id: string
           visibility: Database["charter"]["Enums"]["attribute_visibility"]
         }
-        ComputedFields: never
         Insert: {
           active?: boolean
           applies_to?: Database["charter"]["Enums"]["attribute_subject"]
@@ -205,6 +238,14 @@ export type Database = {
           {
             foreignKeyName: "attribute_definitions_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attribute_definitions_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
@@ -221,7 +262,6 @@ export type Database = {
           unit_id: string
           value: string
         }
-        ComputedFields: never
         Insert: {
           active?: boolean
           definition_id: string
@@ -246,12 +286,21 @@ export type Database = {
           {
             foreignKeyName: "attribute_options_definition_id_fkey"
             columns: ["definition_id"]
+            isOneToOne: false
             referencedRelation: "attribute_definitions"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "attribute_options_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attribute_options_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
@@ -266,9 +315,8 @@ export type Database = {
           unit_id: string
           updated_at: string
           updated_by: string | null
-          value: NonNullable<Json>
+          value: Json
         }
-        ComputedFields: never
         Insert: {
           definition_id: string
           entity_id: string
@@ -277,7 +325,7 @@ export type Database = {
           unit_id: string
           updated_at?: string
           updated_by?: string | null
-          value: NonNullable<Json>
+          value: Json
         }
         Update: {
           definition_id?: string
@@ -287,18 +335,27 @@ export type Database = {
           unit_id?: string
           updated_at?: string
           updated_by?: string | null
-          value?: NonNullable<Json>
+          value?: Json
         }
         Relationships: [
           {
             foreignKeyName: "attribute_values_definition_id_fkey"
             columns: ["definition_id"]
+            isOneToOne: false
             referencedRelation: "attribute_definitions"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "attribute_values_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attribute_values_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
@@ -318,7 +375,6 @@ export type Database = {
           tx_id: number | null
           unit_id: string | null
         }
-        ComputedFields: never
         Insert: {
           action: string
           actor_id?: string | null
@@ -347,6 +403,60 @@ export type Database = {
         }
         Relationships: []
       }
+      chapter_board_requests: {
+        Row: {
+          board_org_id: string | null
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          note: string | null
+          org_id: string
+          requested_at: string
+          requested_by: string | null
+          status: string
+          unit_id: string
+        }
+        Insert: {
+          board_org_id?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          note?: string | null
+          org_id: string
+          requested_at?: string
+          requested_by?: string | null
+          status?: string
+          unit_id: string
+        }
+        Update: {
+          board_org_id?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          note?: string | null
+          org_id?: string
+          requested_at?: string
+          requested_by?: string | null
+          status?: string
+          unit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapter_board_requests_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chapter_board_requests_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gateway_connections: {
         Row: {
           account_label: string
@@ -360,7 +470,6 @@ export type Database = {
           unit_id: string
           updated_at: string
         }
-        ComputedFields: never
         Insert: {
           account_label?: string
           connected_at?: string
@@ -389,6 +498,14 @@ export type Database = {
           {
             foreignKeyName: "gateway_connections_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: true
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gateway_connections_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: true
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
@@ -401,7 +518,6 @@ export type Database = {
           unit_id: string
           updated_at: string
         }
-        ComputedFields: never
         Insert: {
           org_id?: string | null
           sealed: string
@@ -418,6 +534,14 @@ export type Database = {
           {
             foreignKeyName: "gateway_secrets_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: true
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gateway_secrets_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: true
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
@@ -437,10 +561,7 @@ export type Database = {
           source: string
           unit_id: string
           user_id: string | null
-          listed_in_directory: boolean | null
-          profile_membership_id: string | null
         }
-        ComputedFields: "listed_in_directory" | "profile_membership_id"
         Insert: {
           claimed_at?: string | null
           created_at?: string
@@ -473,12 +594,21 @@ export type Database = {
           {
             foreignKeyName: "member_profiles_home_of_fkey"
             columns: ["home_of"]
+            isOneToOne: false
             referencedRelation: "memberships"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "member_profiles_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_profiles_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
@@ -488,17 +618,16 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
-          filter: NonNullable<Json>
+          filter: Json
           id: string
           name: string
           org_id: string | null
           unit_id: string
         }
-        ComputedFields: never
         Insert: {
           created_at?: string
           created_by?: string | null
-          filter?: NonNullable<Json>
+          filter?: Json
           id?: string
           name: string
           org_id?: string | null
@@ -507,7 +636,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
-          filter?: NonNullable<Json>
+          filter?: Json
           id?: string
           name?: string
           org_id?: string | null
@@ -517,6 +646,14 @@ export type Database = {
           {
             foreignKeyName: "member_segments_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_segments_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
@@ -538,7 +675,6 @@ export type Database = {
           tier_id: string | null
           unit_id: string
         }
-        ComputedFields: never
         Insert: {
           actor_id?: string | null
           created_at?: string
@@ -573,30 +709,42 @@ export type Database = {
           {
             foreignKeyName: "membership_events_membership_id_fkey"
             columns: ["membership_id"]
+            isOneToOne: false
             referencedRelation: "memberships"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "membership_events_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_events_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "membership_events_payment_id_fkey"
             columns: ["payment_id"]
+            isOneToOne: false
             referencedRelation: "payments"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "membership_events_term_id_fkey"
             columns: ["term_id"]
+            isOneToOne: false
             referencedRelation: "tier_terms"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "membership_events_tier_id_fkey"
             columns: ["tier_id"]
+            isOneToOne: false
             referencedRelation: "membership_tiers"
             referencedColumns: ["id"]
           },
@@ -620,7 +768,6 @@ export type Database = {
           tax_treatment: Database["charter"]["Enums"]["tax_treatment"]
           unit_id: string
         }
-        ComputedFields: never
         Insert: {
           active?: boolean
           created_at?: string
@@ -659,12 +806,21 @@ export type Database = {
           {
             foreignKeyName: "membership_tiers_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_tiers_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "membership_tiers_source_tier_id_fkey"
             columns: ["source_tier_id"]
+            isOneToOne: false
             referencedRelation: "membership_tiers"
             referencedColumns: ["id"]
           },
@@ -686,7 +842,6 @@ export type Database = {
           unit_id: string
           updated_at: string
         }
-        ComputedFields: never
         Insert: {
           created_at?: string
           home_org_id?: string | null
@@ -721,30 +876,49 @@ export type Database = {
           {
             foreignKeyName: "memberships_home_org_id_fkey"
             columns: ["home_org_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_home_org_id_fkey"
+            columns: ["home_org_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "memberships_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memberships_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "memberships_profile_id_fkey"
             columns: ["profile_id"]
+            isOneToOne: false
             referencedRelation: "member_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "memberships_term_id_fkey"
             columns: ["term_id"]
+            isOneToOne: false
             referencedRelation: "tier_terms"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "memberships_tier_id_fkey"
             columns: ["tier_id"]
+            isOneToOne: false
             referencedRelation: "membership_tiers"
             referencedColumns: ["id"]
           },
@@ -759,7 +933,6 @@ export type Database = {
           updated_at: string
           value: Json | null
         }
-        ComputedFields: never
         Insert: {
           key: string
           mode?: Database["charter"]["Enums"]["setting_mode"]
@@ -780,6 +953,14 @@ export type Database = {
           {
             foreignKeyName: "org_settings_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_settings_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
@@ -796,7 +977,7 @@ export type Database = {
           gateway: Database["charter"]["Enums"]["payment_gateway"]
           gateway_ref: string | null
           id: string
-          join_answers: NonNullable<Json>
+          join_answers: Json
           livemode: boolean
           membership_id: string | null
           method: Database["charter"]["Enums"]["payment_method"] | null
@@ -811,7 +992,6 @@ export type Database = {
           term_id: string | null
           unit_id: string
         }
-        ComputedFields: never
         Insert: {
           amount_minor: number
           checkout_ref?: string | null
@@ -822,7 +1002,7 @@ export type Database = {
           gateway?: Database["charter"]["Enums"]["payment_gateway"]
           gateway_ref?: string | null
           id?: string
-          join_answers?: NonNullable<Json>
+          join_answers?: Json
           livemode?: boolean
           membership_id?: string | null
           method?: Database["charter"]["Enums"]["payment_method"] | null
@@ -847,7 +1027,7 @@ export type Database = {
           gateway?: Database["charter"]["Enums"]["payment_gateway"]
           gateway_ref?: string | null
           id?: string
-          join_answers?: NonNullable<Json>
+          join_answers?: Json
           livemode?: boolean
           membership_id?: string | null
           method?: Database["charter"]["Enums"]["payment_method"] | null
@@ -866,24 +1046,35 @@ export type Database = {
           {
             foreignKeyName: "payments_membership_id_fkey"
             columns: ["membership_id"]
+            isOneToOne: false
             referencedRelation: "memberships"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "payments_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "payments_profile_id_fkey"
             columns: ["profile_id"]
+            isOneToOne: false
             referencedRelation: "member_profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "payments_term_id_fkey"
             columns: ["term_id"]
+            isOneToOne: false
             referencedRelation: "tier_terms"
             referencedColumns: ["id"]
           },
@@ -894,7 +1085,6 @@ export type Database = {
           description: string
           key: string
         }
-        ComputedFields: never
         Insert: {
           description: string
           key: string
@@ -909,18 +1099,17 @@ export type Database = {
         Row: {
           key: string
           updated_at: string
-          value: NonNullable<Json>
+          value: Json
         }
-        ComputedFields: never
         Insert: {
           key: string
           updated_at?: string
-          value: NonNullable<Json>
+          value: Json
         }
         Update: {
           key?: string
           updated_at?: string
-          value?: NonNullable<Json>
+          value?: Json
         }
         Relationships: []
       }
@@ -929,7 +1118,6 @@ export type Database = {
           added_at: string
           user_id: string
         }
-        ComputedFields: never
         Insert: {
           added_at?: string
           user_id: string
@@ -943,7 +1131,7 @@ export type Database = {
       pricing_rules: {
         Row: {
           active: boolean
-          conditions: NonNullable<Json>
+          conditions: Json
           created_at: string
           created_by: string | null
           discount_pct: number | null
@@ -955,10 +1143,9 @@ export type Database = {
           term_id: string
           unit_id: string
         }
-        ComputedFields: never
         Insert: {
           active?: boolean
-          conditions?: NonNullable<Json>
+          conditions?: Json
           created_at?: string
           created_by?: string | null
           discount_pct?: number | null
@@ -972,7 +1159,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
-          conditions?: NonNullable<Json>
+          conditions?: Json
           created_at?: string
           created_by?: string | null
           discount_pct?: number | null
@@ -988,12 +1175,21 @@ export type Database = {
           {
             foreignKeyName: "pricing_rules_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_rules_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "pricing_rules_term_id_fkey"
             columns: ["term_id"]
+            isOneToOne: false
             referencedRelation: "tier_terms"
             referencedColumns: ["id"]
           },
@@ -1006,7 +1202,6 @@ export type Database = {
           unit_id: string
           year: number
         }
-        ComputedFields: never
         Insert: {
           last_seq?: number
           org_id?: string | null
@@ -1023,6 +1218,14 @@ export type Database = {
           {
             foreignKeyName: "receipt_counters_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_counters_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
@@ -1036,7 +1239,7 @@ export type Database = {
           org_id: string | null
           payment_id: string
           seq: number
-          snapshot: NonNullable<Json>
+          snapshot: Json
           status: Database["charter"]["Enums"]["receipt_status"]
           supersedes_id: string | null
           unit_id: string
@@ -1045,7 +1248,6 @@ export type Database = {
           voided_by: string | null
           year: number
         }
-        ComputedFields: never
         Insert: {
           id?: string
           issued_at?: string
@@ -1053,7 +1255,7 @@ export type Database = {
           org_id?: string | null
           payment_id: string
           seq: number
-          snapshot: NonNullable<Json>
+          snapshot: Json
           status?: Database["charter"]["Enums"]["receipt_status"]
           supersedes_id?: string | null
           unit_id: string
@@ -1069,7 +1271,7 @@ export type Database = {
           org_id?: string | null
           payment_id?: string
           seq?: number
-          snapshot?: NonNullable<Json>
+          snapshot?: Json
           status?: Database["charter"]["Enums"]["receipt_status"]
           supersedes_id?: string | null
           unit_id?: string
@@ -1082,18 +1284,28 @@ export type Database = {
           {
             foreignKeyName: "receipts_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "receipts_payment_id_fkey"
             columns: ["payment_id"]
+            isOneToOne: false
             referencedRelation: "payments"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "receipts_supersedes_id_fkey"
             columns: ["supersedes_id"]
+            isOneToOne: false
             referencedRelation: "receipts"
             referencedColumns: ["id"]
           },
@@ -1109,7 +1321,6 @@ export type Database = {
           unit_id: string
           user_id: string
         }
-        ComputedFields: never
         Insert: {
           created_at?: string
           id?: string
@@ -1132,12 +1343,21 @@ export type Database = {
           {
             foreignKeyName: "role_assignments_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_assignments_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "role_assignments_role_id_fkey"
             columns: ["role_id"]
+            isOneToOne: false
             referencedRelation: "roles"
             referencedColumns: ["id"]
           },
@@ -1148,7 +1368,6 @@ export type Database = {
           permission_key: string
           role_id: string
         }
-        ComputedFields: never
         Insert: {
           permission_key: string
           role_id: string
@@ -1161,12 +1380,14 @@ export type Database = {
           {
             foreignKeyName: "role_permissions_permission_key_fkey"
             columns: ["permission_key"]
+            isOneToOne: false
             referencedRelation: "permissions"
             referencedColumns: ["key"]
           },
           {
             foreignKeyName: "role_permissions_role_id_fkey"
             columns: ["role_id"]
+            isOneToOne: false
             referencedRelation: "roles"
             referencedColumns: ["id"]
           },
@@ -1183,7 +1404,6 @@ export type Database = {
           org_id: string | null
           unit_id: string | null
         }
-        ComputedFields: never
         Insert: {
           active?: boolean
           created_at?: string
@@ -1208,6 +1428,14 @@ export type Database = {
           {
             foreignKeyName: "roles_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roles_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
@@ -1223,7 +1451,6 @@ export type Database = {
           updated_at: string
           updated_by: string | null
         }
-        ComputedFields: never
         Insert: {
           id?: string
           org_id?: string | null
@@ -1246,12 +1473,21 @@ export type Database = {
           {
             foreignKeyName: "seat_contacts_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seat_contacts_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "seat_contacts_template_id_fkey"
             columns: ["template_id"]
+            isOneToOne: false
             referencedRelation: "seat_templates"
             referencedColumns: ["id"]
           },
@@ -1275,7 +1511,6 @@ export type Database = {
           title: string
           unit_id: string
         }
-        ComputedFields: never
         Insert: {
           active?: boolean
           created_at?: string
@@ -1314,12 +1549,21 @@ export type Database = {
           {
             foreignKeyName: "seat_templates_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seat_templates_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "seat_templates_role_id_fkey"
             columns: ["role_id"]
+            isOneToOne: false
             referencedRelation: "roles"
             referencedColumns: ["id"]
           },
@@ -1339,7 +1583,6 @@ export type Database = {
           template_id: string
           unit_id: string
         }
-        ComputedFields: never
         Insert: {
           bylaw_reference?: string
           created_at?: string
@@ -1370,12 +1613,21 @@ export type Database = {
           {
             foreignKeyName: "seat_terms_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seat_terms_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "seat_terms_template_id_fkey"
             columns: ["template_id"]
+            isOneToOne: false
             referencedRelation: "seat_templates"
             referencedColumns: ["id"]
           },
@@ -1390,7 +1642,6 @@ export type Database = {
           unit_id: string
           updated_at: string
         }
-        ComputedFields: never
         Insert: {
           id?: string
           org_id?: string | null
@@ -1411,12 +1662,21 @@ export type Database = {
           {
             foreignKeyName: "seat_title_overrides_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seat_title_overrides_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "seat_title_overrides_template_id_fkey"
             columns: ["template_id"]
+            isOneToOne: false
             referencedRelation: "seat_templates"
             referencedColumns: ["id"]
           },
@@ -1424,7 +1684,7 @@ export type Database = {
       }
       setup_states: {
         Row: {
-          answers: NonNullable<Json>
+          answers: Json
           applied_at: string | null
           flow_id: string
           org_id: string | null
@@ -1433,9 +1693,8 @@ export type Database = {
           updated_at: string
           updated_by: string | null
         }
-        ComputedFields: never
         Insert: {
-          answers?: NonNullable<Json>
+          answers?: Json
           applied_at?: string | null
           flow_id: string
           org_id?: string | null
@@ -1445,7 +1704,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
-          answers?: NonNullable<Json>
+          answers?: Json
           applied_at?: string | null
           flow_id?: string
           org_id?: string | null
@@ -1458,6 +1717,14 @@ export type Database = {
           {
             foreignKeyName: "setup_states_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "setup_states_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
@@ -1478,7 +1745,6 @@ export type Database = {
           unit_id: string
           updated_at: string
         }
-        ComputedFields: never
         Insert: {
           address_line1?: string
           address_line2?: string
@@ -1511,6 +1777,14 @@ export type Database = {
           {
             foreignKeyName: "tax_profiles_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: true
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tax_profiles_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: true
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
@@ -1533,7 +1807,6 @@ export type Database = {
           tier_id: string
           unit_id: string
         }
-        ComputedFields: never
         Insert: {
           active?: boolean
           created_at?: string
@@ -1570,18 +1843,28 @@ export type Database = {
           {
             foreignKeyName: "tier_terms_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tier_terms_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "tier_terms_source_term_id_fkey"
             columns: ["source_term_id"]
+            isOneToOne: false
             referencedRelation: "tier_terms"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "tier_terms_tier_id_fkey"
             columns: ["tier_id"]
+            isOneToOne: false
             referencedRelation: "membership_tiers"
             referencedColumns: ["id"]
           },
@@ -1604,7 +1887,6 @@ export type Database = {
           type: Database["charter"]["Enums"]["org_type"]
           updated_at: string
         }
-        ComputedFields: never
         Insert: {
           ancestor_ids?: string[]
           created_at?: string
@@ -1641,6 +1923,14 @@ export type Database = {
           {
             foreignKeyName: "units_parent_id_fkey"
             columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "units_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
@@ -1657,7 +1947,6 @@ export type Database = {
           type: string
           unit_id: string
         }
-        ComputedFields: never
         Insert: {
           event_id: string
           gateway: Database["charter"]["Enums"]["payment_gateway"]
@@ -1682,12 +1971,21 @@ export type Database = {
           {
             foreignKeyName: "webhook_events_org_id_fkey"
             columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_events_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
             referencedRelation: "units"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "webhook_events_payment_id_fkey"
             columns: ["payment_id"]
+            isOneToOne: false
             referencedRelation: "payments"
             referencedColumns: ["id"]
           },
@@ -1695,9 +1993,143 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      api_board_seats: {
+        Row: {
+          holder_name: string | null
+          id: string | null
+          org_id: string | null
+          planned_end: string | null
+          required: boolean | null
+          seat_id: string | null
+          seat_number: number | null
+          starts_on: string | null
+          title: string | null
+          unit_id: string | null
+          unit_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_template_id_fkey"
+            columns: ["seat_id"]
+            isOneToOne: false
+            referencedRelation: "seat_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_member_summary: {
+        Row: {
+          current_members: number | null
+          org_id: string | null
+          pending_requests: number | null
+          renewals_due: number | null
+        }
+        Relationships: []
+      }
+      api_people: {
+        Row: {
+          org_id: string | null
+          roles: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      api_tasks: {
+        Row: {
+          due_on: string | null
+          item_id: string | null
+          kind: string | null
+          link: string | null
+          org_id: string | null
+          title: string | null
+          unit_id: string | null
+          unit_name: string | null
+        }
+        Relationships: []
+      }
+      api_unit_count: {
+        Row: {
+          org_id: string | null
+          units: number | null
+        }
+        Relationships: []
+      }
+      api_units: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          name: string | null
+          org_id: string | null
+          parent_id: string | null
+          slug: string | null
+          status: string | null
+          type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          org_id?: string | null
+          parent_id?: string | null
+          slug?: string | null
+          status?: string | null
+          type?: never
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          org_id?: string | null
+          parent_id?: string | null
+          slug?: string | null
+          status?: string | null
+          type?: never
+        }
+        Relationships: [
+          {
+            foreignKeyName: "units_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "units_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      _chapter_board_email: {
+        Args: { p_request: string; p_template: string }
+        Returns: undefined
+      }
+      _enable_chapter_board: {
+        Args: { p_owner: string; p_unit: string }
+        Returns: string
+      }
+      _wf_member_ctx: {
+        Args: { p_membership?: string; p_profile: string; p_unit: string }
+        Returns: Json
+      }
       accept_invitation: { Args: { _token: string }; Returns: string }
       admin_create_member: {
         Args: { _display_name: string; _email?: string; _org: string }
@@ -1718,10 +2150,7 @@ export type Database = {
         Args: { _answers: Json; _flow: string; _org: string; _plan: Json }
         Returns: undefined
       }
-      apply_setup_sections: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
-      }
+      apply_setup_sections: { Args: never; Returns: string[] }
       appoint_officer: {
         Args: {
           _org: string
@@ -1729,6 +2158,16 @@ export type Database = {
           _seat_number?: number
           _starts_on?: string
           _template: string
+        }
+        Returns: string
+      }
+      appointment_from_board: {
+        Args: {
+          p_org: string
+          p_person_name: string
+          p_position: string
+          p_start: string
+          p_user_id: string
         }
         Returns: string
       }
@@ -1777,6 +2216,7 @@ export type Database = {
           template_id: string
         }[]
       }
+      board_org_for_unit: { Args: { p_unit: string }; Returns: string }
       can_read_attribute_value: {
         Args: {
           _def: string
@@ -1790,9 +2230,39 @@ export type Database = {
         Args: { _org: string; _user: string }
         Returns: boolean
       }
+      cancel_chapter_board_request: {
+        Args: { p_request: string }
+        Returns: undefined
+      }
       cancel_membership: {
         Args: { _membership: string; _note?: string }
         Returns: undefined
+      }
+      chapter_board_policy: { Args: { p_unit: string }; Returns: string }
+      chapter_board_requests_for: {
+        Args: { p_org: string }
+        Returns: {
+          board_org_id: string
+          chapter: string
+          decided_at: string
+          id: string
+          note: string
+          requested_at: string
+          requested_by_name: string
+          status: string
+          unit_id: string
+        }[]
+      }
+      chapter_board_status: {
+        Args: { p_unit: string }
+        Returns: {
+          board_org_id: string
+          can_request: boolean
+          note: string
+          policy: string
+          request_id: string
+          status: string
+        }[]
       }
       chapter_national_standing: {
         Args: { _chapter: string }
@@ -1862,6 +2332,10 @@ export type Database = {
         }
         Returns: string
       }
+      decide_chapter_board: {
+        Args: { p_approve: boolean; p_note?: string; p_request: string }
+        Returns: undefined
+      }
       decline_application: {
         Args: { _membership: string; _note?: string }
         Returns: Json
@@ -1896,6 +2370,10 @@ export type Database = {
       emails_allowed: { Args: { _org: string }; Returns: boolean }
       end_appointment: {
         Args: { _appointment: string; _ended_on?: string; _reason?: string }
+        Returns: undefined
+      }
+      end_appointment_from_board: {
+        Args: { p_appointment: string; p_ended_on: string }
         Returns: undefined
       }
       ensure_top_unit: {
@@ -1964,10 +2442,7 @@ export type Database = {
         Returns: Json
       }
       is_org_member: { Args: { _org: string; _user: string }; Returns: boolean }
-      is_platform_operator: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_platform_operator: { Args: never; Returns: boolean }
       is_portal_member: {
         Args: { p_org: string; p_unit: string }
         Returns: boolean
@@ -1993,10 +2468,7 @@ export type Database = {
       }
       listed_in_directory: {
         Args: {
-          _profile: Omit<
-            Database["charter"]["Tables"]["member_profiles"]["Row"],
-            Database["charter"]["Tables"]["member_profiles"]["ComputedFields"]
-          >
+          _profile: Database["charter"]["Tables"]["member_profiles"]["Row"]
         }
         Returns: boolean
       }
@@ -2208,12 +2680,7 @@ export type Database = {
         Returns: boolean
       }
       profile_membership_id: {
-        Args: {
-          _p: Omit<
-            Database["charter"]["Tables"]["member_profiles"]["Row"],
-            Database["charter"]["Tables"]["member_profiles"]["ComputedFields"]
-          >
-        }
+        Args: { _p: Database["charter"]["Tables"]["member_profiles"]["Row"] }
         Returns: string
       }
       profile_values: { Args: { _profile: string }; Returns: Json }
@@ -2262,16 +2729,14 @@ export type Database = {
         }
         Returns: string
       }
+      request_chapter_board: { Args: { p_unit: string }; Returns: string }
       resolve_role: { Args: { _key: string; _org: string }; Returns: string }
       restore_member_record: { Args: { _profile: string }; Returns: undefined }
       revoke_invitation: { Args: { _id: string }; Returns: undefined }
       role_applies_at: {
         Args: {
           _org: string
-          _role: Omit<
-            Database["charter"]["Tables"]["roles"]["Row"],
-            Database["charter"]["Tables"]["roles"]["ComputedFields"]
-          >
+          _role: Database["charter"]["Tables"]["roles"]["Row"]
         }
         Returns: boolean
       }
@@ -2299,10 +2764,7 @@ export type Database = {
       seat_applies_at: {
         Args: {
           _org: string
-          _t: Omit<
-            Database["charter"]["Tables"]["seat_templates"]["Row"],
-            Database["charter"]["Tables"]["seat_templates"]["ComputedFields"]
-          >
+          _t: Database["charter"]["Tables"]["seat_templates"]["Row"]
         }
         Returns: boolean
       }
@@ -2397,8 +2859,9 @@ export type Database = {
         Args: { _org: string; _template: string; _title: string }
         Returns: undefined
       }
+      slug_available: { Args: { p_slug: string }; Returns: boolean }
       sync_linked_level: { Args: { _tier: string }; Returns: undefined }
-      sync_my_email: { Args: Record<PropertyKey, never>; Returns: number }
+      sync_my_email: { Args: never; Returns: number }
       term_end: {
         Args: {
           _count: number
@@ -2409,6 +2872,7 @@ export type Database = {
       }
       term_price: { Args: { _term: string; _values: Json }; Returns: number }
       test_gateway_allowed: { Args: { _org: string }; Returns: boolean }
+      unit_for_board_org: { Args: { p_org: string }; Returns: string }
       unit_org: { Args: { p_unit: string }; Returns: string }
       update_member_record: {
         Args: { _display_name: string; _email: string; _profile: string }
@@ -2439,10 +2903,7 @@ export type Database = {
       }
       validate_attribute_value: {
         Args: {
-          _def: Omit<
-            Database["charter"]["Tables"]["attribute_definitions"]["Row"],
-            Database["charter"]["Tables"]["attribute_definitions"]["ComputedFields"]
-          >
+          _def: Database["charter"]["Tables"]["attribute_definitions"]["Row"]
           _v: Json
         }
         Returns: undefined
@@ -2459,6 +2920,22 @@ export type Database = {
         Args: { _reason: string; _receipt: string }
         Returns: undefined
       }
+      wf_member_fields: { Args: { p_org: string }; Returns: Json }
+      wf_membership_lapsed: {
+        Args: { p_org: string; p_params: Json }
+        Returns: {
+          ctx: Json
+          dedupe: string
+        }[]
+      }
+      wf_seat_holders: {
+        Args: { p_ctx: Json; p_org: string; p_params: Json }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      wf_seat_options: { Args: { p_org: string }; Returns: Json }
       write_audit: {
         Args: {
           _action: string
@@ -2508,13 +2985,775 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_role_overrides: {
+        Row: {
+          app: string
+          org_id: string
+          role: Database["public"]["Enums"]["org_role"]
+          set_at: string
+          set_by: string | null
+          user_id: string
+        }
+        Insert: {
+          app: string
+          org_id: string
+          role: Database["public"]["Enums"]["org_role"]
+          set_at?: string
+          set_by?: string | null
+          user_id: string
+        }
+        Update: {
+          app?: string
+          org_id?: string
+          role?: Database["public"]["Enums"]["org_role"]
+          set_at?: string
+          set_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_role_overrides_org_id_user_id_fkey"
+            columns: ["org_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["org_id", "user_id"]
+          },
+        ]
+      }
+      automation_action_types: {
+        Row: {
+          app: string
+          description: string
+          label: string
+          params_schema: Json
+          requires: string[]
+          sort: number
+          type: string
+        }
+        Insert: {
+          app: string
+          description?: string
+          label: string
+          params_schema?: Json
+          requires?: string[]
+          sort?: number
+          type: string
+        }
+        Update: {
+          app?: string
+          description?: string
+          label?: string
+          params_schema?: Json
+          requires?: string[]
+          sort?: number
+          type?: string
+        }
+        Relationships: []
+      }
+      automation_editors: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          org_id: string
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          org_id: string
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          org_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_editors_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_events: {
+        Row: {
+          ctx: Json
+          id: number
+          occurred_at: string
+          org_id: string
+          processed_at: string | null
+          type: string
+        }
+        Insert: {
+          ctx?: Json
+          id?: never
+          occurred_at?: string
+          org_id: string
+          processed_at?: string | null
+          type: string
+        }
+        Update: {
+          ctx?: Json
+          id?: never
+          occurred_at?: string
+          org_id?: string
+          processed_at?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_jobs: {
+        Row: {
+          app: string
+          attempts: number
+          created_at: string
+          error: string | null
+          id: number
+          kind: string
+          org_id: string
+          payload: Json
+          result: Json | null
+          run_id: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          app: string
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          id?: never
+          kind: string
+          org_id: string
+          payload?: Json
+          result?: Json | null
+          run_id?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          app?: string
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          id?: never
+          kind?: string
+          org_id?: string
+          payload?: Json
+          result?: Json | null
+          run_id?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_jobs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_jobs_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "automation_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_kinds: {
+        Row: {
+          app: string
+          category: string
+          default_enabled: boolean
+          default_params: Json
+          description: string
+          key: string
+          name: string
+          params_schema: Json
+          sort: number
+        }
+        Insert: {
+          app: string
+          category?: string
+          default_enabled?: boolean
+          default_params?: Json
+          description: string
+          key: string
+          name: string
+          params_schema?: Json
+          sort?: number
+        }
+        Update: {
+          app?: string
+          category?: string
+          default_enabled?: boolean
+          default_params?: Json
+          description?: string
+          key?: string
+          name?: string
+          params_schema?: Json
+          sort?: number
+        }
+        Relationships: []
+      }
+      automation_log: {
+        Row: {
+          at: string
+          count: number
+          id: number
+          kind: string
+          org_id: string
+          summary: string
+        }
+        Insert: {
+          at?: string
+          count?: number
+          id?: never
+          kind: string
+          org_id: string
+          summary: string
+        }
+        Update: {
+          at?: string
+          count?: number
+          id?: never
+          kind?: string
+          org_id?: string
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_log_kind_fkey"
+            columns: ["kind"]
+            isOneToOne: false
+            referencedRelation: "automation_kinds"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "automation_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_org_settings: {
+        Row: {
+          chapters_may_build: boolean
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          chapters_may_build?: boolean
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          chapters_may_build?: boolean
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_org_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_recipient_types: {
+        Row: {
+          app: string
+          description: string
+          label: string
+          options_fn: string | null
+          params_schema: Json
+          resolve_fn: string
+          sort: number
+          type: string
+        }
+        Insert: {
+          app: string
+          description?: string
+          label: string
+          options_fn?: string | null
+          params_schema?: Json
+          resolve_fn: string
+          sort?: number
+          type: string
+        }
+        Update: {
+          app?: string
+          description?: string
+          label?: string
+          options_fn?: string | null
+          params_schema?: Json
+          resolve_fn?: string
+          sort?: number
+          type?: string
+        }
+        Relationships: []
+      }
+      automation_runs: {
+        Row: {
+          branch: string | null
+          ctx: Json
+          dedupe_key: string
+          error: string | null
+          finished_at: string | null
+          id: number
+          log: Json
+          org_id: string
+          started_at: string
+          status: string
+          trigger_type: string
+          workflow_id: string
+        }
+        Insert: {
+          branch?: string | null
+          ctx?: Json
+          dedupe_key: string
+          error?: string | null
+          finished_at?: string | null
+          id?: never
+          log?: Json
+          org_id: string
+          started_at?: string
+          status?: string
+          trigger_type: string
+          workflow_id: string
+        }
+        Update: {
+          branch?: string | null
+          ctx?: Json
+          dedupe_key?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: never
+          log?: Json
+          org_id?: string
+          started_at?: string
+          status?: string
+          trigger_type?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_runs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_runs_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "automation_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_tasks: {
+        Row: {
+          assignee_id: string
+          created_at: string
+          done_at: string | null
+          done_by: string | null
+          due_on: string | null
+          id: string
+          link: string | null
+          note: string
+          org_id: string
+          run_id: number | null
+          status: string
+          title: string
+        }
+        Insert: {
+          assignee_id: string
+          created_at?: string
+          done_at?: string | null
+          done_by?: string | null
+          due_on?: string | null
+          id?: string
+          link?: string | null
+          note?: string
+          org_id: string
+          run_id?: number | null
+          status?: string
+          title: string
+        }
+        Update: {
+          assignee_id?: string
+          created_at?: string
+          done_at?: string | null
+          done_by?: string | null
+          due_on?: string | null
+          id?: string
+          link?: string | null
+          note?: string
+          org_id?: string
+          run_id?: number | null
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_tasks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_tasks_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "automation_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_trigger_types: {
+        Row: {
+          app: string
+          description: string
+          fields: Json
+          fields_fn: string | null
+          kind: string
+          label: string
+          params_schema: Json
+          provides: string[]
+          scan_fn: string | null
+          sort: number
+          type: string
+        }
+        Insert: {
+          app: string
+          description?: string
+          fields?: Json
+          fields_fn?: string | null
+          kind: string
+          label: string
+          params_schema?: Json
+          provides?: string[]
+          scan_fn?: string | null
+          sort?: number
+          type: string
+        }
+        Update: {
+          app?: string
+          description?: string
+          fields?: Json
+          fields_fn?: string | null
+          kind?: string
+          label?: string
+          params_schema?: Json
+          provides?: string[]
+          scan_fn?: string | null
+          sort?: number
+          type?: string
+        }
+        Relationships: []
+      }
+      automation_workflows: {
+        Row: {
+          adopted_from: string | null
+          created_at: string
+          created_by: string | null
+          definition: Json | null
+          description: string
+          enabled: boolean
+          id: string
+          name: string
+          org_id: string
+          shared: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          adopted_from?: string | null
+          created_at?: string
+          created_by?: string | null
+          definition?: Json | null
+          description?: string
+          enabled?: boolean
+          id?: string
+          name: string
+          org_id: string
+          shared?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          adopted_from?: string | null
+          created_at?: string
+          created_by?: string | null
+          definition?: Json | null
+          description?: string
+          enabled?: boolean
+          id?: string
+          name?: string
+          org_id?: string
+          shared?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_workflows_adopted_from_fkey"
+            columns: ["adopted_from"]
+            isOneToOne: false
+            referencedRelation: "automation_workflows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_workflows_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automations: {
+        Row: {
+          enabled: boolean
+          kind: string
+          org_id: string
+          params: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          enabled: boolean
+          kind: string
+          org_id: string
+          params?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          kind?: string
+          org_id?: string
+          params?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automations_kind_fkey"
+            columns: ["kind"]
+            isOneToOne: false
+            referencedRelation: "automation_kinds"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "automations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_jobs: {
+        Row: {
+          every: unknown
+          fn: string
+          last_error: string | null
+          last_run_at: string | null
+          name: string
+        }
+        Insert: {
+          every?: unknown
+          fn: string
+          last_error?: string | null
+          last_run_at?: string | null
+          name: string
+        }
+        Update: {
+          every?: unknown
+          fn?: string
+          last_error?: string | null
+          last_run_at?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
+      email_outbox: {
+        Row: {
+          app: string
+          attempts: number
+          category: string
+          claimed_at: string | null
+          created_at: string
+          data: Json
+          dedupe_key: string | null
+          id: string
+          last_error: string | null
+          org_id: string | null
+          provider_id: string | null
+          send_after: string
+          sent_at: string | null
+          status: string
+          template: string
+          to_email: string | null
+          to_user_id: string | null
+        }
+        Insert: {
+          app: string
+          attempts?: number
+          category?: string
+          claimed_at?: string | null
+          created_at?: string
+          data?: Json
+          dedupe_key?: string | null
+          id?: string
+          last_error?: string | null
+          org_id?: string | null
+          provider_id?: string | null
+          send_after?: string
+          sent_at?: string | null
+          status?: string
+          template: string
+          to_email?: string | null
+          to_user_id?: string | null
+        }
+        Update: {
+          app?: string
+          attempts?: number
+          category?: string
+          claimed_at?: string | null
+          created_at?: string
+          data?: Json
+          dedupe_key?: string | null
+          id?: string
+          last_error?: string | null
+          org_id?: string | null
+          provider_id?: string | null
+          send_after?: string
+          sent_at?: string | null
+          status?: string
+          template?: string
+          to_email?: string | null
+          to_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_outbox_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_preferences: {
+        Row: {
+          digest: string
+          digest_day: number
+          digest_hour: number
+          digest_include: string[]
+          digest_last_sent_at: string | null
+          digest_org_ids: string[] | null
+          digest_time_zone: string | null
+          reminders: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          digest?: string
+          digest_day?: number
+          digest_hour?: number
+          digest_include?: string[]
+          digest_last_sent_at?: string | null
+          digest_org_ids?: string[] | null
+          digest_time_zone?: string | null
+          reminders?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          digest?: string
+          digest_day?: number
+          digest_hour?: number
+          digest_include?: string[]
+          digest_last_sent_at?: string | null
+          digest_org_ids?: string[] | null
+          digest_time_zone?: string | null
+          reminders?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      instance_email_settings: {
+        Row: {
+          from_address: string | null
+          from_name: string | null
+          id: boolean
+          reply_to: string | null
+          smtp_host: string | null
+          smtp_password_enc: string | null
+          smtp_port: number | null
+          smtp_security: string
+          smtp_username: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          from_address?: string | null
+          from_name?: string | null
+          id?: boolean
+          reply_to?: string | null
+          smtp_host?: string | null
+          smtp_password_enc?: string | null
+          smtp_port?: number | null
+          smtp_security?: string
+          smtp_username?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          from_address?: string | null
+          from_name?: string | null
+          id?: boolean
+          reply_to?: string | null
+          smtp_host?: string | null
+          smtp_password_enc?: string | null
+          smtp_port?: number | null
+          smtp_security?: string
+          smtp_username?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       instance_settings: {
         Row: {
           billing_enabled: boolean
           hub_url: string | null
           id: boolean
         }
-        ComputedFields: never
         Insert: {
           billing_enabled?: boolean
           hub_url?: string | null
@@ -2532,7 +3771,7 @@ export type Database = {
           accepted_at: string | null
           accepted_by: string | null
           app: string | null
-          app_payload: NonNullable<Json>
+          app_payload: Json
           created_at: string
           email: string | null
           expires_at: string
@@ -2543,12 +3782,11 @@ export type Database = {
           role: Database["public"]["Enums"]["org_role"] | null
           token_hash: string
         }
-        ComputedFields: never
         Insert: {
           accepted_at?: string | null
           accepted_by?: string | null
           app?: string | null
-          app_payload?: NonNullable<Json>
+          app_payload?: Json
           created_at?: string
           email?: string | null
           expires_at: string
@@ -2563,7 +3801,7 @@ export type Database = {
           accepted_at?: string | null
           accepted_by?: string | null
           app?: string | null
-          app_payload?: NonNullable<Json>
+          app_payload?: Json
           created_at?: string
           email?: string | null
           expires_at?: string
@@ -2578,6 +3816,7 @@ export type Database = {
           {
             foreignKeyName: "invitations_org_id_fkey"
             columns: ["org_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -2590,7 +3829,6 @@ export type Database = {
           role: Database["public"]["Enums"]["org_role"]
           user_id: string
         }
-        ComputedFields: never
         Insert: {
           created_at?: string
           org_id: string
@@ -2607,6 +3845,7 @@ export type Database = {
           {
             foreignKeyName: "memberships_org_id_fkey"
             columns: ["org_id"]
+            isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -2619,17 +3858,22 @@ export type Database = {
           currency: string
           id: string
           name: string
+          parent_org_id: string | null
           slug: string | null
+          source_app: string | null
+          source_ref: string | null
           time_zone: string
         }
-        ComputedFields: never
         Insert: {
           created_at?: string
           created_by?: string | null
           currency?: string
           id?: string
           name: string
+          parent_org_id?: string | null
           slug?: string | null
+          source_app?: string | null
+          source_ref?: string | null
           time_zone?: string
         }
         Update: {
@@ -2638,10 +3882,21 @@ export type Database = {
           currency?: string
           id?: string
           name?: string
+          parent_org_id?: string | null
           slug?: string | null
+          source_app?: string | null
+          source_ref?: string | null
           time_zone?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "organizations_parent_org_id_fkey"
+            columns: ["parent_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -2650,7 +3905,6 @@ export type Database = {
           id: string
           updated_at: string
         }
-        ComputedFields: never
         Insert: {
           avatar_url?: string | null
           display_name?: string | null
@@ -2670,11 +3924,70 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _automation_condition: {
+        Args: { p_c: Json; p_ctx: Json }
+        Returns: boolean
+      }
+      _automation_execute: {
+        Args: {
+          p_ctx: Json
+          p_dedupe: string
+          p_def: Json
+          p_org: string
+          p_wf: Database["public"]["Tables"]["automation_workflows"]["Row"]
+        }
+        Returns: number
+      }
+      _automation_extra_fields: {
+        Args: { p_fn: string; p_org: string }
+        Returns: Json
+      }
+      _automation_fill: {
+        Args: { p_ctx: Json; p_text: string }
+        Returns: string
+      }
+      _automation_recipients: {
+        Args: { p_ctx: Json; p_org: string; p_to: Json }
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      _clean_automation_params: {
+        Args: { p_params: Json; p_schema: Json }
+        Returns: Json
+      }
       _clean_org_name: { Args: { p_name: string }; Returns: string }
+      _create_child_organization: {
+        Args: {
+          p_admins?: string[]
+          p_name: string
+          p_owner: string
+          p_parent: string
+          p_source_app: string
+          p_source_ref: string
+        }
+        Returns: string
+      }
+      _email_opted_out: {
+        Args: { p_category: string; p_user: string }
+        Returns: boolean
+      }
       _is_active_user: { Args: { p_user: string }; Returns: boolean }
+      _may_build_workflows: { Args: { p_org: string }; Returns: boolean }
       _member_confirm_text: { Args: { p_user: string }; Returns: string }
-      _require_uid: { Args: Record<PropertyKey, never>; Returns: string }
+      _require_uid: { Args: never; Returns: string }
       _token_hash: { Args: { p_token: string }; Returns: string }
+      _validate_actions: {
+        Args: {
+          p_actions: Json
+          p_trig: Database["public"]["Tables"]["automation_trigger_types"]["Row"]
+          p_where: string
+        }
+        Returns: Json
+      }
+      _validate_recipient: { Args: { p: Json; p_where: string }; Returns: Json }
+      _validate_workflow: { Args: { p_def: Json }; Returns: Json }
       accept_invitation: {
         Args: { p_token: string }
         Returns: {
@@ -2685,7 +3998,64 @@ export type Database = {
           role: Database["public"]["Enums"]["org_role"]
         }[]
       }
+      adopt_workflow: {
+        Args: { p_org: string; p_source: string }
+        Returns: string
+      }
+      app_role: {
+        Args: { p_app: string; p_org: string; p_user?: string }
+        Returns: Database["public"]["Enums"]["org_role"]
+      }
+      automation_settings: {
+        Args: { p_kind: string; p_org: string }
+        Returns: {
+          enabled: boolean
+          params: Json
+        }[]
+      }
+      can_edit_automations: { Args: { p_org: string }; Returns: boolean }
       can_write: { Args: { p_app: string; p_org: string }; Returns: boolean }
+      claim_automation_jobs: {
+        Args: { p_app: string; p_limit?: number }
+        Returns: {
+          app: string
+          attempts: number
+          created_at: string
+          error: string | null
+          id: number
+          kind: string
+          org_id: string
+          payload: Json
+          result: Json | null
+          run_id: number | null
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "automation_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      claim_emails: {
+        Args: { p_apps?: string[]; p_limit?: number }
+        Returns: {
+          app: string
+          attempts: number
+          category: string
+          data: Json
+          id: string
+          org_id: string
+          org_name: string
+          org_time_zone: string
+          template: string
+          to_email: string
+          to_name: string
+          to_user_id: string
+        }[]
+      }
+      complete_automation_task: { Args: { p_id: string }; Returns: undefined }
       create_invitation: {
         Args: {
           p_app?: string
@@ -2705,6 +4075,65 @@ export type Database = {
         Args: { p_confirm_name: string; p_org: string }
         Returns: undefined
       }
+      delete_workflow: { Args: { p_id: string }; Returns: undefined }
+      digest_automation_tasks: {
+        Args: { p_org: string; p_user: string }
+        Returns: Json
+      }
+      digest_for: { Args: { p_period?: string; p_user: string }; Returns: Json }
+      email_unsubscribe: {
+        Args: { p_category: string; p_user: string }
+        Returns: undefined
+      }
+      emit_automation_event: {
+        Args: { p_ctx: Json; p_org: string; p_type: string }
+        Returns: undefined
+      }
+      enqueue_email: {
+        Args: {
+          p_app: string
+          p_category?: string
+          p_data?: Json
+          p_dedupe_key?: string
+          p_org?: string
+          p_send_after?: string
+          p_template: string
+          p_to_email?: string
+          p_to_user?: string
+        }
+        Returns: string
+      }
+      finish_automation_job: {
+        Args: { p_error: string; p_id: number; p_ok: boolean; p_result: Json }
+        Returns: undefined
+      }
+      finish_email: {
+        Args: {
+          p_error?: string
+          p_id: string
+          p_outcome: string
+          p_provider_id?: string
+        }
+        Returns: undefined
+      }
+      get_digest_preferences: {
+        Args: never
+        Returns: {
+          digest: string
+          digest_day: number
+          digest_hour: number
+          digest_include: string[]
+          digest_org_ids: string[]
+          digest_time_zone: string
+        }[]
+      }
+      get_email_preferences: {
+        Args: never
+        Returns: {
+          digest: string
+          reminders: boolean
+        }[]
+      }
       get_invitation: {
         Args: { p_token: string }
         Returns: {
@@ -2715,8 +4144,20 @@ export type Database = {
           status: string
         }[]
       }
+      grant_automation_editor: {
+        Args: { p_grant: boolean; p_org: string; p_user: string }
+        Returns: undefined
+      }
       has_app_access: {
         Args: { p_app: string; p_org: string }
+        Returns: boolean
+      }
+      has_app_role: {
+        Args: {
+          p_app: string
+          p_org: string
+          p_roles: Database["public"]["Enums"]["org_role"][]
+        }
         Returns: boolean
       }
       has_role: {
@@ -2726,7 +4167,28 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_instance_owner: { Args: never; Returns: boolean }
       is_member: { Args: { p_org: string }; Returns: boolean }
+      is_member_of_child: { Args: { p_org: string }; Returns: boolean }
+      list_automations: {
+        Args: { p_org: string }
+        Returns: {
+          app: string
+          category: string
+          default_enabled: boolean
+          default_params: Json
+          description: string
+          enabled: boolean
+          is_default: boolean
+          kind: string
+          last_run_at: string
+          last_summary: string
+          name: string
+          params: Json
+          params_schema: Json
+          updated_at: string
+        }[]
+      }
       list_invitations: {
         Args: { p_org: string }
         Returns: {
@@ -2739,6 +4201,37 @@ export type Database = {
           invited_by_name: string
           role: Database["public"]["Enums"]["org_role"]
           status: string
+        }[]
+      }
+      log_automation: {
+        Args: {
+          p_count: number
+          p_kind: string
+          p_org: string
+          p_summary: string
+        }
+        Returns: undefined
+      }
+      my_app_memberships: {
+        Args: { p_app: string }
+        Returns: {
+          org_id: string
+          role: Database["public"]["Enums"]["org_role"]
+        }[]
+      }
+      org_email_log: {
+        Args: { p_limit?: number; p_org: string }
+        Returns: {
+          app: string
+          attempts: number
+          category: string
+          created_at: string
+          id: string
+          last_error: string
+          sent_at: string
+          status: string
+          template: string
+          to_email: string
         }[]
       }
       org_member_directory: {
@@ -2759,13 +4252,130 @@ export type Database = {
           user_id: string
         }[]
       }
+      prune_automation_log: { Args: never; Returns: number }
+      prune_workflow_history: { Args: never; Returns: number }
+      queue_digests: { Args: never; Returns: number }
+      register_automation_action: {
+        Args: {
+          p_app: string
+          p_description: string
+          p_label: string
+          p_params_schema: Json
+          p_requires: string[]
+          p_sort?: number
+          p_type: string
+        }
+        Returns: undefined
+      }
+      register_automation_kind: {
+        Args: {
+          p_app: string
+          p_category: string
+          p_default_enabled: boolean
+          p_default_params: Json
+          p_description: string
+          p_key: string
+          p_name: string
+          p_params_schema: Json
+          p_sort?: number
+        }
+        Returns: undefined
+      }
+      register_automation_recipient: {
+        Args: {
+          p_app: string
+          p_description: string
+          p_label: string
+          p_options_fn?: string
+          p_params_schema: Json
+          p_resolve_fn: string
+          p_sort?: number
+          p_type: string
+        }
+        Returns: undefined
+      }
+      register_automation_trigger: {
+        Args: {
+          p_app: string
+          p_description: string
+          p_fields: Json
+          p_fields_fn: string
+          p_kind: string
+          p_label: string
+          p_params_schema: Json
+          p_provides: string[]
+          p_scan_fn: string
+          p_sort?: number
+          p_type: string
+        }
+        Returns: undefined
+      }
       rename_organization: {
         Args: { p_name: string; p_org: string }
         Returns: undefined
       }
+      reset_automation: {
+        Args: { p_kind: string; p_org: string }
+        Returns: undefined
+      }
       revoke_invitation: { Args: { p_id: string }; Returns: undefined }
+      run_email_jobs: { Args: never; Returns: number }
+      run_workflows: { Args: never; Returns: number }
+      save_workflow: {
+        Args: {
+          p_definition: Json
+          p_description: string
+          p_enabled: boolean
+          p_id: string
+          p_name: string
+          p_org: string
+          p_shared?: boolean
+        }
+        Returns: string
+      }
+      set_app_role: {
+        Args: {
+          p_app: string
+          p_org: string
+          p_role: Database["public"]["Enums"]["org_role"]
+          p_user: string
+        }
+        Returns: undefined
+      }
+      set_automation: {
+        Args: {
+          p_enabled: boolean
+          p_kind: string
+          p_org: string
+          p_params: Json
+        }
+        Returns: undefined
+      }
+      set_chapters_may_build: {
+        Args: { p_allowed: boolean; p_org: string }
+        Returns: undefined
+      }
+      set_digest_preferences: {
+        Args: {
+          p_day: number
+          p_digest: string
+          p_hour: number
+          p_include: string[]
+          p_org_ids: string[]
+          p_time_zone: string
+        }
+        Returns: undefined
+      }
+      set_email_preferences: {
+        Args: { p_digest: string; p_reminders: boolean }
+        Returns: undefined
+      }
       set_organization_preferences: {
         Args: { p_currency: string; p_org: string; p_time_zone: string }
+        Returns: undefined
+      }
+      set_workflow_enabled: {
+        Args: { p_enabled: boolean; p_id: string }
         Returns: undefined
       }
       shares_org: { Args: { p_user: string }; Returns: boolean }
@@ -2775,6 +4385,22 @@ export type Database = {
             Args: { p_confirm: string; p_new_owner: string; p_org: string }
             Returns: undefined
           }
+      workflow_overview: { Args: { p_org: string }; Returns: Json }
+      workflow_runs: {
+        Args: { p_limit?: number; p_org: string; p_workflow?: string }
+        Returns: {
+          branch: string
+          error: string
+          id: number
+          log: Json
+          started_at: string
+          status: string
+          summary: string
+          trigger_type: string
+          workflow_id: string
+          workflow_name: string
+        }[]
+      }
     }
     Enums: {
       org_role: "owner" | "admin" | "member" | "viewer"
@@ -2787,19 +4413,18 @@ export type Database = {
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-// Charter's own schema is the default for Tables<…>, TablesInsert<…>, Enums<…> (the clients use db.schema "charter").
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "charter">]
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2823,11 +4448,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2848,11 +4473,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends (DefaultSchemaTableNameOrOptions extends {
+  TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2873,11 +4498,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never) = never,
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2890,11 +4515,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never) = never,
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2945,3 +4570,4 @@ export const Constants = {
     },
   },
 } as const
+
