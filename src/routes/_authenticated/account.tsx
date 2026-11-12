@@ -3,7 +3,14 @@ import { hubUrl, isHosted } from "@shared/supabase/hosted";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { EmailPreferencesPanel, EmailServerPanel } from "@shared/ui/EmailSettings";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  loadEmailSettings,
+  saveEmailSettings,
+  sendTestEmail,
+} from "@/modules/email/email.functions";
 import { myOrgsQuery, TYPE_LABEL } from "@/lib/orgs";
 import { useFeatureReady } from "@/lib/db/readiness";
 import {
@@ -116,6 +123,28 @@ function AccountPage() {
           You sign in with {m.provider === "google" ? "Google" : m.provider}, so there&apos;s no
           password to change here.
         </section>
+      )}
+      {isHosted() ? (
+        <section className="space-y-2 rounded-md border bg-card p-5 text-sm">
+          <h2 className="text-lg font-semibold">Email</h2>
+          <p className="text-muted-foreground">
+            Reminders and your task summary are chosen in OpenAppHub, for every app.
+          </p>
+          <a href={hubUrl("/account#email")} className="font-medium text-primary hover:underline">
+            Email choices
+          </a>
+        </section>
+      ) : (
+        <div id="email" className="space-y-8">
+          <EmailPreferencesPanel client={supabase as unknown as SupabaseClient} />
+          <EmailServerPanel
+            load={() => loadEmailSettings()}
+            save={async (data) => {
+              await saveEmailSettings({ data });
+            }}
+            test={() => sendTestEmail()}
+          />
+        </div>
       )}
       <section className="space-y-3 rounded-md border bg-card p-5">
         <h2 className="text-lg font-semibold">Your organizations</h2>
