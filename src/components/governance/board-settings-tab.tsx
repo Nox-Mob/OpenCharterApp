@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Org } from "@/lib/orgs";
+import { ChapterBoardSettings } from "./chapter-board";
 import type { Grant } from "@/lib/policy";
 import { useFeatureReady } from "@/lib/db/readiness";
 import { SettingRules } from "@/components/org/settings-tab";
@@ -109,6 +110,7 @@ export function BoardSettingsTab({
 
   return (
     <div className="space-y-8">
+      <ChapterBoardSettings org={org} canManage={canManageRules} />
       <section className="space-y-3">
         <div>
           <h2 className="text-lg font-semibold">Seats used here</h2>

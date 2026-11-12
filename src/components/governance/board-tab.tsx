@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Org } from "@/lib/orgs";
+import { ChapterBoardCard } from "./chapter-board";
 import { useFeatureReady } from "@/lib/db/readiness";
 import { membersQuery } from "@/modules/membership/memberships";
 import { today } from "@/modules/membership/standing";
@@ -103,6 +104,7 @@ export function BoardTab({
 
   return (
     <div className="space-y-8">
+      <ChapterBoardCard org={org} />
       <section className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
