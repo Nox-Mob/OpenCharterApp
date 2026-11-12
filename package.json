@@ -24,7 +24,8 @@
     "test:smoke": "vitest run --config vitest.smoke.config.ts",
     "test:e2e": "playwright test",
     "test:perf": "bash scripts/db-perf.sh",
-    "hooks:install": "git config core.hooksPath .githooks"
+    "hooks:install": "git config core.hooksPath .githooks",
+    "gen:types": "bash scripts/gen-types.sh"
   },
   "overrides": {
     "rolldown": "1.2.1"
@@ -114,5 +115,5 @@
     "vite": "8.3.5",
     "vitest": "^5.0.5"
   },
-  "oahShared": "1.11.0"
+  "oahShared": "1.13.0"
 }
