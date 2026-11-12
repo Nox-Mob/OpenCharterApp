@@ -1,12 +1,12 @@
 // Your OpenAppHub organizations (core tables), for setting them up in OpenCharterApp.
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type HubOrg = { id: string; name: string; role: string };
 
 /** Your OpenAppHub organizations (any role), from the core tables. */
-export function useHubOrgs() {
-  return useQuery({
+export const hubOrgsQuery = () =>
+  queryOptions({
     queryKey: ["hub-orgs"],
     queryFn: async (): Promise<HubOrg[]> => {
       const { data: u } = await supabase.auth.getUser();
@@ -24,6 +24,9 @@ export function useHubOrgs() {
       );
     },
   });
+
+export function useHubOrgs() {
+  return useQuery(hubOrgsQuery());
 }
 
 export const canSetUp = (o: HubOrg) => o.role === "owner" || o.role === "admin";

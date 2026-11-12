@@ -61,6 +61,7 @@ export function CreateOrgDialog({
 }) {
   const qc = useQueryClient();
   const types: OrgType[] = parentId ? ["chapter", "region"] : ["standalone", "national"];
+  const joinBase = typeof window === "undefined" ? "" : window.location.origin;
   const [open, setOpen] = useState(false);
   const [stepIdx, setStepIdx] = useState(0);
   // A new national's membership model (A8, D-166); null until picked
@@ -71,6 +72,8 @@ export function CreateOrgDialog({
   const slug = slugInput ?? slugify(name);
   const slugTaken = useSlugTaken(slug, open);
   const [type, setType] = useState<OrgType>(types[0]!);
+  const kindWord =
+    type === "chapter" ? "the chapter" : type === "region" ? "the region" : "the organization";
   const [busy, setBusy] = useState(false);
   const [details, setDetails] = useState<Record<string, unknown>>({});
   const [invites, setInvites] = useState<WizardInvites>(EMPTY_INVITES);
@@ -270,12 +273,25 @@ export function CreateOrgDialog({
                   </p>
                 ) : (
                   <p id="org-slug-help" className="text-xs text-muted-foreground">
-                    Made from the name; you can change it. Lowercase letters, numbers and dashes.
+                    The address of {kindWord}&apos;s public join page, where people find it, sign up
+                    and pay dues
+                    {joinBase ? (
+                      <>
+                        :{" "}
+                        <span className="break-all font-mono text-foreground">
+                          {joinBase}/join/{slug || "…"}
+                        </span>
+                      </>
+                    ) : null}
+                    . Share it on your website, flyers and emails. Made from the name; you can
+                    change it now (lowercase letters, numbers and dashes), but changing it later
+                    breaks links you&apos;ve already shared.
                   </p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label>Type</Label>
+                <p className="text-xs text-muted-foreground">{TYPE_HELP[type]}</p>
                 <Select value={type} onValueChange={(v) => setType(v as OrgType)}>
                   <SelectTrigger aria-label="Type">
                     <SelectValue />
@@ -469,6 +485,18 @@ export function CreateOrgDialog({
     </Dialog>
   );
 }
+
+/** What each type means, under the Type choice. */
+export const TYPE_HELP: Record<OrgType, string> = {
+  standalone:
+    "A single association that runs its own members and dues. It can't add chapters later.",
+  national:
+    "An organization with chapters (and regions, if you like), each with its own members, officers and money.",
+  chapter:
+    "A local group under this organization: its own members, officers, dues and join page. Its national can see its reports.",
+  region:
+    "Groups chapters by area. Chapters can sit under a region; the region sees their reports.",
+};
 
 /** True when the web address is already used (checked as you type, after a short pause). */
 function useSlugTaken(slug: string, enabled: boolean): boolean {

@@ -12,8 +12,12 @@ test("the demo account opens Riverside Community Association", async ({ page }) 
 
 test("the test account has no organization and can't open Riverside", async ({ page }) => {
   await signIn(page, "empty");
-  await expect(page.getByRole("heading", { level: 1, name: "Your organizations" })).toBeVisible();
-  await expect(page.getByText("You aren't part of any organization yet.")).toBeVisible();
+  // Hosted: the welcome that sends you to OpenAppHub to create one; self-hosted: the empty list.
+  await expect(
+    page
+      .getByRole("heading", { level: 1, name: "Set up your organization" })
+      .or(page.getByText("You aren't part of any organization yet.")),
+  ).toBeVisible();
   await page.goto(`/orgs/${DEMO.org}`);
   await expect(page.getByText("Organization not found or not visible to you.")).toBeVisible();
 });

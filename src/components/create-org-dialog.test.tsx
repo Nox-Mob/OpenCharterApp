@@ -74,6 +74,10 @@ describe("chapter creation wizard", () => {
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Post 12 Austin" } });
     const address = screen.getByLabelText("Web address");
     expect(address).toHaveValue("post-12-austin");
+    // It says what the address is for, and shows the join page it makes.
+    expect(screen.getByText(/the chapter's public join page/)).toBeInTheDocument();
+    expect(screen.getByText(/\/join\/post-12-austin$/)).toBeInTheDocument();
+    expect(screen.getByText(/A local group under this organization/)).toBeInTheDocument();
     fireEvent.change(address, { target: { value: "taken-post" } });
     expect(await screen.findByText(/That web address is taken/)).toBeInTheDocument();
     expect(address).toHaveAttribute("aria-invalid", "true");
