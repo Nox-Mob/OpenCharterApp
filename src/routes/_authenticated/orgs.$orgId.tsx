@@ -12,6 +12,8 @@ import {
   type Permission,
 } from "@/lib/policy";
 import { useReadOnly } from "@/lib/use-billing";
+import { SetUpThisOrg } from "@/components/org/set-up-from-hub";
+import { isHosted } from "@shared/supabase/hosted";
 import { ExportEverything } from "@/components/org/export-everything";
 import { MemberOverview } from "@/components/members/member-overview";
 import { CreateOrgDialog } from "@/components/create-org-dialog";
@@ -56,10 +58,16 @@ export const Route = createFileRoute("/_authenticated/orgs/$orgId")({
     ]);
   },
   component: OrgPage,
-  notFoundComponent: () => (
-    <p className="text-muted-foreground">Organization not found or not visible to you.</p>
-  ),
+  // Hosted, the hub links here for every organization; one not set up in Charter yet offers
+  // to set it up (association or national with chapters) instead of "not found".
+  notFoundComponent: OrgNotFound,
 });
+
+function OrgNotFound() {
+  const { orgId } = Route.useParams();
+  if (isHosted()) return <SetUpThisOrg orgId={orgId} />;
+  return <p className="text-muted-foreground">Organization not found or not visible to you.</p>;
+}
 
 function OrgPage() {
   const { orgId } = Route.useParams();
