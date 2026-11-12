@@ -24,7 +24,7 @@ Staging is at **https://staging.charter.staging.openapphub.org**, with the suite
 | `national@demo.openapphub.org` | `OpenAppHubDemo2026` | owns Northstar Veterans League: a 501(c)(19) national with four posts, home-post membership, Rank and Branch, a post on OpenBoardApp and a request waiting |
 | `test@demo.openapphub.org`     | `OpenAppHubDemo2026` | no organization (a first visit)                                                                                                                            |
 
-These are public on purpose and exist only on staging ([`docs/demo-data.md`](docs/demo-data.md)).
+These are public on purpose and exist only on staging ([`OpenAppHub/docs/charter/demo-data.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/charter/demo-data.md)).
 
 ## Purpose
 
@@ -37,7 +37,7 @@ Non-profit associations with chapters (veterans' groups, fraternal and professio
 - organizations **configure it to match how they work** through guided setup, not a developer
 - **with OpenBoardApp**, officers stay in sync both ways, and a national can let its chapters run their own board there (chapters ask, the national approves)
 
-The full vision, scope and feature map are in [`docs/README.md`](docs/README.md) and [`docs/epic.md`](docs/epic.md).
+The full vision, scope and feature map are in [`docs/README.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/charter/README.md) and [`OpenAppHub/docs/ROADMAP.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/ROADMAP.md).
 
 ## Goals
 
@@ -51,7 +51,7 @@ The full vision, scope and feature map are in [`docs/README.md`](docs/README.md)
 
 ### Where it stands
 
-**Next milestone: the MVP release (v0.1.0)**, the first version a real national or standalone association can run on, hosted in the OpenAppHub suite. It is built, live on staging and checked automatically (CI, the smoke test and the end-to-end tests). What's left for the suite move is in [`docs/epic.md`](docs/epic.md) §1. What's left before tagging, and who does it, is in [`docs/plans/release-v0.1.0.md`](docs/plans/release-v0.1.0.md): the owner runs a live Stripe test, adds the licence file and does a final pass of the user-testing guide. What's in it: [`CHANGELOG.md`](CHANGELOG.md). Phases 1 and 2 of the [epic map](docs/epic.md) meet their exit criteria; what's left in Phases 1–3 is in [`docs/plans/phases-1-3-review.md`](docs/plans/phases-1-3-review.md).
+**Next milestone: the MVP release (v0.1.0)**, the first version a real national or standalone association can run on, hosted in the OpenAppHub suite. It is built, live on staging and checked automatically (CI, the smoke test and the end-to-end tests). What's left for the suite move is in [`OpenAppHub/docs/ROADMAP.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/ROADMAP.md) §1. What's left before tagging, and who does it, is in [`OpenAppHub/docs/charter/plans/release-v0.1.0.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/charter/plans/release-v0.1.0.md): the owner runs a live Stripe test, adds the licence file and does a final pass of the user-testing guide. What's in it: [`CHANGELOG.md`](CHANGELOG.md). Phases 1 and 2 of the [epic map](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/ROADMAP.md) meet their exit criteria; what's left in Phases 1–3 is in [`OpenAppHub/docs/charter/plans/phases-1-3-review.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/charter/plans/phases-1-3-review.md).
 
 Working today:
 
@@ -70,9 +70,9 @@ Working today:
   - members see what they need to do, their profile, their chapter, their roles and seats, and who to contact
   - admins can preview the page "as a member"
 
-Not in the MVP: automatic email (the first update after it), postpaid dues and invoices, PayPal, custom domains, approvals, board reports, documents, elections. Progress and what's next: [`roadmap.md`](roadmap.md).
+Not in the MVP: automatic email (the first update after it), postpaid dues and invoices, PayPal, custom domains, approvals, board reports, documents, elections. Progress and what's next: [the suite roadmap](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/ROADMAP.md).
 
-The database is built from `db/migrations` (see [Database changes](#database-changes)); waiting migrations are listed in [`roadmap.md`](roadmap.md). For demos, the demo national **Test-Demo** looks like a real association: 15 chapters, about 500 members with years of history, and a full board ([`docs/demo-data.md`](docs/demo-data.md)). The security, accessibility and performance review is in [`docs/security-review.md`](docs/security-review.md), and a map of every table is in [`docs/tables.md`](docs/tables.md).
+The database is built from `db/migrations` (see [Database changes](#database-changes)); waiting migrations are listed in [the suite roadmap](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/ROADMAP.md). For demos, staging has the suite demo: Riverside Community Association and Northstar Veterans League, a veterans national with four posts ([`OpenAppHub/docs/charter/demo-data.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/charter/demo-data.md)). The security, accessibility and performance review is in [`OpenAppHub/docs/charter/security-review.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/charter/security-review.md), and a map of every table is in [`OpenAppHub/docs/charter/tables.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/charter/tables.md).
 
 ## Install and run
 
@@ -81,7 +81,7 @@ The database is built from `db/migrations` (see [Database changes](#database-cha
 - [Bun](https://bun.sh) 1.x. The project uses Bun as its package manager (decision D-104), so don't use npm, Yarn or pnpm.
 - Git.
 - PostgreSQL 16 or newer, only for running the database rule tests locally.
-- For the end-to-end tests: Playwright 1.64.1 (pinned) with Chromium (`bunx playwright install chromium`) or Google Chrome (`E2E_BROWSER_CHANNEL=chrome`), and network access to the Supabase backend in `.env.local`. The test browser runs with its sandbox on and may only reach the app and its backend (`docs/testing.md`).
+- For the end-to-end tests: Playwright 1.64.1 (pinned) with Chromium (`bunx playwright install chromium`) or Google Chrome (`E2E_BROWSER_CHANNEL=chrome`), and network access to the Supabase backend in `.env.local`. The test browser runs with its sandbox on and may only reach the app and its backend (`OpenAppHub/docs/charter/testing.md`).
 
 ### Set up
 
@@ -116,14 +116,14 @@ bun run test:e2e             # end-to-end, in Chromium (needs network; see docs/
 
 Install the pre-commit hook once per clone with `bun run hooks:install`; it runs the fast checks on every commit. `bun run test:perf` (with `TEST_DATABASE_URL`) times the heavy reads with 5,000, 10,000 and 20,000 members and fails over budget; `bun run test:smoke` checks the suite demo and the security rules on staging.
 
-GitHub runs all of these (D-197) on every pull request and on pushes to `staging`: `ci.yml` (also weekly), and `live.yml`, the smoke test and then the end-to-end tests against staging (also daily and on demand). See [`docs/testing.md`](docs/testing.md).
+GitHub runs all of these (D-197) on every pull request and on pushes to `staging`: `ci.yml` (also weekly), and `live.yml`, the smoke test and then the end-to-end tests against staging (also daily and on demand). See [`OpenAppHub/docs/charter/testing.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/charter/testing.md).
 
-`test:db` creates and drops its own throwaway database (`charter_rules_test`), applies every migration and runs `db/tests/*.sql`. **Never point it at the real project database.** Details are in [`docs/testing.md`](docs/testing.md). For checking the app by hand, follow [`docs/user-testing.md`](docs/user-testing.md).
+`test:db` creates and drops its own throwaway database (`charter_rules_test`), applies every migration and runs `db/tests/*.sql`. **Never point it at the real project database.** Details are in [`OpenAppHub/docs/charter/testing.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/charter/testing.md). For checking the app by hand, follow [`OpenAppHub/docs/charter/user-testing.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/charter/user-testing.md).
 
 ### Database changes
 
 - Schema changes are SQL migrations in [`db/migrations`](db/migrations), in schema `charter` on the shared OpenAppHub core (`db/core`, vendored from the hub). `scripts/migrate.mjs` applies them (`DATABASE_URL=… bun run db:migrate`); the owner runs the **Migrate** workflow for staging and production. Migrations are additive: no dropping tables or columns, and an applied migration is never edited.
-- Demo data for staging or development: [`db/seed`](db/seed) (`bun run db:migrate -- --seed`; the suite demo, `demo@demo.openapphub.org` / `OpenAppHubDemo2026`, see [`docs/demo-data.md`](docs/demo-data.md)). It refuses a database with real organizations, and never runs on production.
+- Demo data for staging or development: [`db/seed`](db/seed) (`bun run db:migrate -- --seed`; the suite demo, `demo@demo.openapphub.org` / `OpenAppHubDemo2026`, see [`OpenAppHub/docs/charter/demo-data.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/charter/demo-data.md)). It refuses a database with real organizations, and never runs on production.
 
 ### Branches and deploys (spec §10, v2.2)
 
@@ -147,12 +147,12 @@ Don't rewrite published history: no force pushes, and no rebasing or amending pu
 
 ## Contributing
 
-Start with [`docs/instructions.md`](docs/instructions.md). It holds the working rules, and [`AGENTS.md`](AGENTS.md) summarizes them for AI assistants. In short:
+Start with [`OpenAppHub/docs/charter/instructions.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/charter/instructions.md). It holds the working rules, and [`AGENTS.md`](AGENTS.md) summarizes them for AI assistants. In short:
 
 - every change ships with tests and updated docs
 - tenant data is isolated by row-level security
 - authorization goes through the policy layer
-- decisions are recorded in [`docs/decisions.md`](docs/decisions.md)
+- decisions are recorded in [`OpenAppHub/docs/charter/decisions.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/charter/decisions.md)
 - user-facing flows get end-to-end tests (`e2e/`, Playwright)
 
 ## License

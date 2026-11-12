@@ -10,7 +10,7 @@ docs=$(echo "$changed" | grep -E '^(docs/|README\.md|roadmap\.md|AGENTS\.md|db/t
 if [ -n "$code" ] && [ -z "$docs" ]; then
   echo "Code changed but no documentation or test changed:"
   echo "$code"
-  echo 'Update the docs and tests (instructions.md §3, §6), or label the pull request "no-docs-needed".'
+  echo 'Add or update tests, or update the docs (they live in OpenAppHub: docs/charter/, in a companion pull request; mention it here), or label the pull request "no-docs-needed".'
   exit 1
 fi
 echo "docs check ok"

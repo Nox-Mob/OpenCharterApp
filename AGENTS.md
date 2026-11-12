@@ -2,7 +2,7 @@
 
 > **Branches (owner rule, 2026-11-11):** pull requests target `staging`, and every merge goes to `staging`. Nothing merges into `main` (production) without the owner's approval, or the owner merging it. CI runs on pull requests and on pushes to `staging`; only workflows that must run on `main` (releases) do.
 
-**Read `docs/SHARED-SPEC.md` (v2) first.** The step plan, inventory and status: `docs/MIGRATION-NOTES.md` §9. This section gives the owner's answers and the changes v2 makes to that plan.
+**Read `docs/SHARED-SPEC.md` (v2) first.** All other internal docs are in OpenAppHub's `docs/` (reader: `OpenAppHub/docs/README.md`). The step plan, inventory and status: `OpenAppHub/docs/charter/MIGRATION-NOTES.md` §9. This section gives the owner's answers and the changes v2 makes to that plan.
 
 App ID `charter` · schema `charter` · hosted at `charter.openapphub.org` (staging `staging.charter.staging.openapphub.org`) · package manager **Bun**.
 
@@ -55,7 +55,7 @@ The repo's other rules still apply unless this section or the spec replaces them
 
 ### Phase 5 — Documentation (steps 16–17)
 
-Docs live in `Nox-Mob/OpenAppHub-docs` under `src/content/docs/charter/` (spec §12). `docs/user-testing.md` is the best source for exact on-screen words.
+Docs live in `Nox-Mob/OpenAppHub-docs` under `src/content/docs/charter/` (spec §12). `OpenAppHub/docs/charter/user-testing.md` is the best source for exact on-screen words.
 
 16. **Help links** (`src/config/help.ts`):
 
@@ -81,11 +81,11 @@ Docs live in `Nox-Mob/OpenAppHub-docs` under `src/content/docs/charter/` (spec �
 
 SHARED-SPEC §13 is satisfied; a hosted user signed in at the hub opens `charter.openapphub.org` already signed in, in the same org; a new member can sign up at the hub, join a chapter and pay dues; and a self-hosted build runs on an empty database with only Charter's migrations and `db/core`.
 
-The repo's own rules below stay in force unless this section or the spec replaces them; `docs/MIGRATION-NOTES.md` §7 lists which rule is replaced in which step.
+The repo's own rules below stay in force unless this section or the spec replaces them; `OpenAppHub/docs/charter/MIGRATION-NOTES.md` §7 lists which rule is replaced in which step.
 
 # OpenCharterApp — agent rules
 
-Read `docs/instructions.md` before changing code; planning docs live in `docs/`. Track work in `roadmap.md`.
+Read `OpenAppHub/docs/charter/instructions.md` before changing code; planning docs live in `OpenAppHub/docs/charter/`. Track work in `OpenAppHub/docs/ROADMAP.md` (Charter's items are `C-`).
 
 - The app runs in the shared OpenAppHub Supabase project (schema `charter`) and on a Cloudflare Worker; Google sign-in goes through `supabase.auth.signInWithOAuth` (self-hosted) or the hub (hosted). The database is built from `db/migrations` by `scripts/migrate.mjs`; the owner applies them with `migrate.yml`.
 - Deploys (D-219, spec §10.2): public settings per environment live in `wrangler.jsonc` (no `.env` is committed; local values go in `.env.local`). Staging is the Worker's preview of branch `staging` (`staging.charter.staging.openapphub.org`); production deploys from `main`. Pull requests target `staging`; nothing merges into `main` without the owner's approval. Security headers come from `src/server.ts`; keep the CSP in `src/lib/security-headers.ts` to the app, its Supabase project and the hosts it really loads.
@@ -101,7 +101,7 @@ Read `docs/instructions.md` before changing code; planning docs live in `docs/`.
 - Attribute values change only via `set_attribute_value`; definitions/options are retired (`active=false`), never deleted — keeps stored values meaningful.
 - Setup flows live in `src/modules/<domain>/setup-flow.ts` on the `src/engines/setup` framework and apply only via `apply_setup` — one transaction, idempotent by key.
 - New migrations follow Charter's migration rules: `org_id uuid not null references public.organizations(id)` on tenant tables, `grant select, insert, update, delete ... to authenticated`, RLS with `has_permission` / `is_org_member` policies, and no `DROP TABLE` / `DROP COLUMN` (enforce "no delete" by having no DELETE policy, and immutable columns by trigger). `bun run check:migrations` checks this in CI (D-125).
-- Every policy/grant/trigger/RPC change ships with a test in `db/tests/` (see docs/testing.md); CI (`.github/workflows/ci.yml`) must stay green.
+- Every policy/grant/trigger/RPC change ships with a test in `db/tests/` (see `OpenAppHub/docs/charter/testing.md`); CI (`.github/workflows/ci.yml`) must stay green.
 - Migrations not yet applied to the live database: put their types in `src/lib/db/pending-schema.ts` (never hand-edit the generated `src/integrations/supabase/types.ts`), guard the screens with `src/lib/db/readiness.ts` / `<RequiresDatabase>`, and list them in `roadmap.md` (D-135). Once the owner has applied them (`migrate.yml`) and `gen-types.yml` has regenerated the types, remove the shims and mark the feature applied. Never edit an applied migration (the runner refuses changed files).
 - A new migration must also apply inside a single transaction (the runner applies each file in one transaction): compare new enum values as text, and copy a function's full latest body when replacing it.
 - Playwright stays pinned at exactly `1.64.1` (owner's requirement, D-186). Specs import `test`/`expect` from `e2e/fixtures.ts` (origin guard: only the app, its backend and fonts), keep Chromium's sandbox on, and open extra pages with `guardedPage`. Never point the test browser or a browsing agent at the open web.
@@ -115,5 +115,5 @@ Read `docs/instructions.md` before changing code; planning docs live in `docs/`.
 - Lists that can pass 1,000 rows must read every page (`readAllPages` in `src/lib/db/pages.ts`; the API caps each request at 1,000), and roll-ups resolve inherited settings once per org, not per row (D-181). Check big changes with `bun run test:perf`.
 - Member records are never deleted: take them off the roster with `remove_member_record` (sets `left_at`; history kept) and back with `restore_member_record` (D-190). `is_org_member` ignores records that left. Bulk changes to members go through `import_members` (D-189). The audit log is read through `audit_log()`, one org at a time (D-191).
 - The privacy policy and terms text lives in `src/content/legal.tsx` (final text, operated by OpenAppHub; D-193, D-210, D-214).
-- Table map: `docs/tables.md` (every table, its links and write paths). A migration that adds a table, column or foreign key updates it.
-- Every change updates its docs in the same commit: `roadmap.md`, `docs/decisions.md` (new `D-xxx`, older rows point to it), `docs/user-testing.md`, `docs/testing.md`, `docs/tables.md` for schema changes, and the README where it says what works. Finished plans in `docs/plans/` are removed, not left to go stale.
+- Table map: `OpenAppHub/docs/charter/tables.md` (every table, its links and write paths). A migration that adds a table, column or foreign key updates it.
+- Every change updates its docs (in OpenAppHub, a companion pull request) with the change: `OpenAppHub/docs/ROADMAP.md`, `OpenAppHub/docs/charter/decisions.md` (new `D-xxx`, older rows point to it), `OpenAppHub/docs/charter/user-testing.md`, `OpenAppHub/docs/charter/testing.md`, `OpenAppHub/docs/charter/tables.md` for schema changes, and the README where it says what works. Finished plans in `OpenAppHub/docs/charter/plans/` are removed, not left to go stale.
