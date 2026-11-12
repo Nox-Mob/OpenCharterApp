@@ -107,3 +107,7 @@ Membership at a glance, per organization (what the reader can see).
 | `current_members` | int | Active memberships, paid up or lifetime |
 | `pending_requests` | int | Join requests waiting for review |
 | `renewals_due` | int | Active memberships expiring within 30 days |
+
+## Email (S-16)
+
+Charter doesn't send email itself. It queues email in the core outbox (`public.enqueue_email`, core 0005) from its own security definer functions, with a template from `shared/email/templates.ts`. Hosted, the hub's Worker sends it through Resend; self-hosted, this app's Worker does (`server/email-cron.ts`, through the SMTP server entered on the Account page, `src/modules/email/`). Unsubscribe links go to `/email/unsubscribe` (served by `src/server.ts` when self-hosted).

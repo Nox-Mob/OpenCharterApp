@@ -4,9 +4,13 @@
 // `bun run build` reads the VITE_* values from your .env (copy .env.example). Set the secrets
 // with `npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY` and `… GATEWAY_ENCRYPTION_KEY`.
 // VITE_HOSTED=false: the app keeps its own sign-in and never links to openapphub.org.
+// Email: the cron below sends it every 5 minutes, through the SMTP server you enter on your
+// Account page (or SMTP_* / RESEND_API_KEY on the Worker). APP_URL: your server's address, for
+// links in emails.
 {
   "name": "opencharterapp-selfhosted",
   "compatibility_date": "2026-11-06",
+  "triggers": { "crons": ["*/5 * * * *"] },
   "vars": {
     "VITE_HOSTED": "false",
     "VITE_APP_ID": "charter",
@@ -16,5 +20,6 @@
     "SUPABASE_URL": "https://your-project-ref.supabase.co",
     "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_your_key",
     "VITE_DOCS_URL": "https://docs.openapphub.org",
+    "APP_URL": "https://charter.example.org",
   },
 }
