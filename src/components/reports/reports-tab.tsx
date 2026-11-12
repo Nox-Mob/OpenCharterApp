@@ -1,5 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { AddToBoardPackage } from "@shared/ui/AddToBoardPackage";
+import { suiteUrls } from "@shared/supabase/hosted";
+import { supabase } from "@/integrations/supabase/client";
+import type { ReportSection } from "@/modules/reports/pdf";
 import { membershipModelQuery } from "@/modules/membership/home-chapter";
 import { toast } from "sonner";
 import type { Org } from "@/lib/orgs";
@@ -94,10 +99,96 @@ export function ReportsTab({
     download(`${org.slug}-${report}-${on}.csv`, tableCsv(header, rows));
   }
 
+  const membersTable = (): { header: string[]; rows: (string | number)[][] } => ({
+    header: [
+      "Organization",
+      "Current members",
+      "Good standing",
+      "Grace period",
+      "Lapsed",
+      "Pending",
+      "Cancelled or declined",
+      "Records without a membership",
+      "Joined in the last 30 days",
+      "Expiring within 30 days",
+      "Expiring within 60 days",
+      "Expiring within 90 days",
+    ],
+    rows: members.data!.map((r) => [
+      r.name,
+      currentMembers(r),
+      r.good,
+      r.grace,
+      r.lapsed,
+      r.pending,
+      r.ended,
+      r.no_membership,
+      r.joined_30d,
+      r.expiring_30,
+      r.expiring_60,
+      r.expiring_90,
+    ]),
+  });
+  const revenueTable = (): { header: string[]; rows: (string | number)[][] } => ({
+    header: ["Organization", "Currency", "Payments", "Received", "Refunded", "Net"],
+    rows: revenue.data!.map((r) => [
+      r.name,
+      r.currency,
+      r.payments,
+      (r.gross_minor / 100).toFixed(2),
+      (r.refunded_minor / 100).toFixed(2),
+      (r.net_minor / 100).toFixed(2),
+    ]),
+  });
+  const governanceTable = (): { header: string[]; rows: (string | number)[][] } => ({
+    header: ["Organization", "Required seats", "Vacant", "Vacant seats", "Terms past their end"],
+    rows: board.data!.map((r) => [
+      r.name,
+      r.required_seats,
+      r.vacant_required,
+      r.vacant_titles.join("; "),
+      r.terms_past_end,
+    ]),
+  });
+  // S-13: the visible reports as one PDF, to keep or to put in an OpenBoardApp board package.
+  const reportSections = (): ReportSection[] => [
+    ...(canSeeMembers && members.data ? [{ heading: "Members", ...membersTable() }] : []),
+    ...(canSeeRevenue && revenue.data
+      ? [{ heading: `Revenue, ${range.from} to ${range.to}`, ...revenueTable() }]
+      : []),
+    ...(canSeeBoards && board.data ? [{ heading: "Boards", ...governanceTable() }] : []),
+  ];
+  async function reportsPdfFile() {
+    const { reportsPdf } = await import("@/modules/reports/pdf");
+    const doc = reportsPdf({
+      organization: org.name,
+      subtitle: `As of ${on}`,
+      sections: reportSections(),
+    });
+    return { doc, fileName: `${org.slug}-reports-${on}.pdf` };
+  }
   const indent = (depth: number) => ({ paddingLeft: `${depth * 1.25}rem` });
 
   return (
     <div className="space-y-10">
+      <div className="flex flex-wrap items-start gap-2">
+        <Button
+          variant="outline"
+          onClick={() => void reportsPdfFile().then(({ doc, fileName }) => doc.save(fileName))}
+        >
+          Download reports (PDF)
+        </Button>
+        <AddToBoardPackage
+          client={supabase as unknown as SupabaseClient}
+          orgId={org.org_id ?? org.id}
+          sourceApp="charter"
+          boardUrl={suiteUrls().board}
+          makePdf={async () => {
+            const { doc, fileName } = await reportsPdfFile();
+            return { pdf: doc.output("blob"), fileName, title: `${org.name}: membership reports` };
+          }}
+        />
+      </div>
       {canSeeMembers && (
         <section className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -118,39 +209,7 @@ export function ReportsTab({
               size="sm"
               variant="outline"
               disabled={!members.data?.length}
-              onClick={() =>
-                void exportCsv(
-                  "members",
-                  [
-                    "Organization",
-                    "Current members",
-                    "Good standing",
-                    "Grace period",
-                    "Lapsed",
-                    "Pending",
-                    "Cancelled or declined",
-                    "Records without a membership",
-                    "Joined in the last 30 days",
-                    "Expiring within 30 days",
-                    "Expiring within 60 days",
-                    "Expiring within 90 days",
-                  ],
-                  members.data!.map((r) => [
-                    r.name,
-                    currentMembers(r),
-                    r.good,
-                    r.grace,
-                    r.lapsed,
-                    r.pending,
-                    r.ended,
-                    r.no_membership,
-                    r.joined_30d,
-                    r.expiring_30,
-                    r.expiring_60,
-                    r.expiring_90,
-                  ]),
-                )
-              }
+              onClick={() => void exportCsv("members", membersTable().header, membersTable().rows)}
             >
               Export CSV
             </Button>
@@ -235,19 +294,7 @@ export function ReportsTab({
                 variant="outline"
                 disabled={!revenue.data?.length}
                 onClick={() =>
-                  void exportCsv(
-                    "revenue",
-                    ["Organization", "Currency", "Payments", "Received", "Refunded", "Net"],
-                    revenue.data!.map((r) => [
-                      r.name,
-                      r.currency,
-                      r.payments,
-                      (r.gross_minor / 100).toFixed(2),
-                      (r.refunded_minor / 100).toFixed(2),
-                      (r.net_minor / 100).toFixed(2),
-                    ]),
-                    range,
-                  )
+                  void exportCsv("revenue", revenueTable().header, revenueTable().rows, range)
                 }
               >
                 Export CSV
@@ -323,23 +370,7 @@ export function ReportsTab({
               variant="outline"
               disabled={!board.data?.length}
               onClick={() =>
-                void exportCsv(
-                  "governance",
-                  [
-                    "Organization",
-                    "Required seats",
-                    "Vacant",
-                    "Vacant seats",
-                    "Terms past their end",
-                  ],
-                  board.data!.map((r) => [
-                    r.name,
-                    r.required_seats,
-                    r.vacant_required,
-                    r.vacant_titles.join("; "),
-                    r.terms_past_end,
-                  ]),
-                )
+                void exportCsv("governance", governanceTable().header, governanceTable().rows)
               }
             >
               Export CSV

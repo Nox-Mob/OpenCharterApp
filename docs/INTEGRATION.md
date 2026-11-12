@@ -65,3 +65,45 @@ Active units per organization (spec §6.1: kept in case pricing later depends on
 |---|---|---|
 | `org_id` | uuid | The OpenAppHub organization |
 | `units` | int | Active units, the top unit included |
+
+## `charter.api_tasks` (S-15)
+
+What needs doing in Charter, for the hub's task list. Each person sees the tasks for the units they
+can see.
+
+| Column | Type | Meaning |
+|---|---|---|
+| `org_id` | uuid | The OpenAppHub organization |
+| `unit_id` | uuid | Unit the task is about |
+| `kind` | text | `join_request` (one per request), `vacant_seat` (a required seat with fewer holders than seats, per unit), `renewals_due` (memberships expiring within 30 days, one per unit) |
+| `title` | text | Ready to show, for example "Review join request: Morgan" |
+| `unit_name` | text | |
+| `due_on` | date | When it was asked (join requests) or the first expiry (renewals); null for seats |
+| `item_id` | uuid | The membership or seat; null for renewals |
+| `link` | text | Path in OpenCharterApp where it's done |
+
+## Board members in sync with OpenBoardApp (S-14)
+
+Officers at the organization level (the top unit) are kept in step with OpenBoardApp's terms
+(migration `0005_board_sync.sql`): appointing, changing or ending one here updates Board; a term
+added in Board becomes an appointment here when its position matches a seat and its person a
+member; ending a linked term in Board ends the appointment here. Chapter officers stay in Charter.
+Details, and why these sync functions are trigger-only `security definer` functions (an exception
+to SHARED-SPEC §3.6): OpenBoardApp's `docs/INTEGRATION.md`.
+
+## Uses from other apps (S-13)
+
+The Reports tab's **Add to a board package** puts the reports PDF into an upcoming OpenBoardApp
+meeting through `board.add_report_to_meeting` (shared `AddToBoardPackage`). Hidden when OpenBoardApp
+isn't on this database.
+
+## `charter.api_member_summary` (hub dashboard)
+
+Membership at a glance, per organization (what the reader can see).
+
+| Column | Type | Meaning |
+|---|---|---|
+| `org_id` | uuid | The OpenAppHub organization |
+| `current_members` | int | Active memberships, paid up or lifetime |
+| `pending_requests` | int | Join requests waiting for review |
+| `renewals_due` | int | Active memberships expiring within 30 days |
