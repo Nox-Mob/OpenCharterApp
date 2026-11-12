@@ -30,6 +30,10 @@ Charter-only follow-ups (2026-11-11):
 - The end-to-end tests for chapters, regions and two-level dues were retired with Demo National; they need a national demo with chapters (a second demo organization in the suite seed).
 - On the Account page the organization switcher reads "No organization": Charter only knows the current organization on an organization's own pages. Board and Ledger show it everywhere.
 
+## 0b. Chapters on OpenBoardApp (S-24, 2026-11-12, PR)
+
+A chapter can use OpenBoardApp for its own board if its national allows it (Board settings → Chapters on OpenBoardApp: off, approval (default) or open). The chapter's admins ask on its Board page; the national approves or declines, with emails both ways. Approved chapters get their own organization (core 0006) under the national's, covered by the national's plan, and their officers sync like the national's (S-14). Migration `0006_chapter_board.sql`; `docs/INTEGRATION.md`.
+
 ## 0a. Next (proposed 2026-11-12)
 
 Proposed, not scheduled; the whole suite's plan is in the hub's [`docs/ROADMAP.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/ROADMAP.md). Suite epics that touch this app: S-16 email from the Worker, S-17 task digest, S-18 Charter payments into Ledger (`charter.api_payments`), S-20 board package on a schedule, S-21 committees in sync, S-23 election results into Board terms.

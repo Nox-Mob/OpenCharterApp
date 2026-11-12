@@ -7,7 +7,7 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When a migration is applied, delete its section here (the generated types take over).
- * Pending: none (see roadmap.md).
+ * Pending: 0006_chapter_board.sql (chapters on OpenBoardApp).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,7 +18,41 @@ type Generated = Database["charter"];
 // Add types for a migration here while it isn't applied yet; delete them once applied.
 export type PendingEnums = Record<never, never>;
 export type PendingTables = Record<never, never>;
-export type PendingFunctions = Record<never, never>;
+export type PendingFunctions = {
+  // 0006_chapter_board.sql
+  chapter_board_status: {
+    Args: { p_unit: string };
+    Returns: {
+      policy: string;
+      request_id: string | null;
+      status: string | null;
+      board_org_id: string | null;
+      note: string | null;
+      can_request: boolean;
+    }[];
+  };
+  chapter_board_requests_for: {
+    Args: { p_org: string };
+    Returns: {
+      id: string;
+      unit_id: string;
+      chapter: string;
+      status: string;
+      requested_by_name: string | null;
+      requested_at: string;
+      decided_at: string | null;
+      note: string | null;
+      board_org_id: string | null;
+    }[];
+  };
+  request_chapter_board: { Args: { p_unit: string }; Returns: string };
+  decide_chapter_board: {
+    Args: { p_request: string; p_approve: boolean; p_note?: string | null };
+    Returns: undefined;
+  };
+  cancel_chapter_board_request: { Args: { p_request: string }; Returns: undefined };
+  chapter_board_policy: { Args: { p_unit: string }; Returns: string };
+};
 
 export type FullDatabase = Omit<Database, "charter"> & {
   charter: {

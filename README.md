@@ -136,6 +136,7 @@ GitHub runs all of these (D-197) on every pull request and on pushes to `staging
 
 - `bun run build` builds the self-hosted app from your own `.env` / `.env.local` (copy `.env.example`); it never uses the hosted values in `wrangler.jsonc`. With `VITE_HOSTED=false` (the default) the app keeps its own sign-in and doesn't link to openapphub.org.
 - To deploy your own Worker: copy [`wrangler.selfhosted.example.jsonc`](wrangler.selfhosted.example.jsonc) over `wrangler.jsonc`, replace the placeholder values with your project's, run `bun run build`, then `npx wrangler deploy --config .output/server/wrangler.json`, and set the two secrets on the Worker.
+- Email (reminders, chapter requests, test emails): the owner of the server's first organization enters an SMTP server on the **Account** page and sends a test email. The Worker sends every 5 minutes from its cron trigger (in the example config) and needs `SUPABASE_SERVICE_ROLE_KEY`; `APP_URL` sets the address used in links. `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY`, `SMTP_USERNAME`, `SMTP_PASSWORD` and `EMAIL_FROM` on the Worker (or `RESEND_API_KEY`) work instead. Hosted, OpenAppHub sends the email.
 - Database: `DATABASE_URL=… bun run db:migrate` applies the core (`db/core`) and the `charter` schema (`db/migrations`), and only what's new on later runs. Then add `charter` to the exposed schemas (Supabase: Project Settings → Data API; Docker: `PGRST_DB_SCHEMAS`). Self-hosted, there's no hub and no billing: everything stays writable, and the public join page works without signing in.
 
 ### Git history

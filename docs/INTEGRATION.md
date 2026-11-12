@@ -107,3 +107,15 @@ Membership at a glance, per organization (what the reader can see).
 | `current_members` | int | Active memberships, paid up or lifetime |
 | `pending_requests` | int | Join requests waiting for review |
 | `renewals_due` | int | Active memberships expiring within 30 days |
+
+## Email (S-16)
+
+Charter doesn't send email itself. It queues email in the core outbox (`public.enqueue_email`, core 0005) from its own security definer functions, with a template from `shared/email/templates.ts`. Hosted, the hub's Worker sends it through Resend; self-hosted, this app's Worker does (`server/email-cron.ts`, through the SMTP server entered on the Account page, `src/modules/email/`). Unsubscribe links go to `/email/unsubscribe` (served by `src/server.ts` when self-hosted).
+
+## Chapters on OpenBoardApp (0006)
+
+A chapter can run its board in OpenBoardApp when its national allows it. The national's setting `board.chapters` (`charter.org_settings` on the top unit) is `off`, `approval` (the default) or `open`. A chapter admin asks with `charter.request_chapter_board(unit)`. With `approval`, the national's owners and admins get an email (`charter.chapter_board_request`) and decide with `charter.decide_chapter_board(request, approve, note)`. The requester then hears back (`charter.chapter_board_decided`).
+
+On approval, `charter._enable_chapter_board` creates the chapter's own organization with core `public._create_child_organization`: parent = the national's organization, `source_app = 'charter'`, `source_ref` = the chapter's unit. The requester owns it, the national's owner is an admin, and the chapter's current officers are copied to its board. OpenBoardApp needs nothing special: it's an organization like any other. When billing is on, the hub's billing 0004 covers it with the national's plan.
+
+The S-14 sync now works per unit: `charter.board_org_for_unit(unit)` gives the board organization (the national's own for the top unit, the chapter's once approved) and `charter.unit_for_board_org(org)` maps back, so officers sync both ways for chapters too. Both are trigger-only security definer functions like the rest of the sync.

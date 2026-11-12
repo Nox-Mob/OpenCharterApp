@@ -58,6 +58,14 @@ function secure(response: Response): Response {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      // Email unsubscribe links on a self-hosted server (S-16); hosted, the hub serves them.
+      if (
+        import.meta.env["VITE_HOSTED"] !== "true" &&
+        new URL(request.url).pathname === "/email/unsubscribe"
+      ) {
+        const { charterUnsubscribe } = await import("./modules/email/email.server");
+        return secure(await charterUnsubscribe(request));
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return secure(await normalizeCatastrophicSsrResponse(response));
