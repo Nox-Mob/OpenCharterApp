@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/db/pending-schema";
 import { createOrgSchema, slugify, type OrgType } from "@/lib/policy";
 import { isDemoOrg, myOrgsQuery, myPermissionsQuery } from "@/lib/orgs";
 import { cn } from "@/lib/utils";
@@ -65,7 +66,10 @@ export function CreateOrgDialog({
   // A new national's membership model (A8, D-166); null until picked
   const [model, setModel] = useState<ModelChoice | null>(null);
   const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
+  // The web address follows the name until someone edits it.
+  const [slugInput, setSlugInput] = useState<string | null>(null);
+  const slug = slugInput ?? slugify(name);
+  const slugTaken = useSlugTaken(slug, open);
   const [type, setType] = useState<OrgType>(types[0]!);
   const [busy, setBusy] = useState(false);
   const [details, setDetails] = useState<Record<string, unknown>>({});
@@ -122,7 +126,7 @@ export function CreateOrgDialog({
   function reset() {
     setStepIdx(0);
     setName("");
-    setSlug("");
+    setSlugInput(null);
     setType(types[0]!);
     setDetails({});
     setInvites(EMPTY_INVITES);
@@ -135,11 +139,12 @@ export function CreateOrgDialog({
     if (step === "basics") {
       const parsed = createOrgSchema.safeParse({
         name,
-        slug: slug || slugify(name),
+        slug,
         type,
         parentId,
       });
-      return parsed.success ? null : (parsed.error.issues[0]?.message ?? "Invalid input");
+      if (!parsed.success) return parsed.error.issues[0]?.message ?? "Invalid input";
+      return slugTaken ? "That web address is taken. Try another." : null;
     }
     if (step === "model" && !model) return "Choose how membership works, or decide later";
     if (step === "details") return firstValueError(chapterFields, details);
@@ -158,7 +163,7 @@ export function CreateOrgDialog({
   }
 
   async function create() {
-    const parsed = createOrgSchema.parse({ name, slug: slug || slugify(name), type, parentId });
+    const parsed = createOrgSchema.parse({ name, slug, type, parentId });
     setBusy(true);
     let id: string;
     if (canCreateDemo && demo && (parsed.type === "national" || parsed.type === "standalone")) {
@@ -253,9 +258,21 @@ export function CreateOrgDialog({
                 <Input
                   id="org-slug"
                   value={slug}
-                  placeholder={slugify(name) || "my-association"}
-                  onChange={(e) => setSlug(e.target.value)}
+                  placeholder="my-association"
+                  aria-invalid={slugTaken}
+                  aria-describedby={slugTaken ? "org-slug-taken" : "org-slug-help"}
+                  className={cn(slugTaken && "border-destructive focus-visible:ring-destructive")}
+                  onChange={(e) => setSlugInput(e.target.value.toLowerCase())}
                 />
+                {slugTaken ? (
+                  <p id="org-slug-taken" className="text-sm text-destructive">
+                    That web address is taken. Try another.
+                  </p>
+                ) : (
+                  <p id="org-slug-help" className="text-xs text-muted-foreground">
+                    Made from the name; you can change it. Lowercase letters, numbers and dashes.
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Type</Label>
@@ -451,4 +468,28 @@ export function CreateOrgDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** True when the web address is already used (checked as you type, after a short pause). */
+function useSlugTaken(slug: string, enabled: boolean): boolean {
+  const [taken, setTaken] = useState(false);
+  useEffect(() => {
+    if (!enabled || !slug) {
+      setTaken(false);
+      return;
+    }
+    let live = true;
+    const t = setTimeout(() => {
+      void db.rpc("slug_available", { p_slug: slug }).then(({ data, error }) => {
+        // Before migration 0007 (or offline) the check is skipped; creating still refuses a duplicate.
+        if (live)
+          setTaken(!error && data === false && /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(slug));
+      });
+    }, 300);
+    return () => {
+      live = false;
+      clearTimeout(t);
+    };
+  }, [slug, enabled]);
+  return taken;
 }

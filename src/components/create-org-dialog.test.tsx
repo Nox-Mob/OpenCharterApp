@@ -22,7 +22,14 @@ const tables: Record<string, unknown[]> = {
 };
 const { rpc } = vi.hoisted(() => ({
   rpc: vi.fn(async (fn: string, _args?: unknown) => ({
-    data: fn === "create_organization" ? "new-id" : fn === "create_invitation" ? "tok" : [],
+    data:
+      fn === "create_organization"
+        ? "new-id"
+        : fn === "create_invitation"
+          ? "tok"
+          : fn === "slug_available"
+            ? (_args as { p_slug: string }).p_slug !== "taken-post"
+            : [],
     error: null,
   })),
 }));
@@ -53,6 +60,27 @@ vi.mock("@tanstack/react-router", () => ({
 import { CreateOrgDialog } from "./create-org-dialog";
 
 describe("chapter creation wizard", () => {
+  it("fills the web address from the name, lets you change it, and says when it's taken", async () => {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <CreateOrgDialog
+          parentId="22222222-0000-4000-8000-000000000001"
+          trigger={<button>Add chapter</button>}
+        />
+      </QueryClientProvider>,
+    );
+    fireEvent.click(screen.getByText("Add chapter"));
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Post 12 Austin" } });
+    const address = screen.getByLabelText("Web address");
+    expect(address).toHaveValue("post-12-austin");
+    fireEvent.change(address, { target: { value: "taken-post" } });
+    expect(await screen.findByText(/That web address is taken/)).toBeInTheDocument();
+    expect(address).toHaveAttribute("aria-invalid", "true");
+    fireEvent.change(address, { target: { value: "free-post" } });
+    await waitFor(() => expect(screen.queryByText(/That web address is taken/)).toBeNull());
+  });
+
   it("asks for an admin and the required officers, then shows the invitation links", async () => {
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(

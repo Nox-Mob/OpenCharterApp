@@ -229,6 +229,24 @@ export const STARTER_ATTRIBUTES: readonly (Omit<AttributeInput, "options"> & {
   },
 ];
 
+/** Starter fields only offered to veterans organizations (501(c)(19)). */
+export const VETERANS_ONLY_STARTERS: ReadonlySet<string> = new Set(["rank", "branch"]);
+
+/**
+ * The starter member fields to offer in setup for this tax status: Rank and Branch only for a
+ * 501(c)(19) veterans organization. A field already chosen stays visible, so it can be unticked.
+ */
+export function startersForTaxStatus<T extends { key: string }>(
+  starters: readonly T[],
+  taxStatus: string | null | undefined,
+  chosen: ReadonlySet<string> = new Set(),
+): T[] {
+  const veterans = taxStatus === "501(c)(19)";
+  return starters.filter(
+    (s) => veterans || !VETERANS_ONLY_STARTERS.has(s.key) || chosen.has(s.key),
+  );
+}
+
 /** Common chapter fields offered to nationals in setup (setup-engine.md §6.2). */
 export const STARTER_CHAPTER_ATTRIBUTES: readonly (Omit<AttributeInput, "options"> & {
   options: { value: string; label: string }[];

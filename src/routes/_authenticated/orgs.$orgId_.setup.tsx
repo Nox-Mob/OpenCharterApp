@@ -18,6 +18,7 @@ import {
   attributeInputSchema,
   forSubject,
   STARTER_ATTRIBUTES,
+  startersForTaxStatus,
   STARTER_CHAPTER_ATTRIBUTES,
   type AttributeInput,
   type AttributeSubject,
@@ -179,6 +180,7 @@ function MembershipSetup({ org }: { org: Org }) {
             value={(value as AttributeInput[]) ?? []}
             onChange={onChange}
             subject={q.subject ?? "member"}
+            taxStatus={typeof answers["tax_status"] === "string" ? answers["tax_status"] : null}
           />
         ) : q.type === "tiers" ? (
           <TiersQuestion value={(value as Tier[]) ?? []} onChange={onChange} />
@@ -385,16 +387,22 @@ function AttributesQuestion({
   value,
   onChange,
   subject,
+  taxStatus,
 }: {
   value: AttributeInput[];
   onChange: (v: AttributeInput[]) => void;
   subject: AttributeSubject;
+  /** The tax status answered earlier in setup: Rank and Branch are for 501(c)(19) only. */
+  taxStatus: string | null;
 }) {
-  const starters = subject === "chapter" ? STARTER_CHAPTER_ATTRIBUTES : STARTER_ATTRIBUTES;
   const [editing, setEditing] = useState<{ index: number | null; input: AttributeInput } | null>(
     null,
   );
   const keys = new Set(value.map((v) => v.key));
+  const starters =
+    subject === "chapter"
+      ? STARTER_CHAPTER_ATTRIBUTES
+      : startersForTaxStatus(STARTER_ATTRIBUTES, taxStatus, keys);
   function saveEdit() {
     if (!editing) return;
     const parsed = attributeInputSchema.safeParse(forSubject(editing.input, subject));
