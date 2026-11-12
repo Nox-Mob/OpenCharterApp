@@ -16,12 +16,13 @@ OpenCharterApp is one of the apps of **[OpenAppHub](https://openapphub.org)**: o
 
 ## Try it
 
-Staging is at **https://staging.charter.staging.openapphub.org**, with the suite demo (reset every 12 hours):
+Staging is at **https://staging.charter.staging.openapphub.org**, with the suite demo (reset every 12 hours; the apps' data agree with each other, and every account has tasks waiting):
 
-| Account                    | Password             | What you see                                                                                                   |
-| -------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `demo@demo.openapphub.org` | `OpenAppHubDemo2026` | owns Riverside Community Association: about 140 members on varied levels and terms, dues, receipts and a board |
-| `test@demo.openapphub.org` | `OpenAppHubDemo2026` | no organization (a first visit)                                                                                |
+| Account                        | Password             | What you see                                                                                                                                               |
+| ------------------------------ | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `demo@demo.openapphub.org`     | `OpenAppHubDemo2026` | owns Riverside Community Association: about 140 members on varied levels and terms, dues, receipts and a board                                             |
+| `national@demo.openapphub.org` | `OpenAppHubDemo2026` | owns Northstar Veterans League: a 501(c)(19) national with four posts, home-post membership, Rank and Branch, a post on OpenBoardApp and a request waiting |
+| `test@demo.openapphub.org`     | `OpenAppHubDemo2026` | no organization (a first visit)                                                                                                                            |
 
 These are public on purpose and exist only on staging ([`docs/demo-data.md`](docs/demo-data.md)).
 
@@ -34,6 +35,7 @@ Non-profit associations with chapters (veterans' groups, fraternal and professio
 - **each level collects its own money** into its own Stripe account and issues its own receipts
 - **governance is built in**: required board seats, reports, elections, document compliance and award approvals
 - organizations **configure it to match how they work** through guided setup, not a developer
+- **with OpenBoardApp**, officers stay in sync both ways, and a national can let its chapters run their own board there (chapters ask, the national approves)
 
 The full vision, scope and feature map are in [`docs/README.md`](docs/README.md) and [`docs/epic.md`](docs/epic.md).
 

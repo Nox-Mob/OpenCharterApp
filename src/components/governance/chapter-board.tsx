@@ -137,6 +137,8 @@ export function ChapterBoardCard({ org }: { org: Org }) {
 export function ChapterBoardSettings({ org, canManage }: { org: Org; canManage: boolean }) {
   const qc = useQueryClient();
   const [busy, setBusy] = useState<string | null>(null);
+  // The request being declined, and the note for the chapter.
+  const [declining, setDeclining] = useState<{ id: string; note: string } | null>(null);
   const isTop = (org.org_id ?? org.id) === org.id && org.type !== "standalone";
   const policy = useQuery({
     queryKey: ["chapter-board-policy", org.id],
@@ -176,10 +178,7 @@ export function ChapterBoardSettings({ org, canManage }: { org: Org; canManage: 
     }
   }
 
-  async function decide(id: string, approve: boolean) {
-    const note = approve
-      ? null
-      : (window.prompt("Why? (optional, shared with the chapter)") ?? null);
+  async function decide(id: string, approve: boolean, note: string | null = null) {
     setBusy(id);
     const { error } = await db.rpc("decide_chapter_board", {
       p_request: id,
@@ -190,6 +189,7 @@ export function ChapterBoardSettings({ org, canManage }: { org: Org; canManage: 
     if (error) toast.error(error.message);
     else {
       toast.success(approve ? "Approved: the chapter can use OpenBoardApp" : "Declined");
+      setDeclining(null);
       await qc.invalidateQueries({ queryKey: ["chapter-board-requests", org.id] });
     }
   }
