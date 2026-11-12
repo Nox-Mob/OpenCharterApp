@@ -37,6 +37,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
       - name: Install psql
         run: command -v psql || (sudo apt-get update && sudo apt-get install -y postgresql-client)
       - name: Generate types from the migrations
