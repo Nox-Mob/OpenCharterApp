@@ -22,6 +22,8 @@ function Organizations() {
   const hubOrgs = useHubOrgs();
   const hasPending =
     isHosted() && (hubOrgs.data ?? []).some((o) => !orgs.some((u) => u.id === o.id));
+  // Hosted and in no organization at all: the same welcome as the other apps.
+  if (isHosted() && orgs.length === 0 && hubOrgs.isSuccess && !hasPending) return <Welcome />;
   return (
     <div>
       <div className="flex items-end justify-between rule-brass pt-6">
@@ -73,6 +75,26 @@ function Organizations() {
         </ul>
       )}
     </div>
+  );
+}
+
+/** Hosted, with no organization anywhere yet: organizations are made in OpenAppHub. */
+function Welcome() {
+  return (
+    <section className="mx-auto mt-12 max-w-xl rounded-md border bg-card p-6">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Welcome</p>
+      <h1 className="mt-1 text-2xl font-semibold">Set up your organization</h1>
+      <p className="mt-2 text-muted-foreground">
+        Organizations are created in OpenAppHub, for every app at once: name it there, then come
+        back here to choose how it's organized (a single association, or a national with chapters).
+        If you were invited, open the invitation link instead.
+      </p>
+      <div className="mt-5">
+        <Button asChild>
+          <a href={hubUrl("/orgs/new")}>Create organization</a>
+        </Button>
+      </div>
+    </section>
   );
 }
 
