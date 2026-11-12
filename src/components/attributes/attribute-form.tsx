@@ -177,6 +177,9 @@ export function AttributeForm({
             ))}
           </SelectContent>
         </Select>
+        <p className="text-xs text-muted-foreground">
+          Admins always see it. Choose whether members, or anyone, can see it too.
+        </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         {(subject === "chapter"

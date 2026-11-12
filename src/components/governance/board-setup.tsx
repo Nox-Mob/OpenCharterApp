@@ -291,6 +291,10 @@ function SeatTermsQuestion({
             ) : (
               <div className="space-y-2 pl-6">
                 <TermFields term={own.term} onChange={(term) => set({ term })} />
+                <p className="text-xs text-muted-foreground">
+                  When these term rules start to apply, and where your by-laws say so (for your
+                  records).
+                </p>
                 <div className="flex flex-wrap gap-2">
                   <div className="space-y-1">
                     <Label htmlFor={`${k}-from`}>Takes effect</Label>

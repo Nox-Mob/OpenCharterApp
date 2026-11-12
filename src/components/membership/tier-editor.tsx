@@ -107,6 +107,11 @@ export function TierEditor({
             ))}
           </SelectContent>
         </Select>
+        <p className="text-xs text-muted-foreground">
+          What receipts for this level say about taxes. Choose tax-deductible only if your
+          organization can accept deductible gifts (for example a 501(c)(3)) and members get nothing
+          of value in return; ask your accountant if you&apos;re not sure.
+        </p>
       </div>
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">Terms and prices</legend>

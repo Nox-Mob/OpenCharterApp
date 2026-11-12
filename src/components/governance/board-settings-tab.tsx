@@ -707,6 +707,10 @@ function SeatEditor({
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  Whoever holds this seat gets the role&apos;s permissions (for example, the
+                  Treasurer can record payments) and loses them when their term ends.
+                </p>
               </div>
             </div>
             <DialogFooter>

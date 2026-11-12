@@ -293,7 +293,11 @@ export function PricingRulesDialog({
                         input: { ...draft.input, sort_order: Number(e.target.value) },
                       })
                     }
+                    aria-describedby="rule-order-help"
                   />
+                  <p id="rule-order-help" className="text-xs text-muted-foreground">
+                    Lower numbers are checked first.
+                  </p>
                 </div>
               </div>
             </div>
