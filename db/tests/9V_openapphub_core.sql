@@ -18,19 +18,41 @@ select tests.eq((select count(*) from public.memberships where org_id = '2222222
 select tests.as_user('11111111-0000-4000-8000-000000000003');
 select tests.eq(charter.is_portal_member('22222222-0000-4000-8000-000000000001', null), true, 'the dues member is a portal member');
 select tests.reset_role();
--- A core admin without any Charter role holds org_admin's permissions in the whole tree.
+-- H-09: an OpenAppHub admin isn't an OpenCharterApp admin by itself; an OpenCharterApp admin
+-- (set on the hub, without any Charter role) holds org_admin's permissions in the whole tree.
 insert into auth.users (id, email) values ('11111111-0000-4000-8000-000000000005', 'coreadmin@test.org');
 insert into public.memberships (org_id, user_id, role) values
   ('22222222-0000-4000-8000-000000000001', '11111111-0000-4000-8000-000000000005', 'admin');
 select tests.eq(charter.has_permission('11111111-0000-4000-8000-000000000005', 'members.manage', '22222222-0000-4000-8000-000000000003'),
-  true, 'a core admin manages members anywhere in the tree');
--- A chapter admin demoted to core viewer loses staff permissions.
-update public.memberships set role = 'viewer' where org_id = '22222222-0000-4000-8000-000000000001'
-  and user_id = '11111111-0000-4000-8000-000000000002';
+  false, 'an OpenAppHub admin alone has no Charter permissions');
+insert into public.app_role_overrides (org_id, user_id, app, role) values
+  ('22222222-0000-4000-8000-000000000001', '11111111-0000-4000-8000-000000000005', 'charter', 'admin');
+select tests.eq(charter.has_permission('11111111-0000-4000-8000-000000000005', 'members.manage', '22222222-0000-4000-8000-000000000003'),
+  true, 'an OpenCharterApp admin manages members anywhere in the tree');
+select tests.eq((select role::text from public.memberships where org_id = '22222222-0000-4000-8000-000000000001'
+  and user_id = '11111111-0000-4000-8000-000000000005'), 'admin', 'and the OpenAppHub role is untouched');
+-- A chapter admin made a viewer in OpenCharterApp loses staff permissions.
+insert into public.app_role_overrides (org_id, user_id, app, role) values
+  ('22222222-0000-4000-8000-000000000001', '11111111-0000-4000-8000-000000000002', 'charter', 'viewer')
+on conflict (org_id, user_id, app) do update set role = 'viewer';
 select tests.eq(charter.has_permission('11111111-0000-4000-8000-000000000002', 'members.manage', '22222222-0000-4000-8000-000000000002'),
-  false, 'a core viewer can''t use staff permissions');
-update public.memberships set role = 'member' where org_id = '22222222-0000-4000-8000-000000000001'
-  and user_id = '11111111-0000-4000-8000-000000000002';
+  false, 'a viewer in OpenCharterApp can''t use staff permissions');
+update public.app_role_overrides set role = 'member' where org_id = '22222222-0000-4000-8000-000000000001'
+  and user_id = '11111111-0000-4000-8000-000000000002' and app = 'charter';
+-- A named role grants a Charter permission across the organization, without a unit role.
+insert into auth.users (id, email) values ('11111111-0000-4000-8000-0000000000a6', 'named@test.org');
+insert into public.org_named_roles (id, org_id, name, app_roles, permissions) values
+  ('77777777-0000-4000-8000-000000000001', '22222222-0000-4000-8000-000000000001', 'Payments clerk',
+   '{"charter":"member"}', '{"charter":["payments.view"]}');
+insert into public.memberships (org_id, user_id, role, named_role_id) values
+  ('22222222-0000-4000-8000-000000000001', '11111111-0000-4000-8000-0000000000a6', 'member', '77777777-0000-4000-8000-000000000001');
+select tests.eq(charter.has_permission('11111111-0000-4000-8000-0000000000a6', 'payments.view', '22222222-0000-4000-8000-000000000003'),
+  true, 'a named role''s permission applies in every unit');
+select tests.eq(charter.has_permission('11111111-0000-4000-8000-0000000000a6', 'members.manage', '22222222-0000-4000-8000-000000000003'),
+  false, 'and only that permission');
+select tests.as_user('11111111-0000-4000-8000-0000000000a6');
+select tests.eq((select count(*) > 0 from charter.permitted_units('payments.view')), true, 'permitted_units follows it too');
+select tests.reset_role();
 -- Giving someone a staff role makes them a core member.
 select tests.as_user('11111111-0000-4000-8000-000000000002');
 select charter.create_role('22222222-0000-4000-8000-000000000002', 'helper', 'Helper', '', array['members.view']);
@@ -38,6 +60,10 @@ select charter.assign_role('22222222-0000-4000-8000-000000000002', '11111111-000
 select tests.reset_role();
 select tests.eq((select role::text from public.memberships where org_id = '22222222-0000-4000-8000-000000000001'
   and user_id = '11111111-0000-4000-8000-000000000003'), 'member', 'staff get a core membership');
+select tests.eq(public.app_role('22222222-0000-4000-8000-000000000001', 'charter', '11111111-0000-4000-8000-000000000003')::text,
+  'member', 'and are members in OpenCharterApp (not elsewhere)');
+select tests.eq(public.app_role('22222222-0000-4000-8000-000000000001', 'ledger', '11111111-0000-4000-8000-000000000003')::text,
+  'viewer', 'viewers in the other apps');
 
 -- Read-only when the plan doesn't include Charter: no writes, no new joins; payments
 -- members already made are still recorded.
@@ -68,7 +94,7 @@ select tests.as_user('11111111-0000-4000-8000-000000000006');
 select public.create_organization('Hub Association') as hub_org \gset
 select tests.reset_role();
 select tests.as_user('11111111-0000-4000-8000-000000000004');
-select tests.throws(format($$select charter.ensure_top_unit(%L)$$, :'hub_org'), 'Only the owner or an admin');
+select tests.throws(format($$select charter.ensure_top_unit(%L)$$, :'hub_org'), 'Only the owner or an OpenCharterApp admin');
 select tests.reset_role();
 select tests.as_user('11111111-0000-4000-8000-000000000006');
 select tests.eq(charter.ensure_top_unit(:'hub_org', 'standalone', 'hub-assoc'), :'hub_org'::uuid, 'the top unit has the organization''s id');
