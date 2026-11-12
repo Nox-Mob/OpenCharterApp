@@ -5,7 +5,8 @@
 set -euo pipefail
 base="${1:-origin/main}"
 changed=$(git diff --name-only "$base"...HEAD)
-code=$(echo "$changed" | grep -E '^(src/|db/migrations/|db/tests/|smoke/|scripts/)' || true)
+# Generated files (H-06: the database types) need no docs of their own.
+code=$(echo "$changed" | grep -E '^(src/|db/migrations/|db/tests/|smoke/|scripts/)' | grep -vxF 'src/integrations/supabase/types.ts' || true)
 docs=$(echo "$changed" | grep -E '^(docs/|README\.md|roadmap\.md|AGENTS\.md|db/tests/|e2e/)|\.test\.tsx?$' || true)
 if [ -n "$code" ] && [ -z "$docs" ]; then
   echo "Code changed but no documentation or test changed:"
