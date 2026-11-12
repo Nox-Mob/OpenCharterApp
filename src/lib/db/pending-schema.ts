@@ -7,7 +7,7 @@
  * schema plus the definitions below; at runtime it is the same Supabase client.
  *
  * When a migration is applied, delete its section here (the generated types take over).
- * Pending: 0006_chapter_board.sql (chapters on OpenBoardApp).
+ * Pending: 0006_chapter_board.sql (chapters on OpenBoardApp), 0007_slug_available.sql.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +52,8 @@ export type PendingFunctions = {
   };
   cancel_chapter_board_request: { Args: { p_request: string }; Returns: undefined };
   chapter_board_policy: { Args: { p_unit: string }; Returns: string };
+  // 0007_slug_available.sql
+  slug_available: { Args: { p_slug: string }; Returns: boolean };
 };
 
 export type FullDatabase = Omit<Database, "charter"> & {

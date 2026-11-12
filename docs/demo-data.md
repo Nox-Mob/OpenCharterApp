@@ -1,33 +1,70 @@
 # Demo data (staging)
 
-The suite has **one demo and one test account**, the same in OpenAppHub and every app, on staging
-(and local development databases) only. OpenAppHub resets them **every 12 hours** (its
-`demo-reset` workflow, `hub.reset_suite_demo`), so they're always in the same shape for
-screenshots and demonstrations. Sign in through OpenAppHub (hosted, every app sends you there),
-or on an app's own sign-in page when self-hosted.
+The suite has **two demo accounts and a test account**, the same in OpenAppHub and every app, on
+staging (and local development databases) only. OpenAppHub rebuilds them **every 12 hours** (its
+`demo-reset` workflow, `hub.reset_suite_demo`), dated from the day it runs, so due dates and
+"this month" always look current. Sign in through OpenAppHub (hosted, every app sends you there; the
+staging sign-in page has a button for each), or on an app's own sign-in page when self-hosted.
 
 | Account | Password | What it is |
 |---|---|---|
-| `demo@demo.openapphub.org` (Alex Morgan) | `OpenAppHubDemo2026` | Owner of **Riverside Community Association**, a neighbourhood association with about three months of history in every app |
+| `demo@demo.openapphub.org` (Alex Morgan) | `OpenAppHubDemo2026` | Owner of **Riverside Community Association**, a neighbourhood association, in every app |
+| `national@demo.openapphub.org` (Casey Ramirez) | `OpenAppHubDemo2026` | Owner of **Northstar Veterans League**, a fictional 501(c)(19) veterans national with four posts, in every app |
 | `test@demo.openapphub.org` (Test Account) | `OpenAppHubDemo2026` | An active account with no organization and no data, to try everything as a new customer |
 
-In OpenCharterApp (`charter.demo_fill`: `db/seed/0001_charter_demo.sql`, replaced by `0002_charter_demo_levels.sql` with varied levels; applied files never change), Riverside has:
+**The apps agree.** The reset fills OpenCharterApp first, then OpenLedgerApp books every dues
+payment Charter recorded (cards into Stripe balance net of fees, paid out on Fridays; checks and
+cash into Undeposited funds, deposited on Mondays), so Ledger's dues income equals Charter's
+receipts for any period. OpenBoardApp's officers come from Charter (S-14), and its treasurer's
+reports quote Charter's dues and Ledger's checking balance.
 
-- About 140 members on the roster, on varied levels and lengths, with real payment history (cards, checks, cash, bank transfers) and a receipt for every payment:
+**Every account has work waiting**, so the hub's dashboard shows tasks from each app.
+
+## Riverside Community Association
+
+`charter.demo_fill`: `db/seed/0001_charter_demo.sql`, replaced by `0002_charter_demo_levels.sql`
+(varied levels), which `0003_charter_demo_v3.sql` builds on (applied seed files never change).
+
+- About 140 members on varied levels and lengths, with real payment history (cards, checks, cash,
+  bank transfers) and a receipt for every payment:
   - **Household:** monthly $4, 1 year $40, 2 years $75.
   - **Individual:** monthly $2.50, 1 year $25, 2 years $45, lifetime $300.
   - **Senior (65+):** 1 year $15, lifetime $150.
   - **Student:** 6 months $8, 1 year $12.
   - **Business Sponsor:** 1 year $250.
-  - Most pay for a year; monthly members have up to six months of dues, many others renewed once, and lifetime members never lapse. Standing: mostly good, about ten each in grace and lapsed, a few cancelled.
-- Dues paid by check, card, cash and bank transfer, each with its receipt; most joined or renewed in the last three months. Standing: about 115 good, 10 in grace, 11 lapsed, 4 cancelled.
+  - Standing: mostly good, about ten each in grace and lapsed, a few cancelled.
 - Member fields Street and "Wants to volunteer".
-- A board of six: Alex Morgan (President), Jordan Lee, Sam Chen, Taylor Brooks, Priya Patel and Marcus Johnson, the same people as in OpenBoardApp.
+- A board of six: Alex Morgan (President), Jordan Lee, Sam Chen, Taylor Brooks, Priya Patel and
+  Marcus Johnson, synced to OpenBoardApp.
+- **Waiting for the admin:** three join requests from the last week, renewals due in the next 30
+  days, and a required seat nobody holds (Membership Chair).
 - Test payments (no real money). It's a demo organization, so it never sends email.
 
-The organization's id is `de000000-0000-4000-8000-0000000000a1`; the accounts are
-`de000000-0000-4000-8000-000000000001` (demo) and `…-000000000002` (test). Anything made by
-either account is removed at the next reset.
+## Northstar Veterans League
+
+`charter.demo_fill_national` in `0003_charter_demo_v3.sql`.
+
+- A 501(c)(19) national (Saint Paul, MN) with four posts: **Post 1 Cedar Falls**, **Post 7
+  Riverbend**, **Post 12 Harbor City** and **Post 23 Millbrook** (each with a charter date).
+- **National membership with a home post** (D-166): members join the national and belong to a
+  post. About 190 members: Annual ($35; junior enlisted E-1 to E-4 pay $20 through a pricing rule)
+  and Life ($350), with Rank (E-1 to O-6) and Branch on every member.
+- National officers (Casey Ramirez is National Commander) and post officers (Commander, Adjutant,
+  Finance Officer, Chaplain). **Post 23 has no Finance Officer yet** (a vacant required seat).
+- **Chapters on OpenBoardApp** (S-24): set to "chapters ask, the national approves". Post 7
+  Riverbend already runs its own board there (its own organization, owned by Casey); **Post 12's
+  request is waiting** on Board settings → Chapters on OpenBoardApp.
+- **Waiting for the admin:** two join requests, renewals due, the vacant seat, Post 12's request.
+- In OpenLedgerApp: the national's books (its dues from Charter, a quarterly magazine, insurance
+  for the posts, a restricted Veterans Relief Fund with grants to posts, the annual convention).
+  In OpenBoardApp: the National Executive Committee's meetings and Post 7's own board.
+
+## Ids
+
+Organizations: Riverside `de000000-0000-4000-8000-0000000000a1`, Northstar
+`de000000-0000-4000-8000-0000000000b1` (Post 7's organization gets a new id each reset). Accounts:
+`de000000-0000-4000-8000-000000000001` (demo), `…-000000000002` (test), `…-000000000003`
+(national). Anything made by these accounts is removed at the next reset.
 
 The older Charter-only demo below (Demo National, Test-Demo and the `@opencharter.test` accounts)
 is retired: the smoke and end-to-end tests that used it need rewriting for the suite demo.
