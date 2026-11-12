@@ -19,16 +19,30 @@ What's left for the OpenAppHub suite migration to be "done". The same items (S-x
 | S-09 | End-to-end tests | Playwright on a local dev server against staging and the suite demo, in CI on every pull request and daily. | ✅ 2026-11-11 (`live.yml`, 17 tests and the API smoke test) |
 | S-10 | Retire the old projects | The old editor and Supabase projects, once the app has run on the shared projects for a while (owner). | ✅ 2026-11-12 (owner) |
 | S-11 | One look across the suite | Same shell, menus and settings pattern as the other apps; differences found are listed under Known issues. | ✅ shared AppShell; see Known issues; one logo family (shared 1.5.0) |
-| S-12 | Data between apps (groundwork) | Apps exchange data only through documented read-only `api_*` views (to read) and `security invoker` RPCs (to cause a change in the owning app), as SHARED-SPEC §3.6 says. Each app lists what it offers and consumes in `docs/INTEGRATION.md`; the hub and every app feature-detect, so self-hosted single apps keep working. | ⬜ |
-| S-13 | Reports into a board package | From a report (Board's own, Charter's reports, Ledger's financial reports), "Add to a board package" picks an upcoming scheduled meeting in OpenBoardApp and attaches the report (PDF) to that meeting's packet. Needs a Board RPC to add a packet item and a document from another app. | ⬜ |
-| S-14 | Board members in sync (Charter ⇄ Board) | Appointing, ending or changing a board member or officer in OpenCharterApp shows in OpenBoardApp's members and terms, and the other way round, for organizations that use both. Decide which app owns the record (likely Charter's seats when it's in use), how conflicts resolve, and what the audit logs record. | ⬜ |
-| S-15 | Tasks on the hub dashboard | The hub's dashboard lists each person's open work from every app under one heading ("Tasks", name to confirm): Board's action items assigned to them, and Charter's tasks (join requests to review, vacant required seats, renewals to follow up, setup steps). Each app publishes its own as an `api_*` view; the hub links back to the item. | ⬜ |
+| S-12 | Data between apps (groundwork) | Apps exchange data only through documented read-only `api_*` views (to read) and `security invoker` RPCs (to cause a change in the owning app), as SHARED-SPEC §3.6 says. Each app lists what it offers and consumes in `docs/INTEGRATION.md`; the hub and every app feature-detect, so self-hosted single apps keep working. | ✅ 2026-11-12 (PR): offers and uses listed in `docs/INTEGRATION.md`; one documented exception, the S-14 sync functions |
+| S-13 | Reports into a board package | From a report (Board's own, Charter's reports, Ledger's financial reports), "Add to a board package" picks an upcoming scheduled meeting in OpenBoardApp and attaches the report (PDF) to that meeting's packet. Needs a Board RPC to add a packet item and a document from another app. | ✅ 2026-11-12 (PR): Reports → "Add to a board package" (the reports as one PDF); Board side is `board.add_report_to_meeting` |
+| S-14 | Board members in sync (Charter ⇄ Board) | Appointing, ending or changing a board member or officer in OpenCharterApp shows in OpenBoardApp's members and terms, and the other way round, for organizations that use both. Decide which app owns the record (likely Charter's seats when it's in use), how conflicts resolve, and what the audit logs record. | ✅ 2026-11-12 (PR): Charter owns the top unit's officers; migration `0005_board_sync.sql` mirrors them into Board's terms and takes Board's changes back |
+| S-15 | Tasks on the hub dashboard | The hub's dashboard lists each person's open work from every app under one heading ("Tasks", name to confirm): Board's action items assigned to them, and Charter's tasks (join requests to review, vacant required seats, renewals to follow up, setup steps). Each app publishes its own as an `api_*` view; the hub links back to the item. | ✅ 2026-11-12 (PR): `charter.api_tasks` (join requests, vacant required seats, renewals due) and `api_member_summary`, migration `0004_tasks_view.sql` |
 
 Charter-only follow-ups (2026-11-11):
 
 - `charter.purge_smoke_data` still names the retired Demo National ids; it should follow the suite demo or be removed (a migration).
 - The end-to-end tests for chapters, regions and two-level dues were retired with Demo National; they need a national demo with chapters (a second demo organization in the suite seed).
 - On the Account page the organization switcher reads "No organization": Charter only knows the current organization on an organization's own pages. Board and Ledger show it everywhere.
+
+## 0a. Next (proposed 2026-11-12)
+
+Proposed, not scheduled; the whole suite's plan is in the hub's [`docs/ROADMAP.md`](https://github.com/Nox-Mob/OpenAppHub/blob/staging/docs/ROADMAP.md). Suite epics that touch this app: S-16 email from the Worker, S-17 task digest, S-18 Charter payments into Ledger (`charter.api_payments`), S-20 board package on a schedule, S-21 committees in sync, S-23 election results into Board terms.
+
+Recommended order of Charter's own epics:
+
+1. E-08 jobs, email and notifications (with S-16), which finishes E-13's lapse notices and reminders
+2. E-25 governance compliance: vacancy alerts and good-standing checks into the hub's tasks; board reports to Board through S-13
+3. E-27 elections, then S-23
+4. E-34 donations, with S-18
+5. E-39 communications, on S-16
+6. E-20 postpaid dues and E-21 PayPal
+7. Later: E-26 documents (or Board's library through an RPC), E-24 approvals, awards (E-29 to E-33), events (E-37)
 
 ## 1. Roadmap at a glance
 
