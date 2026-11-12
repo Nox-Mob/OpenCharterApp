@@ -99,3 +99,12 @@ test("when the plan makes Charter read-only, writing is switched off", async ({ 
   // the roster is still there
   await expect(page.getByText(/^Showing ([1-9]\d{2,}) of \1$/)).toBeVisible();
 });
+
+// This round: fields explain themselves (in-app explanations).
+test("a new member field says who can see it", async ({ page }) => {
+  await openRiverside(page, "fields");
+  await page.getByRole("button", { name: "Add field" }).click();
+  await expect(
+    page.getByText("Admins always see it. Choose whether members, or anyone, can see it too."),
+  ).toBeVisible();
+});
