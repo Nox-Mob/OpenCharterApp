@@ -44,7 +44,18 @@
     }
   },
 
-  "routes": [{ "pattern": "charter.openapphub.org", "custom_domain": true }],
+  // Production, plus the preview-only domain: branch previews are served at
+  // <branch>.charter.staging.openapphub.org (staging = branch `staging`). Declared here because
+  // `wrangler deploy` replaces the Worker's domains with this list.
+  "routes": [
+    { "pattern": "charter.openapphub.org", "custom_domain": true },
+    {
+      "pattern": "charter.staging.openapphub.org",
+      "custom_domain": true,
+      "previews_enabled": true,
+      "enabled": false
+    }
+  ],
   "vars": {
     "VITE_HOSTED": "true",
     "VITE_APP_ID": "charter",

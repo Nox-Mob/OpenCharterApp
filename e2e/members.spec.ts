@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { openRiverside, signIn } from "./helpers";
+import { DEMO, openRiverside, signIn } from "./helpers";
 
 // The Members tab lists the demo roster like real, paying members: varied levels and lengths,
 // standing, expiry and details.
@@ -67,4 +67,35 @@ test("the Help link follows the screen", async ({ page }) => {
   await expect(helpLink(page, "charter/members/roster/")).toBeAttached();
   await openRiverside(page, "levels");
   await expect(helpLink(page, "charter/membership/levels-and-dues/")).toBeAttached();
+});
+
+// S-05: answer the hub's billing call with an ended trial, so the app is read-only (nothing on
+// staging changes; the database would refuse the writes anyway).
+async function asReadOnly(page: Page) {
+  await page.route("**/rest/v1/rpc/get_org_billing*", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          plan_id: null,
+          status: "trialing",
+          apps: [],
+          trial_ends_at: "2020-01-01T00:00:00Z",
+          current_period_end: null,
+          cancel_at_period_end: false,
+        },
+      ]),
+    }),
+  );
+}
+
+test("when the plan makes Charter read-only, writing is switched off", async ({ page }) => {
+  await asReadOnly(page);
+  await page.goto(`/orgs/${DEMO.org}/setup`);
+  await expect(page.getByText(/Charter is read-only for this organization/)).toBeVisible();
+  await openRiverside(page, "members");
+  await expect(page.getByText(/this app is read-only/).first()).toBeVisible();
+  // the roster is still there
+  await expect(page.getByText(/^Showing ([1-9]\d{2,}) of \1$/)).toBeVisible();
 });

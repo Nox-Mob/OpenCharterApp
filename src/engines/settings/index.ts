@@ -150,6 +150,14 @@ export const SETTINGS: readonly SettingDef[] = [
     default: "",
   },
   {
+    key: "receipts.tax_exempt",
+    label: "Tax-exempt organization",
+    description:
+      "On: each receipt follows its membership level's tax treatment (tax-deductible, partly or not). Off: every receipt says the payment is not tax-deductible. Applies to receipts issued from now on.",
+    kind: "boolean",
+    default: true,
+  },
+  {
     key: "governance.custom_titles_allowed",
     label: "Chapters may rename the board seats you define",
     description: 'When off, chapters show your seat titles (e.g. always "President").',
