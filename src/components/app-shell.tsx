@@ -13,6 +13,7 @@ import { hasPermission, type Grant } from "@/lib/policy";
 import { LegalLinks } from "@/components/legal/legal-page";
 import { SidebarSlot } from "@/components/sidebar-slot";
 import { RouterLink } from "@/lib/router-link";
+import { notificationSettingsHref } from "@/lib/notifications";
 
 /**
  * Every signed-in page sits in the suite's AppShell (shared/ui, SHARED-SPEC §9): sidebar, top bar
@@ -88,9 +89,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         billingHref={hubUrl("/billing")}
         helpHref={helpHrefFor(pathname, search)}
         notificationsClient={supabase as unknown as SupabaseClient}
-        notificationSettingsHref={
-          isHosted() ? hubUrl("/account#notifications") : "/account#notifications"
-        }
+        notificationSettingsHref={notificationSettingsHref()}
         onSignOut={() => void signOut()}
         LinkComponent={RouterLink}
       >
