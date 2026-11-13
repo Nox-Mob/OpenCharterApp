@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { EmailPreferencesPanel, EmailServerPanel } from "@shared/ui/EmailSettings";
+import { NotificationSettings } from "@shared/ui/Notifications";
 import { supabase } from "@/integrations/supabase/client";
 import {
   loadEmailSettings,
@@ -130,12 +131,22 @@ function AccountPage() {
           <p className="text-muted-foreground">
             Reminders and your task summary are chosen in OpenAppHub, for every app.
           </p>
-          <a href={hubUrl("/account#email")} className="font-medium text-primary hover:underline">
-            Email choices
+          <a
+            href={hubUrl("/account#notifications")}
+            className="font-medium text-primary hover:underline"
+          >
+            Notifications and email choices
           </a>
         </section>
       ) : (
         <div id="email" className="space-y-8">
+          <section id="notifications" className="space-y-3 rounded-md border bg-card p-5">
+            <h2 className="text-lg font-semibold">Notifications</h2>
+            <p className="text-sm text-muted-foreground">
+              What you're told about, under the bell at the top and by email.
+            </p>
+            <NotificationSettings client={supabase as unknown as SupabaseClient} />
+          </section>
           <EmailPreferencesPanel client={supabase as unknown as SupabaseClient} />
           <EmailServerPanel
             load={() => loadEmailSettings()}
