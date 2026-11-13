@@ -18,6 +18,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as ActTokenRouteImport } from './routes/act.$token'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedOrgsIndexRouteImport } from './routes/_authenticated/orgs.index'
 import { Route as AuthenticatedOrgsOrgIdRouteImport } from './routes/_authenticated/orgs.$orgId'
@@ -72,6 +73,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ActTokenRoute = ActTokenRouteImport.update({
+  id: '/act/$token',
+  path: '/act/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
@@ -137,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/act/$token': typeof ActTokenRoute
   '/invite/$token': typeof InviteTokenRoute
   '/orgs/$orgId': typeof AuthenticatedOrgsOrgIdRoute
   '/receipts/$receiptId': typeof AuthenticatedReceiptsReceiptIdRoute
@@ -157,6 +164,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/act/$token': typeof ActTokenRoute
   '/invite/$token': typeof InviteTokenRoute
   '/orgs/$orgId': typeof AuthenticatedOrgsOrgIdRoute
   '/receipts/$receiptId': typeof AuthenticatedReceiptsReceiptIdRoute
@@ -179,6 +187,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/act/$token': typeof ActTokenRoute
   '/invite/$token': typeof InviteTokenRoute
   '/_authenticated/orgs/$orgId': typeof AuthenticatedOrgsOrgIdRoute
   '/_authenticated/receipts/$receiptId': typeof AuthenticatedReceiptsReceiptIdRoute
@@ -201,6 +210,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account'
     | '/dashboard'
+    | '/act/$token'
     | '/invite/$token'
     | '/orgs/$orgId'
     | '/receipts/$receiptId'
@@ -221,6 +231,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account'
     | '/dashboard'
+    | '/act/$token'
     | '/invite/$token'
     | '/orgs/$orgId'
     | '/receipts/$receiptId'
@@ -242,6 +253,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_authenticated/account'
     | '/_authenticated/dashboard'
+    | '/act/$token'
     | '/invite/$token'
     | '/_authenticated/orgs/$orgId'
     | '/_authenticated/receipts/$receiptId'
@@ -262,6 +274,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  ActTokenRoute: typeof ActTokenRoute
   InviteTokenRoute: typeof InviteTokenRoute
   JoinOrgSlugCancelledRoute: typeof JoinOrgSlugCancelledRoute
   JoinOrgSlugIndexRoute: typeof JoinOrgSlugIndexRoute
@@ -332,6 +345,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/act/$token': {
+      id: '/act/$token'
+      path: '/act/$token'
+      fullPath: '/act/$token'
+      preLoaderRoute: typeof ActTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
       id: '/invite/$token'
@@ -439,6 +459,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  ActTokenRoute: ActTokenRoute,
   InviteTokenRoute: InviteTokenRoute,
   JoinOrgSlugCancelledRoute: JoinOrgSlugCancelledRoute,
   JoinOrgSlugIndexRoute: JoinOrgSlugIndexRoute,
