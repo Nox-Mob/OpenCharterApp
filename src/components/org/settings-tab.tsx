@@ -1,4 +1,7 @@
 import { MembershipModelCard } from "@/components/membership/membership-model-card";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { hubUrl, isHosted } from "@shared/supabase/hosted";
+import { EmailActionSettingsPanel } from "@shared/ui/ActionLink";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -73,6 +76,7 @@ export function SettingsTab({
         onSaved={refresh}
       />
       <TaxCard orgId={org.id} />
+      {!org.parent_id ? <EmailActionsCard orgId={org.org_id ?? org.id} /> : null}
       <MembershipModelCard org={org} settings={settings} />
       <RulesCard
         org={org}
@@ -466,5 +470,33 @@ function SettingRowEditor({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Actions from email (core 0014, C-08): whether reviewers may approve or decline join requests
+ * (and the other kinds) straight from an email. Hosted, it's one setting for every app, in
+ * OpenAppHub's organization settings.
+ */
+function EmailActionsCard({ orgId }: { orgId: string }) {
+  return (
+    <section id="email-actions" className="space-y-3 rounded-md border bg-card p-5">
+      <h2 className="text-lg font-semibold">Actions from email</h2>
+      {isHosted() ? (
+        <p className="text-sm text-muted-foreground">
+          Whether people may approve or decline join requests (and answer other things) straight
+          from an email is set for every app in{" "}
+          <a
+            className="font-medium text-primary hover:underline"
+            href={hubUrl("/settings#email-actions")}
+          >
+            OpenAppHub's organization settings
+          </a>
+          .
+        </p>
+      ) : (
+        <EmailActionSettingsPanel client={supabase as unknown as SupabaseClient} orgId={orgId} />
+      )}
+    </section>
   );
 }
