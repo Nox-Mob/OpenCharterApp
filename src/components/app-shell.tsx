@@ -87,6 +87,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         canManageBilling={canManageBilling}
         billingHref={hubUrl("/billing")}
         helpHref={helpHrefFor(pathname, search)}
+        notificationsClient={supabase as unknown as SupabaseClient}
+        notificationSettingsHref={
+          isHosted() ? hubUrl("/account#notifications") : "/account#notifications"
+        }
         onSignOut={() => void signOut()}
         LinkComponent={RouterLink}
       >
