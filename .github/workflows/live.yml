@@ -24,6 +24,10 @@ concurrency:
   group: live-demo
   cancel-in-progress: false
 
+# Least privilege (security review 2026-11-14): the job only reads the repository.
+permissions:
+  contents: read
+
 jobs:
   smoke:
     name: Smoke test (live backend)
