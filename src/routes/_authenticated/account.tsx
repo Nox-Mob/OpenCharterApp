@@ -1,3 +1,5 @@
+import { TwoStepSettings } from "@shared/ui/TwoStep";
+import { appSaveRecoveryEmail, appSendCode } from "@/modules/security/security.functions";
 import { useEffect, useState } from "react";
 import { hubUrl, isHosted } from "@shared/supabase/hosted";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -116,6 +118,30 @@ function AccountPage() {
         <NameCard me={m} />
       )}
       <DefaultOrgCard me={m} orgs={orgs.data ?? []} />
+      {isHosted() ? (
+        <section id="two-step" className="space-y-2 rounded-md border bg-card p-5 text-sm">
+          <h2 className="text-lg font-semibold">Two-step sign-in</h2>
+          <p className="text-muted-foreground">
+            Two-step sign-in, backup codes and your recovery email are set in OpenAppHub, for every
+            app.
+          </p>
+          <a
+            href={hubUrl("/account#two-step")}
+            className="font-medium text-primary hover:underline"
+          >
+            Two-step sign-in
+          </a>
+        </section>
+      ) : (
+        <section id="two-step" className="space-y-3 rounded-md border bg-card p-5">
+          <h2 className="text-lg font-semibold">Two-step sign-in</h2>
+          <TwoStepSettings
+            client={supabase as unknown as SupabaseClient}
+            sendCode={appSendCode}
+            saveRecoveryEmail={appSaveRecoveryEmail}
+          />
+        </section>
+      )}
       {isHosted() ? null : <EmailCard me={m} />}
       {isHosted() ? null : m.provider === "email" ? (
         <PasswordCard />

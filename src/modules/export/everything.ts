@@ -42,6 +42,12 @@ export type ExportData = Record<ExportTable, Row[]>;
 
 const PAGE = 1000;
 
+/** Columns per table where "*" isn't right: member field values come decrypted where the person
+ *  may read them (sensitive fields, Charter 0019), never in their encrypted form. */
+const SELECT: Partial<Record<ExportTable, string>> = {
+  attribute_values: "id,unit_id,definition_id,entity_id,value:shown_value,updated_by,updated_at",
+};
+
 /** The minimal client surface used (PostgREST through supabase-js, schema `charter`). */
 type Query = {
   select: (cols: string) => {
@@ -71,7 +77,7 @@ export async function readEverything(
     for (let from = 0; ; from += PAGE) {
       const { data, error } = await client
         .from(table)
-        .select("*")
+        .select(SELECT[table] ?? "*")
         .in(key, unitIds)
         .order(key === "id" ? "id" : "unit_id")
         .range(from, from + PAGE - 1);

@@ -14,8 +14,10 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RecoverRouteImport } from './routes/recover'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as VerifyRecoveryEmailRouteImport } from './routes/verify-recovery-email'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as ActTokenRouteImport } from './routes/act.$token'
@@ -54,6 +56,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecoverRoute = RecoverRouteImport.update({
+  id: '/recover',
+  path: '/recover',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -62,6 +69,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyRecoveryEmailRoute = VerifyRecoveryEmailRouteImport.update({
+  id: '/verify-recovery-email',
+  path: '/verify-recovery-email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
@@ -139,8 +151,10 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/cookies': typeof CookiesRoute
   '/privacy': typeof PrivacyRoute
+  '/recover': typeof RecoverRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/verify-recovery-email': typeof VerifyRecoveryEmailRoute
   '/account': typeof AuthenticatedAccountRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/act/$token': typeof ActTokenRoute
@@ -160,8 +174,10 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/cookies': typeof CookiesRoute
   '/privacy': typeof PrivacyRoute
+  '/recover': typeof RecoverRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/verify-recovery-email': typeof VerifyRecoveryEmailRoute
   '/account': typeof AuthenticatedAccountRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/act/$token': typeof ActTokenRoute
@@ -183,8 +199,10 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/cookies': typeof CookiesRoute
   '/privacy': typeof PrivacyRoute
+  '/recover': typeof RecoverRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/verify-recovery-email': typeof VerifyRecoveryEmailRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/act/$token': typeof ActTokenRoute
@@ -206,8 +224,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/cookies'
     | '/privacy'
+    | '/recover'
     | '/reset-password'
     | '/terms'
+    | '/verify-recovery-email'
     | '/account'
     | '/dashboard'
     | '/act/$token'
@@ -227,8 +247,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/cookies'
     | '/privacy'
+    | '/recover'
     | '/reset-password'
     | '/terms'
+    | '/verify-recovery-email'
     | '/account'
     | '/dashboard'
     | '/act/$token'
@@ -249,8 +271,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/cookies'
     | '/privacy'
+    | '/recover'
     | '/reset-password'
     | '/terms'
+    | '/verify-recovery-email'
     | '/_authenticated/account'
     | '/_authenticated/dashboard'
     | '/act/$token'
@@ -272,8 +296,10 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CookiesRoute: typeof CookiesRoute
   PrivacyRoute: typeof PrivacyRoute
+  RecoverRoute: typeof RecoverRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  VerifyRecoveryEmailRoute: typeof VerifyRecoveryEmailRoute
   ActTokenRoute: typeof ActTokenRoute
   InviteTokenRoute: typeof InviteTokenRoute
   JoinOrgSlugCancelledRoute: typeof JoinOrgSlugCancelledRoute
@@ -318,6 +344,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/recover': {
+      id: '/recover'
+      path: '/recover'
+      fullPath: '/recover'
+      preLoaderRoute: typeof RecoverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -330,6 +363,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-recovery-email': {
+      id: '/verify-recovery-email'
+      path: '/verify-recovery-email'
+      fullPath: '/verify-recovery-email'
+      preLoaderRoute: typeof VerifyRecoveryEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/account': {
@@ -457,8 +497,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CookiesRoute: CookiesRoute,
   PrivacyRoute: PrivacyRoute,
+  RecoverRoute: RecoverRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  VerifyRecoveryEmailRoute: VerifyRecoveryEmailRoute,
   ActTokenRoute: ActTokenRoute,
   InviteTokenRoute: InviteTokenRoute,
   JoinOrgSlugCancelledRoute: JoinOrgSlugCancelledRoute,

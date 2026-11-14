@@ -228,8 +228,8 @@ export function ReportsTab({
           {members.isLoading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <div>
+              <Table scrollLabel="Members by organization">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Organization</TableHead>
@@ -308,8 +308,8 @@ export function ReportsTab({
               {revenue.isLoading ? "Loading…" : "No payments in this period."}
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <div>
+              <Table scrollLabel="Revenue by organization">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Organization</TableHead>
@@ -376,8 +376,8 @@ export function ReportsTab({
               Export CSV
             </Button>
           </div>
-          <div className="overflow-x-auto">
-            <Table>
+          <div>
+            <Table scrollLabel="Boards by organization">
               <TableHeader>
                 <TableRow>
                   <TableHead>Organization</TableHead>

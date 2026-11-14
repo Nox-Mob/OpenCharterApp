@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { HelpTip } from "@/components/help-tip";
+import { docsUrl } from "@shared/docs";
 import {
   Select,
   SelectContent,
@@ -33,6 +35,7 @@ export const EMPTY_ATTRIBUTE: AttributeInput = {
   visibility: "admins",
   member_editable: false,
   show_in_directory: false,
+  sensitive: false,
   options: [],
 };
 
@@ -163,7 +166,8 @@ export function AttributeForm({
       <div className="space-y-2">
         <Label>Who can see it</Label>
         <Select
-          value={value.visibility}
+          value={value.sensitive ? "admins" : value.visibility}
+          disabled={value.sensitive === true}
           onValueChange={(v) => set({ visibility: v as Visibility })}
         >
           <SelectTrigger aria-label="Who can see it">
@@ -178,7 +182,9 @@ export function AttributeForm({
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          Admins always see it. Choose whether members, or anyone, can see it too.
+          {value.sensitive
+            ? "Sensitive fields are for admins only (and each member sees their own)."
+            : "Admins always see it. Choose whether members, or anyone, can see it too."}
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
@@ -195,7 +201,8 @@ export function AttributeForm({
         ).map(([k, l]) => (
           <label key={k} className="flex items-center gap-2 text-sm">
             <Switch
-              checked={value[k] === true}
+              checked={k === "show_in_directory" && value.sensitive ? false : value[k] === true}
+              disabled={k === "show_in_directory" && value.sensitive === true}
               onCheckedChange={(c) => set({ [k]: c })}
               aria-label={l}
             />
@@ -203,6 +210,52 @@ export function AttributeForm({
           </label>
         ))}
       </div>
+      {subject === "member" && (
+        <div className="flex items-start gap-2 rounded-md border p-3 text-sm">
+          <Switch
+            id="attr-sensitive"
+            checked={value.sensitive === true}
+            onCheckedChange={(c) =>
+              set(
+                c
+                  ? { sensitive: true, visibility: "admins", show_in_directory: false }
+                  : { sensitive: false },
+              )
+            }
+          />
+          <div className="grow">
+            <label htmlFor="attr-sensitive" className="font-medium">
+              Sensitive
+            </label>
+            <p className="text-muted-foreground">
+              Stored encrypted. Only member admins and the member can see it.
+            </p>
+          </div>
+          <HelpTip label="What does Sensitive mean?">
+            <p>
+              Use <strong>Sensitive</strong> for private details, like a date of birth, a medical
+              note or an ID number.
+            </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>
+                Each answer is <strong>encrypted</strong> (scrambled with AES-256) before it's
+                saved, so a copy of the database shows only scrambled text.
+              </li>
+              <li>Only people who manage members, and the member themself, can see it.</li>
+              <li>It's never shown in the member directory.</li>
+              <li>It can't be used in pricing rules, and the history log hides it.</li>
+            </ul>
+            <a
+              className="mt-2 inline-block font-medium underline"
+              href={docsUrl("charter/members/roster/#sensitive-fields")}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Learn more
+            </a>
+          </HelpTip>
+        </div>
+      )}
       {subject === "chapter" && value.locked && (
         <p className="text-sm text-muted-foreground">
           Chapter admins will see this value but can't change it. Your admins set it on each

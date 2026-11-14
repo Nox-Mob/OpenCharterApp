@@ -48,6 +48,7 @@ export async function saveAttribute(
         member_editable: parsed.member_editable,
         show_in_directory: parsed.show_in_directory,
         locked: parsed.locked ?? false,
+        sensitive: subject === "member" ? (parsed.sensitive ?? false) : false,
       })
       .select("id")
       .single();
@@ -63,6 +64,7 @@ export async function saveAttribute(
         member_editable: parsed.member_editable,
         show_in_directory: parsed.show_in_directory,
         locked: parsed.locked ?? false,
+        sensitive: subject === "member" ? (parsed.sensitive ?? false) : false,
       })
       .eq("id", existing.id);
     if (error) throw error;

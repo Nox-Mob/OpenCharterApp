@@ -117,7 +117,9 @@ select tests.reset_role();
 
 -- Deleting the organization (core, owner) removes everything in Charter.
 select tests.as_user('11111111-0000-4000-8000-000000000001');
-select public.delete_organization('22222222-0000-4000-8000-000000000001', 'Nat');
+-- "Confirm it's you" (core 0019): a session that just typed its password makes the pass.
+select set_config('request.jwt.claims', json_build_object('sub', '11111111-0000-4000-8000-000000000001', 'role', 'authenticated', 'amr', json_build_array(json_build_object('method', 'password', 'timestamp', extract(epoch from now())::bigint)))::text, true);
+select public.delete_organization('22222222-0000-4000-8000-000000000001', 'Nat', public.begin_reauth('delete_organization'));
 select tests.reset_role();
 select tests.eq((select count(*) from charter.units where org_id = '22222222-0000-4000-8000-000000000001')
   + (select count(*) from charter.member_profiles where org_id = '22222222-0000-4000-8000-000000000001')

@@ -193,6 +193,7 @@ export type Database = {
           member_editable: boolean
           org_id: string | null
           required: boolean
+          sensitive: boolean
           show_in_directory: boolean
           sort_order: number
           unit_id: string
@@ -211,6 +212,7 @@ export type Database = {
           member_editable?: boolean
           org_id?: string | null
           required?: boolean
+          sensitive?: boolean
           show_in_directory?: boolean
           sort_order?: number
           unit_id: string
@@ -229,6 +231,7 @@ export type Database = {
           member_editable?: boolean
           org_id?: string | null
           required?: boolean
+          sensitive?: boolean
           show_in_directory?: boolean
           sort_order?: number
           unit_id?: string
@@ -315,7 +318,10 @@ export type Database = {
           unit_id: string
           updated_at: string
           updated_by: string | null
-          value: Json
+          value: Json | null
+          value_enc: string | null
+          /** Computed column (charter.shown_value, 0019): the value, decrypted where allowed. */
+          shown_value: Json | null
         }
         Insert: {
           definition_id: string
@@ -325,7 +331,8 @@ export type Database = {
           unit_id: string
           updated_at?: string
           updated_by?: string | null
-          value: Json
+          value?: Json | null
+          value_enc?: string | null
         }
         Update: {
           definition_id?: string
@@ -335,7 +342,8 @@ export type Database = {
           unit_id?: string
           updated_at?: string
           updated_by?: string | null
-          value?: Json
+          value?: Json | null
+          value_enc?: string | null
         }
         Relationships: [
           {
@@ -2118,6 +2126,10 @@ export type Database = {
       }
     }
     Functions: {
+      shown_value: {
+        Args: { "": Database["charter"]["Tables"]["attribute_values"]["Row"] }
+        Returns: Json
+      }
       _chapter_board_email: {
         Args: { p_request: string; p_template: string }
         Returns: undefined

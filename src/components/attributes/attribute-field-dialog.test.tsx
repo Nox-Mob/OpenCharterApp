@@ -51,3 +51,33 @@ describe("AttributeFieldDialog", () => {
     expect(document.activeElement).toBe(screen.getByLabelText("Choice 4"));
   });
 });
+
+describe("Sensitive member fields", () => {
+  it("turning Sensitive on makes the field admins-only and keeps it out of the directory", () => {
+    render(
+      <Harness
+        initial={{
+          ...EMPTY_ATTRIBUTE,
+          label: "Date of birth",
+          key: "dob",
+          data_type: "date",
+          show_in_directory: true,
+          visibility: "members",
+        }}
+      />,
+    );
+    fireEvent.click(screen.getByLabelText("Sensitive"));
+    expect((screen.getByLabelText("Show in directory") as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByLabelText("Show in directory").getAttribute("aria-checked")).toBe("false");
+    expect(screen.getByText(/Sensitive fields are for admins only/)).toBeTruthy();
+  });
+
+  it("has a ? button that explains what Sensitive means", async () => {
+    render(<Harness initial={EMPTY_ATTRIBUTE} />);
+    fireEvent.click(screen.getByRole("button", { name: "What does Sensitive mean?" }));
+    expect(await screen.findByText(/scrambled with AES-256/)).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Learn more" }).getAttribute("href")).toContain(
+      "charter/members/roster/#sensitive-fields",
+    );
+  });
+});

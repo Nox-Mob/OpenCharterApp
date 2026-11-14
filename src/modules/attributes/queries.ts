@@ -27,6 +27,9 @@ export const attributeDefsQuery = (orgId: string, lineage: readonly string[]) =>
     },
   });
 
+// Values are read through `shown_value` (Charter 0019): the stored value, or a sensitive field's
+// decrypted value for the people allowed to see it (null for everyone else).
+
 /** Every member's field values in an org, keyed by profile id then field id (E-14 lists). */
 export const orgMemberValuesQuery = (orgId: string) =>
   queryOptions({
@@ -34,7 +37,7 @@ export const orgMemberValuesQuery = (orgId: string) =>
     queryFn: async (): Promise<Record<string, Record<string, unknown>>> => {
       const { data, error } = await supabase
         .from("attribute_values")
-        .select("entity_id,definition_id,value")
+        .select("entity_id,definition_id,value:shown_value")
         .eq("unit_id", orgId);
       if (error) throw error;
       const out: Record<string, Record<string, unknown>> = {};
@@ -53,7 +56,7 @@ export const treeMemberValuesQuery = (orgIds: readonly string[]) =>
       for (let from = 0; ; from += 1000) {
         const { data, error } = await supabase
           .from("attribute_values")
-          .select("entity_id,definition_id,value")
+          .select("entity_id,definition_id,value:shown_value")
           .in("unit_id", [...orgIds])
           .order("id")
           .range(from, from + 999);
@@ -71,7 +74,7 @@ export const memberValuesQuery = (profileId: string) =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("attribute_values")
-        .select("definition_id,value")
+        .select("definition_id,value:shown_value")
         .eq("entity_id", profileId);
       if (error) throw error;
       return Object.fromEntries((data ?? []).map((v) => [v.definition_id, v.value as unknown]));
