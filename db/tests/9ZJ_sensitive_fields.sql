@@ -84,6 +84,29 @@ insert into charter.attribute_values (unit_id, definition_id, entity_id, value)
 values ('22222222-0000-4000-8000-000000000001', '55555555-0000-4000-8000-000000000001', '33333333-0000-4000-8000-000000000001',
   jsonb_build_object('sealed', encode(charter._seal('"1990-01-01"'), 'base64')));
 select tests.eq((select value from charter.attribute_values where entity_id = '33333333-0000-4000-8000-000000000001' and definition_id = '55555555-0000-4000-8000-000000000001'), '"1990-01-01"'::jsonb, 'opened, not stored sealed');
+-- Changing the key: a new key re-encrypts every value; old keys can then be forgotten.
+update charter.attribute_definitions set sensitive = true where key = 'dob';
+create temp table before_rotation on commit drop as
+  select id, value_enc from charter.attribute_values where value_enc is not null;
+select tests.eq((charter.rotate_field_key() ->> 'version')::int, 2, 'a new key, version 2');
+select tests.eq((select count(*) from charter.attribute_values a join before_rotation b using (id) where a.value_enc = b.value_enc), 0::bigint,
+  'every value was re-encrypted');
+select tests.eq((select charter._opens_with(value_enc, 2) from charter.attribute_values where value_enc is not null limit 1), true,
+  'with the new key');
+select tests.eq((select charter._opens_with(value_enc, 1) from charter.attribute_values where value_enc is not null limit 1), false,
+  'and not the old one');
+-- A value still on the old key (an old backup restored, say) still opens, and blocks forgetting.
+insert into charter.attribute_values (unit_id, definition_id, entity_id, value_enc)
+select '22222222-0000-4000-8000-000000000001', '55555555-0000-4000-8000-000000000001', '33333333-0000-4000-8000-000000000002',
+  extensions.pgp_sym_encrypt('"2001-01-01"', charter._field_key(1), 'cipher-algo=aes256');
+select tests.eq(charter._unseal((select value_enc from charter.attribute_values where entity_id = '33333333-0000-4000-8000-000000000002' and definition_id = '55555555-0000-4000-8000-000000000001')),
+  '"2001-01-01"'::jsonb, 'an old-key value still opens');
+select tests.throws($$select charter.forget_old_field_keys()$$, 'still need an older key');
+select charter.rotate_field_key();
+select tests.eq(charter.forget_old_field_keys(), 2, 'after another rotation, the two old keys are forgotten');
+select tests.eq(charter._unseal((select value_enc from charter.attribute_values where entity_id = '33333333-0000-4000-8000-000000000002' and definition_id = '55555555-0000-4000-8000-000000000001')),
+  '"2001-01-01"'::jsonb, 'values still open with the newest key');
+select tests.eq(has_function_privilege('authenticated', 'charter.rotate_field_key()', 'EXECUTE'), false, 'only the operator changes the key');
 -- Nobody signed in can call the encryption functions.
 select tests.eq(has_function_privilege('authenticated', 'charter._unseal(bytea)', 'EXECUTE'), false, 'no direct decryption');
 select tests.eq(has_table_privilege('authenticated', 'charter.field_keys', 'SELECT'), false, 'nobody reads the key table');

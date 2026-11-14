@@ -1,3 +1,6 @@
+import { supabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { OrgTwoStepPanel } from "@shared/ui/TwoStep";
 import { useEffect } from "react";
 import { setCurrentOrg } from "../../../shared/supabase/org";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
@@ -310,6 +313,13 @@ function OrgPage() {
                 <DeleteDemoOrg org={org} orgs={orgs} />
               </fieldset>
               {navCan("org.manage") ? <ExportEverything org={org} orgs={orgs} /> : null}
+              {/* Who must use two-step sign-in (core 0019). Hosted, it's set in OpenAppHub. */}
+              {!isHosted() && navCan("org.manage") ? (
+                <section className="mt-6 rounded-md border bg-card p-5">
+                  <h2 className="mb-3 text-lg font-semibold">Security</h2>
+                  <OrgTwoStepPanel client={supabase as unknown as SupabaseClient} orgId={org.id} />
+                </section>
+              ) : null}
             </>
           )}
           {section === "setup" && (

@@ -15,44 +15,74 @@
 -- Turning the setting on encrypts the values already saved and hides them in earlier audit
 -- entries. Turning it off decrypts them again.
 
--- The key ---------------------------------------------------------------------------------
--- Kept in Supabase Vault. A database without Vault (the tests' plain Postgres) keeps it in a
--- table nobody can read through the API.
+-- The keys ---------------------------------------------------------------------------------
+-- Kept in Supabase Vault (version 1 is "charter_sensitive_fields", later ones
+-- "charter_sensitive_fields_v2", …). A database without Vault (the tests' plain Postgres) keeps
+-- them in a table nobody can read through the API. The newest version encrypts; older ones are
+-- kept only until every value has been re-encrypted (charter.rotate_field_key).
+create table if not exists charter.field_key_versions (
+  version int primary key,
+  created_at timestamptz not null default now(),
+  forgotten_at timestamptz
+);
 create table if not exists charter.field_keys (
-  id int primary key default 1 check (id = 1),
+  version int primary key references charter.field_key_versions (version) on delete cascade,
   key text not null
 );
+alter table charter.field_key_versions enable row level security;
 alter table charter.field_keys enable row level security;
-revoke all on table charter.field_keys from public, anon, authenticated;
+revoke all on table charter.field_key_versions, charter.field_keys from public, anon, authenticated;
 
-do $$
+create or replace function charter._field_key_name(p_version int)
+returns text language sql immutable set search_path = '' as $$
+  select case when p_version = 1 then 'charter_sensitive_fields' else 'charter_sensitive_fields_v' || p_version end;
+$$;
+
+-- Makes key p_version (32 random bytes) and stores it in Vault, or the fallback table.
+create or replace function charter._make_field_key(p_version int)
+returns void language plpgsql volatile security definer set search_path = '' as $$
 declare
   v_key text := encode(extensions.gen_random_bytes(32), 'base64');
 begin
+  insert into charter.field_key_versions (version) values (p_version) on conflict do nothing;
   if to_regprocedure('vault.create_secret(text,text,text,uuid)') is not null then
-    if not exists (select 1 from vault.secrets where name = 'charter_sensitive_fields') then
-      perform vault.create_secret(v_key, 'charter_sensitive_fields',
-        'OpenCharterApp: the key for sensitive member fields. Never change or delete it: values encrypted with it would be lost.');
+    if not exists (select 1 from vault.secrets where name = charter._field_key_name(p_version)) then
+      perform vault.create_secret(v_key, charter._field_key_name(p_version),
+        'OpenCharterApp: a key for sensitive member fields. Never delete it by hand: use charter.forget_old_field_keys() after a rotation.');
     end if;
-  elsif not exists (select 1 from charter.field_keys) then
-    insert into charter.field_keys (id, key) values (1, v_key);
+  else
+    insert into charter.field_keys (version, key) values (p_version, v_key) on conflict do nothing;
+  end if;
+end;
+$$;
+
+do $$
+begin
+  if not exists (select 1 from charter.field_key_versions) then
+    perform charter._make_field_key(1);
   end if;
 end $$;
 
-create or replace function charter._field_key()
+create or replace function charter._current_field_key_version()
+returns int language sql stable security definer set search_path = '' as $$
+  select max(v.version) from charter.field_key_versions v where v.forgotten_at is null;
+$$;
+
+create or replace function charter._field_key(p_version int default null)
 returns text language plpgsql stable security definer set search_path = '' as $$
 declare
+  v_version int := coalesce(p_version, charter._current_field_key_version());
   v_key text;
 begin
   if to_regclass('vault.decrypted_secrets') is not null then
     execute 'select decrypted_secret from vault.decrypted_secrets where name = $1 limit 1'
-      into v_key using 'charter_sensitive_fields';
+      into v_key using charter._field_key_name(v_version);
   end if;
   if v_key is null then
-    select k.key into v_key from charter.field_keys k where k.id = 1;
+    select k.key into v_key from charter.field_keys k where k.version = v_version;
   end if;
   if v_key is null then
-    raise exception 'The key for sensitive fields is missing.' using errcode = '55000';
+    raise exception 'The key for sensitive fields (version %) is missing.', v_version using errcode = '55000';
   end if;
   return v_key;
 end;
@@ -64,10 +94,92 @@ returns bytea language sql volatile security definer set search_path = '' as $$
     'cipher-algo=aes256, compress-algo=0, s2k-mode=3, s2k-digest-algo=sha256');
 $$;
 
+-- Opens a value with the newest key, or, during a rotation, an older one that's still kept.
 create or replace function charter._unseal(p_sealed bytea)
-returns jsonb language sql stable security definer set search_path = '' as $$
-  select case when p_sealed is null then null
-              else extensions.pgp_sym_decrypt(p_sealed, charter._field_key())::jsonb end;
+returns jsonb language plpgsql stable security definer set search_path = '' as $$
+declare
+  v_version int;
+begin
+  if p_sealed is null then
+    return null;
+  end if;
+  for v_version in select v.version from charter.field_key_versions v
+                   where v.forgotten_at is null order by v.version desc loop
+    begin
+      return extensions.pgp_sym_decrypt(p_sealed, charter._field_key(v_version))::jsonb;
+    exception when others then
+      -- Wrong key: try the next older one.
+      null;
+    end;
+  end loop;
+  raise exception 'A sensitive value couldn''t be opened with any kept key.' using errcode = '55000';
+end;
+$$;
+
+-- Change the key: makes a new one and re-encrypts every sensitive value and sealed join answer
+-- with it, all at once. Run by the install's operator (Supabase SQL editor, or the service role):
+--   select charter.rotate_field_key();
+-- Then, once you're sure (a backup restored later may still hold values encrypted with an old
+-- key, so keep old keys as long as you keep backups):
+--   select charter.forget_old_field_keys();
+create or replace function charter.rotate_field_key()
+returns jsonb language plpgsql volatile security definer set search_path = '' as $$
+declare
+  v_new int := coalesce((select max(version) from charter.field_key_versions), 0) + 1;
+  v_values int;
+  v_answers int;
+begin
+  perform charter._make_field_key(v_new);
+  -- The re-encryption isn't a change anyone made, so it isn't written to the audit log.
+  alter table charter.attribute_values disable trigger audit_attribute_values;
+  update charter.attribute_values set value_enc = charter._seal(charter._unseal(value_enc))
+  where value_enc is not null;
+  get diagnostics v_values = row_count;
+  alter table charter.attribute_values enable trigger audit_attribute_values;
+  update charter.payments p set join_answers = (
+    select jsonb_object_agg(k, case when jsonb_typeof(v) = 'object' and v ? 'sealed'
+      then jsonb_build_object('sealed', encode(charter._seal(charter._unseal(decode(v ->> 'sealed', 'base64'))), 'base64'))
+      else v end)
+    from jsonb_each(p.join_answers) a(k, v))
+  where exists (select 1 from jsonb_each(p.join_answers) a(k, v) where jsonb_typeof(v) = 'object' and v ? 'sealed');
+  get diagnostics v_answers = row_count;
+  return jsonb_build_object('version', v_new, 'values', v_values, 'payments_with_answers', v_answers);
+end;
+$$;
+
+-- Deletes every key older than the newest. Values still encrypted with an old key (there are
+-- none right after a rotation) would be lost, so it refuses while any value needs one.
+create or replace function charter.forget_old_field_keys()
+returns int language plpgsql volatile security definer set search_path = '' as $$
+declare
+  v_current int := charter._current_field_key_version();
+  v_n int := 0;
+  r record;
+begin
+  if exists (select 1 from charter.attribute_values a where a.value_enc is not null
+             and not charter._opens_with(a.value_enc, v_current)) then
+    raise exception 'Some values still need an older key. Run charter.rotate_field_key() first.' using errcode = '55000';
+  end if;
+  for r in select version from charter.field_key_versions where version < v_current and forgotten_at is null loop
+    if to_regclass('vault.secrets') is not null then
+      execute 'delete from vault.secrets where name = $1' using charter._field_key_name(r.version);
+    end if;
+    delete from charter.field_keys where version = r.version;
+    update charter.field_key_versions set forgotten_at = now() where version = r.version;
+    v_n := v_n + 1;
+  end loop;
+  return v_n;
+end;
+$$;
+
+create or replace function charter._opens_with(p_sealed bytea, p_version int)
+returns boolean language plpgsql stable security definer set search_path = '' as $$
+begin
+  perform extensions.pgp_sym_decrypt(p_sealed, charter._field_key(p_version));
+  return true;
+exception when others then
+  return false;
+end;
 $$;
 
 -- The setting -------------------------------------------------------------------------------
@@ -323,7 +435,11 @@ begin
 end $$;
 
 -- Access ------------------------------------------------------------------------------------
-revoke all on function charter._field_key(), charter._seal(jsonb), charter._unseal(bytea),
+revoke all on function charter.rotate_field_key(), charter.forget_old_field_keys() from public, anon, authenticated;
+grant execute on function charter.rotate_field_key(), charter.forget_old_field_keys() to service_role;
+revoke all on function charter._field_key_name(int), charter._make_field_key(int), charter._current_field_key_version(),
+  charter._opens_with(bytea, int) from public, anon, authenticated;
+revoke all on function charter._field_key(int), charter._seal(jsonb), charter._unseal(bytea),
   charter._answer_plain(jsonb), charter._sensitive_definition(), charter._seal_attribute_value(),
   charter._sensitive_changed(), charter.audit_attribute_value_change(), charter._seal_join_answers()
 from public, anon, authenticated;

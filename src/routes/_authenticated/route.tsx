@@ -22,13 +22,13 @@ export const Route = createFileRoute("/_authenticated")({
           organizations that require it of owners and admins. */}
       <TwoStepGate
         client={supabase as unknown as SupabaseClient}
-        {...(isHosted() ? { recoverHref: hubUrl("/recover") } : {})}
+        recoverHref={isHosted() ? hubUrl("/recover") : "/recover"}
         onSignOut={() => void supabase.auth.signOut().then(() => window.location.assign("/"))}
       >
         <div className="mb-4 empty:hidden">
           <TwoStepNotice
             client={supabase as unknown as SupabaseClient}
-            accountHref={isHosted() ? hubUrl("/account#two-step") : "/account"}
+            accountHref={isHosted() ? hubUrl("/account#two-step") : "/account#two-step"}
           />
         </div>
         <Outlet />
