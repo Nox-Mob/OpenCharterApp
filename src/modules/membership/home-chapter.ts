@@ -113,11 +113,9 @@ export const myHomeChapterQuery = (nationalId: string) =>
       if (!u.user) return null;
       const { data, error } = await db
         .from("memberships")
-        .select(
-          "id,home_org_id,status,org_member_profiles!memberships_profile_id_fkey!inner(user_id)",
-        )
+        .select("id,home_org_id,status,member_profiles!memberships_profile_id_fkey!inner(user_id)")
         .eq("unit_id", nationalId)
-        .eq("org_member_profiles.user_id", u.user.id)
+        .eq("member_profiles.user_id", u.user.id)
         .maybeSingle();
       if (error) throw error;
       if (!data || (data.status !== "active" && data.status !== "pending")) return null;
