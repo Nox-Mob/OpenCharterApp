@@ -15,6 +15,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Least privilege (security review 2026-11-14): the job only reads the repository.
+permissions:
+  contents: read
+
 jobs:
   checks:
     name: Lint, format, types, unit tests
