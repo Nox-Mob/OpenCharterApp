@@ -1,3 +1,6 @@
+import { supabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { OrgTwoStepPanel } from "@shared/ui/TwoStep";
 import { useEffect } from "react";
 import { setCurrentOrg } from "../../../shared/supabase/org";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
@@ -155,8 +158,8 @@ function OrgPage() {
             ← {parent.name}
           </Link>
         )}
-        <div className="mt-1 flex items-center gap-3">
-          <h1 className="text-3xl font-semibold">{org.name}</h1>
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <h1 className="min-w-0 break-words text-3xl font-semibold">{org.name}</h1>
           <Badge variant="secondary">{TYPE_LABEL[org.type]}</Badge>
           {isDemoOrg(org) && <DemoBadge />}
           {canPreview && !asMember && (
@@ -310,6 +313,13 @@ function OrgPage() {
                 <DeleteDemoOrg org={org} orgs={orgs} />
               </fieldset>
               {navCan("org.manage") ? <ExportEverything org={org} orgs={orgs} /> : null}
+              {/* Who must use two-step sign-in (core 0019). Hosted, it's set in OpenAppHub. */}
+              {!isHosted() && navCan("org.manage") ? (
+                <section className="mt-6 rounded-md border bg-card p-5">
+                  <h2 className="mb-3 text-lg font-semibold">Security</h2>
+                  <OrgTwoStepPanel client={supabase as unknown as SupabaseClient} orgId={org.id} />
+                </section>
+              ) : null}
             </>
           )}
           {section === "setup" && (
