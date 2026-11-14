@@ -158,8 +158,8 @@ function OrgPage() {
             ← {parent.name}
           </Link>
         )}
-        <div className="mt-1 flex items-center gap-3">
-          <h1 className="text-3xl font-semibold">{org.name}</h1>
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <h1 className="min-w-0 break-words text-3xl font-semibold">{org.name}</h1>
           <Badge variant="secondary">{TYPE_LABEL[org.type]}</Badge>
           {isDemoOrg(org) && <DemoBadge />}
           {canPreview && !asMember && (
