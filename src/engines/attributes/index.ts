@@ -67,6 +67,8 @@ export type AttributeDef = {
   show_in_directory: boolean;
   /** Chapter fields only: only the defining org's admins can set the value (D-121). */
   locked: boolean;
+  /** Member fields only: stored encrypted, readable by member managers and the member (0019). */
+  sensitive?: boolean;
   sort_order: number;
   active: boolean;
 };
@@ -159,6 +161,8 @@ export const attributeInputSchema = z
     show_in_directory: z.boolean(),
     /** Chapter fields only (D-121). */
     locked: z.boolean().optional(),
+    /** Member fields only: encrypted, admins only, never in the directory (0019). */
+    sensitive: z.boolean().optional(),
     options: z.array(optionInputSchema),
   })
   .superRefine((v, ctx) => {

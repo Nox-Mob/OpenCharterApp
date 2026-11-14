@@ -22,6 +22,7 @@ export const Route = createFileRoute("/_authenticated")({
           organizations that require it of owners and admins. */}
       <TwoStepGate
         client={supabase as unknown as SupabaseClient}
+        {...(isHosted() ? { recoverHref: hubUrl("/recover") } : {})}
         onSignOut={() => void supabase.auth.signOut().then(() => window.location.assign("/"))}
       >
         <div className="mb-4 empty:hidden">

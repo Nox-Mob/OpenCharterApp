@@ -50,7 +50,9 @@ export const quotePriceQuery = (termId: string, answers: Record<string, unknown>
 export function ruleAttributes(defs: readonly DefWithOptions[]): Map<string, RuleAttribute> {
   return new Map(
     defs
-      .filter((d) => d.applies_to === "member" && d.active && d.data_type !== "text")
+      .filter(
+        (d) => d.applies_to === "member" && d.active && d.data_type !== "text" && !d.sensitive,
+      )
       .map((d) => [
         d.id,
         {
