@@ -731,6 +731,13 @@ export type Database = {
             foreignKeyName: "membership_events_payment_id_fkey"
             columns: ["payment_id"]
             isOneToOne: false
+            referencedRelation: "api_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_events_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
             referencedRelation: "payments"
             referencedColumns: ["id"]
           },
@@ -1293,6 +1300,13 @@ export type Database = {
             columns: ["unit_id"]
             isOneToOne: false
             referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "api_payments"
             referencedColumns: ["id"]
           },
           {
@@ -1986,6 +2000,13 @@ export type Database = {
             foreignKeyName: "webhook_events_payment_id_fkey"
             columns: ["payment_id"]
             isOneToOne: false
+            referencedRelation: "api_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_events_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
             referencedRelation: "payments"
             referencedColumns: ["id"]
           },
@@ -2039,6 +2060,41 @@ export type Database = {
           renewals_due: number | null
         }
         Relationships: []
+      }
+      api_payments: {
+        Row: {
+          amount_minor: number | null
+          channel: string | null
+          created_at: string | null
+          currency: string | null
+          gateway: string | null
+          id: string | null
+          is_national: boolean | null
+          method: string | null
+          org_id: string | null
+          purpose: string | null
+          received_on: string | null
+          refunded_amount_minor: number | null
+          status: string | null
+          unit_id: string | null
+          unit_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "api_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_org_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       api_people: {
         Row: {
@@ -4506,6 +4562,7 @@ export type Database = {
       _require_people_manager: { Args: { p_org: string }; Returns: undefined }
       _require_uid: { Args: never; Returns: string }
       _token_hash: { Args: { p_token: string }; Returns: string }
+      _tune_schema: { Args: { p_schema: string }; Returns: undefined }
       _validate_actions: {
         Args: {
           p_actions: Json
@@ -4993,6 +5050,7 @@ export type Database = {
         }[]
       }
       prune_automation_log: { Args: never; Returns: number }
+      prune_email_history: { Args: never; Returns: number }
       prune_notifications: { Args: never; Returns: number }
       prune_workflow_history: { Args: never; Returns: number }
       queue_digests: { Args: never; Returns: number }
@@ -5229,6 +5287,13 @@ export type Database = {
             Args: { p_confirm: string; p_new_owner: string; p_org: string }
             Returns: undefined
           }
+      tuning_problems: {
+        Args: { p_schema: string }
+        Returns: {
+          kind: string
+          object: string
+        }[]
+      }
       unread_notification_count: { Args: never; Returns: number }
       workflow_overview: { Args: { p_org: string }; Returns: Json }
       workflow_runs: {
