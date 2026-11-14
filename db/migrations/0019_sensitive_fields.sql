@@ -32,6 +32,7 @@ create table if not exists charter.field_keys (
 alter table charter.field_key_versions enable row level security;
 alter table charter.field_keys enable row level security;
 revoke all on table charter.field_key_versions, charter.field_keys from public, anon, authenticated;
+-- no access: field_key_versions, field_keys (keys; only the definer functions here read them)
 
 create or replace function charter._field_key_name(p_version int)
 returns text language sql immutable set search_path = '' as $$
