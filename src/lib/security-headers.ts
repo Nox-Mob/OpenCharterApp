@@ -9,17 +9,19 @@
  * writes inline hydration scripts, and toasts and dialogs set inline styles. Moving scripts to a
  * per-request nonce is a later hardening step.
  */
+import { ANALYTICS_CSP, analyticsToken } from "../../shared/analytics";
 export function contentSecurityPolicy(supabaseUrl: string | undefined): string {
   const supabase = originOf(supabaseUrl);
   const connect = ["'self'", ...(supabase ? [supabase, supabase.replace(/^https:/, "wss:")] : [])];
   const img = ["'self'", "data:", "blob:", ...(supabase ? [supabase] : [])];
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    // Cloudflare Web Analytics, production builds only (shared/analytics.ts).
+    `script-src 'self' 'unsafe-inline'${analyticsToken() ? ` ${ANALYTICS_CSP.script}` : ""}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     `img-src ${img.join(" ")}`,
-    `connect-src ${connect.join(" ")}`,
+    `connect-src ${[...connect, ...(analyticsToken() ? [ANALYTICS_CSP.connect] : [])].join(" ")}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

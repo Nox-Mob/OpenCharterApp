@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { contentSecurityPolicy, withSecurityHeaders } from "./security-headers";
 
 const supabase = "https://abc.supabase.co";
@@ -34,5 +34,20 @@ describe("security headers (spec §10.1, D-219)", () => {
   it("falls back to self when the Supabase URL is missing or unusable", () => {
     expect(contentSecurityPolicy(undefined)).toContain("connect-src 'self';");
     expect(contentSecurityPolicy("javascript:alert(1)")).toContain("connect-src 'self';");
+  });
+});
+
+describe("Cloudflare Web Analytics in the CSP (production only)", () => {
+  it("isn't allowed without the production token", () => {
+    vi.stubEnv("VITE_CF_ANALYTICS_TOKEN", "");
+    expect(contentSecurityPolicy("https://abc.supabase.co")).not.toContain("cloudflareinsights");
+    vi.unstubAllEnvs();
+  });
+  it("allows only the beacon script and its reporting endpoint with the token", () => {
+    vi.stubEnv("VITE_CF_ANALYTICS_TOKEN", "054d7738b858425f863060e1c3b9dbb3");
+    const csp = contentSecurityPolicy("https://abc.supabase.co");
+    expect(csp).toMatch(/script-src [^;]*https:\/\/static\.cloudflareinsights\.com/);
+    expect(csp).toMatch(/connect-src [^;]*https:\/\/cloudflareinsights\.com/);
+    vi.unstubAllEnvs();
   });
 });
