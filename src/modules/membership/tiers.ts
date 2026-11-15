@@ -147,7 +147,7 @@ export const tierInputSchema = z
     name: z.string().trim().min(1, "Give the level a name").max(80),
     description: z.string().trim().max(500),
     tax_treatment: z.enum(TAX_TREATMENTS),
-    terms: z.array(termSchema).min(1, "Add at least one term"),
+    terms: z.array(termSchema).min(1, "Add at least one term").max(20, "Up to 20 terms"),
   })
   .refine((t) => new Set(t.terms.map((x) => x.key)).size === t.terms.length, {
     message: "Each term length can only be listed once",

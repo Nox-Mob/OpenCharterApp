@@ -173,8 +173,8 @@ export const conditionSchema = z
   .object({
     attribute_id: z.string().uuid("Pick a field"),
     op: z.enum(CONDITION_OPS),
-    value: z.union([z.string(), z.number(), z.boolean()]).optional(),
-    values: z.array(z.string()).optional(),
+    value: z.union([z.string().max(200), z.number(), z.boolean()]).optional(),
+    values: z.array(z.string().max(200)).max(200).optional(),
   })
   .refine(
     (c) => (c.op === "in" ? (c.values?.length ?? 0) > 0 : c.value !== undefined && c.value !== ""),

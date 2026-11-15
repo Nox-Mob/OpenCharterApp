@@ -163,7 +163,7 @@ export const attributeInputSchema = z
     locked: z.boolean().optional(),
     /** Member fields only: encrypted, admins only, never in the directory (0019). */
     sensitive: z.boolean().optional(),
-    options: z.array(optionInputSchema),
+    options: z.array(optionInputSchema).max(200, "Up to 200 choices"),
   })
   .superRefine((v, ctx) => {
     if (hasOptions(v.data_type) && v.options.length < 2) {
