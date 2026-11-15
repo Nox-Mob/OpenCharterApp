@@ -50,6 +50,10 @@ export function withSecurityHeaders(response: Response, supabaseUrl: string | un
   for (const [name, value] of Object.entries(securityHeaders(supabaseUrl))) {
     if (!out.headers.has(name)) out.headers.set(name, value);
   }
+  // OWASP A04:2025 (sensitive data in caches): everything the Worker renders can hold a
+  // person's data, so nothing keeps a copy unless a response says otherwise. Static files are
+  // served before the Worker runs and keep their own caching.
+  if (!out.headers.has("Cache-Control")) out.headers.set("Cache-Control", "private, no-store");
   return out;
 }
 
