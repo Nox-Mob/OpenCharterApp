@@ -28,6 +28,9 @@ describe("validateLogo", () => {
   it("rejects files over 2 MB", () => {
     expect(validateLogo({ type: "image/png", size: 2 * 1024 * 1024 + 1 })).not.toBeNull();
   });
+  it("rejects SVG, which can carry scripts", () => {
+    expect(validateLogo({ type: "image/svg+xml", size: 10 })).not.toBeNull();
+  });
   it("rejects non-image files", () => {
     expect(validateLogo({ type: "application/pdf", size: 10 })).not.toBeNull();
   });

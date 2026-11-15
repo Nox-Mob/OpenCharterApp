@@ -14,12 +14,11 @@ export function resolveLogo(
   return pick ? { path: pick.logo_path!, orgId: pick.id } : null;
 }
 
-export const LOGO_TYPES = ["image/png", "image/jpeg", "image/svg+xml", "image/webp"] as const;
+export const LOGO_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
 export const LOGO_MAX_BYTES = 2 * 1024 * 1024;
 
 export function validateLogo(file: { type: string; size: number }): string | null {
-  if (!(LOGO_TYPES as readonly string[]).includes(file.type))
-    return "Use a PNG, JPG, SVG or WebP image";
+  if (!(LOGO_TYPES as readonly string[]).includes(file.type)) return "Use a PNG, JPG or WebP image";
   if (file.size > LOGO_MAX_BYTES) return "Logo must be 2 MB or smaller";
   return null;
 }

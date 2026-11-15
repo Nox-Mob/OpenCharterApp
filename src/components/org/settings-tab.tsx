@@ -262,11 +262,11 @@ function LogoCard({
         </p>
       ) : (
         <div className="space-y-2">
-          <Label htmlFor="logo">Upload a logo (PNG, JPG, SVG or WebP, up to 2 MB)</Label>
+          <Label htmlFor="logo">Upload a logo (PNG, JPG or WebP, up to 2 MB)</Label>
           <Input
             id="logo"
             type="file"
-            accept="image/png,image/jpeg,image/svg+xml,image/webp"
+            accept="image/png,image/jpeg,image/webp"
             disabled={busy}
             onChange={onFile}
           />

@@ -67,8 +67,19 @@ export async function applyGatewayEvent(
 }
 
 /** POST /api/public/stripe/$orgId: one endpoint per org, verified with that org's secret. */
+const WEBHOOK_MAX_BYTES = 1_000_000;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function handleStripeWebhook(orgId: string, request: Request): Promise<Response> {
+  // Turn away junk before any database lookup: a bad organization id, no signature, or a body
+  // far bigger than any Stripe event.
+  if (!UUID_RE.test(orgId)) return new Response("not found", { status: 404 });
+  if (!request.headers.get("stripe-signature"))
+    return new Response("missing signature", { status: 400 });
+  if (Number(request.headers.get("content-length") ?? 0) > WEBHOOK_MAX_BYTES)
+    return new Response("too large", { status: 413 });
   const rawBody = await request.text();
+  if (rawBody.length > WEBHOOK_MAX_BYTES) return new Response("too large", { status: 413 });
   const { data: sealed, error } = await admin().rpc("gateway_sealed_credentials", { _org: orgId });
   if (error)
     return new Response(isMissingSchemaError(error) ? "database update needed" : "error", {
