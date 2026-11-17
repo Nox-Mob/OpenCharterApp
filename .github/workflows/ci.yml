@@ -33,6 +33,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: Vendored shared code matches OpenAppHub
         run: node scripts/check-shared.mjs
+      - name: Open-source license list is up to date (SHARED-SPEC §10.3)
+        run: node shared/licenses/generate.mjs --check
       - name: Lint
         run: bun run lint
       - name: Formatting

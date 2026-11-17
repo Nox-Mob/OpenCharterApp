@@ -75,6 +75,10 @@ export function LegalLinks({ className = "" }: { className?: string }) {
       <Link to="/terms" className="hover:underline">
         Terms of service
       </Link>
+      <span aria-hidden="true"> · </span>
+      <Link to="/about" className="hover:underline">
+        About and licenses
+      </Link>
     </nav>
   );
 }
