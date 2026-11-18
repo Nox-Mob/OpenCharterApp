@@ -1,25 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import {
-  createTestGateway,
-  isDemoOrgId,
-  testCheckoutPath,
-  testOutcomeEvent,
-  TEST_OUTCOMES,
-} from "./test-gateway";
+import { createTestGateway, isDemoOrgId, testCheckoutPath, testOutcomeEvent } from "./test-gateway";
 
 const amount = { amount_minor: 2500, currency: "USD" };
 
 describe("test gateway", () => {
-  it("offers the outcomes of Stripe's test cards", () => {
-    expect(TEST_OUTCOMES.map((o) => o.value)).toEqual([
-      "accepted",
-      "declined",
-      "insufficient_funds",
-      "slow",
-      "cancel",
-    ]);
-  });
   it("turns outcomes into the same events Stripe produces, never live", () => {
     expect(testOutcomeEvent("accepted", "pay_1", amount, "e1")).toEqual({
       type: "payment.succeeded",

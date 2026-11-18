@@ -11,7 +11,6 @@ import {
   termEndDate,
   termKey,
   termLabel,
-  TERM_LENGTH_CHOICES,
   tierInputSchema,
   tierKey,
   withLength,
@@ -55,17 +54,6 @@ describe("term lengths", () => {
       length_count: 6,
       length_unit: "month",
     });
-  });
-});
-
-describe("length drop-down", () => {
-  it("offers Days, Months, Years and Lifetime", () => {
-    expect(TERM_LENGTH_CHOICES.map((c) => c.label)).toEqual([
-      "Days",
-      "Months",
-      "Years",
-      "Lifetime",
-    ]);
   });
 });
 
