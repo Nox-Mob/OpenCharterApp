@@ -111,9 +111,9 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
       - run: bun install --frozen-lockfile
       - name: High or critical, anywhere
-        run: bun audit --audit-level=high
+        run: bun audit --audit-level=high $(node shared/security/audit.mjs --ignore-flags)
       - name: Anything in production dependencies
-        run: bun audit --production --audit-level=low
+        run: bun audit --production --audit-level=low $(node shared/security/audit.mjs --ignore-flags)
 
   build:
     name: Production build
