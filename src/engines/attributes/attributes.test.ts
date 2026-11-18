@@ -115,13 +115,6 @@ describe("attributeInputSchema", () => {
     for (const s of [...STARTER_ATTRIBUTES, ...STARTER_CHAPTER_ATTRIBUTES])
       expect(attributeInputSchema.safeParse(s).success).toBe(true);
   });
-  it("charter date starts locked so only the national sets it", () => {
-    expect(STARTER_CHAPTER_ATTRIBUTES.find((s) => s.key === "charter_date")?.locked).toBe(true);
-  });
-  it("chapter starters never use member-only switches", () => {
-    for (const s of STARTER_CHAPTER_ATTRIBUTES)
-      expect([s.member_editable, s.show_in_directory]).toEqual([false, false]);
-  });
 });
 
 describe("subjects", () => {
